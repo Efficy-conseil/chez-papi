@@ -297,61 +297,26 @@ Tableau de bord · v1.0<br>Avril 2026
 <!-- ══════════════════════ AGENDA ══════════════════════ -->
 <div class="panel" id="panel-agenda">
 <div class="section-hd">
-<h2>Agenda — Juillet 2025</h2>
-<span class="shd-sub">3 événements confirmés</span>
+<h2 id="agenda-heading">Agenda</h2>
+<span class="shd-sub" id="agenda-sub"></span>
 </div>
 
 <div class="grid2">
 <div class="card">
-<div class="card-title">Calendrier</div>
-<div class="cal-grid">
-<div class="cal-hd">Lu</div><div class="cal-hd">Ma</div><div class="cal-hd">Me</div>
-<div class="cal-hd">Je</div><div class="cal-hd">Ve</div><div class="cal-hd">Sa</div><div class="cal-hd">Di</div>
-<!-- Juillet 2025 commence un mardi -->
-<div class="cal-day other-month">30</div>
-<div class="cal-day today has-event">1</div>
-<div class="cal-day">2</div><div class="cal-day">3</div><div class="cal-day">4</div>
-<div class="cal-day has-event">5</div><div class="cal-day">6</div>
-<div class="cal-day">7</div><div class="cal-day">8</div><div class="cal-day">9</div>
-<div class="cal-day">10</div><div class="cal-day">11</div>
-<div class="cal-day has-event">12</div><div class="cal-day">13</div>
-<div class="cal-day">14</div><div class="cal-day">15</div><div class="cal-day">16</div>
-<div class="cal-day">17</div><div class="cal-day">18</div>
-<div class="cal-day has-event">19</div><div class="cal-day">20</div>
-<div class="cal-day">21</div><div class="cal-day">22</div><div class="cal-day">23</div>
-<div class="cal-day">24</div><div class="cal-day">25</div>
-<div class="cal-day has-event">26</div><div class="cal-day">27</div>
-<div class="cal-day">28</div><div class="cal-day">29</div><div class="cal-day">30</div>
-<div class="cal-day">31</div><div class="cal-day other-month">1</div>
-<div class="cal-day other-month">2</div><div class="cal-day other-month">3</div>
+<div class="cal-nav">
+<button class="cal-nav-btn" id="cal-prev" aria-label="Mois précédent">‹</button>
+<div class="cal-nav-center">
+<select id="cal-month-sel" class="cal-sel"></select>
+<select id="cal-year-sel" class="cal-sel"></select>
 </div>
+<button class="cal-nav-btn" id="cal-next" aria-label="Mois suivant">›</button>
+</div>
+<div class="cal-grid" id="cal-grid"></div>
 </div>
 
 <div class="card">
-<div class="card-title">Détail des événements</div>
-<div class="activity-list">
-<div class="activity-item">
-<div class="act-dot terra"></div>
-<div class="act-body">
-<div class="act-text"><strong>5 juil. — Anniversaire Famille Martin</strong></div>
-<div class="act-text" style="color:var(--muted);font-size:11px;">Buffet · 45 couverts · Grans</div>
-</div>
-</div>
-<div class="activity-item">
-<div class="act-dot terra"></div>
-<div class="act-body">
-<div class="act-text"><strong>12 juil. — Séminaire SAS Prova BTP</strong></div>
-<div class="act-text" style="color:var(--muted);font-size:11px;">Cocktail déj. · 28 pers. · Salon</div>
-</div>
-</div>
-<div class="activity-item">
-<div class="act-dot terra"></div>
-<div class="act-body">
-<div class="act-text"><strong>19 juil. — Réception Mairie de Grans</strong></div>
-<div class="act-text" style="color:var(--muted);font-size:11px;">Cocktail dînatoire · 80 couverts</div>
-</div>
-</div>
-</div>
+<div class="card-title" id="cal-detail-title">Événements du mois</div>
+<div class="activity-list" id="cal-detail-list"></div>
 </div>
 </div>
 </div>

@@ -821,6 +821,53 @@ body {
 }
 
 /* CALENDAR */
+.cal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  gap: 6px;
+}
+
+.cal-nav-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  font-size: 18px;
+  cursor: pointer;
+  color: var(--brown-dk);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background .12s;
+}
+
+.cal-nav-btn:hover { background: var(--warm); }
+
+.cal-nav-center {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+  justify-content: center;
+}
+
+.cal-sel {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--brown-dk);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 6px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.cal-sel:focus { outline: none; border-color: var(--brown); }
+
 .cal-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -854,6 +901,18 @@ body {
 }
 
 .cal-day.other-month { color: var(--faint); }
+
+.cal-day.selected {
+  background: var(--terracotta);
+  color: #fff;
+  font-weight: 700;
+}
+
+.cal-empty {
+  padding: 16px 0;
+  color: var(--muted);
+  font-size: 13px;
+}
 
 .cal-day.has-event {
   font-weight: 700;

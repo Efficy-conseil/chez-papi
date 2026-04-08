@@ -276,11 +276,212 @@ function showNotification(message, type = 'info', duration = 3000) {
   }, duration);
 }
 
+// ── CALENDAR ──
+
+const EVENTS_DATA = [
+  { date: '2025-07-01', title: 'Mariage Dupont', detail: 'Mariage · 120 couverts · Grans' },
+  { date: '2025-07-05', title: 'Anniversaire Famille Martin', detail: 'Buffet · 45 couverts · Grans' },
+  { date: '2025-07-12', title: 'Séminaire SAS Prova BTP', detail: 'Cocktail déj. · 28 pers. · Salon' },
+  { date: '2025-07-19', title: 'Réception Mairie de Grans', detail: 'Cocktail dînatoire · 80 couverts' },
+  { date: '2025-07-26', title: 'Mariage Dupont (final)', detail: '120 couverts · Livraison incluse' },
+  { date: '2025-08-15', title: 'Baptême Famille Bertrand', detail: 'Cocktail · ~40 pers.' },
+  { date: '2025-08-22', title: 'CE Airbus', detail: "Repas d'équipe · 50 pers." },
+  { date: '2025-09-06', title: 'Repas Famille Rousseau', detail: '30 pers. · Terrasse' },
+  { date: '2025-09-20', title: 'Cocktail inauguration', detail: '60 pers. · Salon principal' },
+];
+
+const Calendar = (() => {
+  const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin',
+                     'Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  const DAYS_FR   = ['Lu','Ma','Me','Je','Ve','Sa','Di'];
+
+  const now = new Date();
+  let currentYear  = now.getFullYear();
+  let currentMonth = now.getMonth();
+  let selectedDate = null;
+
+  function toDateStr(y, m, d) {
+    return `${y}-${String(m + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  }
+
+  function eventsForDate(ds) {
+    return EVENTS_DATA.filter(e => e.date === ds);
+  }
+
+  function eventsForMonth(y, m) {
+    const prefix = `${y}-${String(m + 1).padStart(2,'0')}`;
+    return EVENTS_DATA.filter(e => e.date.startsWith(prefix));
+  }
+
+  function formatDate(ds) {
+    const d = new Date(ds + 'T12:00:00');
+    return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  }
+
+  // ── Rendering ──
+
+  function renderGrid() {
+    const grid = document.getElementById('cal-grid');
+    if (!grid) return;
+
+    const todayStr = toDateStr(now.getFullYear(), now.getMonth(), now.getDate());
+    const firstWeekday = (new Date(currentYear, currentMonth, 1).getDay() + 6) % 7; // Mon=0
+    const daysInMonth  = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const daysInPrev   = new Date(currentYear, currentMonth, 0).getDate();
+
+    let html = DAYS_FR.map(d => `<div class="cal-hd">${d}</div>`).join('');
+
+    for (let i = firstWeekday - 1; i >= 0; i--) {
+      html += `<div class="cal-day other-month">${daysInPrev - i}</div>`;
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const ds = toDateStr(currentYear, currentMonth, d);
+      const cls = ['cal-day',
+        ds === todayStr   ? 'today'     : '',
+        eventsForDate(ds).length        ? 'has-event' : '',
+        ds === selectedDate             ? 'selected'  : '',
+      ].filter(Boolean).join(' ');
+      html += `<div class="${cls}" data-date="${ds}">${d}</div>`;
+    }
+
+    const filled = firstWeekday + daysInMonth;
+    const tail   = filled % 7 === 0 ? 0 : 7 - (filled % 7);
+    for (let d = 1; d <= tail; d++) {
+      html += `<div class="cal-day other-month">${d}</div>`;
+    }
+
+    grid.innerHTML = html;
+
+    grid.querySelectorAll('.cal-day[data-date]').forEach(el => {
+      el.addEventListener('click', () => {
+        const ds = el.getAttribute('data-date');
+        selectedDate = selectedDate === ds ? null : ds;
+        renderGrid();
+        renderDetail();
+      });
+    });
+  }
+
+  function renderDetail() {
+    const titleEl = document.getElementById('cal-detail-title');
+    const listEl  = document.getElementById('cal-detail-list');
+    if (!titleEl || !listEl) return;
+
+    let events;
+    if (selectedDate) {
+      events = eventsForDate(selectedDate);
+      const label = formatDate(selectedDate);
+      titleEl.textContent = events.length
+        ? `Événements — ${label}`
+        : `Aucun événement — ${label}`;
+    } else {
+      events = eventsForMonth(currentYear, currentMonth);
+      titleEl.textContent = events.length
+        ? `${events.length} événement${events.length > 1 ? 's' : ''} ce mois`
+        : 'Aucun événement ce mois';
+    }
+
+    if (!events.length) {
+      listEl.innerHTML = '<div class="cal-empty">Aucun événement.</div>';
+      return;
+    }
+
+    listEl.innerHTML = events.map(e => `
+      <div class="activity-item">
+        <div class="act-dot terra"></div>
+        <div class="act-body">
+          <div class="act-text"><strong>${formatDate(e.date)} — ${e.title}</strong></div>
+          <div class="act-text" style="color:var(--muted);font-size:11px;">${e.detail}</div>
+        </div>
+      </div>`).join('');
+  }
+
+  function updateHeader() {
+    const hEl = document.getElementById('agenda-heading');
+    const sEl = document.getElementById('agenda-sub');
+    const mSel = document.getElementById('cal-month-sel');
+    const ySel = document.getElementById('cal-year-sel');
+
+    if (hEl) hEl.textContent = `Agenda — ${MONTHS_FR[currentMonth]} ${currentYear}`;
+
+    const count = eventsForMonth(currentYear, currentMonth).length;
+    if (sEl) sEl.textContent = count
+      ? `${count} événement${count > 1 ? 's' : ''} confirmé${count > 1 ? 's' : ''}`
+      : 'Aucun événement';
+
+    if (mSel) mSel.value = currentMonth;
+    if (ySel) ySel.value = currentYear;
+  }
+
+  function render() {
+    renderGrid();
+    renderDetail();
+    updateHeader();
+  }
+
+  // ── Init ──
+
+  function init() {
+    // Month select
+    const mSel = document.getElementById('cal-month-sel');
+    if (mSel) {
+      MONTHS_FR.forEach((m, i) => {
+        const o = document.createElement('option');
+        o.value = i; o.textContent = m;
+        mSel.appendChild(o);
+      });
+      mSel.addEventListener('change', () => {
+        currentMonth = parseInt(mSel.value);
+        selectedDate = null;
+        render();
+      });
+    }
+
+    // Year select
+    const ySel = document.getElementById('cal-year-sel');
+    if (ySel) {
+      for (let y = 2023; y <= now.getFullYear() + 3; y++) {
+        const o = document.createElement('option');
+        o.value = y; o.textContent = y;
+        ySel.appendChild(o);
+      }
+      ySel.addEventListener('change', () => {
+        currentYear = parseInt(ySel.value);
+        selectedDate = null;
+        render();
+      });
+    }
+
+    // Prev / Next
+    document.getElementById('cal-prev')?.addEventListener('click', () => {
+      currentMonth--;
+      if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+      selectedDate = null;
+      render();
+    });
+
+    document.getElementById('cal-next')?.addEventListener('click', () => {
+      currentMonth++;
+      if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+      selectedDate = null;
+      render();
+    });
+
+    render();
+  }
+
+  return { init, EVENTS_DATA };
+})();
+
+Calendar.init();
+
 // ── EXPORT FOR TESTING ──
 
 window.ChezPapi = {
   API,
   Storage,
+  Calendar,
   showPanel,
   toggleSidebar,
   showNotification
