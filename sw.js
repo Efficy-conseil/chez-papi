@@ -1,11 +1,12 @@
-const CACHE_NAME = 'chez-papi-v1';
+const CACHE_NAME = 'chez-papi-v1.1';
 const ASSETS = [
   './',
   './index.html',
   './styles.css',
   './app.js',
   './manifest.json',
-  './logo.svg'
+  './icon-192x192.png',
+  './icon-512x512.png'
 ];
 
 self.addEventListener('install', e => {
