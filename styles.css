@@ -37,6 +37,54 @@ body {
   position: relative;
 }
 
+/* ── PWA UPDATE BANNER ── */
+.pwa-update-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: var(--brown-dk);
+  color: #fff;
+  padding: 10px 14px;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  animation: slideFromTop .3s ease-out;
+}
+
+@keyframes slideFromTop {
+  from { transform: translateY(-100%); }
+  to   { transform: translateY(0); }
+}
+
+.pwa-update-text { flex: 1; }
+
+.pwa-update-btn {
+  background: var(--gold-lt);
+  color: #fff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity .2s;
+}
+
+.pwa-update-btn:hover { opacity: .85; }
+
+.pwa-update-dismiss {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,.6);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px 6px;
+}
+
 /* ── PWA INSTALL BANNER ── */
 .pwa-banner {
   position: fixed;

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chez-papi-v1.2';
+const CACHE_NAME = 'chez-papi-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -11,39 +11,47 @@ const ASSETS = [
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      // Add all core assets to cache
-      return cache.addAll(ASSETS);
-    }).catch(err => console.error('Cache addAll failed:', err))
+    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+      .catch(err => console.error('Cache addAll failed:', err))
   );
-  self.skipWaiting();
+  // Ne pas skipWaiting ici : on attend la confirmation de l'utilisateur
 });
 
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys => {
-      return Promise.all(
-        keys.filter(key => key !== CACHE_NAME)
-          .map(key => caches.delete(key))
-      );
-    })
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+    )
   );
   self.clients.claim();
 });
 
-// Cache First Strategy for Offline Access
+// L'app peut déclencher la mise à jour via ce message
+self.addEventListener('message', e => {
+  if (e.data?.type === 'SKIP_WAITING') self.skipWaiting();
+});
+
 self.addEventListener('fetch', e => {
+  // Network-first pour la page HTML : l'utilisateur reçoit toujours la version fraîche
+  if (e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request)
+        .then(res => {
+          caches.open(CACHE_NAME).then(c => c.put(e.request, res.clone()));
+          return res;
+        })
+        .catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // Cache-first pour les ressources statiques (CSS, JS, images)
   e.respondWith(
-    caches.match(e.request).then(cachedResponse => {
-      return cachedResponse || fetch(e.request).then(response => {
-        return caches.open(CACHE_NAME).then(cache => {
-          // Cache new assets for future
-          cache.put(e.request, response.clone());
-          return response;
-        });
+    caches.match(e.request).then(cached => {
+      return cached || fetch(e.request).then(res => {
+        caches.open(CACHE_NAME).then(c => c.put(e.request, res.clone()));
+        return res;
       });
-    }).catch(() => {
-      // Offline fallback handling if needed
-    })
+    }).catch(() => {})
   );
 });
