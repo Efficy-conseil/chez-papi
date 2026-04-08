@@ -122,27 +122,7 @@ function showPanel(panelName, element) {
   document.querySelector('.content').scrollTop = 0;
 }
 
-// ── DATE INITIALIZATION ──
-
-function initializeDate() {
-  const today = new Date();
-  const opts = {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  };
-
-  const dateStr = today.toLocaleDateString('fr-FR', opts);
-  const capitalizedDate = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
-
-  const titleEl = document.getElementById('topbar-title');
-  if (titleEl) {
-    titleEl.textContent = 'Bonjour — ' + capitalizedDate;
-  }
-}
-
-initializeDate();
+// ── DATE INITIALIZATION REMOVED ──
 
 // ── RESPONSIVE HANDLING ──
 
