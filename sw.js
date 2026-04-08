@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chez-papi-v3';
+const CACHE_NAME = 'chez-papi-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -32,12 +32,15 @@ self.addEventListener('message', e => {
 });
 
 self.addEventListener('fetch', e => {
+  // Ignorer les requêtes cross-origin (appels API Google Apps Script, fonts...)
+  if (!e.request.url.startsWith(self.location.origin)) return;
+
   // Network-first pour la page HTML : l'utilisateur reçoit toujours la version fraîche
   if (e.request.mode === 'navigate') {
     e.respondWith(
       fetch(e.request)
         .then(res => {
-          caches.open(CACHE_NAME).then(c => c.put(e.request, res.clone()));
+          if (res.ok) caches.open(CACHE_NAME).then(c => c.put(e.request, res.clone()));
           return res;
         })
         .catch(() => caches.match(e.request))
@@ -45,11 +48,11 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // Cache-first pour les ressources statiques (CSS, JS, images)
+  // Cache-first pour les ressources statiques same-origin (CSS, JS, images)
   e.respondWith(
     caches.match(e.request).then(cached => {
       return cached || fetch(e.request).then(res => {
-        caches.open(CACHE_NAME).then(c => c.put(e.request, res.clone()));
+        if (res.ok) caches.open(CACHE_NAME).then(c => c.put(e.request, res.clone()));
         return res;
       });
     }).catch(() => {})
