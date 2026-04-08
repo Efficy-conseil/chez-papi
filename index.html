@@ -92,7 +92,7 @@
 <span class="nav-icon">📅</span> Agenda
 </button>
 <button class="nav-item" onclick="showPanel('devis',this)" data-panel="devis">
-<span class="nav-icon">📋</span> Devis & Commandes
+<span class="nav-icon">📋</span> Statut des demandes
 </button>
 </div>
 
@@ -229,7 +229,7 @@ Tableau de bord · v1.0<br>Avril 2026
 <!-- ══════════════════════ DEVIS ══════════════════════ -->
 <div class="panel" id="panel-devis">
 <div class="section-hd">
-<h2>Devis & Commandes</h2>
+<h2>Statut des demandes</h2>
 <span class="shd-sub" id="devis-sub"></span>
 <button class="btn-new" onclick="openEventModal()">+ Nouvel événement</button>
 </div>
@@ -341,9 +341,11 @@ Tableau de bord · v1.0<br>Avril 2026
 <label>Statut</label>
 <select name="Statut traitement">
 <option value="Nouveau">Nouveau</option>
+<option value="Contacté">Contacté</option>
 <option value="Devis envoyé">Devis envoyé</option>
 <option value="Signé">Signé</option>
 <option value="Terminé">Terminé</option>
+<option value="Perdu">Perdu</option>
 </select>
 </div>
 <div class="form-row">

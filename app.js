@@ -108,9 +108,9 @@ function formatDateFR(ds) {
   catch { return ds; }
 }
 
-const STATUS_PILL = { 'Signé': 'pill-green', 'Devis envoyé': 'pill-gold', 'Nouveau': 'pill-terra', 'Terminé': 'pill-gray' };
-const STATUS_LABEL = { 'Nouveau': 'Demande reçue', 'Devis envoyé': 'Devis envoyé', 'Signé': 'Confirmé', 'Terminé': 'Terminé' };
-const STATUS_DOT   = { 'Signé': 'green', 'Devis envoyé': '', 'Nouveau': 'terra', 'Terminé': 'gray' };
+const STATUS_PILL = { 'Signé': 'pill-green', 'Devis envoyé': 'pill-gold', 'Contacté': 'pill-gold', 'Nouveau': 'pill-terra', 'Terminé': 'pill-gray', 'Perdu': 'pill-red' };
+const STATUS_LABEL = { 'Nouveau': 'Nouveau', 'Contacté': 'Contacté', 'Devis envoyé': 'Devis envoyé', 'Signé': 'Signé', 'Terminé': 'Terminé', 'Perdu': 'Perdu' };
+const STATUS_DOT   = { 'Signé': 'green', 'Devis envoyé': '', 'Contacté': '', 'Nouveau': 'terra', 'Terminé': 'gray', 'Perdu': 'red' };
 
 // ── SHEETS API ──
 
@@ -218,9 +218,15 @@ function renderDashboard() {
   if (badge) badge.textContent = appData.length ? appData.length + ' événement' + (appData.length > 1 ? 's' : '') : '';
 
   // Prochains événements
-  const today   = new Date().toISOString().split('T')[0];
+  const todayDate = new Date();
+  todayDate.setHours(0,0,0,0);
   const upcoming = appData
-    .filter(e => e['Date de l\'événement'] >= today && e['Statut traitement'] !== 'Terminé')
+    .filter(e => {
+      if (e['Statut traitement'] === 'Terminé' || e['Statut traitement'] === 'Perdu') return false;
+      if (!e['Date de l\'événement']) return false;
+      const d = new Date(String(e['Date de l\'événement']).split('T')[0]);
+      return d.getTime() >= todayDate.getTime();
+    })
     .sort((a, b) => (a['Date de l\'événement'] || '').localeCompare(b['Date de l\'événement'] || ''))
     .slice(0, 6);
 
@@ -263,14 +269,16 @@ function renderDashboard() {
   }
 }
 
-// ── RENDER: PIPELINE ──
+// ── RENDER: PIPELINE (STATUT DES DEMANDES) ──
 
 const PIPELINE_COLS = [
-  { label: 'Demande reçue', status: 'Nouveau'      },
-  { label: 'Devis envoyé',  status: 'Devis envoyé' },
-  { label: 'Confirmé',      status: 'Signé'         },
-  { label: 'Terminé',       status: 'Terminé'       },
+  { label: 'Urgent',      id: 'urgent'      },
+  { label: 'Prioritaire', id: 'prioritaire' },
+  { label: 'En cours',    id: 'encours'     },
+  { label: 'À planifier', id: 'aplanifier'  },
 ];
+
+const ALL_STATUSES = ['Nouveau', 'Contacté', 'Devis envoyé', 'Signé', 'Terminé', 'Perdu'];
 
 function renderPipeline() {
   const el = document.getElementById('pipeline');
@@ -281,23 +289,65 @@ function renderPipeline() {
     return;
   }
 
-  el.innerHTML = PIPELINE_COLS.map(col => {
-    const events  = appData.filter(e => e['Statut traitement'] === col.status);
-    const options = PIPELINE_COLS.map(c =>
-      `<option value="${c.status}"${c.status === col.status ? ' selected' : ''}>${c.label}</option>`
-    ).join('');
+  const today = new Date();
+  today.setHours(0,0,0,0);
 
-    const cards = events.map(e => `
+  // Classify events into columns
+  const colsData = {
+    'urgent': [],
+    'prioritaire': [],
+    'encours': [],
+    'aplanifier': []
+  };
+
+  appData.forEach(e => {
+    // Optionally exclude 'Terminé' or 'Perdu' if desired.
+    // The prompt didn't say to hide them, but usually they don't sit in "Urgent".
+    // I will include them but they'll just fall into their date category.
+    
+    if (!e['Date de l\'événement']) {
+      colsData['aplanifier'].push(e);
+      return;
+    }
+    
+    const d = new Date(String(e['Date de l\'événement']).split('T')[0]);
+    if (isNaN(d.getTime())) {
+      colsData['aplanifier'].push(e);
+      return;
+    }
+
+    const diffTime = d.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays <= 30) {
+      colsData['urgent'].push(e);
+    } else if (diffDays <= 90) {
+      colsData['prioritaire'].push(e);
+    } else {
+      colsData['encours'].push(e);
+    }
+  });
+
+  el.innerHTML = PIPELINE_COLS.map(col => {
+    const events = colsData[col.id];
+
+    const cards = events.map(e => {
+      const options = ALL_STATUSES.map(s =>
+        `<option value="${s}"${s === e['Statut traitement'] ? ' selected' : ''}>${STATUS_LABEL[s]}</option>`
+      ).join('');
+
+      return `
       <div class="pipe-card" onclick="openEventModal(${e._row})">
         <div class="pipe-client">${e['Nom client']}</div>
         <div class="pipe-event">${e['Type d\'événement']} \xb7 ${e['Nb convives']} pers.${e['Date de l\'événement'] ? ' \xb7 ' + formatDateFR(e['Date de l\'événement']) : ''}</div>
-        <div class="pipe-footer">
-          <span class="pipe-amount">${formatEuro(parseFloat(e['Budget estimé (€)']) || 0)}</span>
+        <div class="pipe-footer" style="padding-top: 8px;">
+          <span class="pipe-amount" style="font-size:12px">${formatEuro(parseFloat(e['Budget estimé (€)']) || 0)}</span>
           <select class="pipe-status-sel pill ${STATUS_PILL[e['Statut traitement']] || 'pill-gray'}" style="border:none; outline:none; cursor:pointer; font-family:inherit;" onchange="updateEventStatus(this,${e._row})" onclick="event.stopPropagation()">
             ${options}
           </select>
         </div>
-      </div>`).join('') || '<div class="pipe-card-empty">\u2014</div>';
+      </div>`;
+    }).join('') || '<div class="pipe-card-empty">\u2014</div>';
 
     return `<div class="pipe-col">
       <div class="pipe-header">${col.label} <span class="pipe-count">${events.length}</span></div>
@@ -484,11 +534,17 @@ const Calendar = (() => {
     return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
   }
   function eventsForDate(ds) {
-    return appData.filter(e => e['Date de l\'événement'] === ds);
+    return appData.filter(e => {
+      const dbDate = e['Date de l\'événement'];
+      return dbDate && String(dbDate).startsWith(ds);
+    });
   }
   function eventsForMonth(y, m) {
     const pfx = `${y}-${String(m+1).padStart(2,'0')}`;
-    return appData.filter(e => typeof e['Date de l\'événement'] === 'string' && e['Date de l\'événement'].startsWith(pfx));
+    return appData.filter(e => {
+      const dbDate = e['Date de l\'événement'];
+      return dbDate && String(dbDate).startsWith(pfx);
+    });
   }
 
   function renderGrid() {
