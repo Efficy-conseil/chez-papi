@@ -103,7 +103,13 @@ function formatDateFR(ds) {
     const cleanDs = String(ds).split('T')[0];
     const d = new Date(cleanDs);
     if (isNaN(d.getTime())) return ds;
-    return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }); 
+    
+    const currentYear = new Date().getFullYear();
+    const opts = { day: 'numeric', month: 'short' };
+    if (d.getFullYear() !== currentYear) {
+      opts.year = 'numeric';
+    }
+    return d.toLocaleDateString('fr-FR', opts); 
   }
   catch { return ds; }
 }
