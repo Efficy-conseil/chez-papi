@@ -99,7 +99,12 @@ function formatEuro(n) {
 }
 function formatDateFR(ds) {
   if (!ds) return '';
-  try { return new Date(ds + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }); }
+  try { 
+    const cleanDs = String(ds).split('T')[0];
+    const d = new Date(cleanDs);
+    if (isNaN(d.getTime())) return ds;
+    return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }); 
+  }
   catch { return ds; }
 }
 
@@ -174,7 +179,7 @@ function setConnectionStatus(state, info = '') {
   const el = document.getElementById('accueil-sub');
   if (!el) return;
   if (state === 'loading') { el.textContent = 'Connexion…'; el.style.color = ''; }
-  else if (state === 'ok')  { el.textContent = info + ' ligne' + (info > 1 ? 's' : '') + ' chargée' + (info > 1 ? 's' : ''); el.style.color = 'var(--green)'; }
+  else if (state === 'ok')  { el.textContent = ''; }
   else { el.textContent = '⚠ ' + info; el.style.color = 'var(--red-soft)'; }
 }
 
@@ -552,7 +557,7 @@ const Calendar = (() => {
     const ySel = document.getElementById('cal-year-sel');
     if (hEl) hEl.textContent = `Agenda \u2014 ${MONTHS_FR[currentMonth]} ${currentYear}`;
     const count = eventsForMonth(currentYear, currentMonth).length;
-    if (sEl) sEl.textContent = count ? `${count} événement${count > 1 ? 's' : ''}` : 'Aucun événement';
+    if (sEl) sEl.textContent = count ? `${count} événement${count > 1 ? 's' : ''}` : '';
     if (mSel) mSel.value = currentMonth;
     if (ySel) ySel.value = currentYear;
   }
