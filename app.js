@@ -293,7 +293,7 @@ function renderPipeline() {
         <div class="pipe-event">${e['Type d\'événement']} \xb7 ${e['Nb convives']} pers.${e['Date de l\'événement'] ? ' \xb7 ' + formatDateFR(e['Date de l\'événement']) : ''}</div>
         <div class="pipe-footer">
           <span class="pipe-amount">${formatEuro(parseFloat(e['Budget estimé (€)']) || 0)}</span>
-          <select class="pipe-status-sel" onchange="updateEventStatus(this,${e._row})" onclick="event.stopPropagation()">
+          <select class="pipe-status-sel pill ${STATUS_PILL[e['Statut traitement']] || 'pill-gray'}" style="border:none; outline:none; cursor:pointer; font-family:inherit;" onchange="updateEventStatus(this,${e._row})" onclick="event.stopPropagation()">
             ${options}
           </select>
         </div>
@@ -557,7 +557,7 @@ const Calendar = (() => {
     const ySel = document.getElementById('cal-year-sel');
     if (hEl) hEl.textContent = `Agenda \u2014 ${MONTHS_FR[currentMonth]} ${currentYear}`;
     const count = eventsForMonth(currentYear, currentMonth).length;
-    if (sEl) sEl.textContent = count ? `${count} événement${count > 1 ? 's' : ''}` : '';
+    if (sEl) sEl.textContent = '';
     if (mSel) mSel.value = currentMonth;
     if (ySel) ySel.value = currentYear;
   }
