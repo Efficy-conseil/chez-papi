@@ -149,17 +149,22 @@ Tableau de bord · v1.0<br>Avril 2026
 
 <!-- ══════════════════════ ACCUEIL ══════════════════════ -->
 <div class="panel active" id="panel-accueil">
+<div class="section-hd">
+<h2>Tableau de bord</h2>
+<span class="shd-sub" id="accueil-sub"></span>
+<button class="btn-refresh" onclick="loadData()" title="Actualiser">↻</button>
+</div>
 
 <div class="kpi-strip">
 <div class="kpi-card">
-<div class="kpi-label">CA du mois</div>
-<div class="kpi-val">8 640 €</div>
-<div class="kpi-delta up">↑ +12 % vs juin</div>
+<div class="kpi-label">CA confirmé</div>
+<div class="kpi-val" id="kpi-ca-val">—</div>
+<div class="kpi-delta">Événements signés</div>
 </div>
 <div class="kpi-card green">
 <div class="kpi-label">Événements confirmés</div>
-<div class="kpi-val">3</div>
-<div class="kpi-delta">Juillet · 2 en cours de devis</div>
+<div class="kpi-val" id="kpi-confirmes-val">—</div>
+<div class="kpi-delta" id="kpi-confirmes-delta">—</div>
 </div>
 <div class="kpi-card terra">
 <div class="kpi-label">Plats livrés / sem.</div>
@@ -168,8 +173,8 @@ Tableau de bord · v1.0<br>Avril 2026
 </div>
 <div class="kpi-card">
 <div class="kpi-label">Devis en attente</div>
-<div class="kpi-val">2</div>
-<div class="kpi-delta">Réponse attendue cette semaine</div>
+<div class="kpi-val" id="kpi-devis-val">—</div>
+<div class="kpi-delta">Réponse attendue</div>
 </div>
 <div class="kpi-card red">
 <div class="kpi-label">Stocks critiques</div>
@@ -195,85 +200,17 @@ Tableau de bord · v1.0<br>Avril 2026
 <th>Statut</th>
 </tr>
 </thead>
-<tbody>
-<tr>
-<td><strong>5 juil.</strong></td>
-<td>Famille Martin</td>
-<td>Anniversaire</td>
-<td>45</td>
-<td><span class="pill pill-green">Confirmé</span></td>
-</tr>
-<tr>
-<td><strong>12 juil.</strong></td>
-<td>SAS Prova BTP</td>
-<td>Séminaire</td>
-<td>28</td>
-<td><span class="pill pill-green">Confirmé</span></td>
-</tr>
-<tr>
-<td><strong>19 juil.</strong></td>
-<td>Mairie de Grans</td>
-<td>Réception</td>
-<td>80</td>
-<td><span class="pill pill-green">Confirmé</span></td>
-</tr>
-<tr>
-<td><strong>26 juil.</strong></td>
-<td>Dupont Mariage</td>
-<td>Mariage</td>
-<td>120</td>
-<td><span class="pill pill-gold">Devis envoyé</span></td>
-</tr>
-<tr>
-<td><strong>2 août</strong></td>
-<td>Assoc. Sportive</td>
-<td>Cocktail</td>
-<td>60</td>
-<td><span class="pill pill-terra">En discussion</span></td>
-</tr>
+<tbody id="upcoming-tbody">
+<tr><td colspan="5" class="tbl-empty">Chargement…</td></tr>
 </tbody>
 </table>
 </div>
 
 <!-- Activité récente -->
 <div class="card">
-<div class="card-title">Activité récente</div>
-<div class="activity-list">
-<div class="activity-item">
-<div class="act-dot green"></div>
-<div class="act-body">
-<div class="act-text">Devis <strong>Mairie de Grans</strong> signé — Réception 80 couverts</div>
-<div class="act-time">Aujourd'hui · 09h14</div>
-</div>
-</div>
-<div class="activity-item">
-<div class="act-dot terra"></div>
-<div class="act-body">
-<div class="act-text">Livraison plats du jour — <strong>47 plateaux</strong> expédiés</div>
-<div class="act-time">Aujourd'hui · 11h30</div>
-</div>
-</div>
-<div class="activity-item">
-<div class="act-dot"></div>
-<div class="act-body">
-<div class="act-text">Devis <strong>Dupont Mariage</strong> envoyé — 4 850 €</div>
-<div class="act-time">Hier · 16h02</div>
-</div>
-</div>
-<div class="activity-item">
-<div class="act-dot gray"></div>
-<div class="act-body">
-<div class="act-text">Commande fournisseur <strong>Métro Salon</strong> reçue</div>
-<div class="act-time">Hier · 08h45</div>
-</div>
-</div>
-<div class="activity-item">
-<div class="act-dot green"></div>
-<div class="act-body">
-<div class="act-text">Paiement reçu — <strong>SAS Prova BTP</strong> · 1 260 €</div>
-<div class="act-time">29 juin · 14h20</div>
-</div>
-</div>
+<div class="card-title">Dernières demandes</div>
+<div class="activity-list" id="recent-activity">
+<div class="act-time" style="padding:12px 0;color:var(--muted);">Chargement…</div>
 </div>
 </div>
 </div>
@@ -307,6 +244,7 @@ Tableau de bord · v1.0<br>Avril 2026
 <div class="section-hd">
 <h2 id="agenda-heading">Agenda</h2>
 <span class="shd-sub" id="agenda-sub"></span>
+<button class="btn-new" onclick="openEventModal()">+ Nouvel événement</button>
 </div>
 
 <div class="grid2">
@@ -333,61 +271,10 @@ Tableau de bord · v1.0<br>Avril 2026
 <div class="panel" id="panel-devis">
 <div class="section-hd">
 <h2>Devis & Commandes</h2>
-<span class="shd-sub">Pipeline commercial</span>
+<span class="shd-sub" id="devis-sub">Pipeline commercial</span>
+<button class="btn-new" onclick="openEventModal()">+ Nouvel événement</button>
 </div>
-
-<div class="pipeline">
-<div class="pipe-col">
-<div class="pipe-header">Demande reçue <span class="pipe-count">2</span></div>
-<div class="pipe-card">
-<div class="pipe-client">Fam. Bertrand</div>
-<div class="pipe-event">Baptême · ~40 pers. · Août 2025</div>
-<div class="pipe-footer">
-<span class="pipe-amount">~1 800 €</span>
-</div>
-</div>
-<div class="pipe-card">
-<div class="pipe-client">CE Airbus</div>
-<div class="pipe-event">Repas d'équipe · 50 pers.</div>
-<div class="pipe-footer">
-<span class="pipe-amount">~2 200 €</span>
-</div>
-</div>
-</div>
-
-<div class="pipe-col">
-<div class="pipe-header">Devis envoyé <span class="pipe-count">2</span></div>
-<div class="pipe-card">
-<div class="pipe-client">Dupont Mariage</div>
-<div class="pipe-event">Mariage · 120 couverts · 26 juil.</div>
-<div class="pipe-footer">
-<span class="pipe-amount">4 850 €</span>
-</div>
-</div>
-</div>
-
-<div class="pipe-col">
-<div class="pipe-header">Confirmé <span class="pipe-count">3</span></div>
-<div class="pipe-card">
-<div class="pipe-client">Famille Martin</div>
-<div class="pipe-event">Anniversaire · 5 juil.</div>
-<div class="pipe-footer">
-<span class="pipe-amount">2 160 €</span>
-</div>
-</div>
-</div>
-
-<div class="pipe-col">
-<div class="pipe-header">Terminé <span class="pipe-count">4</span></div>
-<div class="pipe-card">
-<div class="pipe-client">Fam. Rousseau</div>
-<div class="pipe-event">Repas famille · Juin</div>
-<div class="pipe-footer">
-<span class="pipe-amount">1 680 €</span>
-</div>
-</div>
-</div>
-</div>
+<div class="pipeline" id="pipeline"></div>
 </div>
 
 <!-- ══════════════════════ MENU ══════════════════════ -->
@@ -545,11 +432,11 @@ Tableau de bord · v1.0<br>Avril 2026
 <div class="kpi-strip">
 <div class="kpi-card green">
 <div class="kpi-label">CA confirmé</div>
-<div class="kpi-val">7 260 €</div>
+<div class="kpi-val" id="fin-ca-confirme">—</div>
 </div>
 <div class="kpi-card">
 <div class="kpi-label">CA potentiel</div>
-<div class="kpi-val">13 550 €</div>
+<div class="kpi-val" id="fin-ca-potentiel">—</div>
 </div>
 <div class="kpi-card terra">
 <div class="kpi-label">Charges prévues</div>
@@ -566,9 +453,8 @@ Tableau de bord · v1.0<br>Avril 2026
 <div class="card-title">Encaissements attendus</div>
 <table class="tbl">
 <thead><tr><th>Client</th><th>Montant</th><th>Statut</th></tr></thead>
-<tbody>
-<tr><td>SAS Prova BTP</td><td><strong>1 260 €</strong></td><td><span class="pill pill-green">Soldé</span></td></tr>
-<tr><td>Famille Martin</td><td><strong>1 080 €</strong></td><td><span class="pill pill-gold">À recevoir</span></td></tr>
+<tbody id="fin-encaissements">
+<tr><td colspan="3" class="tbl-empty">Chargement…</td></tr>
 </tbody>
 </table>
 </div>
@@ -600,22 +486,17 @@ Tableau de bord · v1.0<br>Avril 2026
 <div class="panel" id="panel-clients">
 <div class="section-hd">
 <h2>Clients</h2>
-<span class="shd-sub">Fichier actif · 12 clients</span>
+<span class="shd-sub" id="clients-sub">Chargement…</span>
 </div>
 
 <div class="card">
-<div class="card-title">Clients actifs</div>
+<div class="card-title">Historique clients</div>
 <table class="tbl">
 <thead>
 <tr><th>Nom / Société</th><th>Type</th><th>CA total</th><th>Statut</th></tr>
 </thead>
-<tbody>
-<tr><td><strong>Famille Martin</strong></td><td>Privé</td><td>4 320 €</td><td><span class="pill pill-green">Fidèle</span></td></tr>
-<tr><td><strong>Mairie de Grans</strong></td><td>Collectivité</td><td>12 400 €</td><td><span class="pill pill-green">VIP</span></td></tr>
-<tr><td><strong>SAS Prova BTP</strong></td><td>Entreprise</td><td>3 780 €</td><td><span class="pill pill-green">Fidèle</span></td></tr>
-<tr><td><strong>Cabinet Maurel</strong></td><td>Entreprise</td><td>5 640 €</td><td><span class="pill pill-green">Abonné</span></td></tr>
-<tr><td><strong>Agence Immo Soleil</strong></td><td>Entreprise</td><td>4 230 €</td><td><span class="pill pill-green">Abonné</span></td></tr>
-<tr><td><strong>Fam. Dupont</strong></td><td>Privé</td><td>4 850 €</td><td><span class="pill pill-gold">Prospect</span></td></tr>
+<tbody id="clients-tbody">
+<tr><td colspan="4" class="tbl-empty">Chargement…</td></tr>
 </tbody>
 </table>
 </div>
@@ -623,6 +504,91 @@ Tableau de bord · v1.0<br>Avril 2026
 
 </div><!-- /content -->
 </div><!-- /main -->
+
+<!-- ══════════════════════ MODAL ÉVÉNEMENT ══════════════════════ -->
+<div id="event-modal" class="modal-overlay" style="display:none;">
+<div class="modal-box">
+<div class="modal-hd">
+<h3 id="modal-title">Nouvel événement</h3>
+<button class="modal-close" onclick="closeEventModal()">✕</button>
+</div>
+<form id="event-form" class="modal-form">
+<div class="form-row">
+<label>Nom client *</label>
+<input type="text" name="Nom client" required placeholder="Famille Martin">
+</div>
+<div class="form-row2">
+<div class="form-row">
+<label>Type d'événement</label>
+<select name="Type d'événement">
+<option>Mariage</option><option>Séminaire</option><option>Réception</option>
+<option>Cocktail</option><option>Baptême</option><option>Repas d'équipe</option><option>Autre</option>
+</select>
+</div>
+<div class="form-row">
+<label>Canal</label>
+<select name="Canal">
+<option>Email</option><option>WhatsApp</option><option>SMS</option>
+<option>Formulaire</option><option>Instagram</option><option>Appel</option>
+</select>
+</div>
+</div>
+<div class="form-row2">
+<div class="form-row">
+<label>Date de l'événement *</label>
+<input type="date" name="Date de l'événement" required>
+</div>
+<div class="form-row">
+<label>Date de la demande</label>
+<input type="date" name="Date de la demande">
+</div>
+</div>
+<div class="form-row2">
+<div class="form-row">
+<label>Nb convives</label>
+<input type="number" name="Nb convives" min="1" placeholder="40">
+</div>
+<div class="form-row">
+<label>Budget estimé (€)</label>
+<input type="number" name="Budget estimé (€)" min="0" placeholder="1800">
+</div>
+</div>
+<div class="form-row2">
+<div class="form-row">
+<label>Statut</label>
+<select name="Statut traitement">
+<option value="Nouveau">Nouveau</option>
+<option value="Devis envoyé">Devis envoyé</option>
+<option value="Signé">Signé</option>
+<option value="Terminé">Terminé</option>
+</select>
+</div>
+<div class="form-row">
+<label>Urgence</label>
+<select name="Urgence">
+<option>À planifier</option><option>En cours</option><option>Prioritaire</option>
+</select>
+</div>
+</div>
+<div class="form-row">
+<label>Contact</label>
+<input type="tel" name="Contact" placeholder="06 12 34 56 78">
+</div>
+<div class="form-row">
+<label>Message original</label>
+<textarea name="Message original" rows="2" placeholder="Message du client..."></textarea>
+</div>
+<div class="form-row">
+<label>Notes</label>
+<textarea name="Notes" rows="2" placeholder="Notes internes..."></textarea>
+</div>
+<div class="modal-ft">
+<button type="button" class="btn-secondary" onclick="closeEventModal()">Annuler</button>
+<button type="submit" class="btn-primary">Enregistrer</button>
+</div>
+</form>
+</div>
+</div>
 
 <script src="app.js"></script>
 
