@@ -112,18 +112,32 @@ const STATUS_DOT   = { 'Signé': 'green', 'Devis envoyé': '', 'Nouveau': 'terra
 const SheetsAPI = {
   async load() {
     if (!CONFIG.SHEETS_URL) return null;
-    const res = await fetch(CONFIG.SHEETS_URL + '?action=getAll');
-    return res.json();
+    const res = await fetch(CONFIG.SHEETS_URL + '?action=getAll', { redirect: 'follow' });
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch {
+      console.error('SheetsAPI: réponse non-JSON :', text.slice(0, 300));
+      throw new Error('Réponse invalide du serveur (non-JSON)');
+    }
   },
   async add(row) {
     if (!CONFIG.SHEETS_URL) return { error: 'Non configuré' };
-    const res = await fetch(CONFIG.SHEETS_URL, { method: 'POST', body: JSON.stringify({ action: 'add', row }) });
-    return res.json();
+    const res = await fetch(CONFIG.SHEETS_URL, {
+      method: 'POST', redirect: 'follow',
+      body: JSON.stringify({ action: 'add', row }),
+    });
+    const text = await res.text();
+    try { return JSON.parse(text); } catch { throw new Error('Réponse invalide : ' + text.slice(0, 100)); }
   },
   async update(rowIndex, fields) {
     if (!CONFIG.SHEETS_URL) return { error: 'Non configuré' };
-    const res = await fetch(CONFIG.SHEETS_URL, { method: 'POST', body: JSON.stringify({ action: 'update', rowIndex, fields }) });
-    return res.json();
+    const res = await fetch(CONFIG.SHEETS_URL, {
+      method: 'POST', redirect: 'follow',
+      body: JSON.stringify({ action: 'update', rowIndex, fields }),
+    });
+    const text = await res.text();
+    try { return JSON.parse(text); } catch { throw new Error('Réponse invalide : ' + text.slice(0, 100)); }
   },
 };
 
@@ -133,21 +147,35 @@ let appData = [];
 
 async function loadData() {
   if (!CONFIG.SHEETS_URL) { renderAll(); return; }
+  setConnectionStatus('loading');
   setLoading(true);
   try {
     const result = await SheetsAPI.load();
     if (result && result.rows) {
       appData = result.rows;
+      setConnectionStatus('ok', result.rows.length);
       renderAll();
     } else {
-      showNotification('Erreur de chargement des données', 'error');
+      const msg = result?.error || 'Réponse inattendue';
+      console.error('loadData: erreur API :', msg, result);
+      setConnectionStatus('error', msg);
+      showNotification('Erreur Google Sheet : ' + msg, 'error');
     }
   } catch (err) {
     console.error('loadData:', err);
-    showNotification('Impossible de contacter le serveur', 'error');
+    setConnectionStatus('error', err.message);
+    showNotification(err.message, 'error');
   } finally {
     setLoading(false);
   }
+}
+
+function setConnectionStatus(state, info = '') {
+  const el = document.getElementById('accueil-sub');
+  if (!el) return;
+  if (state === 'loading') { el.textContent = 'Connexion…'; el.style.color = ''; }
+  else if (state === 'ok')  { el.textContent = info + ' ligne' + (info > 1 ? 's' : '') + ' chargée' + (info > 1 ? 's' : ''); el.style.color = 'var(--green)'; }
+  else { el.textContent = '⚠ ' + info; el.style.color = 'var(--red-soft)'; }
 }
 
 function setLoading(on) {
@@ -625,5 +653,18 @@ loadData();
 
 // ── EXPORT ──
 
-window.ChezPapi = { SheetsAPI, Calendar, showPanel, toggleSidebar, showNotification, loadData, openEventModal };
+window.ChezPapi = {
+  SheetsAPI, Calendar, showPanel, toggleSidebar, showNotification, loadData, openEventModal,
+  // Diagnostic : testConnection() dans la console pour voir la réponse brute
+  async testConnection() {
+    console.log('Test connexion →', CONFIG.SHEETS_URL);
+    try {
+      const res = await fetch(CONFIG.SHEETS_URL + '?action=getAll', { redirect: 'follow' });
+      const text = await res.text();
+      console.log('Status :', res.status);
+      console.log('Réponse (200 premiers chars) :', text.slice(0, 200));
+      try { console.log('JSON parsé :', JSON.parse(text)); } catch { console.warn('Pas du JSON valide'); }
+    } catch (e) { console.error('Erreur réseau :', e); }
+  },
+};
 console.log('Chez Papi PWA initialized \u2713');
