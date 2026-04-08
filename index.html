@@ -25,7 +25,7 @@
 
 <body>
 
-<!-- ── PWA INSTALL BANNER (Mobile) ── -->
+<!-- ── PWA INSTALL BANNER (Android/Chrome) ── -->
 
 <div id="pwa-install-banner" class="pwa-banner" style="display:none;">
 <div class="pwa-banner-content">
@@ -36,6 +36,34 @@
 </div>
 <button id="pwa-install-btn" class="pwa-banner-btn">Installer</button>
 <button id="pwa-dismiss-btn" class="pwa-banner-close">✕</button>
+</div>
+</div>
+
+<!-- ── PWA IOS INSTALL MODAL ── -->
+
+<div id="pwa-ios-modal" class="pwa-ios-modal" style="display:none;">
+<div class="pwa-ios-box">
+  <button id="pwa-ios-dismiss-btn" class="pwa-ios-close">✕</button>
+  <img src="icon-192x192.png" alt="Chez Papi" class="pwa-ios-icon">
+  <div class="pwa-ios-title">Installer Chez Papi</div>
+  <div class="pwa-ios-desc">Ajoutez l'application sur votre écran d'accueil pour un accès rapide, même sans connexion.</div>
+  <div class="pwa-ios-steps">
+    <div class="pwa-ios-step">
+      <span class="pwa-ios-num">1</span>
+      <span>Appuyez sur le bouton <strong>Partager</strong>
+        <svg class="pwa-ios-share-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+      </span>
+    </div>
+    <div class="pwa-ios-step">
+      <span class="pwa-ios-num">2</span>
+      <span>Choisissez <strong>« Sur l'écran d'accueil »</strong></span>
+    </div>
+    <div class="pwa-ios-step">
+      <span class="pwa-ios-num">3</span>
+      <span>Appuyez sur <strong>Ajouter</strong></span>
+    </div>
+  </div>
+  <div class="pwa-ios-arrow">▼</div>
 </div>
 </div>
 

@@ -9,29 +9,39 @@ if ('serviceWorker' in navigator) {
 
 // ── PWA INSTALL BANNER ──
 
+const INSTALL_DISMISSED_KEY = 'pwa_install_dismissed_at';
+const DISMISS_DURATION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+
+function wasRecentlyDismissed() {
+  const ts = localStorage.getItem(INSTALL_DISMISSED_KEY);
+  return ts && (Date.now() - parseInt(ts, 10) < DISMISS_DURATION_MS);
+}
+
+function markDismissed() {
+  localStorage.setItem(INSTALL_DISMISSED_KEY, Date.now().toString());
+}
+
+// ── Android / Chrome: beforeinstallprompt ──
+
 let deferredPrompt;
 const installBanner = document.getElementById('pwa-install-banner');
 const installBtn = document.getElementById('pwa-install-btn');
 const dismissBtn = document.getElementById('pwa-dismiss-btn');
 
-// Listen for beforeinstallprompt event
 window.addEventListener('beforeinstallprompt', (e) => {
-  // Prevent the mini-infobar from appearing on mobile
   e.preventDefault();
-
-  // Stash the event so it can be triggered later
   deferredPrompt = e;
 
-  // Show the install banner (on mobile only)
-  if (window.innerWidth < 900) {
-    showInstallBanner();
+  if (window.innerWidth < 900 && !isInStandaloneMode && !wasRecentlyDismissed()) {
+    setTimeout(showInstallBanner, 2000);
   }
 });
 
 function showInstallBanner() {
   installBanner.style.display = 'block';
-
-  // Adjust bottom padding when banner visible
   document.querySelector('.content').style.paddingBottom = (60 + 80) + 'px';
 }
 
@@ -40,31 +50,47 @@ function hideInstallBanner() {
   document.querySelector('.content').style.paddingBottom = '60px';
 }
 
-// Install button click
 installBtn.addEventListener('click', async () => {
   if (!deferredPrompt) return;
-
   deferredPrompt.prompt();
   const { outcome } = await deferredPrompt.userChoice;
-
-  console.log(`User response to the install prompt: ${outcome}`);
-
-  // We've used the prompt, and can't use it again
   deferredPrompt = null;
-
   hideInstallBanner();
 });
 
-// Dismiss button
 dismissBtn.addEventListener('click', () => {
   deferredPrompt = null;
+  markDismissed();
   hideInstallBanner();
 });
 
-// Detect if app is installed
+// ── iOS Safari: manual instructions modal ──
+
+const iosModal = document.getElementById('pwa-ios-modal');
+const iosDismissBtn = document.getElementById('pwa-ios-dismiss-btn');
+
+function showIOSModal() {
+  iosModal.style.display = 'flex';
+}
+
+function hideIOSModal() {
+  iosModal.style.display = 'none';
+}
+
+if (isIOS && !isInStandaloneMode && window.innerWidth < 900 && !wasRecentlyDismissed()) {
+  setTimeout(showIOSModal, 2000);
+}
+
+iosDismissBtn.addEventListener('click', () => {
+  markDismissed();
+  hideIOSModal();
+});
+
+// ── App installed ──
+
 window.addEventListener('appinstalled', () => {
-  console.log('PWA was installed');
   hideInstallBanner();
+  hideIOSModal();
 });
 
 // ── SIDEBAR MOBILE TOGGLE ──

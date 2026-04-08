@@ -113,6 +113,125 @@ body {
   flex-shrink: 0;
 }
 
+/* ── PWA IOS INSTALL MODAL ── */
+.pwa-ios-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  z-index: 400;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 12px;
+  animation: fadeIn .25s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.pwa-ios-box {
+  background: #fff;
+  border-radius: 18px;
+  padding: 24px 20px 20px;
+  width: 100%;
+  max-width: 380px;
+  position: relative;
+  text-align: center;
+  animation: slideUp .3s ease-out;
+  margin-bottom: 10px;
+}
+
+.pwa-ios-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #e8e8e8;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #555;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pwa-ios-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.15);
+}
+
+.pwa-ios-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--brown-dk);
+  margin-bottom: 6px;
+}
+
+.pwa-ios-desc {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
+
+.pwa-ios-steps {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pwa-ios-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #333;
+  line-height: 1.4;
+}
+
+.pwa-ios-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--brown-dk);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pwa-ios-share-icon {
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+  margin-left: 3px;
+  stroke: var(--brown-dk);
+}
+
+.pwa-ios-arrow {
+  margin-top: 16px;
+  font-size: 22px;
+  color: var(--brown-dk);
+  animation: bounce .9s ease-in-out infinite alternate;
+}
+
+@keyframes bounce {
+  from { transform: translateY(0); }
+  to   { transform: translateY(8px); }
+}
+
 /* ── SIDEBAR MOBILE (hidden by default) ── */
 .sidebar {
   position: fixed;
