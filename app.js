@@ -115,7 +115,7 @@ function formatDateFR(ds) {
 }
 
 const STATUS_PILL = { 'Signé': 'pill-green', 'Devis envoyé': 'pill-gold', 'Contacté': 'pill-gold', 'Nouveau': 'pill-terra', 'Terminé': 'pill-gray', 'Perdu': 'pill-red' };
-const STATUS_LABEL = { 'Nouveau': 'Nouveau', 'Contacté': 'Contacté', 'Devis envoyé': 'Devis envoyé', 'Signé': 'Signé', 'Terminé': 'Terminé', 'Perdu': 'Perdu' };
+const STATUS_LABEL = { 'Nouveau': '🆕 Nouveau', 'Contacté': '☎️ Contacté', 'Devis envoyé': '💬 Devis envoyé', 'Signé': '✅ Signé', 'Terminé': 'Terminé', 'Perdu': '❌ Perdu' };
 const STATUS_DOT   = { 'Signé': 'green', 'Devis envoyé': '', 'Contacté': '', 'Nouveau': 'terra', 'Terminé': 'gray', 'Perdu': 'red' };
 
 // ── SHEETS API ──
@@ -210,17 +210,24 @@ function renderAll() {
   renderPipeline();
   Calendar.refresh();
   renderClients();
-  renderFinances();
   if (typeof renderHistorique === 'function') renderHistorique();
 }
 
 // ── RENDER: DASHBOARD ──
 
 function renderDashboard() {
+  const currentYear = new Date().getFullYear();
+  const yearlySigned = appData.filter(e => {
+    if (e['Statut traitement'] !== 'Signé') return false;
+    if (!e['Date de l\'événement']) return false;
+    const d = new Date(String(e['Date de l\'événement']).split('T')[0]);
+    return !isNaN(d.getTime()) && d.getFullYear() === currentYear;
+  });
+  const caConf = yearlySigned.reduce((s, e) => s + (parseFloat(e['Budget estimé (€)']) || 0), 0);
+
   const actives = appData.filter(e => !isEventPast(e));
   const confirmes = actives.filter(e => e['Statut traitement'] === 'Signé');
   const devisEnv  = actives.filter(e => e['Statut traitement'] === 'Devis envoyé');
-  const caConf    = confirmes.reduce((s, e) => s + (parseFloat(e['Budget estimé (€)']) || 0), 0);
 
   const nouveaux = actives.filter(e => e['Statut traitement'] === 'Nouveau');
 
@@ -379,7 +386,7 @@ async function updateEventStatus(selectEl, rowIndex) {
     if (result.success) {
       const row = appData.find(e => e._row === rowIndex);
       if (row) row['Statut traitement'] = newStatus;
-      renderPipeline(); renderDashboard(); renderFinances();
+      renderPipeline(); renderDashboard();
       showNotification('Statut mis à jour', 'success');
     } else {
       selectEl.disabled = false;
@@ -412,6 +419,7 @@ function renderClients() {
   });
 
   const clients = Object.entries(clientMap)
+    .filter(([name, events]) => events.some(e => e['Statut traitement'] === 'Signé'))
     .map(([name, events]) => ({ name, events }))
     .sort((a, b) => {
       const dA = Math.max(...a.events.map(e => new Date(e['Date de l\'événement'] || 0).getTime()));
@@ -460,29 +468,7 @@ function renderHistorique() {
   `).join('');
 }
 
-// ── RENDER: FINANCES ──
-
-function renderFinances() {
-  const confirmes = appData.filter(e => e['Statut traitement'] === 'Signé');
-  const actifs    = appData.filter(e => e['Statut traitement'] !== 'Terminé');
-  const caConf    = confirmes.reduce((s, e) => s + (parseFloat(e['Budget estimé (€)']) || 0), 0);
-  const caPot     = actifs.reduce((s, e) => s + (parseFloat(e['Budget estimé (€)']) || 0), 0);
-
-  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-  set('fin-ca-confirme',  formatEuro(caConf));
-  set('fin-ca-potentiel', formatEuro(caPot));
-
-  const encTbody = document.getElementById('fin-encaissements');
-  if (encTbody) {
-    encTbody.innerHTML = confirmes.length
-      ? confirmes.map(e => `<tr>
-          <td>${e['Nom client']}</td>
-          <td><strong>${formatEuro(parseFloat(e['Budget estimé (€)']) || 0)}</strong></td>
-          <td><span class="pill pill-gold">À recevoir</span></td>
-        </tr>`).join('')
-      : '<tr><td colspan="3" class="tbl-empty">Aucun encaissement confirmé</td></tr>';
-  }
-}
+// ── FINANCES REMOVED ──
 
 // ── EVENT MODAL ──
 

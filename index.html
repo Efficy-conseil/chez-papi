@@ -98,9 +98,6 @@
 
 <div class="sidebar-section">
 <div class="sidebar-section-label">Pilotage</div>
-<button class="nav-item" onclick="showPanel('finances',this)" data-panel="finances">
-<span class="nav-icon">💶</span> Finances
-</button>
 <button class="nav-item" onclick="showPanel('clients',this)" data-panel="clients">
 <span class="nav-icon">👥</span> Clients
 </button>
@@ -239,34 +236,6 @@ Tableau de bord · v1.0<br>Avril 2026
 <div class="pipeline" id="pipeline"></div>
 </div>
 
-<!-- ══════════════════════ FINANCES ══════════════════════ -->
-<div class="panel" id="panel-finances">
-<div class="section-hd">
-<h2>Finances</h2>
-<span class="shd-sub">Avril 2026</span>
-</div>
-
-<div class="kpi-strip">
-<div class="kpi-card green">
-<div class="kpi-label">CA confirmé</div>
-<div class="kpi-val" id="fin-ca-confirme">—</div>
-</div>
-<div class="kpi-card">
-<div class="kpi-label">CA potentiel</div>
-<div class="kpi-val" id="fin-ca-potentiel">—</div>
-</div>
-</div>
-
-<div class="card">
-<div class="card-title">Encaissements attendus</div>
-<table class="tbl">
-<thead><tr><th>Client</th><th>Montant</th><th>Statut</th></tr></thead>
-<tbody id="fin-encaissements">
-<tr><td colspan="3" class="tbl-empty">Chargement…</td></tr>
-</tbody>
-</table>
-</div>
-</div>
 
 <!-- ══════════════════════ CLIENTS ══════════════════════ -->
 <div class="panel" id="panel-clients">
