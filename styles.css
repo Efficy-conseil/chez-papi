@@ -1414,6 +1414,20 @@ body {
   gap: 12px;
 }
 
+.btn-danger {
+  background: var(--red);
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+}
+.btn-danger:hover {
+  opacity: .9;
+}
+
 .modal-ft {
   display: flex;
   gap: 10px;

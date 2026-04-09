@@ -348,9 +348,14 @@ Tableau de bord · v1.0<br>Avril 2026
 <label>Notes</label>
 <textarea name="Notes" rows="2" placeholder="Notes internes..."></textarea>
 </div>
-<div class="modal-ft">
+<div class="modal-ft" style="justify-content: space-between; display: flex;">
+<div style="flex-shrink: 0;">
+<button type="button" id="btn-delete-event" class="btn-danger" style="display:none;" onclick="deleteCurrentEvent()">Supprimer</button>
+</div>
+<div style="display:flex; gap:10px;">
 <button type="button" class="btn-secondary" onclick="closeEventModal()">Annuler</button>
 <button type="submit" class="btn-primary">Enregistrer</button>
+</div>
 </div>
 </form>
 </div>

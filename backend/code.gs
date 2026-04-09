@@ -47,6 +47,7 @@ function doPost(e) {
     const body = JSON.parse(e.postData.contents);
     if (body.action === 'add')    return addRow(body.row);
     if (body.action === 'update') return updateRow(body.rowIndex, body.fields);
+    if (body.action === 'delete') return deleteRow(body.rowIndex);
     return ko('Action inconnue : ' + body.action);
   } catch (err) {
     return ko(err.message);
@@ -68,6 +69,12 @@ function updateRow(rowIndex, fields) {
       sheet.getRange(rowIndex, i + 1).setValue(fields[h]);
     }
   });
+  return ok({ success: true });
+}
+
+function deleteRow(rowIndex) {
+  const sheet = getSheet();
+  sheet.deleteRow(rowIndex);
   return ok({ success: true });
 }
 

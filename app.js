@@ -150,6 +150,15 @@ const SheetsAPI = {
     const text = await res.text();
     try { return JSON.parse(text); } catch { throw new Error('Réponse invalide : ' + text.slice(0, 100)); }
   },
+  async remove(rowIndex) {
+    if (!CONFIG.SHEETS_URL) return { error: 'Non configuré' };
+    const res = await fetch(CONFIG.SHEETS_URL, {
+      method: 'POST', redirect: 'follow',
+      body: JSON.stringify({ action: 'delete', rowIndex }),
+    });
+    const text = await res.text();
+    try { return JSON.parse(text); } catch { throw new Error('Réponse invalide : ' + text.slice(0, 100)); }
+  }
 };
 
 // ── APP DATA ──
@@ -506,6 +515,9 @@ function openEventModal(rowIndex = null) {
     }
   }
 
+  const btnDel = document.getElementById('btn-delete-event');
+  if (btnDel) btnDel.style.display = rowIndex ? 'block' : 'none';
+
   modal.style.display = 'flex';
   form.querySelector('input,select,textarea')?.focus();
 }
@@ -556,6 +568,32 @@ document.getElementById('event-form').addEventListener('submit', async e => {
     btn.disabled = false; btn.textContent = 'Enregistrer';
   }
 });
+
+async function deleteCurrentEvent() {
+  if (!editingRow) return;
+  if (!confirm("Voulez-vous vraiment supprimer cet événement ? Cette action est irréversible.")) return;
+
+  const btnDel = document.getElementById('btn-delete-event');
+  btnDel.disabled = true;
+  btnDel.textContent = '...';
+
+  try {
+    const result = await SheetsAPI.remove(editingRow);
+    if (result.success) {
+      appData = appData.filter(r => r._row !== editingRow);
+      renderAll();
+      closeEventModal();
+      showNotification('Événement supprimé', 'success');
+    } else {
+      showNotification('Erreur : ' + (result.error || 'inconnue'), 'error');
+    }
+  } catch (err) {
+    showNotification('Erreur réseau', 'error');
+  } finally {
+    btnDel.disabled = false;
+    btnDel.textContent = 'Supprimer';
+  }
+}
 
 // ── CALENDAR ──
 
@@ -754,7 +792,7 @@ loadData();
 // ── EXPORT ──
 
 window.ChezPapi = {
-  SheetsAPI, Calendar, showPanel, toggleSidebar, showNotification, loadData, openEventModal,
+  SheetsAPI, Calendar, showPanel, toggleSidebar, showNotification, loadData, openEventModal, deleteCurrentEvent,
   renderHistorique,
   // Diagnostic : testConnection() dans la console pour voir la réponse brute
   async testConnection() {
