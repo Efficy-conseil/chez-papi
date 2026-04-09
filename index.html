@@ -51,7 +51,7 @@
 
 <!-- VIEW MODAL (Lecture seule) -->
 <div class="modal-overlay" id="view-modal" style="display:none;" onclick="if(event.target===this) closeViewModal()">
-<div class="modal-content">
+<div class="modal-box">
 <div class="modal-hd">
   <h3 id="view-title">Détail de la demande</h3>
   <span class="modal-close" onclick="closeViewModal()">&times;</span>
@@ -83,7 +83,7 @@
 
 <!-- KPI DETAIL MODAL -->
 <div class="modal-overlay" id="kpi-modal" style="display:none;" onclick="if(event.target===this) document.getElementById('kpi-modal').style.display='none'">
-<div class="modal-content" style="max-width:550px;">
+<div class="modal-box" style="max-width:550px;">
 <div class="modal-hd">
   <h3 id="kpi-title">Détail</h3>
   <span class="modal-close" onclick="document.getElementById('kpi-modal').style.display='none'">&times;</span>
