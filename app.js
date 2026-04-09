@@ -486,7 +486,13 @@ function openEventModal(rowIndex = null) {
     const data = appData.find(e => e._row === rowIndex);
     if (data) {
       for (const el of form.elements) {
-        if (el.name && data[el.name] !== undefined) el.value = data[el.name];
+        if (el.name && data[el.name] !== undefined) {
+          let val = data[el.name];
+          if (el.type === 'date' && val) {
+            val = String(val).split('T')[0];
+          }
+          el.value = val;
+        }
       }
     }
   } else {
