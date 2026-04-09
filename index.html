@@ -104,6 +104,9 @@
 <button class="nav-item" onclick="showPanel('clients',this)" data-panel="clients">
 <span class="nav-icon">👥</span> Clients
 </button>
+<button class="nav-item" onclick="showPanel('historique',this)" data-panel="historique">
+<span class="nav-icon">🕰️</span> Historique
+</button>
 </div>
 
 <div class="sidebar-footer">
@@ -276,11 +279,25 @@ Tableau de bord · v1.0<br>Avril 2026
 <div class="card-title">Historique clients</div>
 <table class="tbl">
 <thead>
-<tr><th>Nom / Société</th><th>Type</th><th>CA total</th><th>Statut</th></tr>
+<tr><th>Client</th><th>Contact</th><th>CA cumulé</th></tr>
 </thead>
 <tbody id="clients-tbody">
-<tr><td colspan="4" class="tbl-empty">Chargement…</td></tr>
+<tr><td colspan="3" class="tbl-empty">Chargement…</td></tr>
 </tbody>
+</table>
+</div>
+</div>
+
+<!-- ══════════════════════ HISTORIQUE ══════════════════════ -->
+<div class="panel" id="panel-historique">
+<div class="section-hd">
+<h2>Historique</h2>
+<span class="shd-sub" id="historique-sub"></span>
+</div>
+<div class="card">
+<table class="tbl">
+<thead><tr><th>Date</th><th>Client</th><th>Type</th><th>Statut</th></tr></thead>
+<tbody id="historique-tbody"><tr><td colspan="4" class="tbl-empty">Chargement…</td></tr></tbody>
 </table>
 </div>
 </div>

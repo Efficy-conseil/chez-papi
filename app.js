@@ -156,6 +156,15 @@ const SheetsAPI = {
 
 let appData = [];
 
+function isEventPast(e) {
+  if (!e['Date de l\'événement']) return false;
+  const d = new Date(String(e['Date de l\'événement']).split('T')[0]);
+  if (isNaN(d.getTime())) return false;
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  return d.getTime() < today.getTime();
+}
+
 async function loadData() {
   if (!CONFIG.SHEETS_URL) { renderAll(); return; }
   setConnectionStatus('loading');
@@ -202,16 +211,18 @@ function renderAll() {
   Calendar.refresh();
   renderClients();
   renderFinances();
+  if (typeof renderHistorique === 'function') renderHistorique();
 }
 
 // ── RENDER: DASHBOARD ──
 
 function renderDashboard() {
-  const confirmes = appData.filter(e => e['Statut traitement'] === 'Signé');
-  const devisEnv  = appData.filter(e => e['Statut traitement'] === 'Devis envoyé');
+  const actives = appData.filter(e => !isEventPast(e));
+  const confirmes = actives.filter(e => e['Statut traitement'] === 'Signé');
+  const devisEnv  = actives.filter(e => e['Statut traitement'] === 'Devis envoyé');
   const caConf    = confirmes.reduce((s, e) => s + (parseFloat(e['Budget estimé (€)']) || 0), 0);
 
-  const nouveaux = appData.filter(e => e['Statut traitement'] === 'Nouveau');
+  const nouveaux = actives.filter(e => e['Statut traitement'] === 'Nouveau');
 
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
   set('kpi-ca-val',          formatEuro(caConf));
@@ -221,12 +232,12 @@ function renderDashboard() {
   set('kpi-leads-val',       nouveaux.length || '—');
 
   const badge = document.getElementById('topbar-badge');
-  if (badge) badge.textContent = appData.length ? appData.length + ' événement' + (appData.length > 1 ? 's' : '') : '';
+  if (badge) badge.textContent = actives.length ? actives.length + ' événement' + (actives.length > 1 ? 's' : '') : '';
 
   // Prochains événements
   const todayDate = new Date();
   todayDate.setHours(0,0,0,0);
-  const upcoming = appData
+  const upcoming = actives
     .filter(e => {
       if (e['Statut traitement'] === 'Terminé' || e['Statut traitement'] === 'Perdu') return false;
       if (!e['Date de l\'événement']) return false;
@@ -257,7 +268,7 @@ function renderDashboard() {
     </tr>`).join('');
 
   // Activité récente
-  const recent = [...appData]
+  const recent = [...actives]
     .sort((a, b) => (b['Date de la demande'] || '').localeCompare(a['Date de la demande'] || ''))
     .slice(0, 5);
   const actEl = document.getElementById('recent-activity');
@@ -307,9 +318,7 @@ function renderPipeline() {
   };
 
   appData.forEach(e => {
-    // Optionally exclude 'Terminé' or 'Perdu' if desired.
-    // The prompt didn't say to hide them, but usually they don't sit in "Urgent".
-    // I will include them but they'll just fall into their date category.
+    if (isEventPast(e)) return; // Exclude past events
     
     if (!e['Date de l\'événement']) {
       colsData['aplanifier'].push(e);
@@ -415,14 +424,40 @@ function renderClients() {
   tbody.innerHTML = clients.map(c => {
     const last   = c.events.sort((a, b) => (b['Date de l\'événement'] || '').localeCompare(a['Date de l\'événement'] || ''))[0];
     const ca     = c.events.reduce((s, e) => s + (parseFloat(e['Budget estimé (€)']) || 0), 0);
-    const status = last['Statut traitement'];
+    const contact = last['Contact'] || '\u2014';
     return `<tr style="cursor:pointer" onclick="openEventModal(${last._row})">
       <td><strong>${c.name}</strong>${c.events.length > 1 ? ` <span style="color:var(--muted);font-size:10px;">(${c.events.length})</span>` : ''}</td>
-      <td>${last['Type d\'événement'] || '\u2014'}</td>
+      <td>${contact}</td>
       <td>${formatEuro(ca)}</td>
-      <td><span class="pill ${STATUS_PILL[status] || 'pill-gray'}">${STATUS_LABEL[status] || status}</span></td>
     </tr>`;
   }).join('');
+}
+
+// ── RENDER: HISTORIQUE ──
+
+function renderHistorique() {
+  const tbody = document.getElementById('historique-tbody');
+  const sub = document.getElementById('historique-sub');
+  if (!tbody) return;
+
+  const pastEvents = appData.filter(e => isEventPast(e))
+    .sort((a, b) => (b['Date de l\'événement'] || '').localeCompare(a['Date de l\'événement'] || ''));
+
+  if (sub) sub.textContent = `${pastEvents.length} événement${pastEvents.length > 1 ? 's' : ''}`;
+
+  if (!pastEvents.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="tbl-empty">Aucun événement passé</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = pastEvents.map(e => `
+    <tr style="cursor:pointer" onclick="openEventModal(${e._row})">
+      <td><strong>${formatDateFR(e['Date de l\'événement'])}</strong></td>
+      <td>${e['Nom client']}</td>
+      <td>${e['Type d\'événement'] || '\u2014'}</td>
+      <td><span class="pill ${STATUS_PILL[e['Statut traitement']] || 'pill-gray'}">${STATUS_LABEL[e['Statut traitement']] || e['Statut traitement']}</span></td>
+    </tr>
+  `).join('');
 }
 
 // ── RENDER: FINANCES ──
@@ -722,6 +757,7 @@ loadData();
 
 window.ChezPapi = {
   SheetsAPI, Calendar, showPanel, toggleSidebar, showNotification, loadData, openEventModal,
+  renderHistorique,
   // Diagnostic : testConnection() dans la console pour voir la réponse brute
   async testConnection() {
     console.log('Test connexion →', CONFIG.SHEETS_URL);

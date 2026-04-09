@@ -968,6 +968,9 @@ body {
   color: var(--terracotta);
   position: relative;
 }
+.cal-day.has-event.selected {
+  color: #000;
+}
 .cal-day.has-event::after {
   content: '';
   position: absolute;
