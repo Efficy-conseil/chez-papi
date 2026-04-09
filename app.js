@@ -605,17 +605,19 @@ async function deleteCurrentEvent() {
   if (!editingRow) return;
   if (!confirm("Voulez-vous vraiment supprimer cet événement ? Cette action est irréversible.")) return;
 
-  const btnDel = document.getElementById('btn-delete-event');
-  btnDel.disabled = true;
-  btnDel.textContent = '...';
+  const btnDel = document.getElementById('btn-delete-view-modal') || document.getElementById('btn-delete-event');
+  if (btnDel) {
+    btnDel.disabled = true;
+    btnDel.textContent = '...';
+  }
 
   try {
     const result = await SheetsAPI.remove(editingRow);
     if (result.success) {
       appData = appData.filter(r => r._row !== editingRow);
       renderAll();
-      closeEventModal();
-      closeViewModal();
+      if (typeof closeEventModal === 'function') closeEventModal();
+      if (typeof closeViewModal === 'function') closeViewModal();
       showNotification('Événement supprimé', 'success');
     } else {
       showNotification('Erreur : ' + (result.error || 'inconnue'), 'error');
@@ -623,8 +625,10 @@ async function deleteCurrentEvent() {
   } catch (err) {
     showNotification('Erreur réseau', 'error');
   } finally {
-    btnDel.disabled = false;
-    btnDel.textContent = 'Supprimer';
+    if (btnDel) {
+      btnDel.disabled = false;
+      btnDel.textContent = 'Supprimer';
+    }
   }
 }
 

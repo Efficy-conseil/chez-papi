@@ -1415,7 +1415,7 @@ body {
 }
 
 .btn-danger {
-  background: var(--red);
+  background: #C0453A;
   color: #fff;
   border: none;
   padding: 10px 16px;
