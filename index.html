@@ -56,20 +56,20 @@
   <h3 id="view-title">Détail de la demande</h3>
   <span class="modal-close" onclick="closeViewModal()">&times;</span>
 </div>
-<div class="modal-bd" style="padding: 16px;">
-  <p style="margin: 0 0 8px 0; font-size: 13px;"><strong>Date de l'événement:</strong> <span id="view-date-evt">—</span></p>
-  <p style="margin: 0 0 8px 0; font-size: 13px;"><strong>Client:</strong> <span id="view-client">—</span></p>
-  <p style="margin: 0 0 8px 0; font-size: 13px;"><strong>Type complet:</strong> <span id="view-type">—</span></p>
-  <p style="margin: 0 0 8px 0; font-size: 13px;"><strong>Invités:</strong> <span id="view-invites">—</span></p>
-  <p style="margin: 0 0 8px 0; font-size: 13px;"><strong>Budget:</strong> <span id="view-budget">—</span></p>
-  <p style="margin: 0 0 8px 0; font-size: 13px;"><strong>Statut:</strong> <span id="view-statut">—</span></p>
-  <p style="margin: 0 0 8px 0; font-size: 13px;"><strong>Contact:</strong> <span id="view-contact">—</span></p>
-  <div style="background: var(--warm); padding: 8px; border-radius: 4px; font-size: 12px; margin-top: 10px;">
+<div class="modal-bd" style="padding: 24px;">
+  <p style="margin: 0 0 12px 0; font-size: 14px;"><strong>Date de l'événement:</strong> <span id="view-date-evt">—</span></p>
+  <p style="margin: 0 0 12px 0; font-size: 14px;"><strong>Client:</strong> <span id="view-client">—</span></p>
+  <p style="margin: 0 0 12px 0; font-size: 14px;"><strong>Type complet:</strong> <span id="view-type">—</span></p>
+  <p style="margin: 0 0 12px 0; font-size: 14px;"><strong>Invités:</strong> <span id="view-invites">—</span></p>
+  <p style="margin: 0 0 12px 0; font-size: 14px;"><strong>Budget:</strong> <span id="view-budget">—</span></p>
+  <p style="margin: 0 0 12px 0; font-size: 14px;"><strong>Statut:</strong> <span id="view-statut">—</span></p>
+  <p style="margin: 0 0 12px 0; font-size: 14px;"><strong>Contact:</strong> <span id="view-contact">—</span></p>
+  <div style="background: var(--warm, #fdf6f0); padding: 12px; border-radius: 6px; font-size: 13px; margin-top: 16px;">
     <strong>Notes:</strong><br/>
     <span id="view-notes" style="white-space: pre-wrap;">—</span>
   </div>
 </div>
-<div class="modal-ft" style="justify-content: space-between; display: flex;">
+<div class="modal-ft" style="justify-content: space-between; display: flex; margin-top: 20px;">
   <div style="flex-shrink: 0;">
     <button type="button" class="btn-danger" onclick="deleteCurrentEvent()">Supprimer</button>
   </div>
@@ -88,7 +88,7 @@
   <h3 id="kpi-title">Détail</h3>
   <span class="modal-close" onclick="document.getElementById('kpi-modal').style.display='none'">&times;</span>
 </div>
-<div class="modal-bd">
+<div class="modal-bd" style="padding: 24px;">
   <table class="tbl">
     <thead id="kpi-thead"></thead>
     <tbody id="kpi-tbody"></tbody>
