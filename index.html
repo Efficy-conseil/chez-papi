@@ -47,6 +47,57 @@
 </div>
 </div>
 
+<!-- ══════════════════════ MODALS ══════════════════════ -->
+
+<!-- VIEW MODAL (Lecture seule) -->
+<div class="modal-overlay" id="view-modal" style="display:none;" onclick="if(event.target===this) closeViewModal()">
+<div class="modal-content">
+<div class="modal-hd">
+  <h3 id="view-title">Détail de la demande</h3>
+  <span class="modal-close" onclick="closeViewModal()">&times;</span>
+</div>
+<div class="modal-bd" style="padding: 16px;">
+  <p style="margin: 0 0 8px 0; font-size: 13px;"><strong>Date de l'événement:</strong> <span id="view-date-evt">—</span></p>
+  <p style="margin: 0 0 8px 0; font-size: 13px;"><strong>Client:</strong> <span id="view-client">—</span></p>
+  <p style="margin: 0 0 8px 0; font-size: 13px;"><strong>Type complet:</strong> <span id="view-type">—</span></p>
+  <p style="margin: 0 0 8px 0; font-size: 13px;"><strong>Invités:</strong> <span id="view-invites">—</span></p>
+  <p style="margin: 0 0 8px 0; font-size: 13px;"><strong>Budget:</strong> <span id="view-budget">—</span></p>
+  <p style="margin: 0 0 8px 0; font-size: 13px;"><strong>Statut:</strong> <span id="view-statut">—</span></p>
+  <p style="margin: 0 0 8px 0; font-size: 13px;"><strong>Contact:</strong> <span id="view-contact">—</span></p>
+  <div style="background: var(--warm); padding: 8px; border-radius: 4px; font-size: 12px; margin-top: 10px;">
+    <strong>Notes:</strong><br/>
+    <span id="view-notes" style="white-space: pre-wrap;">—</span>
+  </div>
+</div>
+<div class="modal-ft" style="justify-content: space-between; display: flex;">
+  <div style="flex-shrink: 0;">
+    <button type="button" class="btn-danger" onclick="deleteCurrentEvent()">Supprimer</button>
+  </div>
+  <div style="display:flex; gap:10px;">
+    <button type="button" class="btn-secondary" onclick="closeViewModal()">Fermer</button>
+    <button type="button" class="btn-primary" onclick="openEventModal(editingRow, true)">Modifier</button>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- KPI DETAIL MODAL -->
+<div class="modal-overlay" id="kpi-modal" style="display:none;" onclick="if(event.target===this) document.getElementById('kpi-modal').style.display='none'">
+<div class="modal-content" style="max-width:550px;">
+<div class="modal-hd">
+  <h3 id="kpi-title">Détail</h3>
+  <span class="modal-close" onclick="document.getElementById('kpi-modal').style.display='none'">&times;</span>
+</div>
+<div class="modal-bd">
+  <table class="tbl">
+    <thead id="kpi-thead"></thead>
+    <tbody id="kpi-tbody"></tbody>
+    <tfoot id="kpi-tfoot"></tfoot>
+  </table>
+</div>
+</div>
+</div>
+
 <!-- ── PWA IOS INSTALL MODAL ── -->
 
 <div id="pwa-ios-modal" class="pwa-ios-modal" style="display:none;">
@@ -145,25 +196,21 @@ Tableau de bord · v1.0<br>Avril 2026
 </div>
 
 <div class="kpi-strip">
-<div class="kpi-card">
-<div class="kpi-label">CA confirmé</div>
+<div class="kpi-card" onclick="showKpiModal('ca')" style="cursor:pointer">
+<div class="kpi-label">CA estimé 2026</div>
 <div class="kpi-val" id="kpi-ca-val">—</div>
-<div class="kpi-delta">Événements signés</div>
 </div>
-<div class="kpi-card green">
+<div class="kpi-card green" onclick="showKpiModal('confirmes')" style="cursor:pointer">
 <div class="kpi-label">Événements confirmés</div>
 <div class="kpi-val" id="kpi-confirmes-val">—</div>
-<div class="kpi-delta" id="kpi-confirmes-delta">—</div>
 </div>
-<div class="kpi-card">
+<div class="kpi-card" onclick="showKpiModal('devis')" style="cursor:pointer">
 <div class="kpi-label">Devis en attente</div>
 <div class="kpi-val" id="kpi-devis-val">—</div>
-<div class="kpi-delta">Réponse attendue</div>
 </div>
-<div class="kpi-card terra">
+<div class="kpi-card terra" onclick="showKpiModal('leads')" style="cursor:pointer">
 <div class="kpi-label">Nouveaux leads</div>
 <div class="kpi-val" id="kpi-leads-val">—</div>
-<div class="kpi-delta">Demandes reçues</div>
 </div>
 </div>
 
@@ -348,14 +395,9 @@ Tableau de bord · v1.0<br>Avril 2026
 <label>Notes</label>
 <textarea name="Notes" rows="2" placeholder="Notes internes..."></textarea>
 </div>
-<div class="modal-ft" style="justify-content: space-between; display: flex;">
-<div style="flex-shrink: 0;">
-<button type="button" id="btn-delete-event" class="btn-danger" style="display:none;" onclick="deleteCurrentEvent()">Supprimer</button>
-</div>
-<div style="display:flex; gap:10px;">
+<div class="modal-ft" style="justify-content: flex-end; display: flex; gap: 10px;">
 <button type="button" class="btn-secondary" onclick="closeEventModal()">Annuler</button>
 <button type="submit" class="btn-primary">Enregistrer</button>
-</div>
 </div>
 </form>
 </div>

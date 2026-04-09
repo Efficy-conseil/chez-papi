@@ -483,8 +483,40 @@ function renderHistorique() {
 
 let editingRow = null;
 
-function openEventModal(rowIndex = null) {
+function closeViewModal() {
+  const v = document.getElementById('view-modal');
+  if (v) v.style.display = 'none';
+  editingRow = null;
+}
+
+function showViewModal(rowIndex) {
   editingRow = rowIndex;
+  const data = appData.find(e => e._row === rowIndex);
+  if (!data) return;
+
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val || '—'; };
+  
+  set('view-date-evt', formatDateFR(data['Date de l\'événement']));
+  set('view-client', data['Nom client']);
+  set('view-type', data['Type d\'événement']);
+  set('view-invites', data['Nombre d\'invités']);
+  set('view-budget', formatEuro(parseFloat(data['Budget estimé (€)']) || 0));
+  set('view-statut', STATUS_LABEL[data['Statut traitement']] || data['Statut traitement']);
+  set('view-contact', data['Contact']);
+  set('view-notes', data['Notes']);
+
+  document.getElementById('view-modal').style.display = 'flex';
+}
+
+function openEventModal(rowIndex = null, forceEdit = false) {
+  if (rowIndex && !forceEdit) {
+    showViewModal(rowIndex);
+    return;
+  }
+
+  editingRow = rowIndex;
+  closeViewModal();
+
   const modal = document.getElementById('event-modal');
   document.getElementById('modal-title').textContent = rowIndex ? "Modifier l'événement" : 'Nouvel événement';
 
@@ -583,6 +615,7 @@ async function deleteCurrentEvent() {
       appData = appData.filter(r => r._row !== editingRow);
       renderAll();
       closeEventModal();
+      closeViewModal();
       showNotification('Événement supprimé', 'success');
     } else {
       showNotification('Erreur : ' + (result.error || 'inconnue'), 'error');
@@ -730,6 +763,72 @@ const Calendar = (() => {
 
 Calendar.init();
 
+// ── KPI MODALS ──
+
+function showKpiModal(type) {
+  const currentYear = new Date().getFullYear();
+  const title = document.getElementById('kpi-title');
+  const thead = document.getElementById('kpi-thead');
+  const tbody = document.getElementById('kpi-tbody');
+  const tfoot = document.getElementById('kpi-tfoot');
+  if (!tbody) return;
+  
+  thead.innerHTML = '';
+  tbody.innerHTML = '';
+  tfoot.innerHTML = '';
+
+  const actives = appData.filter(e => !isEventPast(e));
+
+  if (type === 'ca') {
+    title.textContent = `CA Estimé ${currentYear}`;
+    const yearlySigned = appData.filter(e => {
+      if (e['Statut traitement'] !== 'Signé') return false;
+      if (!e['Date de l\'événement']) return false;
+      const d = new Date(String(e['Date de l\'événement']).split('T')[0]);
+      return !isNaN(d.getTime()) && d.getFullYear() === currentYear;
+    });
+
+    const cm = {};
+    yearlySigned.forEach(e => {
+      const n = e['Nom client'] || 'Inconnu';
+      if (!cm[n]) cm[n] = 0;
+      cm[n] += (parseFloat(e['Budget estimé (€)']) || 0);
+    });
+    const rows = Object.entries(cm).sort((a,b)=>b[1]-a[1]);
+    
+    thead.innerHTML = '<tr><th>Client</th><th>CA Signé</th></tr>';
+    tbody.innerHTML = rows.length ? rows.map(([c, v]) => `<tr><td>${c}</td><td><strong>${formatEuro(v)}</strong></td></tr>`).join('') : '<tr><td colspan="2" class="tbl-empty">Aucun CA</td></tr>';
+    const total = rows.reduce((s, r)=>s+r[1], 0);
+    if(rows.length) tfoot.innerHTML = `<tr><td><strong>TOTAL</strong></td><td><strong>${formatEuro(total)}</strong></td></tr>`;
+  } 
+  else if (type === 'confirmes') {
+    title.textContent = 'Événements confirmés';
+    const evts = actives.filter(e => e['Statut traitement'] === 'Signé');
+    evts.sort((a,b) => new Date(String(a['Date de l\'événement']||'').split('T')[0]).getTime() - new Date(String(b['Date de l\'événement']||'').split('T')[0]).getTime());
+    
+    thead.innerHTML = '<tr><th>Date</th><th>Client</th><th>Type</th></tr>';
+    tbody.innerHTML = evts.length ? evts.map(e => `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})"><td>${formatDateFR(e['Date de l\'événement'])}</td><td><strong>${e['Nom client']}</strong></td><td>${e['Type d\'événement'] || '—'}</td></tr>`).join('') : '<tr><td colspan="3" class="tbl-empty">Aucun événement signé</td></tr>';
+  }
+  else if (type === 'devis') {
+    title.textContent = 'Devis en attente';
+    const evts = actives.filter(e => e['Statut traitement'] === 'Devis envoyé');
+    evts.sort((a,b) => new Date(String(a['Date de l\'événement']||'').split('T')[0]).getTime() - new Date(String(b['Date de l\'événement']||'').split('T')[0]).getTime());
+    
+    thead.innerHTML = '<tr><th>Date prévue</th><th>Client</th></tr>';
+    tbody.innerHTML = evts.length ? evts.map(e => `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})"><td>${formatDateFR(e['Date de l\'événement'])}</td><td><strong>${e['Nom client']}</strong></td></tr>`).join('') : '<tr><td colspan="2" class="tbl-empty">Aucun devis en attente</td></tr>';
+  }
+  else if (type === 'leads') {
+    title.textContent = 'Nouveaux leads';
+    const evts = actives.filter(e => e['Statut traitement'] === 'Nouveau');
+    evts.sort((a,b) => new Date(String(a['Date de l\'événement']||'').split('T')[0]).getTime() - new Date(String(b['Date de l\'événement']||'').split('T')[0]).getTime());
+    
+    thead.innerHTML = '<tr><th>Client</th><th>Date d\'év.</th><th>Statut</th></tr>';
+    tbody.innerHTML = evts.length ? evts.map(e => `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})"><td><strong>${e['Nom client']}</strong></td><td>${formatDateFR(e['Date de l\'événement']) || 'À dét.'}</td><td>${STATUS_LABEL[e['Statut traitement']]}</td></tr>`).join('') : '<tr><td colspan="3" class="tbl-empty">Aucun nouveau lead</td></tr>';
+  }
+
+  document.getElementById('kpi-modal').style.display = 'flex';
+}
+
 // ── SIDEBAR MOBILE TOGGLE ──
 
 const sidebar        = document.getElementById('sidebar');
@@ -792,7 +891,7 @@ loadData();
 // ── EXPORT ──
 
 window.ChezPapi = {
-  SheetsAPI, Calendar, showPanel, toggleSidebar, showNotification, loadData, openEventModal, deleteCurrentEvent,
+  SheetsAPI, Calendar, showPanel, toggleSidebar, showNotification, loadData, openEventModal, showViewModal, closeViewModal, deleteCurrentEvent, showKpiModal,
   renderHistorique,
   // Diagnostic : testConnection() dans la console pour voir la réponse brute
   async testConnection() {
