@@ -492,6 +492,12 @@ function openEventModal(rowIndex = null) {
   } else {
     form.elements['Date de la demande'].value = new Date().toISOString().split('T')[0];
     form.elements['Statut traitement'].value  = 'Nouveau';
+    if (typeof Calendar !== 'undefined' && typeof Calendar.getSelectedDate === 'function') {
+      const sd = Calendar.getSelectedDate();
+      if (sd) {
+        form.elements['Date de l\'événement'].value = sd;
+      }
+    }
   }
 
   modal.style.display = 'flex';
@@ -675,7 +681,7 @@ const Calendar = (() => {
     render();
   }
 
-  return { init, refresh: render };
+  return { init, refresh: render, getSelectedDate: () => selectedDate };
 })();
 
 Calendar.init();
