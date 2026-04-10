@@ -514,8 +514,8 @@ function openEventModal(rowIndex = null, forceEdit = false) {
     return;
   }
 
-  editingRow = rowIndex;
   closeViewModal();
+  editingRow = rowIndex;
 
   const modal = document.getElementById('event-modal');
   document.getElementById('modal-title').textContent = rowIndex ? "Modifier l'événement" : 'Nouvel événement';
