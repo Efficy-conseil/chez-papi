@@ -554,6 +554,7 @@ body {
 .content {
   padding: 16px 12px 60px;
   flex: 1;
+  overflow-x: hidden;
 }
 
 @media (min-width: 768px) {
@@ -1014,7 +1015,7 @@ body {
 .act-dot.gray { background: var(--faint); }
 
 .act-body { flex: 1; }
-.act-text { font-size: 11px; color: var(--text); line-height: 1.4; }
+.act-text { font-size: 11px; color: var(--text); line-height: 1.4; word-break: break-word; overflow-wrap: break-word; }
 .act-time { font-size: 9px; color: var(--faint); margin-top: 2px; }
 
 /* MENU */
