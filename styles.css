@@ -726,6 +726,12 @@ body {
   border-radius: 4px;
   padding: 14px 12px;
   margin-bottom: 12px;
+  overflow-x: hidden;
+}
+
+.tbl-wrap {
+  overflow-x: auto;
+  width: 100%;
 }
 
 @media (min-width: 768px) {
