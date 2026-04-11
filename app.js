@@ -267,21 +267,25 @@ function renderDashboard() {
   if (!tbody) return;
 
   if (!CONFIG.SHEETS_URL) {
-    tbody.innerHTML = '<tr><td colspan="5" class="tbl-empty">\u2699 Configurez <code>CONFIG.SHEETS_URL</code> dans app.js pour connecter le Google Sheet</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="tbl-empty">\u2699 Configurez <code>CONFIG.SHEETS_URL</code> dans app.js pour connecter le Google Sheet</td></tr>';
     return;
   }
   if (!upcoming.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="tbl-empty">Aucun événement à venir</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="tbl-empty">Aucun événement à venir</td></tr>';
     return;
   }
-  tbody.innerHTML = upcoming.map(e => `
+  tbody.innerHTML = upcoming.map(e => {
+    const budget = parseFloat(e['Budget estimé (€)']);
+    return `
     <tr style="cursor:pointer" onclick="openEventModal(${e._row})">
       <td><strong>${formatDateFR(e['Date de l\'événement'])}</strong></td>
       <td>${e['Nom client']}</td>
       <td>${e['Type d\'événement']}</td>
       <td>${e['Nb convives']}</td>
+      <td>${budget ? formatEuro(budget) : '—'}</td>
       <td><span class="pill ${STATUS_PILL[e['Statut traitement']] || 'pill-gray'}">${STATUS_LABEL[e['Statut traitement']] || e['Statut traitement']}</span></td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 
   // Activité récente
   const recent = [...actives]
@@ -294,7 +298,7 @@ function renderDashboard() {
       return `<div class="activity-item" style="cursor:pointer" onclick="openEventModal(${e._row})">
         <div class="act-dot ${dot}"></div>
         <div class="act-body">
-          <div class="act-text">Demande <strong>${e['Nom client']}</strong> — ${e['Type d\'événement']}, ${e['Nb convives']} pers.</div>
+          <div class="act-text">Demande <strong>${e['Nom client']}</strong> — ${e['Type d\'événement']}, ${e['Nb convives']} pers.${parseFloat(e['Budget estimé (€)']) ? ' · ' + formatEuro(parseFloat(e['Budget estimé (€)'])) : ''}</div>
           <div class="act-time">${formatDateFR(e['Date de la demande'])} · ${e['Canal']}</div>
         </div>
       </div>`;
@@ -499,7 +503,7 @@ function showViewModal(rowIndex) {
   set('view-date-evt', formatDateFR(data['Date de l\'événement']));
   set('view-client', data['Nom client']);
   set('view-type', data['Type d\'événement']);
-  set('view-invites', data['Nombre d\'invités']);
+  set('view-invites', data['Nb convives']);
   set('view-budget', formatEuro(parseFloat(data['Budget estimé (€)']) || 0));
   set('view-statut', STATUS_LABEL[data['Statut traitement']] || data['Statut traitement']);
   set('view-contact', data['Contact']);

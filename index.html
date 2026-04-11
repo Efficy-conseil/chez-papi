@@ -135,7 +135,6 @@
 </div>
 
 <div class="sidebar-section">
-<div class="sidebar-section-label">Vue générale</div>
 <button class="nav-item active" onclick="showPanel('accueil',this)" data-panel="accueil">
 <span class="nav-icon">🏠</span> Accueil
 </button>
@@ -145,10 +144,6 @@
 <button class="nav-item" onclick="showPanel('devis',this)" data-panel="devis">
 <span class="nav-icon">📋</span> Statut des demandes
 </button>
-</div>
-
-<div class="sidebar-section">
-<div class="sidebar-section-label">Pilotage</div>
 <button class="nav-item" onclick="showPanel('clients',this)" data-panel="clients">
 <span class="nav-icon">👥</span> Clients
 </button>
@@ -228,11 +223,12 @@ Tableau de bord · v1.0<br>Avril 2026
 <th>Client</th>
 <th>Type</th>
 <th>Couverts</th>
+<th>Montant</th>
 <th>Statut</th>
 </tr>
 </thead>
 <tbody id="upcoming-tbody">
-<tr><td colspan="5" class="tbl-empty">Chargement…</td></tr>
+<tr><td colspan="6" class="tbl-empty">Chargement…</td></tr>
 </tbody>
 </table>
 </div>
