@@ -814,24 +814,33 @@ function showKpiModal(type) {
     const evts = actives.filter(e => e['Statut traitement'] === 'Signé');
     evts.sort((a,b) => new Date(String(a['Date de l\'événement']||'').split('T')[0]).getTime() - new Date(String(b['Date de l\'événement']||'').split('T')[0]).getTime());
     
-    thead.innerHTML = '<tr><th>Date</th><th>Client</th><th>Type</th></tr>';
-    tbody.innerHTML = evts.length ? evts.map(e => `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})"><td>${formatDateFR(e['Date de l\'événement'])}</td><td><strong>${e['Nom client']}</strong></td><td>${e['Type d\'événement'] || '—'}</td></tr>`).join('') : '<tr><td colspan="3" class="tbl-empty">Aucun événement signé</td></tr>';
+    thead.innerHTML = '<tr><th>Date</th><th>Client</th><th>Type</th><th>Montant</th></tr>';
+    tbody.innerHTML = evts.length ? evts.map(e => {
+      const budget = parseFloat(e['Budget estimé (€)']);
+      return `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})"><td>${formatDateFR(e['Date de l\'événement'])}</td><td><strong>${e['Nom client']}</strong></td><td>${e['Type d\'événement'] || '—'}</td><td>${budget ? formatEuro(budget) : '—'}</td></tr>`;
+    }).join('') : '<tr><td colspan="4" class="tbl-empty">Aucun événement signé</td></tr>';
   }
   else if (type === 'devis') {
     title.textContent = 'Devis en attente';
     const evts = actives.filter(e => e['Statut traitement'] === 'Devis envoyé');
     evts.sort((a,b) => new Date(String(a['Date de l\'événement']||'').split('T')[0]).getTime() - new Date(String(b['Date de l\'événement']||'').split('T')[0]).getTime());
     
-    thead.innerHTML = '<tr><th>Date prévue</th><th>Client</th></tr>';
-    tbody.innerHTML = evts.length ? evts.map(e => `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})"><td>${formatDateFR(e['Date de l\'événement'])}</td><td><strong>${e['Nom client']}</strong></td></tr>`).join('') : '<tr><td colspan="2" class="tbl-empty">Aucun devis en attente</td></tr>';
+    thead.innerHTML = '<tr><th>Date prévue</th><th>Client</th><th>Montant</th></tr>';
+    tbody.innerHTML = evts.length ? evts.map(e => {
+      const budget = parseFloat(e['Budget estimé (€)']);
+      return `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})"><td>${formatDateFR(e['Date de l\'événement'])}</td><td><strong>${e['Nom client']}</strong></td><td>${budget ? formatEuro(budget) : '—'}</td></tr>`;
+    }).join('') : '<tr><td colspan="3" class="tbl-empty">Aucun devis en attente</td></tr>';
   }
   else if (type === 'leads') {
     title.textContent = 'Nouveaux leads';
     const evts = actives.filter(e => e['Statut traitement'] === 'Nouveau');
     evts.sort((a,b) => new Date(String(a['Date de l\'événement']||'').split('T')[0]).getTime() - new Date(String(b['Date de l\'événement']||'').split('T')[0]).getTime());
     
-    thead.innerHTML = '<tr><th>Client</th><th>Date d\'év.</th><th>Statut</th></tr>';
-    tbody.innerHTML = evts.length ? evts.map(e => `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})"><td><strong>${e['Nom client']}</strong></td><td>${formatDateFR(e['Date de l\'événement']) || 'À dét.'}</td><td>${STATUS_LABEL[e['Statut traitement']]}</td></tr>`).join('') : '<tr><td colspan="3" class="tbl-empty">Aucun nouveau lead</td></tr>';
+    thead.innerHTML = '<tr><th>Client</th><th>Date d\'év.</th><th>Montant</th><th>Statut</th></tr>';
+    tbody.innerHTML = evts.length ? evts.map(e => {
+      const budget = parseFloat(e['Budget estimé (€)']);
+      return `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})"><td><strong>${e['Nom client']}</strong></td><td>${formatDateFR(e['Date de l\'événement']) || 'À dét.'}</td><td>${budget ? formatEuro(budget) : '—'}</td><td>${STATUS_LABEL[e['Statut traitement']]}</td></tr>`;
+    }).join('') : '<tr><td colspan="4" class="tbl-empty">Aucun nouveau lead</td></tr>';
   }
 
   document.getElementById('kpi-modal').style.display = 'flex';
