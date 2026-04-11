@@ -1,9 +1,7 @@
-const CACHE_NAME = 'chez-papi-v1.23';
+const CACHE_NAME = 'chez-papi-v1.24';
 const ASSETS = [
   './',
   './index.html',
-  './styles.css',
-  './app.js',
   './manifest.json',
   './icon-192x192.png',
   './icon-512x512.png'
@@ -14,7 +12,7 @@ self.addEventListener('install', e => {
     caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
       .catch(err => console.error('Cache addAll failed:', err))
   );
-  self.skipWaiting(); // Activation immédiate sans attendre la confirmation
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', e => {
@@ -26,15 +24,10 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
-self.addEventListener('message', e => {
-  if (e.data?.type === 'SKIP_WAITING') self.skipWaiting();
-});
-
 self.addEventListener('fetch', e => {
-  // Ignorer les requêtes cross-origin (appels API Google Apps Script, fonts...)
   if (!e.request.url.startsWith(self.location.origin)) return;
 
-  // Network-first pour la page HTML : l'utilisateur reçoit toujours la version fraîche
+  // Network-first pour HTML
   if (e.request.mode === 'navigate') {
     e.respondWith(
       fetch(e.request)
@@ -47,7 +40,20 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // Cache-first pour les ressources statiques same-origin (CSS, JS, images)
+  // Network-first pour JS et CSS (toujours la version fraîche)
+  if (/\.(js|css)(\?.*)?$/.test(e.request.url)) {
+    e.respondWith(
+      fetch(e.request)
+        .then(res => {
+          if (res.ok) caches.open(CACHE_NAME).then(c => c.put(e.request, res.clone()));
+          return res;
+        })
+        .catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // Cache-first pour images et autres assets statiques
   e.respondWith(
     caches.match(e.request).then(cached => {
       return cached || fetch(e.request).then(res => {

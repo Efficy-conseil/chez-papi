@@ -7,38 +7,15 @@ const CONFIG = {
 // ── PWA INITIALIZATION ──
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').then(reg => {
-    setInterval(() => reg.update(), 60 * 60 * 1000);
-    reg.addEventListener('updatefound', () => {
-      const newWorker = reg.installing;
-      if (!newWorker) return;
-      newWorker.addEventListener('statechange', () => {
-        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-          showUpdateBanner();
-        }
-      });
-    });
-    if (reg.waiting && navigator.serviceWorker.controller) showUpdateBanner();
-  }).catch(err => console.error('Service Worker registration failed:', err));
+  navigator.serviceWorker.register('sw.js')
+    .catch(err => console.error('Service Worker registration failed:', err));
 
+  // Recharge la page quand un nouveau SW prend le contrôle (skipWaiting automatique)
   let refreshing = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (!refreshing) { refreshing = true; window.location.reload(); }
   });
 }
-
-function showUpdateBanner() {
-  const b = document.getElementById('pwa-update-banner');
-  if (b) b.style.display = 'flex';
-}
-document.getElementById('pwa-update-btn')?.addEventListener('click', () => {
-  navigator.serviceWorker.getRegistration().then(reg => {
-    if (reg?.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-  });
-});
-document.getElementById('pwa-update-dismiss-btn')?.addEventListener('click', () => {
-  document.getElementById('pwa-update-banner').style.display = 'none';
-});
 
 // ── PWA INSTALL BANNER ──
 
