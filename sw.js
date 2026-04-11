@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chez-papi-v1.22';
+const CACHE_NAME = 'chez-papi-v1.23';
 const ASSETS = [
   './',
   './index.html',
@@ -14,7 +14,7 @@ self.addEventListener('install', e => {
     caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
       .catch(err => console.error('Cache addAll failed:', err))
   );
-  // Ne pas skipWaiting ici : on attend la confirmation de l'utilisateur
+  self.skipWaiting(); // Activation immédiate sans attendre la confirmation
 });
 
 self.addEventListener('activate', e => {
@@ -26,7 +26,6 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
-// L'app peut déclencher la mise à jour via ce message
 self.addEventListener('message', e => {
   if (e.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
