@@ -413,7 +413,8 @@ function renderPipeline() {
       // Badge ancienneté pour Nouveau / Contacté
       let ageBadge = '';
       if ((e['Statut traitement'] === 'Nouveau' || e['Statut traitement'] === 'Contacté') && e['Date de la demande']) {
-        const hours = Math.floor((Date.now() - new Date(String(e['Date de la demande']).split('T')[0]).getTime()) / 3600000);
+        const [y,m,d] = String(e['Date de la demande']).split('T')[0].split('-').map(Number);
+        const hours = Math.floor((Date.now() - new Date(y, m-1, d).getTime()) / 3600000);
         let badgeColor = hours < 24 ? '#4A6741' : hours < 72 ? '#B8860B' : '#C0453A';
         let badgeText = hours < 24 ? `Reçu il y a ${hours}h` : `Reçu il y a ${Math.floor(hours/24)} jour${Math.floor(hours/24) > 1 ? 's' : ''}`;
         ageBadge = `<div style="font-size:10px;font-weight:600;color:${badgeColor};margin-top:4px;">${badgeText}</div>`;
@@ -744,7 +745,9 @@ function openEventModal(rowIndex = null, forceEdit = false) {
       }
     }
   } else {
-    form.elements['Date de la demande'].value = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const localToday = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    form.elements['Date de la demande'].value = localToday;
     form.elements['Statut traitement'].value  = 'Nouveau';
   }
 
