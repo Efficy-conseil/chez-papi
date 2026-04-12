@@ -992,9 +992,9 @@ body {
 }
 
 .pipe-header {
-  font-size: 8px;
+  font-size: 0.85rem;
   font-weight: 700;
-  letter-spacing: .14em;
+  letter-spacing: .08em;
   text-transform: uppercase;
   color: var(--muted);
   padding-bottom: 8px;
