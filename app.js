@@ -333,7 +333,7 @@ function renderDashboard() {
     if (!prestationsHome.length) {
       actEl.innerHTML = '<div class="act-time" style="padding:12px 0;color:var(--muted);">Aucune prestation en cours</div>';
     } else {
-      const thead = '<table class="tbl"><thead><tr><th style="width:22%">Date</th><th style="width:36%">Client</th><th style="width:20%">Montant</th><th style="width:22%">Statut</th></tr></thead><tbody>';
+      const thead = '<table class="tbl tbl-sm"><thead><tr><th style="width:22%">Date</th><th style="width:36%">Client</th><th style="width:20%">Montant</th><th style="width:22%">Statut</th></tr></thead><tbody>';
       actEl.innerHTML = thead + prestationsHome.map(e => {
         const budget = parseFloat(e['Budget estimé (€)']);
         return `<tr style="cursor:pointer" onclick="openEventModal(${e._row})">

@@ -1212,6 +1212,9 @@ body {
 /* ── TABLE empty state ── */
 .tbl-empty { text-align: center; color: var(--muted); padding: 16px 0 !important; font-size: 12px; }
 
+/* Tables compactes (accueil) : en-têtes plus petits */
+.tbl-sm th { font-size: 0.7rem; }
+
 /* Urgence lignes tableau accueil */
 .row-urgent td:first-child { border-left: 3px solid var(--red-soft); padding-left: 5px; }
 .row-prio td:first-child    { border-left: 3px solid var(--gold);     padding-left: 5px; }
