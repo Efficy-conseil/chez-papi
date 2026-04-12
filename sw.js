@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chez-papi-v1.32';
+const CACHE_NAME = 'chez-papi-v1.33';
 const ASSETS = [
   './',
   './index.html',
