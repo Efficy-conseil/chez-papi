@@ -1536,6 +1536,15 @@ body {
 }
 .pc-todo-btn:hover { background: var(--brown-dk); }
 
+/* ── HISTORIQUE TABLE ── */
+#historique .tbl th {
+  font-size: 0.72rem;
+  letter-spacing: .1em;
+}
+@media (min-width: 768px) {
+  #historique .tbl th { font-size: 0.75rem; }
+}
+
 /* ── HISTORIQUE FILTERS ── */
 .hist-filters {
   display: flex;
