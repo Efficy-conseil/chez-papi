@@ -1,9 +1,7 @@
-const CACHE_NAME = 'chez-papi-v1.2';
+const CACHE_NAME = 'chez-papi-v1.27';
 const ASSETS = [
   './',
   './index.html',
-  './styles.css',
-  './app.js',
   './manifest.json',
   './icon-192x192.png',
   './icon-512x512.png'
@@ -11,39 +9,75 @@ const ASSETS = [
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      // Add all core assets to cache
-      return cache.addAll(ASSETS);
-    }).catch(err => console.error('Cache addAll failed:', err))
+    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+      .catch(err => console.error('Cache addAll failed:', err))
   );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys => {
-      return Promise.all(
-        keys.filter(key => key !== CACHE_NAME)
-          .map(key => caches.delete(key))
-      );
-    })
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+    )
   );
   self.clients.claim();
 });
 
-// Cache First Strategy for Offline Access
+// Notifications push (depuis app.js via postMessage)
+self.addEventListener('message', e => {
+  if (e.data?.type === 'SHOW_NOTIFICATION') {
+    self.registration.showNotification(e.data.title, {
+      body: e.data.body,
+      icon: './icon-192x192.png',
+      badge: './icon-192x192.png',
+      tag: e.data.tag || 'chez-papi'
+    }).catch(() => {});
+  }
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(clients.matchAll({ type: 'window' }).then(cs => {
+    if (cs.length) return cs[0].focus();
+    return clients.openWindow('./');
+  }));
+});
+
 self.addEventListener('fetch', e => {
+  if (!e.request.url.startsWith(self.location.origin)) return;
+
+  if (e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request, { cache: 'no-store' })
+        .then(res => {
+          if (res.ok) caches.open(CACHE_NAME).then(c => c.put(e.request, res.clone()));
+          return res;
+        })
+        .catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // JS et CSS : toujours depuis le réseau, bypass du cache HTTP
+  if (/\.(js|css)(\?.*)?$/.test(e.request.url)) {
+    e.respondWith(
+      fetch(e.request, { cache: 'no-store' })
+        .then(res => {
+          if (res.ok) caches.open(CACHE_NAME).then(c => c.put(e.request, res.clone()));
+          return res;
+        })
+        .catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
   e.respondWith(
-    caches.match(e.request).then(cachedResponse => {
-      return cachedResponse || fetch(e.request).then(response => {
-        return caches.open(CACHE_NAME).then(cache => {
-          // Cache new assets for future
-          cache.put(e.request, response.clone());
-          return response;
-        });
+    caches.match(e.request).then(cached => {
+      return cached || fetch(e.request).then(res => {
+        if (res.ok) caches.open(CACHE_NAME).then(c => c.put(e.request, res.clone()));
+        return res;
       });
-    }).catch(() => {
-      // Offline fallback handling if needed
-    })
+    }).catch(() => {})
   );
 });
