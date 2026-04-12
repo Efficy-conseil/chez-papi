@@ -63,7 +63,9 @@
   <p style="margin: 0 0 12px 0; font-size: 14px;"><strong>Invités:</strong> <span id="view-invites">—</span></p>
   <p style="margin: 0 0 12px 0; font-size: 14px;"><strong>Budget:</strong> <span id="view-budget">—</span></p>
   <p style="margin: 0 0 12px 0; font-size: 14px;"><strong>Statut:</strong> <span id="view-statut">—</span></p>
+  <p style="margin: 0 0 12px 0; font-size: 14px;"><strong>Lieu:</strong> <span id="view-lieu">—</span></p>
   <p style="margin: 0 0 12px 0; font-size: 14px;"><strong>Contact:</strong> <span id="view-contact">—</span></p>
+  <p style="margin: 0 0 12px 0; font-size: 14px;"><strong>Email:</strong> <span id="view-email">—</span></p>
   <div style="background: var(--warm, #fdf6f0); padding: 12px; border-radius: 6px; font-size: 13px; margin-top: 16px;">
     <strong>Notes:</strong><br/>
     <span id="view-notes" style="white-space: pre-wrap;">—</span>
@@ -139,7 +141,7 @@
 <span class="nav-icon">🏠</span> Accueil
 </button>
 <button class="nav-item" onclick="showPanel('devis',this)" data-panel="devis">
-<span class="nav-icon">📋</span> Statut des demandes
+<span class="nav-icon">📋</span> Demandes en cours
 </button>
 <button class="nav-item" onclick="showPanel('clients',this)" data-panel="clients">
 <span class="nav-icon">👥</span> Clients
@@ -168,7 +170,7 @@ Tableau de bord · v1.0<br>Avril 2026
 <div class="main">
 <div class="topbar">
 <button class="topbar-menu-btn" id="menu-btn">☰</button>
-<div class="topbar-title" id="topbar-title">Dashboard Chez Papi</div>
+<div class="topbar-title" id="topbar-title">Tableau de bord</div>
 <div class="topbar-right">
 <span id="sync-indicator" class="sync-indicator"></span>
 <span class="topbar-badge" id="topbar-badge"></span>
@@ -202,7 +204,7 @@ Tableau de bord · v1.0<br>Avril 2026
 <div class="kpi-val" id="kpi-devis-val">—</div>
 </div>
 <div class="kpi-card terra" onclick="showKpiModal('leads')" style="cursor:pointer">
-<div class="kpi-label">Nouveaux leads</div>
+<div class="kpi-label">Nouvelles demandes</div>
 <div class="kpi-val" id="kpi-leads-val">—</div>
 </div>
 </div>
@@ -213,7 +215,7 @@ Tableau de bord · v1.0<br>Avril 2026
 
 <!-- Prochains événements -->
 <div class="card">
-<div class="card-title">Prochains événements <span class="card-title-action" onclick="showPanel('devis',document.querySelector('[data-panel=devis]'))">Voir tout →</span></div>
+<div class="card-title">Prochains événements <span class="card-title-action" onclick="showPanel('devis',document.querySelector('[data-panel=devis]'))">Voir les demandes →</span></div>
 <div class="tbl-wrap">
 <table class="tbl">
 <thead>
@@ -235,7 +237,7 @@ Tableau de bord · v1.0<br>Avril 2026
 
 <!-- Activité récente -->
 <div class="card">
-<div class="card-title">Dernières demandes</div>
+<div class="card-title">Nouvelles demandes non traitées <span class="card-title-action" onclick="showPanel('devis',document.querySelector('[data-panel=devis]'))">Voir les demandes →</span></div>
 <div class="activity-list" id="recent-activity">
 <div class="act-time" style="padding:12px 0;color:var(--muted);">Chargement…</div>
 </div>
@@ -247,7 +249,7 @@ Tableau de bord · v1.0<br>Avril 2026
 <!-- ══════════════════════ DEVIS ══════════════════════ -->
 <div class="panel" id="panel-devis">
 <div class="section-hd">
-<h2>Statut des demandes</h2>
+<h2>Demandes en cours</h2>
 <span class="shd-sub" id="devis-sub"></span>
 <button class="btn-new" onclick="openEventModal()">+ Nouvel événement</button>
 </div>
@@ -258,20 +260,11 @@ Tableau de bord · v1.0<br>Avril 2026
 <!-- ══════════════════════ CLIENTS ══════════════════════ -->
 <div class="panel" id="panel-clients">
 <div class="section-hd">
-<h2>Clients</h2>
+<h2>Prestations en cours</h2>
 <span class="shd-sub" id="clients-sub">Chargement…</span>
 </div>
-
-<div class="card">
-<div class="card-title">Historique clients</div>
-<table class="tbl">
-<thead>
-<tr><th>Client</th><th>Contact</th><th>CA cumulé</th></tr>
-</thead>
-<tbody id="clients-tbody">
-<tr><td colspan="3" class="tbl-empty">Chargement…</td></tr>
-</tbody>
-</table>
+<div id="clients-cards">
+<div class="tbl-empty" style="padding:20px;">Chargement…</div>
 </div>
 </div>
 
@@ -281,11 +274,32 @@ Tableau de bord · v1.0<br>Avril 2026
 <h2>Historique</h2>
 <span class="shd-sub" id="historique-sub"></span>
 </div>
+
+<div class="hist-filters">
+  <button class="hist-filter-btn active" onclick="setHistoriqueFilter('all',this)">Tout</button>
+  <button class="hist-filter-btn" onclick="setHistoriqueFilter('2026',this)">Exercice 2026</button>
+  <button class="hist-filter-btn" onclick="setHistoriqueFilter('T1',this)">T1 2026</button>
+  <button class="hist-filter-btn" onclick="setHistoriqueFilter('T2',this)">T2 2026</button>
+  <button class="hist-filter-btn" onclick="setHistoriqueFilter('T3',this)">T3 2026</button>
+  <button class="hist-filter-btn" onclick="setHistoriqueFilter('T4',this)">T4 2026</button>
+  <span class="hist-range">
+    Du <input type="date" id="hist-date-from"> Au <input type="date" id="hist-date-to">
+    <button class="btn-secondary" onclick="applyHistoriqueDateRange()">OK</button>
+  </span>
+  <button class="btn-secondary" onclick="exportHistoriqueCSV()">⬇ CSV</button>
+</div>
+
 <div class="card">
+<div class="tbl-wrap">
 <table class="tbl">
-<thead><tr><th>Date</th><th>Client</th><th>Type</th><th>Statut</th></tr></thead>
-<tbody id="historique-tbody"><tr><td colspan="4" class="tbl-empty">Chargement…</td></tr></tbody>
+<thead><tr>
+  <th>Date</th><th>Client</th><th>Type</th><th>Lieu</th>
+  <th>Couverts</th><th>Budget</th><th>Statut</th>
+  <th>Email</th><th>Contact</th><th>Notes</th>
+</tr></thead>
+<tbody id="historique-tbody"><tr><td colspan="10" class="tbl-empty">Chargement…</td></tr></tbody>
 </table>
+</div>
 </div>
 </div>
 
@@ -300,11 +314,12 @@ Tableau de bord · v1.0<br>Avril 2026
 <button class="modal-close" onclick="closeEventModal()">✕</button>
 </div>
 <form id="event-form" class="modal-form">
+
+<!-- ── Champs toujours visibles (mode rapide) ── -->
 <div class="form-row">
 <label>Nom client *</label>
 <input type="text" name="Nom client" required placeholder="Famille Martin">
 </div>
-<div class="form-row2">
 <div class="form-row">
 <label>Type d'événement</label>
 <select name="Type d'événement">
@@ -313,47 +328,55 @@ Tableau de bord · v1.0<br>Avril 2026
 </select>
 </div>
 <div class="form-row">
+<label>Date de l'événement *</label>
+<input type="date" name="Date de l'événement" required>
+<div id="date-conflict-banner" style="display:none;"></div>
+</div>
+<div class="form-row">
+<label>Budget estimé (€)</label>
+<input type="number" name="Budget estimé (€)" min="0" placeholder="1800">
+</div>
+<div class="form-row">
+<label>Téléphone</label>
+<input type="tel" name="Contact" placeholder="06 12 34 56 78">
+</div>
+
+<!-- ── Champs mode complet (cachés en mode rapide) ── -->
+<div id="form-full-section" style="display:none;">
+<div class="form-row">
 <label>Canal</label>
 <select name="Canal">
 <option>Email</option><option>WhatsApp</option><option>SMS</option>
 <option>Formulaire</option><option>Instagram</option><option>Appel</option>
 </select>
 </div>
-</div>
-<div class="form-row2">
-<div class="form-row">
-<label>Date de l'événement *</label>
-<input type="date" name="Date de l'événement" required>
-</div>
 <div class="form-row">
 <label>Date de la demande</label>
 <input type="date" name="Date de la demande">
 </div>
-</div>
-<div class="form-row2">
 <div class="form-row">
 <label>Nb convives</label>
 <input type="number" name="Nb convives" min="1" placeholder="40">
 </div>
 <div class="form-row">
-<label>Budget estimé (€)</label>
-<input type="number" name="Budget estimé (€)" min="0" placeholder="1800">
-</div>
+<label>Lieu de la prestation</label>
+<input type="text" name="Lieu de la prestation" placeholder="Salle des fêtes…">
 </div>
 <div class="form-row">
 <label>Statut</label>
 <select name="Statut traitement">
-<option value="Nouveau">Nouveau</option>
-<option value="Contacté">Contacté</option>
+<option value="Nouveau">Nouvelle demande</option>
+<option value="Contacté">Client contacté</option>
 <option value="Devis envoyé">Devis envoyé</option>
-<option value="Signé">Signé</option>
-<option value="Terminé">Terminé</option>
-<option value="Perdu">Perdu</option>
+<option value="Signé">Devis signé</option>
+<option value="Prestation en cours">Prestation en cours</option>
+<option value="Terminé">Prestation terminée</option>
+<option value="Perdu">Client perdu</option>
 </select>
 </div>
 <div class="form-row">
-<label>Contact</label>
-<input type="tel" name="Contact" placeholder="06 12 34 56 78">
+<label>Email client</label>
+<input type="email" name="Email client" placeholder="client@email.com">
 </div>
 <div class="form-row">
 <label>Message original</label>
@@ -363,9 +386,19 @@ Tableau de bord · v1.0<br>Avril 2026
 <label>Notes</label>
 <textarea name="Notes" rows="2" placeholder="Notes internes..."></textarea>
 </div>
-<div class="modal-ft" style="justify-content: flex-end; display: flex; gap: 10px;">
+</div>
+
+<!-- ── Lien bascule mode ── -->
+<div style="text-align:right; margin: 6px 0 10px;">
+<a href="#" id="form-toggle-link" onclick="toggleFormMode(event)" style="font-size:12px;color:var(--gold);text-decoration:none;border-bottom:1px solid var(--gold-lt);">Compléter la fiche →</a>
+</div>
+
+<div class="modal-ft" style="justify-content:space-between; display:flex; gap:10px;">
+<button type="button" class="btn-danger" id="btn-delete-event" style="display:none;" onclick="deleteCurrentEvent()">Supprimer</button>
+<div style="display:flex;gap:10px;margin-left:auto;">
 <button type="button" class="btn-secondary" onclick="closeEventModal()">Annuler</button>
 <button type="submit" class="btn-primary">Enregistrer</button>
+</div>
 </div>
 </form>
 </div>

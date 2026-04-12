@@ -91,9 +91,9 @@ function formatDateFR(ds) {
   catch { return ds; }
 }
 
-const STATUS_PILL = { 'Signé': 'pill-green', 'Devis envoyé': 'pill-gold', 'Contacté': 'pill-gold', 'Nouveau': 'pill-terra', 'Terminé': 'pill-gray', 'Perdu': 'pill-red' };
-const STATUS_LABEL = { 'Nouveau': '🆕 Nouveau', 'Contacté': '☎️ Contacté', 'Devis envoyé': '💬 Devis envoyé', 'Signé': '✅ Signé', 'Terminé': 'Terminé', 'Perdu': '❌ Perdu' };
-const STATUS_DOT   = { 'Signé': 'green', 'Devis envoyé': '', 'Contacté': '', 'Nouveau': 'terra', 'Terminé': 'gray', 'Perdu': 'red' };
+const STATUS_PILL = { 'Signé': 'pill-green', 'Devis envoyé': 'pill-gold', 'Contacté': 'pill-gold', 'Nouveau': 'pill-terra', 'Terminé': 'pill-gray', 'Perdu': 'pill-red', 'Prestation en cours': 'pill-green' };
+const STATUS_LABEL = { 'Nouveau': '🆕 Nouvelle demande', 'Contacté': '☎️ Client contacté', 'Devis envoyé': '💬 Devis envoyé', 'Signé': '✅ Devis signé', 'Terminé': 'Prestation terminée', 'Perdu': '❌ Client perdu', 'Prestation en cours': '🔄 Prestation en cours' };
+const STATUS_DOT   = { 'Signé': 'green', 'Devis envoyé': '', 'Contacté': '', 'Nouveau': 'terra', 'Terminé': 'gray', 'Perdu': 'red', 'Prestation en cours': 'green' };
 
 // Rend un numéro de téléphone ou email cliquable, sinon retourne le texte brut
 function formatContact(contact) {
@@ -328,35 +328,45 @@ function renderDashboard() {
     </tr>`;
   }).join('');
 
-  // Activité récente
+  // Activité récente — nouvelles demandes non traitées uniquement
   const recent = [...actives]
+    .filter(e => e['Statut traitement'] === 'Nouveau')
     .sort((a, b) => (b['Date de la demande'] || '').localeCompare(a['Date de la demande'] || ''))
     .slice(0, 5);
   const actEl = document.getElementById('recent-activity');
-  if (actEl && recent.length) {
-    actEl.innerHTML = recent.map(e => {
-      const dot = STATUS_DOT[e['Statut traitement']] || '';
-      return `<div class="activity-item" style="cursor:pointer" onclick="openEventModal(${e._row})">
-        <div class="act-dot ${dot}"></div>
-        <div class="act-body">
-          <div class="act-text">Demande <strong>${e['Nom client']}</strong> — ${e['Type d\'événement']}, ${e['Nb convives']} pers.${parseFloat(e['Budget estimé (€)']) ? ' · ' + formatEuro(parseFloat(e['Budget estimé (€)'])) : ''}</div>
-          <div class="act-time">${formatDateFR(e['Date de la demande'])} · ${e['Canal']}</div>
-        </div>
-      </div>`;
-    }).join('');
+  if (actEl) {
+    if (!recent.length) {
+      actEl.innerHTML = '<div class="act-time" style="padding:12px 0;color:var(--muted);">Aucune nouvelle demande</div>';
+    } else {
+      actEl.innerHTML = recent.map(e => {
+        const dot = STATUS_DOT[e['Statut traitement']] || '';
+        const contact = e['Contact'] ? ' · ' + formatContact(e['Contact']) : '';
+        return `<div class="activity-item" style="cursor:pointer" onclick="openEventModal(${e._row})">
+          <div class="act-dot ${dot}"></div>
+          <div class="act-body">
+            <div class="act-text">Demande <strong>${e['Nom client']}</strong> — ${e['Type d\'événement']}, ${e['Nb convives']} pers.${parseFloat(e['Budget estimé (€)']) ? ' · ' + formatEuro(parseFloat(e['Budget estimé (€)'])) : ''}</div>
+            <div class="act-time">${formatDateFR(e['Date de la demande'])} · ${e['Canal']}${contact}</div>
+          </div>
+        </div>`;
+      }).join('');
+    }
   }
 }
 
 // ── RENDER: PIPELINE (STATUT DES DEMANDES) ──
 
+const URGENCE_JOURS_URGENT = 15;
+const URGENCE_JOURS_PRIORITAIRE = 45;
+const URGENCE_SEUIL_CA = 3000;
+
 const PIPELINE_COLS = [
   { label: 'Urgent',      id: 'urgent'      },
   { label: 'Prioritaire', id: 'prioritaire' },
-  { label: 'En cours',    id: 'encours'     },
-  { label: 'À planifier', id: 'aplanifier'  },
+  { label: 'Important',   id: 'important'   },
+  { label: 'Normal',      id: 'normal'      },
 ];
 
-const ALL_STATUSES = ['Nouveau', 'Contacté', 'Devis envoyé', 'Signé', 'Terminé', 'Perdu'];
+const ALL_STATUSES = ['Nouveau', 'Contacté', 'Devis envoyé', 'Signé', 'Prestation en cours', 'Terminé', 'Perdu'];
 
 function renderPipeline() {
   const el = document.getElementById('pipeline');
@@ -370,37 +380,29 @@ function renderPipeline() {
   const today = new Date();
   today.setHours(0,0,0,0);
 
-  // Classify events into columns
-  const colsData = {
-    'urgent': [],
-    'prioritaire': [],
-    'encours': [],
-    'aplanifier': []
-  };
+  // Scope: Nouveau, Contacté, Devis envoyé uniquement
+  const PIPELINE_SCOPE = ['Nouveau', 'Contacté', 'Devis envoyé'];
+  const colsData = { 'urgent': [], 'prioritaire': [], 'important': [], 'normal': [] };
 
   appData.forEach(e => {
-    if (isEventPast(e)) return; // Exclude past events
-    
-    if (!e['Date de l\'événement']) {
-      colsData['aplanifier'].push(e);
-      return;
-    }
-    
+    if (!PIPELINE_SCOPE.includes(e['Statut traitement'])) return;
+    if (isEventPast(e)) return;
+
+    if (!e['Date de l\'événement']) { colsData['normal'].push(e); return; }
     const d = new Date(String(e['Date de l\'événement']).split('T')[0]);
-    if (isNaN(d.getTime())) {
-      colsData['aplanifier'].push(e);
-      return;
-    }
+    if (isNaN(d.getTime())) { colsData['normal'].push(e); return; }
 
-    const diffTime = d.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffDays = Math.ceil((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    const budget = parseFloat(e['Budget estimé (€)']) || 0;
 
-    if (diffDays <= 30) {
+    if (diffDays <= URGENCE_JOURS_URGENT) {
       colsData['urgent'].push(e);
-    } else if (diffDays <= 90) {
+    } else if (diffDays <= URGENCE_JOURS_PRIORITAIRE) {
       colsData['prioritaire'].push(e);
+    } else if (budget >= URGENCE_SEUIL_CA) {
+      colsData['important'].push(e);
     } else {
-      colsData['encours'].push(e);
+      colsData['normal'].push(e);
     }
   });
 
@@ -464,73 +466,203 @@ async function updateEventStatus(selectEl, rowIndex) {
   }
 }
 
-// ── RENDER: CLIENTS ──
+// ── RENDER: CLIENTS (Prestations en cours) ──
 
 function renderClients() {
-  const tbody = document.getElementById('clients-tbody');
-  const sub   = document.getElementById('clients-sub');
-  if (!tbody) return;
+  const container = document.getElementById('clients-cards');
+  const sub       = document.getElementById('clients-sub');
+  if (!container) return;
 
   if (!CONFIG.SHEETS_URL || !appData.length) {
     if (sub) sub.textContent = 'Non connecté';
-    tbody.innerHTML = '<tr><td colspan="4" class="tbl-empty">Aucune donnée</td></tr>';
+    container.innerHTML = '<div class="tbl-empty" style="padding:20px;">Aucune donnée</div>';
     return;
   }
 
-  const clientMap = {};
-  appData.forEach(e => {
-    const n = e['Nom client'];
-    if (!clientMap[n]) clientMap[n] = [];
-    clientMap[n].push(e);
-  });
+  const prestations = appData
+    .filter(e => (e['Statut traitement'] === 'Signé' || e['Statut traitement'] === 'Prestation en cours') && !isEventPast(e))
+    .sort((a, b) => (a['Date de l\'événement'] || '').localeCompare(b['Date de l\'événement'] || ''));
 
-  const clients = Object.entries(clientMap)
-    .filter(([name, events]) => events.some(e => e['Statut traitement'] === 'Signé'))
-    .map(([name, events]) => ({ name, events }))
-    .sort((a, b) => {
-      const dA = Math.max(...a.events.map(e => new Date(e['Date de l\'événement'] || 0).getTime()));
-      const dB = Math.max(...b.events.map(e => new Date(e['Date de l\'événement'] || 0).getTime()));
-      return dB - dA;
-    });
+  if (sub) sub.textContent = `${prestations.length} prestation${prestations.length > 1 ? 's' : ''} en cours`;
 
-  if (sub) sub.textContent = `${clients.length} client${clients.length > 1 ? 's' : ''} · ${appData.length} événement${appData.length > 1 ? 's' : ''}`;
+  if (!prestations.length) {
+    container.innerHTML = '<div class="tbl-empty" style="padding:20px;">Aucune prestation en cours</div>';
+    return;
+  }
 
-  tbody.innerHTML = clients.map(c => {
-    const last   = c.events.sort((a, b) => (b['Date de l\'événement'] || '').localeCompare(a['Date de l\'événement'] || ''))[0];
-    const ca     = c.events.reduce((s, e) => s + (parseFloat(e['Budget estimé (€)']) || 0), 0);
-    return `<tr style="cursor:pointer" onclick="openEventModal(${last._row})">
-      <td><strong>${c.name}</strong>${c.events.length > 1 ? ` <span style="color:var(--muted);font-size:10px;">(${c.events.length})</span>` : ''}</td>
-      <td>${formatContact(last['Contact'] || '')}</td>
-      <td>${formatEuro(ca)}</td>
-    </tr>`;
+  container.innerHTML = prestations.map(e => {
+    const budget = parseFloat(e['Budget estimé (€)']) || 0;
+    const pill   = `<span class="pill ${STATUS_PILL[e['Statut traitement']] || 'pill-gray'}">${STATUS_LABEL[e['Statut traitement']] || e['Statut traitement']}</span>`;
+    const contact = e['Contact'] ? formatContact(e['Contact']) : '';
+    const email   = e['Email client'] ? formatContact(e['Email client']) : '';
+    const contactLine = [contact, email].filter(v => v && v !== '—').join(' · ');
+    return `<div class="prestation-card">
+      <div class="pc-header" onclick="openEventModal(${e._row})" style="cursor:pointer">
+        <div class="pc-line1"><strong>${e['Nom client']}</strong> · ${e['Type d\'événement'] || '—'} · <em>${formatDateFR(e['Date de l\'événement'])}</em></div>
+        <div class="pc-line2">${budget ? formatEuro(budget) : '—'} &nbsp;${pill}</div>
+        ${contactLine ? `<div class="pc-contact">${contactLine}</div>` : ''}
+      </div>
+      <div class="pc-todos" id="todos-${e._row}"></div>
+      <div class="pc-todo-add">
+        <input type="text" class="pc-todo-input" id="todo-input-${e._row}" placeholder="Ajouter une tâche…" onkeydown="if(event.key==='Enter'){event.preventDefault();addTodo(${e._row});}">
+        <button class="pc-todo-btn" onclick="addTodo(${e._row})">+</button>
+      </div>
+    </div>`;
   }).join('');
+
+  prestations.forEach(e => renderTodos(e._row));
+}
+
+function getTodos(rowId) {
+  try { return JSON.parse(localStorage.getItem('todos_' + rowId) || '[]'); } catch { return []; }
+}
+function saveTodos(rowId, todos) {
+  localStorage.setItem('todos_' + rowId, JSON.stringify(todos));
+}
+function renderTodos(rowId) {
+  const el = document.getElementById('todos-' + rowId);
+  if (!el) return;
+  const todos = getTodos(rowId);
+  el.innerHTML = todos.map((t, i) => `
+    <div class="pc-todo-item">
+      <input type="checkbox" ${t.done ? 'checked' : ''} onclick="toggleTodo(${rowId},${i})">
+      <span class="pc-todo-text${t.done ? ' done' : ''}">${t.text}</span>
+      <button class="pc-todo-del" onclick="deleteTodo(${rowId},${i})">✕</button>
+    </div>`).join('');
+}
+function addTodo(rowId) {
+  const input = document.getElementById('todo-input-' + rowId);
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+  const todos = getTodos(rowId);
+  todos.push({ text, done: false });
+  saveTodos(rowId, todos);
+  input.value = '';
+  renderTodos(rowId);
+}
+function toggleTodo(rowId, index) {
+  const todos = getTodos(rowId);
+  if (todos[index]) { todos[index].done = !todos[index].done; saveTodos(rowId, todos); renderTodos(rowId); }
+}
+function deleteTodo(rowId, index) {
+  const todos = getTodos(rowId);
+  todos.splice(index, 1);
+  saveTodos(rowId, todos);
+  renderTodos(rowId);
 }
 
 // ── RENDER: HISTORIQUE ──
 
-function renderHistorique() {
-  const tbody = document.getElementById('historique-tbody');
-  const sub = document.getElementById('historique-sub');
-  if (!tbody) return;
+let historiqueFilter   = 'all';
+let historiqueDateFrom = null;
+let historiqueDateTo   = null;
 
-  const pastEvents = appData.filter(e => isEventPast(e))
+function setHistoriqueFilter(filter, btn) {
+  historiqueFilter   = filter;
+  historiqueDateFrom = null;
+  historiqueDateTo   = null;
+  const df = document.getElementById('hist-date-from');
+  const dt = document.getElementById('hist-date-to');
+  if (df) df.value = '';
+  if (dt) dt.value = '';
+  document.querySelectorAll('.hist-filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderHistorique();
+}
+
+function applyHistoriqueDateRange() {
+  historiqueFilter   = 'range';
+  historiqueDateFrom = document.getElementById('hist-date-from')?.value || null;
+  historiqueDateTo   = document.getElementById('hist-date-to')?.value   || null;
+  document.querySelectorAll('.hist-filter-btn').forEach(b => b.classList.remove('active'));
+  renderHistorique();
+}
+
+function getFilteredHistorique() {
+  const allPast = appData
+    .filter(e => isEventPast(e))
     .sort((a, b) => (b['Date de l\'événement'] || '').localeCompare(a['Date de l\'événement'] || ''));
 
+  if (historiqueFilter === 'all') return allPast;
+
+  const quarters = { T1: ['01','02','03'], T2: ['04','05','06'], T3: ['07','08','09'], T4: ['10','11','12'] };
+
+  if (historiqueFilter === '2026') {
+    return allPast.filter(e => String(e['Date de l\'événement'] || '').startsWith('2026-'));
+  }
+  if (quarters[historiqueFilter]) {
+    const months = quarters[historiqueFilter];
+    return allPast.filter(e => {
+      const ds = String(e['Date de l\'événement'] || '').split('T')[0];
+      return ds.startsWith('2026-') && months.includes(ds.slice(5, 7));
+    });
+  }
+  if (historiqueFilter === 'range') {
+    return allPast.filter(e => {
+      const ds = String(e['Date de l\'événement'] || '').split('T')[0];
+      if (historiqueDateFrom && ds < historiqueDateFrom) return false;
+      if (historiqueDateTo   && ds > historiqueDateTo)   return false;
+      return true;
+    });
+  }
+  return allPast;
+}
+
+function renderHistorique() {
+  const tbody = document.getElementById('historique-tbody');
+  const sub   = document.getElementById('historique-sub');
+  if (!tbody) return;
+
+  const pastEvents = getFilteredHistorique();
   if (sub) sub.textContent = `${pastEvents.length} événement${pastEvents.length > 1 ? 's' : ''}`;
 
   if (!pastEvents.length) {
-    tbody.innerHTML = '<tr><td colspan="4" class="tbl-empty">Aucun événement passé</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" class="tbl-empty">Aucun événement passé</td></tr>';
     return;
   }
 
-  tbody.innerHTML = pastEvents.map(e => `
-    <tr style="cursor:pointer" onclick="openEventModal(${e._row})">
+  tbody.innerHTML = pastEvents.map(e => {
+    const notes  = String(e['Notes'] || '');
+    const notesTrunc = notes.length > 40 ? notes.slice(0, 40) + '…' : notes;
+    const budget = parseFloat(e['Budget estimé (€)']);
+    return `<tr style="cursor:pointer" onclick="openEventModal(${e._row})">
       <td><strong>${formatDateFR(e['Date de l\'événement'])}</strong></td>
       <td>${e['Nom client']}</td>
-      <td>${e['Type d\'événement'] || '\u2014'}</td>
+      <td>${e['Type d\'événement'] || '—'}</td>
+      <td>${e['Lieu de la prestation'] || '—'}</td>
+      <td>${e['Nb convives'] || '—'}</td>
+      <td>${budget ? formatEuro(budget) : '—'}</td>
       <td><span class="pill ${STATUS_PILL[e['Statut traitement']] || 'pill-gray'}">${STATUS_LABEL[e['Statut traitement']] || e['Statut traitement']}</span></td>
-    </tr>
-  `).join('');
+      <td>${e['Email client'] ? formatContact(e['Email client']) : '—'}</td>
+      <td>${formatContact(e['Contact'] || '')}</td>
+      <td title="${notes}">${notesTrunc || '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function exportHistoriqueCSV() {
+  const rows = getFilteredHistorique();
+  const BOM  = '\uFEFF';
+  const esc  = v => '"' + String(v || '').replace(/"/g, '""') + '"';
+  const headers = ['Date','Client','Type','Lieu','Couverts','Budget','Statut','Email','Contact','Notes'];
+  const lines = [headers.join(';')].concat(rows.map(e => [
+    String(e['Date de l\'événement'] || '').split('T')[0],
+    e['Nom client'],
+    e['Type d\'événement'] || '',
+    e['Lieu de la prestation'] || '',
+    e['Nb convives'] || '',
+    parseFloat(e['Budget estimé (€)']) || '',
+    e['Statut traitement'] || '',
+    e['Email client'] || '',
+    e['Contact'] || '',
+    e['Notes'] || ''
+  ].map(esc).join(';')));
+  const blob = new Blob([BOM + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = `chez-papi-historique-${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
 }
 
 // ── FINANCES REMOVED ──
@@ -538,6 +670,20 @@ function renderHistorique() {
 // ── EVENT MODAL ──
 
 let editingRow = null;
+let formMode = 'quick'; // 'quick' | 'full'
+
+function applyFormMode() {
+  const section = document.getElementById('form-full-section');
+  const link    = document.getElementById('form-toggle-link');
+  if (section) section.style.display = formMode === 'full' ? 'block' : 'none';
+  if (link)    link.textContent = formMode === 'full' ? '← Saisie rapide' : 'Compléter la fiche →';
+}
+
+function toggleFormMode(e) {
+  e?.preventDefault();
+  formMode = formMode === 'quick' ? 'full' : 'quick';
+  applyFormMode();
+}
 
 function closeViewModal() {
   const v = document.getElementById('view-modal');
@@ -560,6 +706,9 @@ function showViewModal(rowIndex) {
   set('view-statut', STATUS_LABEL[data['Statut traitement']] || data['Statut traitement']);
   const contactEl = document.getElementById('view-contact');
   if (contactEl) contactEl.innerHTML = formatContact(data['Contact'] || '');
+  const emailEl = document.getElementById('view-email');
+  if (emailEl) emailEl.innerHTML = formatContact(data['Email client'] || '');
+  set('view-lieu', data['Lieu de la prestation']);
   set('view-notes', data['Notes']);
 
   document.getElementById('view-modal').style.display = 'flex';
@@ -601,6 +750,14 @@ function openEventModal(rowIndex = null, forceEdit = false) {
   const btnDel = document.getElementById('btn-delete-event');
   if (btnDel) btnDel.style.display = rowIndex ? 'block' : 'none';
 
+  // Quick mode pour nouvelle saisie, full mode pour édition
+  formMode = rowIndex ? 'full' : 'quick';
+  applyFormMode();
+
+  // Réinitialiser la bannière conflit de date
+  const conflictBanner = document.getElementById('date-conflict-banner');
+  if (conflictBanner) conflictBanner.style.display = 'none';
+
   modal.style.display = 'flex';
   form.querySelector('input,select,textarea')?.focus();
 }
@@ -610,8 +767,35 @@ function closeEventModal() {
   editingRow = null;
 }
 
+function checkDateConflict(dateValue) {
+  const banner = document.getElementById('date-conflict-banner');
+  if (!banner) return;
+  if (!dateValue) { banner.style.display = 'none'; return; }
+
+  const conflicts = appData.filter(e => {
+    if (editingRow && e._row === editingRow) return false;
+    if (!['Signé', 'Prestation en cours'].includes(e['Statut traitement'])) return false;
+    return String(e['Date de l\'événement'] || '').split('T')[0] === dateValue;
+  });
+
+  banner.style.display = 'block';
+  if (conflicts.length) {
+    const c = conflicts[0];
+    banner.style.cssText = 'display:block;padding:8px 12px;border-radius:4px;font-size:12px;margin:4px 0 8px;background:rgba(245,166,35,0.15);color:#B86A00;border:1px solid rgba(245,166,35,0.4);';
+    banner.textContent = `⚠️ ${c['Nom client']} (${c['Type d\'événement']}) est déjà signé à cette date`;
+  } else {
+    banner.style.cssText = 'display:block;padding:8px 12px;border-radius:4px;font-size:12px;margin:4px 0 8px;background:rgba(74,103,65,0.12);color:#4A6741;border:1px solid rgba(74,103,65,0.3);';
+    banner.textContent = '✓ Date disponible';
+  }
+}
+
 document.getElementById('event-modal').addEventListener('click', e => {
   if (e.target === document.getElementById('event-modal')) closeEventModal();
+});
+
+// Vérification conflit de date sur changement du champ date événement
+document.getElementById('event-form').addEventListener('change', e => {
+  if (e.target.name === 'Date de l\'événement') checkDateConflict(e.target.value);
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeEventModal(); });
 
@@ -881,7 +1065,7 @@ function showKpiModal(type) {
     }).join('') : '<tr><td colspan="3" class="tbl-empty">Aucun devis en attente</td></tr>';
   }
   else if (type === 'leads') {
-    title.textContent = 'Nouveaux leads';
+    title.textContent = 'Nouvelles demandes';
     const evts = actives.filter(e => e['Statut traitement'] === 'Nouveau');
     evts.sort((a,b) => new Date(String(a['Date de l\'événement']||'').split('T')[0]).getTime() - new Date(String(b['Date de l\'événement']||'').split('T')[0]).getTime());
     
@@ -965,7 +1149,8 @@ loadData();
 
 window.ChezPapi = {
   SheetsAPI, showPanel, toggleSidebar, showNotification, loadData, openEventModal, showViewModal, closeViewModal, deleteCurrentEvent, showKpiModal,
-  renderHistorique,
+  renderHistorique, setHistoriqueFilter, applyHistoriqueDateRange, exportHistoriqueCSV,
+  addTodo, toggleTodo, deleteTodo, toggleFormMode, checkDateConflict,
   // Diagnostic : testConnection() dans la console pour voir la réponse brute
   async testConnection() {
     console.log('Test connexion →', CONFIG.SHEETS_URL);
