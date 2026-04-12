@@ -97,8 +97,9 @@ const STATUS_DOT   = { 'Signé': 'green', 'Devis envoyé': '', 'Contacté': '', 
 
 // Rend un numéro de téléphone ou email cliquable, sinon retourne le texte brut
 function formatContact(contact) {
-  if (!contact) return '—';
-  const c = contact.trim();
+  if (contact === null || contact === undefined || contact === '') return '—';
+  const c = String(contact).trim();
+  if (!c) return '—';
   const digits = c.replace(/\D/g, '');
   if (!c.includes('@') && digits.length >= 6) {
     return `<a href="tel:${digits}" style="color:inherit;text-decoration:none;">${c}</a>`;
