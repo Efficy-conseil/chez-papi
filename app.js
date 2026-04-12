@@ -101,11 +101,12 @@ function formatContact(contact) {
   const c = String(contact).trim();
   if (!c) return '—';
   const digits = c.replace(/\D/g, '');
+  const linkStyle = 'color:inherit;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px;';
   if (!c.includes('@') && digits.length >= 6) {
-    return `<a href="tel:${digits}" style="color:inherit;text-decoration:none;">${c}</a>`;
+    return `<a href="tel:${digits}" style="${linkStyle}">${c}</a>`;
   }
   if (c.includes('@') && c.includes('.')) {
-    return `<a href="mailto:${c}" style="color:inherit;text-decoration:none;">${c}</a>`;
+    return `<a href="mailto:${c}" style="${linkStyle}">${c}</a>`;
   }
   return c;
 }
