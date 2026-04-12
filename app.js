@@ -71,6 +71,14 @@ window.addEventListener('appinstalled', () => { hideInstallBanner(); iosModal.st
 
 // ── HELPERS ──
 
+// Convertit n'importe quelle date (ISO UTC ou YYYY-MM-DD) en minuit heure locale
+function parseLocalDate(ds) {
+  if (!ds) return null;
+  const d = new Date(String(ds));
+  if (isNaN(d.getTime())) return null;
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
 function formatEuro(n) {
   return (isNaN(n) ? 0 : Math.round(n)).toLocaleString('fr-FR') + ' \u20ac';
 }
@@ -205,8 +213,8 @@ let appData = [];
 
 function isEventPast(e) {
   if (!e['Date de l\'événement']) return false;
-  const d = new Date(String(e['Date de l\'événement']).split('T')[0]);
-  if (isNaN(d.getTime())) return false;
+  const d = parseLocalDate(e['Date de l\'événement']);
+  if (!d) return false;
   const today = new Date();
   today.setHours(0,0,0,0);
   return d.getTime() < today.getTime();
@@ -413,11 +421,13 @@ function renderPipeline() {
       // Badge ancienneté pour Nouveau / Contacté
       let ageBadge = '';
       if ((e['Statut traitement'] === 'Nouveau' || e['Statut traitement'] === 'Contacté') && e['Date de la demande']) {
-        const [y,m,d] = String(e['Date de la demande']).split('T')[0].split('-').map(Number);
-        const hours = Math.floor((Date.now() - new Date(y, m-1, d).getTime()) / 3600000);
-        let badgeColor = hours < 24 ? '#4A6741' : hours < 72 ? '#B8860B' : '#C0453A';
-        let badgeText = hours < 24 ? `Reçu il y a ${hours}h` : `Reçu il y a ${Math.floor(hours/24)} jour${Math.floor(hours/24) > 1 ? 's' : ''}`;
-        ageBadge = `<div style="font-size:10px;font-weight:600;color:${badgeColor};margin-top:4px;">${badgeText}</div>`;
+        const demandDate = parseLocalDate(e['Date de la demande']);
+        const hours = demandDate ? Math.floor((Date.now() - demandDate.getTime()) / 3600000) : -1;
+        if (hours >= 0) {
+          const badgeColor = hours < 24 ? '#4A6741' : hours < 72 ? '#B8860B' : '#C0453A';
+          const badgeText  = hours < 24 ? `Reçu il y a ${hours}h` : `Reçu il y a ${Math.floor(hours/24)} jour${Math.floor(hours/24) > 1 ? 's' : ''}`;
+          ageBadge = `<div style="font-size:10px;font-weight:600;color:${badgeColor};margin-top:4px;">${badgeText}</div>`;
+        }
       }
 
       const contactRaw = e['Contact'] ? formatContact(e['Contact']) : '';
