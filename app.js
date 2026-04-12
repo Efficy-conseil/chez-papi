@@ -84,19 +84,15 @@ function formatEuro(n) {
 }
 function formatDateFR(ds) {
   if (!ds) return '';
-  try { 
-    const cleanDs = String(ds).split('T')[0];
-    const d = new Date(cleanDs);
-    if (isNaN(d.getTime())) return ds;
-    
+  try {
+    const d = parseLocalDate(ds);
+    if (!d) return String(ds);
     const currentYear = new Date().getFullYear();
     const opts = { day: 'numeric', month: 'short' };
-    if (d.getFullYear() !== currentYear) {
-      opts.year = 'numeric';
-    }
-    return d.toLocaleDateString('fr-FR', opts); 
+    if (d.getFullYear() !== currentYear) opts.year = 'numeric';
+    return d.toLocaleDateString('fr-FR', opts);
   }
-  catch { return ds; }
+  catch { return String(ds); }
 }
 
 const STATUS_PILL = { 'Signé': 'pill-green', 'Devis envoyé': 'pill-gold', 'Contacté': 'pill-gold', 'Nouveau': 'pill-terra', 'Terminé': 'pill-gray', 'Perdu': 'pill-red', 'Prestation en cours': 'pill-green' };
