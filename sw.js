@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chez-papi-v1.25';
+const CACHE_NAME = 'chez-papi-v1.26';
 const ASSETS = [
   './',
   './index.html',
@@ -49,7 +49,7 @@ self.addEventListener('fetch', e => {
 
   if (e.request.mode === 'navigate') {
     e.respondWith(
-      fetch(e.request)
+      fetch(e.request, { cache: 'no-store' })
         .then(res => {
           if (res.ok) caches.open(CACHE_NAME).then(c => c.put(e.request, res.clone()));
           return res;
@@ -59,9 +59,10 @@ self.addEventListener('fetch', e => {
     return;
   }
 
+  // JS et CSS : toujours depuis le réseau, bypass du cache HTTP
   if (/\.(js|css)(\?.*)?$/.test(e.request.url)) {
     e.respondWith(
-      fetch(e.request)
+      fetch(e.request, { cache: 'no-store' })
         .then(res => {
           if (res.ok) caches.open(CACHE_NAME).then(c => c.put(e.request, res.clone()));
           return res;

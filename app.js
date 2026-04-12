@@ -257,10 +257,10 @@ function setLoading(on) {
 }
 
 function renderAll() {
-  renderDashboard();
-  renderPipeline();
-  renderClients();
-  if (typeof renderHistorique === 'function') renderHistorique();
+  try { renderDashboard(); } catch(e) { console.error('renderDashboard:', e); }
+  try { renderPipeline(); } catch(e) { console.error('renderPipeline:', e); }
+  try { renderClients(); } catch(e) { console.error('renderClients:', e); }
+  try { if (typeof renderHistorique === 'function') renderHistorique(); } catch(e) { console.error('renderHistorique:', e); }
 }
 
 // ── RENDER: DASHBOARD ──
