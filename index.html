@@ -212,32 +212,30 @@ Tableau de bord · v1.0<br>Avril 2026
 
 <div class="grid2">
 
-<!-- Prochains événements -->
+<!-- Demandes en cours -->
 <div class="card">
-<div class="card-title">Prochains événements <span class="card-title-action" onclick="showPanel('devis',document.querySelector('[data-panel=devis]'))">Voir les demandes →</span></div>
+<div class="card-title">Demandes en cours <span class="card-title-action" onclick="showPanel('devis',document.querySelector('[data-panel=devis]'))">Plus</span></div>
 <div class="tbl-wrap">
 <table class="tbl">
 <thead>
 <tr>
 <th>Date</th>
 <th>Client</th>
-<th>Type</th>
-<th>Couverts</th>
 <th>Montant</th>
 <th>Statut</th>
 </tr>
 </thead>
 <tbody id="upcoming-tbody">
-<tr><td colspan="6" class="tbl-empty">Chargement…</td></tr>
+<tr><td colspan="4" class="tbl-empty">Chargement…</td></tr>
 </tbody>
 </table>
 </div>
 </div>
 
-<!-- Activité récente -->
+<!-- Prestations en cours -->
 <div class="card">
-<div class="card-title">Nouvelles demandes non traitées <span class="card-title-action" onclick="showPanel('devis',document.querySelector('[data-panel=devis]'))">Voir les demandes →</span></div>
-<div class="activity-list" id="recent-activity">
+<div class="card-title">Prestations en cours <span class="card-title-action" onclick="showPanel('clients',document.querySelector('[data-panel=clients]'))">Plus</span></div>
+<div class="tbl-wrap" id="recent-activity">
 <div class="act-time" style="padding:12px 0;color:var(--muted);">Chargement…</div>
 </div>
 </div>

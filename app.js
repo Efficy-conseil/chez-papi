@@ -289,16 +289,12 @@ function renderDashboard() {
   set('kpi-leads-val',       nouveaux.length || '—');
 
 
-  // Prochains événements
+  // ── Carte 1 : Demandes en cours (Nouveau / Contacté / Devis envoyé)
   const todayDate = new Date();
   todayDate.setHours(0,0,0,0);
-  const upcoming = actives
-    .filter(e => {
-      if (e['Statut traitement'] === 'Terminé' || e['Statut traitement'] === 'Perdu') return false;
-      if (!e['Date de l\'événement']) return false;
-      const d = new Date(String(e['Date de l\'événement']).split('T')[0]);
-      return d.getTime() >= todayDate.getTime();
-    })
+  const PIPELINE_SCOPE_HOME = ['Nouveau', 'Contacté', 'Devis envoyé'];
+  const demandesHome = actives
+    .filter(e => PIPELINE_SCOPE_HOME.includes(e['Statut traitement']) && e['Date de l\'événement'])
     .sort((a, b) => (a['Date de l\'événement'] || '').localeCompare(b['Date de l\'événement'] || ''))
     .slice(0, 6);
 
@@ -306,47 +302,46 @@ function renderDashboard() {
   if (!tbody) return;
 
   if (!CONFIG.SHEETS_URL) {
-    tbody.innerHTML = '<tr><td colspan="6" class="tbl-empty">\u2699 Configurez <code>CONFIG.SHEETS_URL</code> dans app.js pour connecter le Google Sheet</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" class="tbl-empty">\u2699 Configurez CONFIG.SHEETS_URL dans app.js</td></tr>';
     return;
   }
-  if (!upcoming.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="tbl-empty">Aucun événement à venir</td></tr>';
-    return;
+  if (!demandesHome.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="tbl-empty">Aucune demande en cours</td></tr>';
+  } else {
+    tbody.innerHTML = demandesHome.map(e => {
+      const budget = parseFloat(e['Budget estimé (€)']);
+      const d = new Date(String(e['Date de l\'événement']).split('T')[0]);
+      const diffDays = Math.ceil((d.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24));
+      const urgClass = diffDays <= URGENCE_JOURS_URGENT ? 'row-urgent' : diffDays <= URGENCE_JOURS_PRIORITAIRE ? 'row-prio' : '';
+      return `<tr class="${urgClass}" style="cursor:pointer" onclick="openEventModal(${e._row})">
+        <td><strong>${formatDateFR(e['Date de l\'événement'])}</strong></td>
+        <td>${e['Nom client']}</td>
+        <td>${budget ? formatEuro(budget) : '—'}</td>
+        <td><span class="pill ${STATUS_PILL[e['Statut traitement']] || 'pill-gray'}">${STATUS_LABEL[e['Statut traitement']] || e['Statut traitement']}</span></td>
+      </tr>`;
+    }).join('');
   }
-  tbody.innerHTML = upcoming.map(e => {
-    const budget = parseFloat(e['Budget estimé (€)']);
-    return `
-    <tr style="cursor:pointer" onclick="openEventModal(${e._row})">
-      <td><strong>${formatDateFR(e['Date de l\'événement'])}</strong></td>
-      <td>${e['Nom client']}</td>
-      <td>${e['Type d\'événement']}</td>
-      <td>${e['Nb convives']}</td>
-      <td>${budget ? formatEuro(budget) : '—'}</td>
-      <td><span class="pill ${STATUS_PILL[e['Statut traitement']] || 'pill-gray'}">${STATUS_LABEL[e['Statut traitement']] || e['Statut traitement']}</span></td>
-    </tr>`;
-  }).join('');
 
-  // Activité récente — nouvelles demandes non traitées uniquement
-  const recent = [...actives]
-    .filter(e => e['Statut traitement'] === 'Nouveau')
-    .sort((a, b) => (b['Date de la demande'] || '').localeCompare(a['Date de la demande'] || ''))
+  // ── Carte 2 : Prestations en cours (Signé / Prestation en cours)
+  const prestationsHome = actives
+    .filter(e => e['Statut traitement'] === 'Signé' || e['Statut traitement'] === 'Prestation en cours')
+    .sort((a, b) => (a['Date de l\'événement'] || '').localeCompare(b['Date de l\'événement'] || ''))
     .slice(0, 5);
+
   const actEl = document.getElementById('recent-activity');
   if (actEl) {
-    if (!recent.length) {
-      actEl.innerHTML = '<div class="act-time" style="padding:12px 0;color:var(--muted);">Aucune nouvelle demande</div>';
+    if (!prestationsHome.length) {
+      actEl.innerHTML = '<div class="act-time" style="padding:12px 0;color:var(--muted);">Aucune prestation en cours</div>';
     } else {
-      actEl.innerHTML = recent.map(e => {
-        const dot = STATUS_DOT[e['Statut traitement']] || '';
-        const contact = e['Contact'] ? ' · ' + formatContact(e['Contact']) : '';
-        return `<div class="activity-item" style="cursor:pointer" onclick="openEventModal(${e._row})">
-          <div class="act-dot ${dot}"></div>
-          <div class="act-body">
-            <div class="act-text">Demande <strong>${e['Nom client']}</strong> — ${e['Type d\'événement']}, ${e['Nb convives']} pers.${parseFloat(e['Budget estimé (€)']) ? ' · ' + formatEuro(parseFloat(e['Budget estimé (€)'])) : ''}</div>
-            <div class="act-time">${formatDateFR(e['Date de la demande'])} · ${e['Canal']}${contact}</div>
-          </div>
-        </div>`;
-      }).join('');
+      actEl.innerHTML = '<table class="tbl"><tbody>' + prestationsHome.map(e => {
+        const budget = parseFloat(e['Budget estimé (€)']);
+        return `<tr style="cursor:pointer" onclick="openEventModal(${e._row})">
+          <td><strong>${formatDateFR(e['Date de l\'événement'])}</strong></td>
+          <td>${e['Nom client']}</td>
+          <td>${budget ? formatEuro(budget) : '—'}</td>
+          <td><span class="pill ${STATUS_PILL[e['Statut traitement']] || 'pill-gray'}">${STATUS_LABEL[e['Statut traitement']] || e['Statut traitement']}</span></td>
+        </tr>`;
+      }).join('') + '</tbody></table>';
     }
   }
 }
