@@ -520,15 +520,9 @@ body {
 }
 
 .topbar-right {
-  display: none;
+  display: flex;
   align-items: center;
-  gap: 16px;
-}
-
-@media (min-width: 1200px) {
-  .topbar-right {
-    display: flex;
-  }
+  gap: 8px;
 }
 
 .topbar-date {
