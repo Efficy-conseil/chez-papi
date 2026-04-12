@@ -1052,6 +1052,19 @@ body {
   color: var(--brown);
 }
 
+.pipe-contact {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.pipe-contact a {
+  color: var(--gold);
+  text-decoration: none;
+}
+.pipe-contact a:hover {
+  text-decoration: underline;
+}
+
 /* STOCK */
 .stock-list {
   display: flex;

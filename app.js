@@ -288,8 +288,6 @@ function renderDashboard() {
   set('kpi-devis-val',       devisEnv.length || '—');
   set('kpi-leads-val',       nouveaux.length || '—');
 
-  const badge = document.getElementById('topbar-badge');
-  if (badge) badge.textContent = actives.length ? actives.length + ' événement' + (actives.length > 1 ? 's' : '') : '';
 
   // Prochains événements
   const todayDate = new Date();
@@ -423,10 +421,15 @@ function renderPipeline() {
         ageBadge = `<div style="font-size:10px;font-weight:600;color:${badgeColor};margin-top:4px;">${badgeText}</div>`;
       }
 
+      const contactRaw = e['Contact'] ? formatContact(e['Contact']) : '';
+      const emailRaw   = e['Email client'] ? formatContact(e['Email client']) : '';
+      const contactLine = [contactRaw, emailRaw].filter(v => v && v !== '—').join(' · ');
+
       return `
       <div class="pipe-card" onclick="openEventModal(${e._row})">
         <div class="pipe-client">${e['Nom client']}</div>
         <div class="pipe-event">${e['Type d\'événement']} \xb7 ${e['Nb convives']} pers.${e['Date de l\'événement'] ? ' \xb7 ' + formatDateFR(e['Date de l\'événement']) : ''}</div>
+        ${contactLine ? `<div class="pipe-contact" onclick="event.stopPropagation()">${contactLine}</div>` : ''}
         <div class="pipe-footer" style="padding-top: 8px;">
           <div>
             <span class="pipe-amount" style="font-size:12px">${formatEuro(parseFloat(e['Budget estimé (€)']) || 0)}</span>
@@ -759,7 +762,6 @@ function openEventModal(rowIndex = null, forceEdit = false) {
   if (conflictBanner) conflictBanner.style.display = 'none';
 
   modal.style.display = 'flex';
-  form.querySelector('input,select,textarea')?.focus();
 }
 
 function closeEventModal() {

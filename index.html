@@ -144,7 +144,7 @@
 <span class="nav-icon">📋</span> Demandes en cours
 </button>
 <button class="nav-item" onclick="showPanel('clients',this)" data-panel="clients">
-<span class="nav-icon">👥</span> Clients
+<span class="nav-icon">✅</span> Prestations en cours
 </button>
 <button class="nav-item" onclick="showPanel('historique',this)" data-panel="historique">
 <span class="nav-icon">🕰️</span> Historique
@@ -173,7 +173,6 @@ Tableau de bord · v1.0<br>Avril 2026
 <div class="topbar-title" id="topbar-title">Tableau de bord</div>
 <div class="topbar-right">
 <span id="sync-indicator" class="sync-indicator"></span>
-<span class="topbar-badge" id="topbar-badge"></span>
 </div>
 </div>
 
@@ -414,14 +413,14 @@ Tableau de bord · v1.0<br>Avril 2026
   </button>
   <button class="bn-item" id="bn-devis" onclick="showPanel('devis',this)">
     <span class="bn-icon">📋</span>
-    <span class="bn-label">À traiter</span>
+    <span class="bn-label">Demandes</span>
   </button>
   <button class="bn-add" onclick="openEventModal()" aria-label="Nouvel événement">
     <span>+</span>
   </button>
   <button class="bn-item" id="bn-clients" onclick="showPanel('clients',this)">
-    <span class="bn-icon">👥</span>
-    <span class="bn-label">Clients</span>
+    <span class="bn-icon">✅</span>
+    <span class="bn-label">Prestations</span>
   </button>
   <button class="bn-item" id="bn-historique" onclick="showPanel('historique',this)">
     <span class="bn-icon">🕰️</span>
