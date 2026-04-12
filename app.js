@@ -267,8 +267,9 @@ function renderAll() {
 
 function renderDashboard() {
   const currentYear = new Date().getFullYear();
+  const CA_STATUTS = ['Signé', 'Prestation en cours', 'Terminé'];
   const yearlySigned = appData.filter(e => {
-    if (e['Statut traitement'] !== 'Signé') return false;
+    if (!CA_STATUTS.includes(e['Statut traitement'])) return false;
     if (!e['Date de l\'événement']) return false;
     const d = new Date(String(e['Date de l\'événement']).split('T')[0]);
     return !isNaN(d.getTime()) && d.getFullYear() === currentYear;
@@ -1020,8 +1021,9 @@ function showKpiModal(type) {
 
   if (type === 'ca') {
     title.textContent = `CA Estimé ${currentYear}`;
+    const CA_STATUTS = ['Signé', 'Prestation en cours', 'Terminé'];
     const yearlySigned = appData.filter(e => {
-      if (e['Statut traitement'] !== 'Signé') return false;
+      if (!CA_STATUTS.includes(e['Statut traitement'])) return false;
       if (!e['Date de l\'événement']) return false;
       const d = new Date(String(e['Date de l\'événement']).split('T')[0]);
       return !isNaN(d.getTime()) && d.getFullYear() === currentYear;
