@@ -138,9 +138,6 @@
 <button class="nav-item active" onclick="showPanel('accueil',this)" data-panel="accueil">
 <span class="nav-icon">🏠</span> Accueil
 </button>
-<button class="nav-item" onclick="showPanel('agenda',this)" data-panel="agenda">
-<span class="nav-icon">📅</span> Agenda
-</button>
 <button class="nav-item" onclick="showPanel('devis',this)" data-panel="devis">
 <span class="nav-icon">📋</span> Statut des demandes
 </button>
@@ -173,6 +170,7 @@ Tableau de bord · v1.0<br>Avril 2026
 <button class="topbar-menu-btn" id="menu-btn">☰</button>
 <div class="topbar-title" id="topbar-title">Dashboard Chez Papi</div>
 <div class="topbar-right">
+<span id="sync-indicator" class="sync-indicator"></span>
 <span class="topbar-badge" id="topbar-badge"></span>
 </div>
 </div>
@@ -215,7 +213,7 @@ Tableau de bord · v1.0<br>Avril 2026
 
 <!-- Prochains événements -->
 <div class="card">
-<div class="card-title">Prochains événements <span class="card-title-action" onclick="showPanel('agenda',document.querySelector('[data-panel=agenda]'))">Voir tout →</span></div>
+<div class="card-title">Prochains événements <span class="card-title-action" onclick="showPanel('devis',document.querySelector('[data-panel=devis]'))">Voir tout →</span></div>
 <div class="tbl-wrap">
 <table class="tbl">
 <thead>
@@ -245,34 +243,6 @@ Tableau de bord · v1.0<br>Avril 2026
 </div>
 
 </div><!-- /accueil -->
-
-<!-- ══════════════════════ AGENDA ══════════════════════ -->
-<div class="panel" id="panel-agenda">
-<div class="section-hd">
-<h2 id="agenda-heading">Agenda</h2>
-<span class="shd-sub" id="agenda-sub"></span>
-<button class="btn-new" onclick="openEventModal()">+ Nouvel événement</button>
-</div>
-
-<div class="grid2">
-<div class="card">
-<div class="cal-nav">
-<button class="cal-nav-btn" id="cal-prev" aria-label="Mois précédent">‹</button>
-<div class="cal-nav-center">
-<select id="cal-month-sel" class="cal-sel"></select>
-<select id="cal-year-sel" class="cal-sel"></select>
-</div>
-<button class="cal-nav-btn" id="cal-next" aria-label="Mois suivant">›</button>
-</div>
-<div class="cal-grid" id="cal-grid"></div>
-</div>
-
-<div class="card">
-<div class="card-title" id="cal-detail-title">Événements du mois</div>
-<div class="activity-list" id="cal-detail-list"></div>
-</div>
-</div>
-</div>
 
 <!-- ══════════════════════ DEVIS ══════════════════════ -->
 <div class="panel" id="panel-devis">
@@ -402,6 +372,29 @@ Tableau de bord · v1.0<br>Avril 2026
 </div>
 
 <script src="app.js"></script>
+
+<!-- ── BOTTOM NAVIGATION (mobile uniquement) ── -->
+<nav class="bottom-nav" id="bottom-nav">
+  <button class="bn-item active" id="bn-accueil" onclick="showPanel('accueil',this)">
+    <span class="bn-icon">🏠</span>
+    <span class="bn-label">Accueil</span>
+  </button>
+  <button class="bn-item" id="bn-devis" onclick="showPanel('devis',this)">
+    <span class="bn-icon">📋</span>
+    <span class="bn-label">À traiter</span>
+  </button>
+  <button class="bn-add" onclick="openEventModal()" aria-label="Nouvel événement">
+    <span>+</span>
+  </button>
+  <button class="bn-item" id="bn-clients" onclick="showPanel('clients',this)">
+    <span class="bn-icon">👥</span>
+    <span class="bn-label">Clients</span>
+  </button>
+  <button class="bn-item" id="bn-historique" onclick="showPanel('historique',this)">
+    <span class="bn-icon">🕰️</span>
+    <span class="bn-label">Historique</span>
+  </button>
+</nav>
 
 </body>
 </html>

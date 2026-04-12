@@ -95,6 +95,65 @@ const STATUS_PILL = { 'Signé': 'pill-green', 'Devis envoyé': 'pill-gold', 'Con
 const STATUS_LABEL = { 'Nouveau': '🆕 Nouveau', 'Contacté': '☎️ Contacté', 'Devis envoyé': '💬 Devis envoyé', 'Signé': '✅ Signé', 'Terminé': 'Terminé', 'Perdu': '❌ Perdu' };
 const STATUS_DOT   = { 'Signé': 'green', 'Devis envoyé': '', 'Contacté': '', 'Nouveau': 'terra', 'Terminé': 'gray', 'Perdu': 'red' };
 
+// Rend un numéro de téléphone ou email cliquable, sinon retourne le texte brut
+function formatContact(contact) {
+  if (!contact) return '—';
+  const c = contact.trim();
+  const digits = c.replace(/\D/g, '');
+  if (!c.includes('@') && digits.length >= 6) {
+    return `<a href="tel:${digits}" style="color:inherit;text-decoration:none;">${c}</a>`;
+  }
+  if (c.includes('@') && c.includes('.')) {
+    return `<a href="mailto:${c}" style="color:inherit;text-decoration:none;">${c}</a>`;
+  }
+  return c;
+}
+
+// ── SYNC INDICATOR ──
+
+let lastSyncTime = null;
+let lastSyncOk = null;
+
+function updateSyncIndicator() {
+  const el = document.getElementById('sync-indicator');
+  if (!el) return;
+  if (lastSyncOk === null) { el.innerHTML = ''; return; }
+  if (!lastSyncOk) { el.innerHTML = '<span class="sync-offline">● Hors ligne</span>'; return; }
+  const mins = Math.floor((Date.now() - lastSyncTime) / 60000);
+  const timeStr = mins < 1 ? 'à l\'instant' : `il y a ${mins} min`;
+  el.innerHTML = `<span class="sync-ok">● Sync. ${timeStr}</span>`;
+}
+setInterval(updateSyncIndicator, 60000);
+
+// ── NOTIFICATIONS PUSH ──
+
+const SEEN_EVENTS_KEY = 'chez_papi_seen_events';
+let notifPermissionRequested = false;
+
+function requestNotifPermission() {
+  if (!('Notification' in window) || Notification.permission !== 'default' || notifPermissionRequested) return;
+  notifPermissionRequested = true;
+  Notification.requestPermission().catch(() => {});
+}
+
+function checkNewEvents(rows) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const seen = new Set(JSON.parse(localStorage.getItem(SEEN_EVENTS_KEY) || '[]'));
+  const newLeads = rows.filter(r => r['Statut traitement'] === 'Nouveau' && !seen.has(String(r._row)));
+  newLeads.forEach(r => {
+    const budget = parseFloat(r['Budget estimé (€)']) || 0;
+    const body = `${r['Nom client']} · ${r['Type d\'événement'] || ''}${budget ? ' · ' + formatEuro(budget) : ''}`;
+    const tag = 'lead-' + r._row;
+    if (navigator.serviceWorker?.controller) {
+      navigator.serviceWorker.controller.postMessage({ type: 'SHOW_NOTIFICATION', title: 'Nouvelle demande', body, tag });
+    } else {
+      new Notification('Nouvelle demande', { body, icon: './icon-192x192.png', tag }).catch(() => {});
+    }
+    seen.add(String(r._row));
+  });
+  localStorage.setItem(SEEN_EVENTS_KEY, JSON.stringify([...seen]));
+}
+
 // ── SHEETS API ──
 
 const SheetsAPI = {
@@ -159,16 +218,21 @@ async function loadData() {
     const result = await SheetsAPI.load();
     if (result && result.rows) {
       appData = result.rows;
+      lastSyncTime = Date.now(); lastSyncOk = true; updateSyncIndicator();
       setConnectionStatus('ok', result.rows.length);
+      checkNewEvents(result.rows);
+      requestNotifPermission();
       renderAll();
     } else {
       const msg = result?.error || 'Réponse inattendue';
       console.error('loadData: erreur API :', msg, result);
+      lastSyncOk = false; updateSyncIndicator();
       setConnectionStatus('error', msg);
       showNotification('Erreur Google Sheet : ' + msg, 'error');
     }
   } catch (err) {
     console.error('loadData:', err);
+    lastSyncOk = false; updateSyncIndicator();
     setConnectionStatus('error', err.message);
     showNotification(err.message, 'error');
   } finally {
@@ -194,7 +258,6 @@ function setLoading(on) {
 function renderAll() {
   renderDashboard();
   renderPipeline();
-  Calendar.refresh();
   renderClients();
   if (typeof renderHistorique === 'function') renderHistorique();
 }
@@ -348,12 +411,24 @@ function renderPipeline() {
         `<option value="${s}"${s === e['Statut traitement'] ? ' selected' : ''}>${STATUS_LABEL[s]}</option>`
       ).join('');
 
+      // Badge ancienneté pour Nouveau / Contacté
+      let ageBadge = '';
+      if ((e['Statut traitement'] === 'Nouveau' || e['Statut traitement'] === 'Contacté') && e['Date de la demande']) {
+        const hours = Math.floor((Date.now() - new Date(String(e['Date de la demande']).split('T')[0]).getTime()) / 3600000);
+        let badgeColor = hours < 24 ? '#4A6741' : hours < 72 ? '#B8860B' : '#C0453A';
+        let badgeText = hours < 24 ? `Reçu il y a ${hours}h` : `Reçu il y a ${Math.floor(hours/24)} jour${Math.floor(hours/24) > 1 ? 's' : ''}`;
+        ageBadge = `<div style="font-size:10px;font-weight:600;color:${badgeColor};margin-top:4px;">${badgeText}</div>`;
+      }
+
       return `
       <div class="pipe-card" onclick="openEventModal(${e._row})">
         <div class="pipe-client">${e['Nom client']}</div>
         <div class="pipe-event">${e['Type d\'événement']} \xb7 ${e['Nb convives']} pers.${e['Date de l\'événement'] ? ' \xb7 ' + formatDateFR(e['Date de l\'événement']) : ''}</div>
         <div class="pipe-footer" style="padding-top: 8px;">
-          <span class="pipe-amount" style="font-size:12px">${formatEuro(parseFloat(e['Budget estimé (€)']) || 0)}</span>
+          <div>
+            <span class="pipe-amount" style="font-size:12px">${formatEuro(parseFloat(e['Budget estimé (€)']) || 0)}</span>
+            ${ageBadge}
+          </div>
           <select class="pipe-status-sel pill ${STATUS_PILL[e['Statut traitement']] || 'pill-gray'}" style="border:none; outline:none; cursor:pointer; font-family:inherit;" onchange="updateEventStatus(this,${e._row})" onclick="event.stopPropagation()">
             ${options}
           </select>
@@ -422,10 +497,9 @@ function renderClients() {
   tbody.innerHTML = clients.map(c => {
     const last   = c.events.sort((a, b) => (b['Date de l\'événement'] || '').localeCompare(a['Date de l\'événement'] || ''))[0];
     const ca     = c.events.reduce((s, e) => s + (parseFloat(e['Budget estimé (€)']) || 0), 0);
-    const contact = last['Contact'] || '\u2014';
     return `<tr style="cursor:pointer" onclick="openEventModal(${last._row})">
       <td><strong>${c.name}</strong>${c.events.length > 1 ? ` <span style="color:var(--muted);font-size:10px;">(${c.events.length})</span>` : ''}</td>
-      <td>${contact}</td>
+      <td>${formatContact(last['Contact'] || '')}</td>
       <td>${formatEuro(ca)}</td>
     </tr>`;
   }).join('');
@@ -483,7 +557,8 @@ function showViewModal(rowIndex) {
   set('view-invites', data['Nb convives']);
   set('view-budget', formatEuro(parseFloat(data['Budget estimé (€)']) || 0));
   set('view-statut', STATUS_LABEL[data['Statut traitement']] || data['Statut traitement']);
-  set('view-contact', data['Contact']);
+  const contactEl = document.getElementById('view-contact');
+  if (contactEl) contactEl.innerHTML = formatContact(data['Contact'] || '');
   set('view-notes', data['Notes']);
 
   document.getElementById('view-modal').style.display = 'flex';
@@ -520,12 +595,6 @@ function openEventModal(rowIndex = null, forceEdit = false) {
   } else {
     form.elements['Date de la demande'].value = new Date().toISOString().split('T')[0];
     form.elements['Statut traitement'].value  = 'Nouveau';
-    if (typeof Calendar !== 'undefined' && typeof Calendar.getSelectedDate === 'function') {
-      const sd = Calendar.getSelectedDate();
-      if (sd) {
-        form.elements['Date de l\'événement'].value = sd;
-      }
-    }
   }
 
   const btnDel = document.getElementById('btn-delete-event');
@@ -613,8 +682,10 @@ async function deleteCurrentEvent() {
   }
 }
 
-// ── CALENDAR ──
+// ── CALENDAR (supprimé) ──
+// Le panel Agenda a été retiré de l'interface.
 
+if (false) { // bloc conservé pour éviter les erreurs de référence
 const Calendar = (() => {
   const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin',
                      'Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -745,8 +816,8 @@ const Calendar = (() => {
 
   return { init, refresh: render, getSelectedDate: () => selectedDate };
 })();
-
 Calendar.init();
+} // fin bloc Calendar désactivé
 
 // ── KPI MODALS ──
 
@@ -849,9 +920,16 @@ document.querySelectorAll('.nav-item').forEach(item => {
 function showPanel(panelName, element) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.bn-item').forEach(n => n.classList.remove('active'));
   const panel = document.getElementById('panel-' + panelName);
   if (panel) panel.classList.add('active');
   if (element) element.classList.add('active');
+  // Sync sidebar item si non déjà marqué
+  const sidebarItem = document.querySelector(`.nav-item[data-panel="${panelName}"]`);
+  if (sidebarItem && sidebarItem !== element) sidebarItem.classList.add('active');
+  // Sync bottom nav item
+  const bnItem = document.getElementById('bn-' + panelName);
+  if (bnItem && bnItem !== element) bnItem.classList.add('active');
   document.querySelector('.content').scrollTop = 0;
 }
 
@@ -885,7 +963,7 @@ loadData();
 // ── EXPORT ──
 
 window.ChezPapi = {
-  SheetsAPI, Calendar, showPanel, toggleSidebar, showNotification, loadData, openEventModal, showViewModal, closeViewModal, deleteCurrentEvent, showKpiModal,
+  SheetsAPI, showPanel, toggleSidebar, showNotification, loadData, openEventModal, showViewModal, closeViewModal, deleteCurrentEvent, showKpiModal,
   renderHistorique,
   // Diagnostic : testConnection() dans la console pour voir la réponse brute
   async testConnection() {

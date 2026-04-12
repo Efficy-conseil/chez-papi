@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chez-papi-v1.24';
+const CACHE_NAME = 'chez-papi-v1.25';
 const ASSETS = [
   './',
   './index.html',
@@ -24,10 +24,29 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
+// Notifications push (depuis app.js via postMessage)
+self.addEventListener('message', e => {
+  if (e.data?.type === 'SHOW_NOTIFICATION') {
+    self.registration.showNotification(e.data.title, {
+      body: e.data.body,
+      icon: './icon-192x192.png',
+      badge: './icon-192x192.png',
+      tag: e.data.tag || 'chez-papi'
+    }).catch(() => {});
+  }
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(clients.matchAll({ type: 'window' }).then(cs => {
+    if (cs.length) return cs[0].focus();
+    return clients.openWindow('./');
+  }));
+});
+
 self.addEventListener('fetch', e => {
   if (!e.request.url.startsWith(self.location.origin)) return;
 
-  // Network-first pour HTML
   if (e.request.mode === 'navigate') {
     e.respondWith(
       fetch(e.request)
@@ -40,7 +59,6 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // Network-first pour JS et CSS (toujours la version fraîche)
   if (/\.(js|css)(\?.*)?$/.test(e.request.url)) {
     e.respondWith(
       fetch(e.request)
@@ -53,7 +71,6 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // Cache-first pour images et autres assets statiques
   e.respondWith(
     caches.match(e.request).then(cached => {
       return cached || fetch(e.request).then(res => {
