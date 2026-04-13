@@ -936,9 +936,9 @@ function agendaGoToday() {
 }
 
 function renderAgenda() {
-  const hEl   = document.getElementById('agenda-heading');
-  const subEl = document.getElementById('agenda-sub');
-  const listEl = document.getElementById('agenda-list');
+  const labelEl = document.getElementById('agenda-month-label');
+  const subEl   = document.getElementById('agenda-sub');
+  const listEl  = document.getElementById('agenda-list');
   if (!listEl) return;
 
   const monthPfx = `${agendaYear}-${String(agendaMonth + 1).padStart(2, '0')}`;
@@ -949,7 +949,7 @@ function renderAgenda() {
     })
     .sort((a, b) => (a['Date de l\'événement'] || '').localeCompare(b['Date de l\'événement'] || ''));
 
-  if (hEl)  hEl.textContent  = `Agenda \u2014 ${MONTHS_FR_AGENDA[agendaMonth]} ${agendaYear}`;
+  if (labelEl) labelEl.textContent = `${MONTHS_FR_AGENDA[agendaMonth]} ${agendaYear}`;
   if (subEl) subEl.textContent = events.length ? `${events.length} \u00e9v\u00e9nement${events.length > 1 ? 's' : ''}` : '';
 
   if (!events.length) {

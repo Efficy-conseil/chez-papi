@@ -291,12 +291,12 @@ Tableau de bord · v1.0<br>Avril 2026
 <!-- ══════════════════════ AGENDA ══════════════════════ -->
 <div class="panel" id="panel-agenda">
 <div class="section-hd">
-<h2 id="agenda-heading">Agenda</h2>
+<h2>Agenda</h2>
 <span class="shd-sub" id="agenda-sub"></span>
-<div style="display:flex; gap:6px; align-items:center;">
-  <button class="btn-secondary" onclick="agendaPrevMonth()" style="padding:4px 10px;">‹</button>
-  <button class="btn-secondary" onclick="agendaGoToday()" style="padding:4px 10px;">Aujourd'hui</button>
-  <button class="btn-secondary" onclick="agendaNextMonth()" style="padding:4px 10px;">›</button>
+<div style="display:flex; gap:4px; align-items:center;">
+  <button class="btn-secondary" onclick="agendaPrevMonth()" style="padding:4px 12px; font-size:1rem;">‹</button>
+  <span id="agenda-month-label" style="min-width:130px; text-align:center; font-size:0.92rem; font-weight:700; color:var(--brown-dk); letter-spacing:.02em;"></span>
+  <button class="btn-secondary" onclick="agendaNextMonth()" style="padding:4px 12px; font-size:1rem;">›</button>
 </div>
 </div>
 <div class="card" style="padding:0;" id="agenda-list">
