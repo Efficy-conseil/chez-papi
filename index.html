@@ -141,10 +141,13 @@
 <span class="nav-icon">🏠</span> Accueil
 </button>
 <button class="nav-item" onclick="showPanel('devis',this)" data-panel="devis">
-<span class="nav-icon">📋</span> Demandes en cours
+<span class="nav-icon">📋</span> Demandes
 </button>
 <button class="nav-item" onclick="showPanel('clients',this)" data-panel="clients">
 <span class="nav-icon">✅</span> Prestations en cours
+</button>
+<button class="nav-item" onclick="showPanel('agenda',this)" data-panel="agenda">
+<span class="nav-icon">📅</span> Agenda
 </button>
 <button class="nav-item" onclick="showPanel('historique',this)" data-panel="historique">
 <span class="nav-icon">🕰️</span> Historique
@@ -210,9 +213,29 @@ Tableau de bord · v1.0<br>Avril 2026
 
 <div class="ornement">· · ·</div>
 
+<!-- Nouvelles demandes (pleine largeur) -->
+<div class="card" style="margin-bottom:16px;">
+<div class="card-title">Nouvelles demandes <span class="card-title-action" onclick="showPanel('devis',document.querySelector('[data-panel=devis]'))">Plus</span></div>
+<div class="tbl-wrap">
+<table class="tbl tbl-sm">
+<thead>
+<tr>
+<th style="width:20%">Date evt</th>
+<th style="width:34%">Client</th>
+<th style="width:18%">€</th>
+<th style="width:28%">Reçu</th>
+</tr>
+</thead>
+<tbody id="new-demandes-tbody">
+<tr><td colspan="4" class="tbl-empty">Chargement…</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
 <div class="grid2">
 
-<!-- Demandes en cours -->
+<!-- Demandes en cours (Contacté / Devis envoyé) -->
 <div class="card">
 <div class="card-title">Demandes en cours <span class="card-title-action" onclick="showPanel('devis',document.querySelector('[data-panel=devis]'))">Plus</span></div>
 <div class="tbl-wrap">
@@ -246,7 +269,7 @@ Tableau de bord · v1.0<br>Avril 2026
 <!-- ══════════════════════ DEVIS ══════════════════════ -->
 <div class="panel" id="panel-devis">
 <div class="section-hd">
-<h2>Demandes en cours</h2>
+<h2>Demandes</h2>
 <span class="shd-sub" id="devis-sub"></span>
 <button class="btn-new" onclick="openEventModal()">+ Nouvel événement</button>
 </div>
@@ -262,6 +285,22 @@ Tableau de bord · v1.0<br>Avril 2026
 </div>
 <div id="clients-cards">
 <div class="tbl-empty" style="padding:20px;">Chargement…</div>
+</div>
+</div>
+
+<!-- ══════════════════════ AGENDA ══════════════════════ -->
+<div class="panel" id="panel-agenda">
+<div class="section-hd">
+<h2 id="agenda-heading">Agenda</h2>
+<span class="shd-sub" id="agenda-sub"></span>
+<div style="display:flex; gap:6px; align-items:center;">
+  <button class="btn-secondary" onclick="agendaPrevMonth()" style="padding:4px 10px;">‹</button>
+  <button class="btn-secondary" onclick="agendaGoToday()" style="padding:4px 10px;">Aujourd'hui</button>
+  <button class="btn-secondary" onclick="agendaNextMonth()" style="padding:4px 10px;">›</button>
+</div>
+</div>
+<div class="card" style="padding:0;" id="agenda-list">
+<div class="tbl-empty" style="padding:24px;">Chargement…</div>
 </div>
 </div>
 
@@ -419,6 +458,10 @@ Tableau de bord · v1.0<br>Avril 2026
   <button class="bn-item" id="bn-clients" onclick="showPanel('clients',this)">
     <span class="bn-icon">✅</span>
     <span class="bn-label">Prestations</span>
+  </button>
+  <button class="bn-item" id="bn-agenda" onclick="showPanel('agenda',this)">
+    <span class="bn-icon">📅</span>
+    <span class="bn-label">Agenda</span>
   </button>
   <button class="bn-item" id="bn-historique" onclick="showPanel('historique',this)">
     <span class="bn-icon">🕰️</span>

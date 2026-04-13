@@ -265,6 +265,7 @@ function renderAll() {
   try { renderDashboard(); } catch(e) { console.error('renderDashboard:', e); }
   try { renderPipeline(); } catch(e) { console.error('renderPipeline:', e); }
   try { renderClients(); } catch(e) { console.error('renderClients:', e); }
+  try { renderAgenda(); } catch(e) { console.error('renderAgenda:', e); }
   try { if (typeof renderHistorique === 'function') renderHistorique(); } catch(e) { console.error('renderHistorique:', e); }
 }
 
@@ -295,10 +296,47 @@ function renderDashboard() {
   set('kpi-leads-val',       nouveaux.length || '—');
 
 
-  // ── Carte 1 : Demandes en cours (Nouveau / Contacté / Devis envoyé)
+  // ── Carte Nouvelles demandes (Nouveau uniquement)
   const todayDate = new Date();
   todayDate.setHours(0,0,0,0);
-  const PIPELINE_SCOPE_HOME = ['Nouveau', 'Contacté', 'Devis envoyé'];
+
+  const newDemandes = appData
+    .filter(e => e['Statut traitement'] === 'Nouveau')
+    .sort((a, b) => (b['Date de la demande'] || '').localeCompare(a['Date de la demande'] || ''))
+    .slice(0, 6);
+
+  const newTbody = document.getElementById('new-demandes-tbody');
+  if (newTbody) {
+    if (!CONFIG.SHEETS_URL) {
+      newTbody.innerHTML = '<tr><td colspan="4" class="tbl-empty">\u2699 Configurez CONFIG.SHEETS_URL</td></tr>';
+    } else if (!newDemandes.length) {
+      newTbody.innerHTML = '<tr><td colspan="4" class="tbl-empty">Aucune nouvelle demande</td></tr>';
+    } else {
+      newTbody.innerHTML = newDemandes.map(e => {
+        const budget = parseFloat(e['Budget estimé (€)']);
+        let ageBadge = '—';
+        if (e['Date de la demande']) {
+          const demandDate = parseLocalDate(e['Date de la demande']);
+          const hours = demandDate ? Math.floor((Date.now() - demandDate.getTime()) / 3600000) : -1;
+          if (hours >= 0) {
+            const color = hours < 24 ? '#4A6741' : hours < 72 ? '#B8860B' : '#C0453A';
+            ageBadge = hours < 24
+              ? `<span style="color:${color};font-weight:600;">il y a ${hours}h</span>`
+              : `<span style="color:${color};font-weight:600;">il y a ${Math.floor(hours/24)}j</span>`;
+          }
+        }
+        return `<tr style="cursor:pointer" onclick="openEventModal(${e._row})">
+          <td><strong>${formatDateFR(e['Date de l\'événement']) || '—'}</strong></td>
+          <td>${e['Nom client']}</td>
+          <td>${budget ? formatEuro(budget) : '—'}</td>
+          <td>${ageBadge}</td>
+        </tr>`;
+      }).join('');
+    }
+  }
+
+  // ── Carte Demandes en cours (Contacté / Devis envoyé)
+  const PIPELINE_SCOPE_HOME = ['Contacté', 'Devis envoyé'];
   const demandesHome = actives
     .filter(e => PIPELINE_SCOPE_HOME.includes(e['Statut traitement']) && e['Date de l\'événement'])
     .sort((a, b) => (a['Date de l\'événement'] || '').localeCompare(b['Date de l\'événement'] || ''))
@@ -316,8 +354,8 @@ function renderDashboard() {
   } else {
     tbody.innerHTML = demandesHome.map(e => {
       const budget = parseFloat(e['Budget estimé (€)']);
-      const d = new Date(String(e['Date de l\'événement']).split('T')[0]);
-      const diffDays = Math.ceil((d.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24));
+      const d = parseLocalDate(e['Date de l\'événement']);
+      const diffDays = d ? Math.ceil((d.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24)) : 999;
       const urgClass = diffDays <= URGENCE_JOURS_URGENT ? 'row-urgent' : diffDays <= URGENCE_JOURS_PRIORITAIRE ? 'row-prio' : '';
       return `<tr class="${urgClass}" style="cursor:pointer" onclick="openEventModal(${e._row})">
         <td><strong>${formatDateFR(e['Date de l\'événement'])}</strong></td>
@@ -876,6 +914,71 @@ async function deleteCurrentEvent() {
   }
 }
 
+// ── RENDER: AGENDA ──
+
+const MONTHS_FR_AGENDA = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+let agendaYear  = new Date().getFullYear();
+let agendaMonth = new Date().getMonth();
+
+function agendaPrevMonth() {
+  if (--agendaMonth < 0) { agendaMonth = 11; agendaYear--; }
+  renderAgenda();
+}
+function agendaNextMonth() {
+  if (++agendaMonth > 11) { agendaMonth = 0; agendaYear++; }
+  renderAgenda();
+}
+function agendaGoToday() {
+  const now = new Date();
+  agendaYear  = now.getFullYear();
+  agendaMonth = now.getMonth();
+  renderAgenda();
+}
+
+function renderAgenda() {
+  const hEl   = document.getElementById('agenda-heading');
+  const subEl = document.getElementById('agenda-sub');
+  const listEl = document.getElementById('agenda-list');
+  if (!listEl) return;
+
+  const monthPfx = `${agendaYear}-${String(agendaMonth + 1).padStart(2, '0')}`;
+  const events = appData
+    .filter(e => {
+      const d = e['Date de l\'événement'];
+      return d && String(d).slice(0, 7) === monthPfx;
+    })
+    .sort((a, b) => (a['Date de l\'événement'] || '').localeCompare(b['Date de l\'événement'] || ''));
+
+  if (hEl)  hEl.textContent  = `Agenda \u2014 ${MONTHS_FR_AGENDA[agendaMonth]} ${agendaYear}`;
+  if (subEl) subEl.textContent = events.length ? `${events.length} \u00e9v\u00e9nement${events.length > 1 ? 's' : ''}` : '';
+
+  if (!events.length) {
+    listEl.innerHTML = '<div class="tbl-empty" style="padding:24px 16px;">Aucun \u00e9v\u00e9nement ce mois</div>';
+    return;
+  }
+
+  listEl.innerHTML =
+    '<table class="tbl" style="padding:0;">' +
+    '<thead><tr>' +
+    '<th style="padding-left:16px;width:16%">Date</th>' +
+    '<th style="width:26%">Client</th>' +
+    '<th style="width:18%">Type</th>' +
+    '<th style="width:18%">\u20ac</th>' +
+    '<th style="width:22%">Statut</th>' +
+    '</tr></thead><tbody>' +
+    events.map(e => {
+      const budget = parseFloat(e['Budget estimé (€)']);
+      return `<tr style="cursor:pointer" onclick="openEventModal(${e._row})">
+        <td style="padding-left:16px;"><strong>${formatDateFR(e['Date de l\'événement'])}</strong></td>
+        <td>${e['Nom client']}</td>
+        <td>${e['Type d\'événement'] || '\u2014'}</td>
+        <td>${budget ? formatEuro(budget) : '\u2014'}</td>
+        <td><span class="pill ${STATUS_PILL[e['Statut traitement']] || 'pill-gray'}">${STATUS_LABEL[e['Statut traitement']] || e['Statut traitement']}</span></td>
+      </tr>`;
+    }).join('') +
+    '</tbody></table>';
+}
+
 // ── CALENDAR (supprimé) ──
 // Le panel Agenda a été retiré de l'interface.
 
@@ -1160,6 +1263,7 @@ loadData();
 window.ChezPapi = {
   SheetsAPI, showPanel, toggleSidebar, showNotification, loadData, openEventModal, showViewModal, closeViewModal, deleteCurrentEvent, showKpiModal,
   renderHistorique, setHistoriqueFilter, applyHistoriqueDateRange, exportHistoriqueCSV,
+  renderAgenda, agendaPrevMonth, agendaNextMonth, agendaGoToday,
   addTodo, toggleTodo, deleteTodo, toggleFormMode, checkDateConflict,
   // Diagnostic : testConnection() dans la console pour voir la réponse brute
   async testConnection() {
