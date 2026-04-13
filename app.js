@@ -935,6 +935,75 @@ function agendaGoToday() {
   renderAgenda();
 }
 
+// ── Picker mois/année ──
+let pickerYear = new Date().getFullYear();
+
+function toggleAgendaPicker(e) {
+  e?.stopPropagation();
+  const picker = document.getElementById('agenda-picker');
+  if (!picker) return;
+  if (picker.style.display === 'none') {
+    pickerYear = agendaYear;
+    renderAgendaPicker();
+    picker.style.display = 'block';
+  } else {
+    picker.style.display = 'none';
+  }
+}
+
+function closeAgendaPicker() {
+  const picker = document.getElementById('agenda-picker');
+  if (picker) picker.style.display = 'none';
+}
+
+function agendaPickerPrevYear(e) {
+  e?.stopPropagation();
+  pickerYear--;
+  renderAgendaPicker();
+}
+
+function agendaPickerNextYear(e) {
+  e?.stopPropagation();
+  pickerYear++;
+  renderAgendaPicker();
+}
+
+function selectAgendaMonth(month) {
+  agendaYear  = pickerYear;
+  agendaMonth = month;
+  closeAgendaPicker();
+  renderAgenda();
+}
+
+function renderAgendaPicker() {
+  const yearEl   = document.getElementById('agenda-picker-year');
+  const monthsEl = document.getElementById('agenda-picker-months');
+  if (!yearEl || !monthsEl) return;
+
+  const MONTHS_SHORT = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+  const now = new Date();
+  yearEl.textContent = pickerYear;
+
+  monthsEl.innerHTML = MONTHS_SHORT.map((m, i) => {
+    const isSelected = (pickerYear === agendaYear && i === agendaMonth);
+    const isToday    = (pickerYear === now.getFullYear() && i === now.getMonth());
+    const style = isSelected
+      ? 'background:var(--brown-dk);color:#fff;border-color:var(--brown-dk);font-weight:700;'
+      : isToday
+        ? 'background:var(--warm);color:var(--brown-dk);border-color:var(--gold);font-weight:600;'
+        : 'background:#fff;color:var(--text);border-color:var(--border);';
+    return `<button onclick="selectAgendaMonth(${i})" style="padding:6px 4px;border-radius:4px;border:1px solid;font-size:0.8rem;cursor:pointer;${style}">${m}</button>`;
+  }).join('');
+}
+
+// Ferme le picker si clic en dehors
+document.addEventListener('click', e => {
+  const picker = document.getElementById('agenda-picker');
+  if (picker && picker.style.display !== 'none' && !picker.contains(e.target)) {
+    closeAgendaPicker();
+  }
+});
+
 function renderAgenda() {
   const labelEl = document.getElementById('agenda-month-label');
   const subEl   = document.getElementById('agenda-sub');
@@ -1264,6 +1333,7 @@ window.ChezPapi = {
   SheetsAPI, showPanel, toggleSidebar, showNotification, loadData, openEventModal, showViewModal, closeViewModal, deleteCurrentEvent, showKpiModal,
   renderHistorique, setHistoriqueFilter, applyHistoriqueDateRange, exportHistoriqueCSV,
   renderAgenda, agendaPrevMonth, agendaNextMonth, agendaGoToday,
+  toggleAgendaPicker, agendaPickerPrevYear, agendaPickerNextYear, selectAgendaMonth,
   addTodo, toggleTodo, deleteTodo, toggleFormMode, checkDateConflict,
   // Diagnostic : testConnection() dans la console pour voir la réponse brute
   async testConnection() {
