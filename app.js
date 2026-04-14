@@ -107,7 +107,12 @@ function formatContact(contact) {
   const digits = c.replace(/\D/g, '');
   const linkStyle = 'color:inherit;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px;';
   if (!c.includes('@') && digits.length >= 6) {
-    return `<a href="tel:${digits}" style="${linkStyle}">${c}</a>`;
+    // Google Sheets stocke les tél. comme des nombres : le 0 initial est supprimé.
+    // Si on a 9 chiffres commençant par 1-9 → numéro français sans son 0.
+    const missingZero = digits.length === 9 && /^[1-9]/.test(digits);
+    const display = missingZero ? '0' + c : c;
+    const tel     = missingZero ? '0' + digits : digits;
+    return `<a href="tel:${tel}" style="${linkStyle}">${display}</a>`;
   }
   if (c.includes('@') && c.includes('.')) {
     return `<a href="mailto:${c}" style="${linkStyle}">${c}</a>`;
