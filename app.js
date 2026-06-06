@@ -391,6 +391,23 @@ async function loadData() {
       checkNewEvents(result.rows);
       requestNotifPermission();
       renderAll();
+      
+      // Gestion du routage profond (Deep Linking) via paramètre URL ?row=X
+      const urlParams = new URLSearchParams(window.location.search);
+      const rowParam = urlParams.get('row');
+      if (rowParam) {
+        const rowIndex = parseInt(rowParam, 10);
+        if (!isNaN(rowIndex)) {
+          // Nettoyer l'URL pour éviter de réouvrir le modal au rafraîchissement
+          const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+          window.history.replaceState({ path: newUrl }, '', newUrl);
+          
+          // Ouvrir la vue détaillée de la demande correspondante
+          setTimeout(() => {
+            openEventModal(rowIndex);
+          }, 500);
+        }
+      }
     } else {
       const msg = result?.error || 'Réponse inattendue';
       console.error('loadData: erreur API :', msg, result);

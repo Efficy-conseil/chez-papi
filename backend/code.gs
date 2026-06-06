@@ -21,6 +21,7 @@ function getSheet() {
 
 const AUTH_USER = "demande.chezpapimaisongourmande@gmail.com";
 const AUTH_PASS = "Niconina13/";
+const FRONTEND_URL = "https://efficy-conseil.github.io/chez-papi/";
 
 function checkAuth(user, pass) {
   return user === AUTH_USER && pass === AUTH_PASS;
@@ -253,6 +254,11 @@ function sendNewDemandEmail(r) {
         </tr>
       </table>
       ${r.message_original ? `<div style="background-color: #fdf6f0; border-radius: 4px; padding: 12px; margin-top: 12px; font-size: 13px; color: #5C3D1E; white-space: pre-wrap;"><strong>Message original:</strong><br/>${r.message_original}</div>` : ''}
+      <div style="margin-top: 20px; text-align: center;">
+        <a href="${FRONTEND_URL}?row=${r._row}" target="_blank" style="display: inline-block; background-color: #5C3D1E; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 13px; box-shadow: 0 4px 6px rgba(92, 61, 30, 0.15);">
+          Consulter / Modifier dans le Tableau de Bord
+        </a>
+      </div>
     </div>
     <p style="font-size: 11px; text-align: center; color: #8A7260; margin-top: 20px;">
       Chez Papi Maison Gourmande • Cet e-mail est généré automatiquement.
@@ -379,6 +385,11 @@ function sendSummaryEmail(rows, dateString) {
           </tr>
         </table>
         ${r.message_original ? `<div style="background-color: #fdf6f0; border-radius: 4px; padding: 10px; margin-top: 10px; font-size: 12px; color: #5C3D1E; white-space: pre-wrap;"><strong>Message original:</strong><br/>${r.message_original}</div>` : ''}
+        <div style="margin-top: 14px; text-align: right;">
+          <a href="${FRONTEND_URL}?row=${r._row}" target="_blank" style="display: inline-block; background-color: #5C3D1E; color: #fff; padding: 6px 14px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 12px; box-shadow: 0 2px 4px rgba(92, 61, 30, 0.12);">
+            Consulter / Modifier
+          </a>
+        </div>
       </div>`;
     });
   }
