@@ -19,10 +19,23 @@ function getSheet() {
   return SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
 }
 
+const AUTH_USER = "demande.chezpapimaisongourmande@gmail.com";
+const AUTH_PASS = "Niconina13/";
+
+function checkAuth(user, pass) {
+  return user === AUTH_USER && pass === AUTH_PASS;
+}
+
 // ── GET : lecture de toutes les lignes ──────────────────────────
 
 function doGet(e) {
   try {
+    const user = e.parameter.user;
+    const pass = e.parameter.pass;
+    if (!checkAuth(user, pass)) {
+      return ko("Non autorisé");
+    }
+    
     const sheet = getSheet();
     const data = sheet.getDataRange().getValues();
     const headers = data[0].map(String);
@@ -32,7 +45,7 @@ function doGet(e) {
         headers.forEach((h, j) => { obj[h] = serialise(row[j]); });
         return obj;
       })
-      .filter(r => r['Nom client']); // ignore les lignes vides
+      .filter(r => r.id_demande || r.nom_client || r.date_evenement); // ignore les lignes vides
 
     return ok({ headers, rows });
   } catch (err) {
@@ -45,6 +58,10 @@ function doGet(e) {
 function doPost(e) {
   try {
     const body = JSON.parse(e.postData.contents);
+    if (!checkAuth(body.user, body.pass)) {
+      return ko("Non autorisé");
+    }
+    
     if (body.action === 'add')    return addRow(body.row);
     if (body.action === 'update') return updateRow(body.rowIndex, body.fields);
     if (body.action === 'delete') return deleteRow(body.rowIndex);
@@ -57,6 +74,24 @@ function doPost(e) {
 function addRow(rowData) {
   const sheet = getSheet();
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
+  
+  // Auto-génération de l'identifiant unique si absent
+  if (!rowData.id_demande) {
+    const today = new Date();
+    const yyyymmdd = today.getFullYear() + 
+      String(today.getMonth() + 1).padStart(2, '0') + 
+      String(today.getDate()).padStart(2, '0');
+    const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+    rowData.id_demande = 'CP-' + yyyymmdd + '-' + rand;
+  }
+  
+  // Initialisation de la date de réception si absente
+  if (!rowData.date_reception) {
+    rowData.date_reception = new Date();
+  }
+  
+  rowData.derniere_modification = new Date();
+  
   sheet.appendRow(headers.map(h => rowData[h] ?? ''));
   return ok({ success: true });
 }
@@ -64,6 +99,9 @@ function addRow(rowData) {
 function updateRow(rowIndex, fields) {
   const sheet = getSheet();
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
+  
+  fields.derniere_modification = new Date();
+  
   headers.forEach((h, i) => {
     if (fields[h] !== undefined) {
       sheet.getRange(rowIndex, i + 1).setValue(fields[h]);
@@ -82,7 +120,11 @@ function deleteRow(rowIndex) {
 
 function serialise(val) {
   if (val instanceof Date) {
-    return Utilities.formatDate(val, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+    try {
+      return Utilities.formatDate(val, Session.getScriptTimeZone(), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+    } catch (e) {
+      return val.toISOString();
+    }
   }
   return val;
 }
@@ -98,3 +140,4 @@ function ko(msg) {
     .createTextOutput(JSON.stringify({ error: msg }))
     .setMimeType(ContentService.MimeType.JSON);
 }
+

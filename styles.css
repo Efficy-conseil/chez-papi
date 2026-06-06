@@ -969,26 +969,45 @@ body {
 .pipeline {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 8px;
+  gap: 12px;
   margin-bottom: 20px;
 }
 
 @media (min-width: 768px) {
   .pipeline {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (min-width: 1200px) {
-  .pipeline {
-    grid-template-columns: repeat(4, 1fr);
+    display: flex;
+    overflow-x: auto;
+    gap: 16px;
+    padding-bottom: 12px;
+    align-items: flex-start;
   }
 }
 
 .pipe-col {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
+}
+
+@media (min-width: 768px) {
+  .pipe-col {
+    flex: 1;
+    min-width: 260px;
+    max-width: 350px;
+  }
+}
+
+/* Barre de défilement horizontale personnalisée pour le pipeline */
+.pipeline::-webkit-scrollbar {
+  height: 6px;
+}
+.pipeline::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 3px;
+}
+.pipeline::-webkit-scrollbar-thumb {
+  background: var(--gold-lt, rgba(184,137,42,.25));
+  border-radius: 3px;
 }
 
 .pipe-header {

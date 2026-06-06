@@ -1,7 +1,7 @@
 // ── CONFIGURATION ──
 // Remplacez cette valeur par l'URL de votre Google Apps Script déployé
 const CONFIG = {
-  SHEETS_URL: 'https://script.google.com/macros/s/AKfycbwnRDJCiVa5y_i2AjDOxmjAl9DMtTitSjPWIOnbvR-OYiKm_ept24UwBE6GJBU93e0Bdg/exec', // Ex: 'https://script.google.com/macros/s/XXXXX/exec'
+  SHEETS_URL: 'https://script.google.com/macros/s/AKfycbzpmDJWRgFZHAKSeHais4uyzslhpbEAItrsx7QirUjXF7CnHQFOtb4Xn9K8nvxvFSei-w/exec', // Ex: 'https://script.google.com/macros/s/XXXXX/exec'
 };
 
 // ── PWA INITIALIZATION ──
@@ -74,7 +74,13 @@ window.addEventListener('appinstalled', () => { hideInstallBanner(); iosModal.st
 // Convertit n'importe quelle date (ISO UTC ou YYYY-MM-DD) en minuit heure locale
 function parseLocalDate(ds) {
   if (!ds) return null;
-  const d = new Date(String(ds));
+  let cleanDs = String(ds).trim();
+  // Extrait la première date YYYY-MM-DD trouvée
+  const dateMatch = cleanDs.match(/\d{4}-\d{2}-\d{2}/);
+  if (dateMatch) {
+    cleanDs = dateMatch[0];
+  }
+  const d = new Date(cleanDs);
   if (isNaN(d.getTime())) return null;
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
@@ -82,11 +88,28 @@ function parseLocalDate(ds) {
 function formatEuro(n) {
   return (isNaN(n) ? 0 : Math.round(n)).toLocaleString('fr-FR') + ' \u20ac';
 }
+
+function formatBudget(val) {
+  if (!val) return '—';
+  const s = String(val).trim();
+  if (s.includes('€') || s.toLowerCase().includes('eur')) return s;
+  const num = parseFloat(s.replace(/\s/g, ''));
+  if (!isNaN(num) && String(num) === s.replace(/\s/g, '')) {
+    return formatEuro(num);
+  }
+  return s + (isNaN(num) ? '' : ' €');
+}
+
 function formatDateFR(ds) {
   if (!ds) return '';
   try {
-    const d = parseLocalDate(ds);
-    if (!d) return String(ds);
+    // Si c'est une plage comme "2026-06-30 au 2026-07-03", on formate les composants individuellement
+    let cleanDs = String(ds).trim();
+    if (cleanDs.includes(' au ')) {
+      return cleanDs.split(' au ').map(part => formatDateFR(part)).join(' au ');
+    }
+    const d = parseLocalDate(cleanDs);
+    if (!d) return cleanDs;
     const currentYear = new Date().getFullYear();
     const opts = { day: 'numeric', month: 'short' };
     if (d.getFullYear() !== currentYear) opts.year = 'numeric';
@@ -95,28 +118,85 @@ function formatDateFR(ds) {
   catch { return String(ds); }
 }
 
-const STATUS_PILL = { 'Signé': 'pill-green', 'Devis envoyé': 'pill-gold', 'Contacté': 'pill-gold', 'Nouveau': 'pill-terra', 'Terminé': 'pill-gray', 'Perdu': 'pill-red', 'Prestation en cours': 'pill-green' };
-const STATUS_LABEL = { 'Nouveau': '🆕 Nouvelle demande', 'Contacté': '☎️ Client contacté', 'Devis envoyé': '💬 Devis envoyé', 'Signé': '✅ Devis signé', 'Terminé': 'Prestation terminée', 'Perdu': '❌ Client perdu', 'Prestation en cours': '🔄 Prestation en cours' };
-const STATUS_DOT   = { 'Signé': 'green', 'Devis envoyé': '', 'Contacté': '', 'Nouveau': 'terra', 'Terminé': 'gray', 'Perdu': 'red', 'Prestation en cours': 'green' };
+const STATUS_PILL = {
+  'Nouveau': 'pill-terra', 'Nouvelle demande': 'pill-terra',
+  'Contacté': 'pill-gold', 'Client contacté': 'pill-gold',
+  'Devis envoyé': 'pill-gold',
+  'Signé': 'pill-green', 'Devis signé': 'pill-green',
+  'Prestation en cours': 'pill-green',
+  'Terminé': 'pill-gray', 'Prestation terminée': 'pill-gray',
+  'Perdu': 'pill-red', 'Client perdu': 'pill-red'
+};
+
+const STATUS_LABEL = {
+  'Nouveau': '🆕 Nouvelle demande', 'Nouvelle demande': '🆕 Nouvelle demande',
+  'Contacté': '☎️ Client contacté', 'Client contacté': '☎️ Client contacté',
+  'Devis envoyé': '💬 Devis envoyé',
+  'Signé': '✅ Devis signé', 'Devis signé': '✅ Devis signé',
+  'Prestation en cours': '🔄 Prestation en cours',
+  'Terminé': 'Prestation terminée', 'Prestation terminée': 'Prestation terminée',
+  'Perdu': '❌ Client perdu', 'Client perdu': '❌ Client perdu'
+};
+
+const STATUS_DOT = {
+  'Signé': 'green', 'Devis signé': 'green',
+  'Devis envoyé': '',
+  'Contacté': '', 'Client contacté': '',
+  'Nouveau': 'terra', 'Nouvelle demande': 'terra',
+  'Terminé': 'gray', 'Prestation terminée': 'gray',
+  'Perdu': 'red', 'Client perdu': 'red',
+  'Prestation en cours': 'green'
+};
+
+function normalizeFrenchPhone(phone) {
+  if (!phone) return '';
+  let clean = String(phone).replace(/\s+/g, '').trim();
+  
+  // Extract all digits
+  let digits = clean.replace(/\D/g, '');
+  
+  // Handle international +33 or 33 prefix
+  if (digits.startsWith('33')) {
+    if (digits.startsWith('330')) {
+      digits = digits.substring(2); // remove '33', keeps the '0'
+    } else {
+      digits = '0' + digits.substring(2); // replace '33' with '0'
+    }
+  }
+  
+  // If it's 9 digits starting with 1-9 (e.g. 663515474), prepend 0
+  if (digits.length === 9 && /^[1-9]/.test(digits)) {
+    digits = '0' + digits;
+  }
+  
+  // If we have exactly 10 digits now, format as "0X XX XX XX XX"
+  if (digits.length === 10) {
+    return digits.replace(/(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/, '$1 $2 $3 $4 $5');
+  }
+  
+  return phone;
+}
 
 // Rend un numéro de téléphone ou email cliquable, sinon retourne le texte brut
 function formatContact(contact) {
   if (contact === null || contact === undefined || contact === '') return '—';
   const c = String(contact).trim();
   if (!c) return '—';
-  const digits = c.replace(/\D/g, '');
+  
   const linkStyle = 'color:inherit;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px;';
-  if (!c.includes('@') && digits.length >= 6) {
-    // Google Sheets stocke les tél. comme des nombres : le 0 initial est supprimé.
-    // Si on a 9 chiffres commençant par 1-9 → numéro français sans son 0.
-    const missingZero = digits.length === 9 && /^[1-9]/.test(digits);
-    const display = missingZero ? '0' + c : c;
-    const tel     = missingZero ? '0' + digits : digits;
-    return `<a href="tel:${tel}" style="${linkStyle}">${display}</a>`;
-  }
+  
+  // Check if it's an email
   if (c.includes('@') && c.includes('.')) {
     return `<a href="mailto:${c}" style="${linkStyle}">${c}</a>`;
   }
+  
+  // Otherwise treat as a phone number
+  const normalized = normalizeFrenchPhone(c);
+  if (normalized && normalized.replace(/\s/g, '').length >= 9) {
+    const rawTel = normalized.replace(/\s/g, '');
+    return `<a href="tel:${rawTel}" style="${linkStyle}">${normalized}</a>`;
+  }
+  
   return c;
 }
 
@@ -150,10 +230,12 @@ function requestNotifPermission() {
 function checkNewEvents(rows) {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
   const seen = new Set(JSON.parse(localStorage.getItem(SEEN_EVENTS_KEY) || '[]'));
-  const newLeads = rows.filter(r => r['Statut traitement'] === 'Nouveau' && !seen.has(String(r._row)));
+  const newLeads = rows.filter(r => (r.statut === 'Nouveau' || r.statut === 'Nouvelle demande') && !seen.has(String(r._row)));
   newLeads.forEach(r => {
-    const budget = parseFloat(r['Budget estimé (€)']) || 0;
-    const body = `${r['Nom client']} · ${r['Type d\'événement'] || ''}${budget ? ' · ' + formatEuro(budget) : ''}`;
+    const sBudget = String(r.budget_estime || '').replace(/\s/g, '');
+    const numMatch = sBudget.match(/\d+/);
+    const budgetVal = numMatch ? parseFloat(numMatch[0]) : 0;
+    const body = `${r.nom_client || 'Sans nom'} · ${r.type_evenement || ''}${budgetVal ? ' · ' + formatEuro(budgetVal) : ''}`;
     const tag = 'lead-' + r._row;
     if (navigator.serviceWorker?.controller) {
       navigator.serviceWorker.controller.postMessage({ type: 'SHOW_NOTIFICATION', title: 'Nouvelle demande', body, tag });
@@ -170,41 +252,83 @@ function checkNewEvents(rows) {
 const SheetsAPI = {
   async load() {
     if (!CONFIG.SHEETS_URL) return null;
-    const res = await fetch(CONFIG.SHEETS_URL + '?action=getAll', { redirect: 'follow' });
+    const user = localStorage.getItem('cp_user') || '';
+    const pass = localStorage.getItem('cp_pass') || '';
+    const url = CONFIG.SHEETS_URL + '?action=getAll&user=' + encodeURIComponent(user) + '&pass=' + encodeURIComponent(pass);
+    const res = await fetch(url, { redirect: 'follow' });
     const text = await res.text();
     try {
-      return JSON.parse(text);
-    } catch {
+      const parsed = JSON.parse(text);
+      if (parsed.error === 'Non autorisé') {
+        logout();
+        throw new Error('Identifiants invalides');
+      }
+      return parsed;
+    } catch (e) {
+      if (e.message === 'Identifiants invalides') throw e;
       console.error('SheetsAPI: réponse non-JSON :', text.slice(0, 300));
       throw new Error('Réponse invalide du serveur (non-JSON)');
     }
   },
   async add(row) {
     if (!CONFIG.SHEETS_URL) return { error: 'Non configuré' };
+    const user = localStorage.getItem('cp_user') || '';
+    const pass = localStorage.getItem('cp_pass') || '';
     const res = await fetch(CONFIG.SHEETS_URL, {
       method: 'POST', redirect: 'follow',
-      body: JSON.stringify({ action: 'add', row }),
+      body: JSON.stringify({ action: 'add', row, user, pass }),
     });
     const text = await res.text();
-    try { return JSON.parse(text); } catch { throw new Error('Réponse invalide : ' + text.slice(0, 100)); }
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed.error === 'Non autorisé') {
+        logout();
+        return { error: 'Session expirée ou non autorisée' };
+      }
+      return parsed;
+    } catch {
+      throw new Error('Réponse invalide : ' + text.slice(0, 100));
+    }
   },
   async update(rowIndex, fields) {
     if (!CONFIG.SHEETS_URL) return { error: 'Non configuré' };
+    const user = localStorage.getItem('cp_user') || '';
+    const pass = localStorage.getItem('cp_pass') || '';
     const res = await fetch(CONFIG.SHEETS_URL, {
       method: 'POST', redirect: 'follow',
-      body: JSON.stringify({ action: 'update', rowIndex, fields }),
+      body: JSON.stringify({ action: 'update', rowIndex, fields, user, pass }),
     });
     const text = await res.text();
-    try { return JSON.parse(text); } catch { throw new Error('Réponse invalide : ' + text.slice(0, 100)); }
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed.error === 'Non autorisé') {
+        logout();
+        return { error: 'Session expirée ou non autorisée' };
+      }
+      return parsed;
+    } catch {
+      throw new Error('Réponse invalide : ' + text.slice(0, 100));
+    }
   },
   async remove(rowIndex) {
     if (!CONFIG.SHEETS_URL) return { error: 'Non configuré' };
+    const user = localStorage.getItem('cp_user') || '';
+    const pass = localStorage.getItem('cp_pass') || '';
     const res = await fetch(CONFIG.SHEETS_URL, {
       method: 'POST', redirect: 'follow',
-      body: JSON.stringify({ action: 'delete', rowIndex }),
+      body: JSON.stringify({ action: 'delete', rowIndex, user, pass }),
     });
     const text = await res.text();
-    try { return JSON.parse(text); } catch { throw new Error('Réponse invalide : ' + text.slice(0, 100)); }
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed.error === 'Non autorisé') {
+        logout();
+        return { error: 'Session expirée ou non autorisée' };
+      }
+      return parsed;
+    } catch {
+      throw new Error('Réponse invalide : ' + text.slice(0, 100));
+    }
   }
 };
 
@@ -213,12 +337,45 @@ const SheetsAPI = {
 let appData = [];
 
 function isEventPast(e) {
-  if (!e['Date de l\'événement']) return false;
-  const d = parseLocalDate(e['Date de l\'événement']);
+  if (!e.date_evenement) return false;
+  let dateStr = String(e.date_evenement).trim();
+  if (dateStr.includes(' au ')) {
+    const parts = dateStr.split(' au ');
+    dateStr = parts[parts.length - 1].trim();
+  }
+  const dateMatch = dateStr.match(/\d{4}-\d{2}-\d{2}/);
+  if (dateMatch) {
+    dateStr = dateMatch[0];
+  }
+  const d = parseLocalDate(dateStr);
   if (!d) return false;
   const today = new Date();
   today.setHours(0,0,0,0);
   return d.getTime() < today.getTime();
+}
+
+function getMissingFields(e) {
+  if (!e) return [];
+  const missing = [];
+  const noPhone = !e.telephone || String(e.telephone).trim() === '' || String(e.telephone).trim() === '—';
+  const noEmail = !e.email_client || String(e.email_client).trim() === '' || String(e.email_client).trim() === '—';
+  const noLieu = !e.lieu_prestation || String(e.lieu_prestation).trim() === '' || String(e.lieu_prestation).trim() === '—';
+  const noConvives = !e.nb_convives || String(e.nb_convives).trim() === '' || String(e.nb_convives).trim() === '—' || String(e.nb_convives).trim() === '0';
+
+  if (noPhone && noEmail) {
+    missing.push('Téléphone & E-mail');
+  }
+  if (noLieu) {
+    missing.push('Lieu');
+  }
+  if (noConvives) {
+    missing.push('Nombre de convives');
+  }
+  return missing;
+}
+
+function hasMissingInfo(e) {
+  return getMissingFields(e).length > 0;
 }
 
 async function loadData() {
@@ -278,20 +435,28 @@ function renderAll() {
 
 function renderDashboard() {
   const currentYear = new Date().getFullYear();
-  const CA_STATUTS = ['Signé', 'Prestation en cours', 'Terminé'];
+  const CA_STATUTS = ['Signé', 'Devis signé', 'Prestation en cours', 'Terminé', 'Prestation terminée'];
   const yearlySigned = appData.filter(e => {
-    if (!CA_STATUTS.includes(e['Statut traitement'])) return false;
-    if (!e['Date de l\'événement']) return false;
-    const d = new Date(String(e['Date de l\'événement']).split('T')[0]);
+    if (!CA_STATUTS.includes(e.statut)) return false;
+    if (!e.date_evenement) return false;
+    let dateStr = String(e.date_evenement).trim();
+    const dateMatch = dateStr.match(/\d{4}-\d{2}-\d{2}/);
+    if (dateMatch) dateStr = dateMatch[0];
+    const d = new Date(dateStr);
     return !isNaN(d.getTime()) && d.getFullYear() === currentYear;
   });
-  const caConf = yearlySigned.reduce((s, e) => s + (parseFloat(e['Budget estimé (€)']) || 0), 0);
+  
+  const caConf = yearlySigned.reduce((s, e) => {
+    const sBudget = String(e.budget_estime || '').replace(/\s/g, '');
+    const numMatch = sBudget.match(/\d+/);
+    const budgetVal = numMatch ? parseFloat(numMatch[0]) : 0;
+    return s + budgetVal;
+  }, 0);
 
   const actives = appData.filter(e => !isEventPast(e));
-  const confirmes = actives.filter(e => e['Statut traitement'] === 'Signé');
-  const devisEnv  = actives.filter(e => e['Statut traitement'] === 'Devis envoyé');
-
-  const nouveaux = actives.filter(e => e['Statut traitement'] === 'Nouveau');
+  const confirmes = actives.filter(e => e.statut === 'Signé' || e.statut === 'Devis signé');
+  const devisEnv  = actives.filter(e => e.statut === 'Devis envoyé');
+  const nouveaux = actives.filter(e => e.statut === 'Nouveau' || e.statut === 'Nouvelle demande');
 
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
   set('kpi-ca-val',          formatEuro(caConf));
@@ -300,14 +465,10 @@ function renderDashboard() {
   set('kpi-devis-val',       devisEnv.length || '—');
   set('kpi-leads-val',       nouveaux.length || '—');
 
-
-  // ── Carte Nouvelles demandes (Nouveau uniquement)
-  const todayDate = new Date();
-  todayDate.setHours(0,0,0,0);
-
+  // Nouvelles demandes (Nouveau ou Nouvelle demande)
   const newDemandes = appData
-    .filter(e => e['Statut traitement'] === 'Nouveau')
-    .sort((a, b) => (b['Date de la demande'] || '').localeCompare(a['Date de la demande'] || ''))
+    .filter(e => e.statut === 'Nouveau' || e.statut === 'Nouvelle demande')
+    .sort((a, b) => (b.date_reception || '').localeCompare(a.date_reception || ''))
     .slice(0, 6);
 
   const newTbody = document.getElementById('new-demandes-tbody');
@@ -318,10 +479,9 @@ function renderDashboard() {
       newTbody.innerHTML = '<tr><td colspan="4" class="tbl-empty">Aucune nouvelle demande</td></tr>';
     } else {
       newTbody.innerHTML = newDemandes.map(e => {
-        const budget = parseFloat(e['Budget estimé (€)']);
         let ageBadge = '—';
-        if (e['Date de la demande']) {
-          const demandDate = parseLocalDate(e['Date de la demande']);
+        if (e.date_reception) {
+          const demandDate = parseLocalDate(e.date_reception);
           const hours = demandDate ? Math.floor((Date.now() - demandDate.getTime()) / 3600000) : -1;
           if (hours >= 0) {
             const color = hours < 24 ? '#4A6741' : hours < 72 ? '#B8860B' : '#C0453A';
@@ -330,51 +490,67 @@ function renderDashboard() {
               : `<span style="color:${color};font-weight:600;">il y a ${Math.floor(hours/24)}j</span>`;
           }
         }
+        const warningBadge = hasMissingInfo(e) ? ` <span class="pill pill-red" style="font-size:8px; font-weight:700; background:rgba(192,69,58,.15); color:var(--red-soft); margin-left:6px; flex-shrink:0; vertical-align:middle;">⚠️ Infos manquantes</span>` : '';
         return `<tr style="cursor:pointer" onclick="openEventModal(${e._row})">
-          <td><strong>${formatDateFR(e['Date de l\'événement']) || '—'}</strong></td>
-          <td>${e['Nom client']}</td>
-          <td>${budget ? formatEuro(budget) : '—'}</td>
+          <td><strong>${formatDateFR(e.date_evenement) || '—'}</strong></td>
+          <td>${e.nom_client || '—'}${warningBadge}</td>
+          <td>${formatBudget(e.budget_estime)}</td>
           <td>${ageBadge}</td>
         </tr>`;
       }).join('');
     }
   }
 
-  // ── Carte Demandes en cours (Contacté / Devis envoyé)
-  const PIPELINE_SCOPE_HOME = ['Contacté', 'Devis envoyé'];
+  // Demandes en cours (Contacté / Devis envoyé)
+  const PIPELINE_SCOPE_HOME = ['Contacté', 'Client contacté', 'Devis envoyé'];
   const demandesHome = actives
-    .filter(e => PIPELINE_SCOPE_HOME.includes(e['Statut traitement']) && e['Date de l\'événement'])
-    .sort((a, b) => (a['Date de l\'événement'] || '').localeCompare(b['Date de l\'événement'] || ''))
+    .filter(e => PIPELINE_SCOPE_HOME.includes(e.statut) && e.date_evenement)
+    .sort((a, b) => (a.date_evenement || '').localeCompare(b.date_evenement || ''))
     .slice(0, 6);
 
   const tbody = document.getElementById('upcoming-tbody');
-  if (!tbody) return;
+  if (tbody) {
+    if (!CONFIG.SHEETS_URL) {
+      tbody.innerHTML = '<tr><td colspan="4" class="tbl-empty">\u2699 Configurez CONFIG.SHEETS_URL dans app.js</td></tr>';
+    } else if (!demandesHome.length) {
+      tbody.innerHTML = '<tr><td colspan="4" class="tbl-empty">Aucune demande en cours</td></tr>';
+    } else {
+      const todayDate = new Date();
+      todayDate.setHours(0,0,0,0);
+      tbody.innerHTML = demandesHome.map(e => {
+        let dateStr = String(e.date_evenement).trim();
+        const dateMatch = dateStr.match(/\d{4}-\d{2}-\d{2}/);
+        if (dateMatch) dateStr = dateMatch[0];
+        const d = parseLocalDate(dateStr);
+        const diffDays = d ? Math.ceil((d.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24)) : 999;
+        
+        const isEnterprise = String(e.type_evenement).trim().toLowerCase() === 'entreprise';
+        let urgClass = '';
+        if (d) {
+          if (!isEnterprise) {
+            if (diffDays < 7) urgClass = 'row-urgent';
+            else if (diffDays >= 7 && diffDays <= 30) urgClass = 'row-prio';
+          } else {
+            if (diffDays <= URGENCE_JOURS_URGENT) urgClass = 'row-urgent';
+            else if (diffDays <= URGENCE_JOURS_PRIORITAIRE) urgClass = 'row-prio';
+          }
+        }
 
-  if (!CONFIG.SHEETS_URL) {
-    tbody.innerHTML = '<tr><td colspan="4" class="tbl-empty">\u2699 Configurez CONFIG.SHEETS_URL dans app.js</td></tr>';
-    return;
-  }
-  if (!demandesHome.length) {
-    tbody.innerHTML = '<tr><td colspan="4" class="tbl-empty">Aucune demande en cours</td></tr>';
-  } else {
-    tbody.innerHTML = demandesHome.map(e => {
-      const budget = parseFloat(e['Budget estimé (€)']);
-      const d = parseLocalDate(e['Date de l\'événement']);
-      const diffDays = d ? Math.ceil((d.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24)) : 999;
-      const urgClass = diffDays <= URGENCE_JOURS_URGENT ? 'row-urgent' : diffDays <= URGENCE_JOURS_PRIORITAIRE ? 'row-prio' : '';
-      return `<tr class="${urgClass}" style="cursor:pointer" onclick="openEventModal(${e._row})">
-        <td><strong>${formatDateFR(e['Date de l\'événement'])}</strong></td>
-        <td>${e['Nom client']}</td>
-        <td>${budget ? formatEuro(budget) : '—'}</td>
-        <td><span class="pill ${STATUS_PILL[e['Statut traitement']] || 'pill-gray'}">${STATUS_LABEL[e['Statut traitement']] || e['Statut traitement']}</span></td>
-      </tr>`;
-    }).join('');
+        const warningBadge = hasMissingInfo(e) ? ` <span class="pill pill-red" style="font-size:8px; font-weight:700; background:rgba(192,69,58,.15); color:var(--red-soft); margin-left:6px; flex-shrink:0; vertical-align:middle;">⚠️ Infos manquantes</span>` : '';
+        return `<tr class="${urgClass}" style="cursor:pointer" onclick="openEventModal(${e._row})">
+          <td><strong>${formatDateFR(e.date_evenement)}</strong></td>
+          <td>${e.nom_client || '—'}${warningBadge}</td>
+          <td>${formatBudget(e.budget_estime)}</td>
+          <td><span class="pill ${STATUS_PILL[e.statut] || 'pill-gray'}">${STATUS_LABEL[e.statut] || e.statut}</span></td>
+        </tr>`;
+      }).join('');
+    }
   }
 
-  // ── Carte 2 : Prestations en cours (Signé / Prestation en cours)
+  // Prestations en cours (Signé / Devis signé / Prestation en cours)
   const prestationsHome = actives
-    .filter(e => e['Statut traitement'] === 'Signé' || e['Statut traitement'] === 'Prestation en cours')
-    .sort((a, b) => (a['Date de l\'événement'] || '').localeCompare(b['Date de l\'événement'] || ''))
+    .filter(e => e.statut === 'Signé' || e.statut === 'Devis signé' || e.statut === 'Prestation en cours')
+    .sort((a, b) => (a.date_evenement || '').localeCompare(b.date_evenement || ''))
     .slice(0, 5);
 
   const actEl = document.getElementById('recent-activity');
@@ -382,14 +558,14 @@ function renderDashboard() {
     if (!prestationsHome.length) {
       actEl.innerHTML = '<div class="act-time" style="padding:12px 0;color:var(--muted);">Aucune prestation en cours</div>';
     } else {
-      const thead = '<table class="tbl tbl-sm"><thead><tr><th style="width:22%">Date</th><th style="width:36%">Client</th><th style="width:20%">€</th><th style="width:22%">Statut</th></tr></thead><tbody>';
+      const thead = '<table class="tbl tbl-sm"><thead><tr><th style="width:22%">Date</th><th style="width:36%">Client</th><th style="width:20%">Budget</th><th style="width:22%">Statut</th></tr></thead><tbody>';
       actEl.innerHTML = thead + prestationsHome.map(e => {
-        const budget = parseFloat(e['Budget estimé (€)']);
+        const warningBadge = hasMissingInfo(e) ? ` <span class="pill pill-red" style="font-size:8px; font-weight:700; background:rgba(192,69,58,.15); color:var(--red-soft); margin-left:6px; flex-shrink:0; vertical-align:middle;">⚠️ Infos manquantes</span>` : '';
         return `<tr style="cursor:pointer" onclick="openEventModal(${e._row})">
-          <td><strong>${formatDateFR(e['Date de l\'événement'])}</strong></td>
-          <td>${e['Nom client']}</td>
-          <td>${budget ? formatEuro(budget) : '—'}</td>
-          <td><span class="pill ${STATUS_PILL[e['Statut traitement']] || 'pill-gray'}">${STATUS_LABEL[e['Statut traitement']] || e['Statut traitement']}</span></td>
+          <td><strong>${formatDateFR(e.date_evenement)}</strong></td>
+          <td>${e.nom_client || '—'}${warningBadge}</td>
+          <td>${formatBudget(e.budget_estime)}</td>
+          <td><span class="pill ${STATUS_PILL[e.statut] || 'pill-gray'}">${STATUS_LABEL[e.statut] || e.statut}</span></td>
         </tr>`;
       }).join('') + '</tbody></table>';
     }
@@ -409,8 +585,6 @@ const PIPELINE_COLS = [
   { label: 'Normal',      id: 'normal'      },
 ];
 
-const ALL_STATUSES = ['Nouveau', 'Contacté', 'Devis envoyé', 'Signé', 'Prestation en cours', 'Terminé', 'Perdu'];
-
 function renderPipeline() {
   const el = document.getElementById('pipeline');
   if (!el) return;
@@ -423,44 +597,63 @@ function renderPipeline() {
   const today = new Date();
   today.setHours(0,0,0,0);
 
-  // Scope: Nouveau, Contacté, Devis envoyé uniquement
-  const PIPELINE_SCOPE = ['Nouveau', 'Contacté', 'Devis envoyé'];
+  // Scope: Nouveau, Nouvelle demande, Contacté, Client contacté, Devis envoyé
+  const PIPELINE_SCOPE = ['Nouveau', 'Nouvelle demande', 'Contacté', 'Client contacté', 'Devis envoyé'];
   const colsData = { 'urgent': [], 'prioritaire': [], 'important': [], 'normal': [] };
 
   appData.forEach(e => {
-    if (!PIPELINE_SCOPE.includes(e['Statut traitement'])) return;
+    if (!PIPELINE_SCOPE.includes(e.statut)) return;
     if (isEventPast(e)) return;
 
-    if (!e['Date de l\'événement']) { colsData['normal'].push(e); return; }
-    const d = new Date(String(e['Date de l\'événement']).split('T')[0]);
+    const isEnterprise = String(e.type_evenement).trim().toLowerCase() === 'entreprise';
+    if (isEnterprise) {
+      colsData['prioritaire'].push(e);
+      return;
+    }
+
+    if (!e.date_evenement) { colsData['normal'].push(e); return; }
+    let dateStr = String(e.date_evenement).trim();
+    const dateMatch = dateStr.match(/\d{4}-\d{2}-\d{2}/);
+    if (dateMatch) dateStr = dateMatch[0];
+    const d = new Date(dateStr);
     if (isNaN(d.getTime())) { colsData['normal'].push(e); return; }
 
     const diffDays = Math.ceil((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    const budget = parseFloat(e['Budget estimé (€)']) || 0;
-
-    if (diffDays <= URGENCE_JOURS_URGENT) {
+    
+    if (diffDays < 7) {
       colsData['urgent'].push(e);
-    } else if (diffDays <= URGENCE_JOURS_PRIORITAIRE) {
-      colsData['prioritaire'].push(e);
-    } else if (budget >= URGENCE_SEUIL_CA) {
+    } else if (diffDays >= 7 && diffDays <= 30) {
       colsData['important'].push(e);
     } else {
       colsData['normal'].push(e);
     }
   });
 
+  // Sort events in each column by date
+  const sortEventsByDate = (a, b) => {
+    const da = a.date_evenement || '';
+    const db = b.date_evenement || '';
+    return da.localeCompare(db);
+  };
+  Object.keys(colsData).forEach(key => {
+    colsData[key].sort(sortEventsByDate);
+  });
+
+  const ALL_STATUSES = ['Nouvelle demande', 'Client contacté', 'Devis envoyé', 'Devis signé', 'Prestation en cours', 'Prestation terminée', 'Client perdu'];
+
   el.innerHTML = PIPELINE_COLS.map(col => {
     const events = colsData[col.id];
 
     const cards = events.map(e => {
       const options = ALL_STATUSES.map(s =>
-        `<option value="${s}"${s === e['Statut traitement'] ? ' selected' : ''}>${STATUS_LABEL[s]}</option>`
+        `<option value="${s}"${s === e.statut || (s === 'Nouvelle demande' && e.statut === 'Nouveau') || (s === 'Client contacté' && e.statut === 'Contacté') || (s === 'Devis signé' && e.statut === 'Signé') || (s === 'Prestation terminée' && e.statut === 'Terminé') || (s === 'Client perdu' && e.statut === 'Perdu') ? ' selected' : ''}>${STATUS_LABEL[s] || s}</option>`
       ).join('');
 
-      // Badge ancienneté pour Nouveau / Contacté
+      // Badge ancienneté
       let ageBadge = '';
-      if ((e['Statut traitement'] === 'Nouveau' || e['Statut traitement'] === 'Contacté') && e['Date de la demande']) {
-        const demandDate = parseLocalDate(e['Date de la demande']);
+      const isNewOrContacted = ['Nouveau', 'Nouvelle demande', 'Contacté', 'Client contacté'].includes(e.statut);
+      if (isNewOrContacted && e.date_reception) {
+        const demandDate = parseLocalDate(e.date_reception);
         const hours = demandDate ? Math.floor((Date.now() - demandDate.getTime()) / 3600000) : -1;
         if (hours >= 0) {
           const badgeColor = hours < 24 ? '#4A6741' : hours < 72 ? '#B8860B' : '#C0453A';
@@ -469,21 +662,39 @@ function renderPipeline() {
         }
       }
 
-      const contactRaw = e['Contact'] ? formatContact(e['Contact']) : '';
-      const emailRaw   = e['Email client'] ? formatContact(e['Email client']) : '';
+      const contactRaw = e.telephone ? formatContact(e.telephone) : '';
+      const emailRaw   = e.email_client ? formatContact(e.email_client) : '';
       const contactLine = [contactRaw, emailRaw].filter(v => v && v !== '—').join(' · ');
+
+      // Liens e-mail et drive sous forme d'icônes
+      let linksLine = '';
+      const links = [];
+      if (e.url_email_origine) links.push(`<a href="${e.url_email_origine}" target="_blank" title="Email d'origine" style="text-decoration:none; margin-right:6px;">✉️</a>`);
+      if (e.url_dossier_drive) links.push(`<a href="${e.url_dossier_drive}" target="_blank" title="Dossier Drive" style="text-decoration:none;">📂</a>`);
+      if (links.length) {
+        linksLine = `<div style="margin-top: 4px; font-size:14px;">${links.join(' ')}</div>`;
+      }
+
+      let warningBadge = '';
+      if (hasMissingInfo(e)) {
+        warningBadge = `<span class="pill pill-red" style="font-size:8px; font-weight:700; background:rgba(192,69,58,.15); color:var(--red-soft); margin-left:6px; flex-shrink:0; vertical-align:middle;">⚠️ Infos manquantes</span>`;
+      }
 
       return `
       <div class="pipe-card" onclick="openEventModal(${e._row})">
-        <div class="pipe-client">${e['Nom client']}</div>
-        <div class="pipe-event">${e['Type d\'événement']} \xb7 ${e['Nb convives']} pers.${e['Date de l\'événement'] ? ' \xb7 ' + formatDateFR(e['Date de l\'événement']) : ''}</div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
+          <div class="pipe-client" style="margin-bottom:0;">${e.nom_client || '—'}</div>
+          ${warningBadge}
+        </div>
+        <div class="pipe-event">${e.type_evenement || 'Autre'} \xb7 ${e.nb_convives || '—'} pers.${e.date_evenement ? ' \xb7 ' + formatDateFR(e.date_evenement) : ''}</div>
         ${contactLine ? `<div class="pipe-contact" onclick="event.stopPropagation()">${contactLine}</div>` : ''}
+        ${linksLine ? `<div onclick="event.stopPropagation()">${linksLine}</div>` : ''}
         <div class="pipe-footer" style="padding-top: 8px;">
           <div>
-            <span class="pipe-amount" style="font-size:12px">${formatEuro(parseFloat(e['Budget estimé (€)']) || 0)}</span>
+            <span class="pipe-amount" style="font-size:12px">${formatBudget(e.budget_estime)}</span>
             ${ageBadge}
           </div>
-          <select class="pipe-status-sel pill ${STATUS_PILL[e['Statut traitement']] || 'pill-gray'}" style="border:none; outline:none; cursor:pointer; font-family:inherit;" onchange="updateEventStatus(this,${e._row})" onclick="event.stopPropagation()">
+          <select class="pipe-status-sel pill ${STATUS_PILL[e.statut] || 'pill-gray'}" style="border:none; outline:none; cursor:pointer; font-family:inherit;" onchange="updateEventStatus(this,${e._row})" onclick="event.stopPropagation()">
             ${options}
           </select>
         </div>
@@ -501,11 +712,11 @@ async function updateEventStatus(selectEl, rowIndex) {
   const newStatus = selectEl.value;
   selectEl.disabled = true;
   try {
-    const result = await SheetsAPI.update(rowIndex, { 'Statut traitement': newStatus });
+    const result = await SheetsAPI.update(rowIndex, { 'statut': newStatus });
     if (result.success) {
       const row = appData.find(e => e._row === rowIndex);
-      if (row) row['Statut traitement'] = newStatus;
-      renderPipeline(); renderDashboard();
+      if (row) row.statut = newStatus;
+      renderAll();
       showNotification('Statut mis à jour', 'success');
     } else {
       selectEl.disabled = false;
@@ -530,9 +741,10 @@ function renderClients() {
     return;
   }
 
+  const CLIENTS_SCOPE = ['Signé', 'Devis signé', 'Prestation en cours'];
   const prestations = appData
-    .filter(e => (e['Statut traitement'] === 'Signé' || e['Statut traitement'] === 'Prestation en cours') && !isEventPast(e))
-    .sort((a, b) => (a['Date de l\'événement'] || '').localeCompare(b['Date de l\'événement'] || ''));
+    .filter(e => CLIENTS_SCOPE.includes(e.statut) && !isEventPast(e))
+    .sort((a, b) => (a.date_evenement || '').localeCompare(b.date_evenement || ''));
 
   if (sub) sub.textContent = `${prestations.length} prestation${prestations.length > 1 ? 's' : ''} en cours`;
 
@@ -542,16 +754,25 @@ function renderClients() {
   }
 
   container.innerHTML = prestations.map(e => {
-    const budget = parseFloat(e['Budget estimé (€)']) || 0;
-    const pill   = `<span class="pill ${STATUS_PILL[e['Statut traitement']] || 'pill-gray'}">${STATUS_LABEL[e['Statut traitement']] || e['Statut traitement']}</span>`;
-    const contact = e['Contact'] ? formatContact(e['Contact']) : '';
-    const email   = e['Email client'] ? formatContact(e['Email client']) : '';
+    const pill   = `<span class="pill ${STATUS_PILL[e.statut] || 'pill-gray'}">${STATUS_LABEL[e.statut] || e.statut}</span>`;
+    const contact = e.telephone ? formatContact(e.telephone) : '';
+    const email   = e.email_client ? formatContact(e.email_client) : '';
     const contactLine = [contact, email].filter(v => v && v !== '—').join(' · ');
+
+    let linksLine = '';
+    const links = [];
+    if (e.url_email_origine) links.push(`<a href="${e.url_email_origine}" target="_blank" style="color:var(--gold);text-decoration:underline;margin-right:12px;">✉️ Ouvrir l'e-mail</a>`);
+    if (e.url_dossier_drive) links.push(`<a href="${e.url_dossier_drive}" target="_blank" style="color:var(--gold);text-decoration:underline;">📂 Ouvrir le dossier Drive</a>`);
+    if (links.length) {
+      linksLine = `<div style="margin-top: 6px; font-size:12px;">${links.join('')}</div>`;
+    }
+
     return `<div class="prestation-card">
       <div class="pc-header" onclick="openEventModal(${e._row})" style="cursor:pointer">
-        <div class="pc-line1"><strong>${e['Nom client']}</strong> · ${e['Type d\'événement'] || '—'} · <em>${formatDateFR(e['Date de l\'événement'])}</em></div>
-        <div class="pc-line2">${budget ? formatEuro(budget) : '—'} &nbsp;${pill}</div>
+        <div class="pc-line1"><strong>${e.nom_client || '—'}</strong> · ${e.type_evenement || 'Autre'} · <em>${formatDateFR(e.date_evenement)}</em></div>
+        <div class="pc-line2">${formatBudget(e.budget_estime)} &nbsp;${pill}</div>
         ${contactLine ? `<div class="pc-contact">${contactLine}</div>` : ''}
+        ${linksLine ? `<div onclick="event.stopPropagation()">${linksLine}</div>` : ''}
       </div>
       <div class="pc-todos" id="todos-${e._row}"></div>
       <div class="pc-todo-add">
@@ -633,25 +854,25 @@ function applyHistoriqueDateRange() {
 function getFilteredHistorique() {
   const allPast = appData
     .filter(e => isEventPast(e))
-    .sort((a, b) => (b['Date de l\'événement'] || '').localeCompare(a['Date de l\'événement'] || ''));
+    .sort((a, b) => (b.date_evenement || '').localeCompare(a.date_evenement || ''));
 
   if (historiqueFilter === 'all') return allPast;
 
   const quarters = { T1: ['01','02','03'], T2: ['04','05','06'], T3: ['07','08','09'], T4: ['10','11','12'] };
 
   if (historiqueFilter === '2026') {
-    return allPast.filter(e => String(e['Date de l\'événement'] || '').startsWith('2026-'));
+    return allPast.filter(e => String(e.date_evenement || '').startsWith('2026-'));
   }
   if (quarters[historiqueFilter]) {
     const months = quarters[historiqueFilter];
     return allPast.filter(e => {
-      const ds = String(e['Date de l\'événement'] || '').split('T')[0];
+      const ds = String(e.date_evenement || '').split('T')[0];
       return ds.startsWith('2026-') && months.includes(ds.slice(5, 7));
     });
   }
   if (historiqueFilter === 'range') {
     return allPast.filter(e => {
-      const ds = String(e['Date de l\'événement'] || '').split('T')[0];
+      const ds = String(e.date_evenement || '').split('T')[0];
       if (historiqueDateFrom && ds < historiqueDateFrom) return false;
       if (historiqueDateTo   && ds > historiqueDateTo)   return false;
       return true;
@@ -674,19 +895,18 @@ function renderHistorique() {
   }
 
   tbody.innerHTML = pastEvents.map(e => {
-    const notes  = String(e['Notes'] || '');
+    const notes  = String(e.notes || '');
     const notesTrunc = notes.length > 40 ? notes.slice(0, 40) + '…' : notes;
-    const budget = parseFloat(e['Budget estimé (€)']);
     return `<tr style="cursor:pointer" onclick="openEventModal(${e._row})">
-      <td><strong>${formatDateFR(e['Date de l\'événement'])}</strong></td>
-      <td>${e['Nom client']}</td>
-      <td>${e['Type d\'événement'] || '—'}</td>
-      <td>${e['Lieu de la prestation'] || '—'}</td>
-      <td>${e['Nb convives'] || '—'}</td>
-      <td>${budget ? formatEuro(budget) : '—'}</td>
-      <td><span class="pill ${STATUS_PILL[e['Statut traitement']] || 'pill-gray'}">${STATUS_LABEL[e['Statut traitement']] || e['Statut traitement']}</span></td>
-      <td>${e['Email client'] ? formatContact(e['Email client']) : '—'}</td>
-      <td>${formatContact(e['Contact'] || '')}</td>
+      <td><strong>${formatDateFR(e.date_evenement)}</strong></td>
+      <td>${e.nom_client || '—'}</td>
+      <td>${e.type_evenement || '—'}</td>
+      <td>${e.lieu_prestation || '—'}</td>
+      <td>${e.nb_convives || '—'}</td>
+      <td>${formatBudget(e.budget_estime)}</td>
+      <td><span class="pill ${STATUS_PILL[e.statut] || 'pill-gray'}">${STATUS_LABEL[e.statut] || e.statut}</span></td>
+      <td>${e.email_client ? formatContact(e.email_client) : '—'}</td>
+      <td>${e.telephone ? formatContact(e.telephone) : '—'}</td>
       <td title="${notes}">${notesTrunc || '—'}</td>
     </tr>`;
   }).join('');
@@ -696,18 +916,25 @@ function exportHistoriqueCSV() {
   const rows = getFilteredHistorique();
   const BOM  = '\uFEFF';
   const esc  = v => '"' + String(v || '').replace(/"/g, '""') + '"';
-  const headers = ['Date','Client','Type','Lieu','Couverts','Budget','Statut','Email','Contact','Notes'];
+  const headers = ['ID Demande','Date Réception','Canal','Client','Téléphone','Email','Type','Date Événement','Convives','Lieu','Budget','Statut','Message','Email Origine','Notes','Dossier Drive','Dernière Modification'];
   const lines = [headers.join(';')].concat(rows.map(e => [
-    String(e['Date de l\'événement'] || '').split('T')[0],
-    e['Nom client'],
-    e['Type d\'événement'] || '',
-    e['Lieu de la prestation'] || '',
-    e['Nb convives'] || '',
-    parseFloat(e['Budget estimé (€)']) || '',
-    e['Statut traitement'] || '',
-    e['Email client'] || '',
-    e['Contact'] || '',
-    e['Notes'] || ''
+    e.id_demande || '',
+    e.date_reception || '',
+    e.canal || '',
+    e.nom_client || '',
+    e.telephone || '',
+    e.email_client || '',
+    e.type_evenement || '',
+    e.date_evenement || '',
+    e.nb_convives || '',
+    e.lieu_prestation || '',
+    e.budget_estime || '',
+    e.statut || '',
+    e.message_original || '',
+    e.url_email_origine || '',
+    e.notes || '',
+    e.url_dossier_drive || '',
+    e.derniere_modification || ''
   ].map(esc).join(';')));
   const blob = new Blob([BOM + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
   const a    = document.createElement('a');
@@ -715,8 +942,6 @@ function exportHistoriqueCSV() {
   a.download = `chez-papi-historique-${new Date().toISOString().split('T')[0]}.csv`;
   a.click();
 }
-
-// ── FINANCES REMOVED ──
 
 // ── EVENT MODAL ──
 
@@ -748,19 +973,45 @@ function showViewModal(rowIndex) {
   if (!data) return;
 
   const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val || '—'; };
+  const setHtml = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html || '—'; };
   
-  set('view-date-evt', formatDateFR(data['Date de l\'événement']));
-  set('view-client', data['Nom client']);
-  set('view-type', data['Type d\'événement']);
-  set('view-invites', data['Nb convives']);
-  set('view-budget', formatEuro(parseFloat(data['Budget estimé (€)']) || 0));
-  set('view-statut', STATUS_LABEL[data['Statut traitement']] || data['Statut traitement']);
-  const contactEl = document.getElementById('view-contact');
-  if (contactEl) contactEl.innerHTML = formatContact(data['Contact'] || '');
-  const emailEl = document.getElementById('view-email');
-  if (emailEl) emailEl.innerHTML = formatContact(data['Email client'] || '');
-  set('view-lieu', data['Lieu de la prestation']);
-  set('view-notes', data['Notes']);
+  set('view-date-evt', formatDateFR(data.date_evenement));
+  set('view-client', data.nom_client);
+  set('view-type', data.type_evenement);
+  set('view-invites', data.nb_convives);
+  set('view-budget', formatBudget(data.budget_estime));
+  set('view-statut', STATUS_LABEL[data.statut] || data.statut);
+  setHtml('view-telephone', data.telephone ? formatContact(data.telephone) : '—');
+  setHtml('view-email', data.email_client ? formatContact(data.email_client) : '—');
+  set('view-lieu', data.lieu_prestation);
+  set('view-canal', data.canal);
+  set('view-date-reception', formatDateFR(data.date_reception));
+  setHtml('view-url-email', data.url_email_origine ? `<a href="${data.url_email_origine}" target="_blank" style="color:var(--gold);text-decoration:underline;">Ouvrir l'e-mail</a>` : '—');
+  setHtml('view-url-drive', data.url_dossier_drive ? `<a href="${data.url_dossier_drive}" target="_blank" style="color:var(--gold);text-decoration:underline;">Ouvrir le dossier</a>` : '—');
+  
+  let modifStr = '—';
+  if (data.derniere_modification) {
+    const d = new Date(data.derniere_modification);
+    if (!isNaN(d.getTime())) {
+      modifStr = d.toLocaleString('fr-FR');
+    } else {
+      modifStr = String(data.derniere_modification);
+    }
+  }
+  set('view-derniere-modif', modifStr);
+  set('view-message', data.message_original);
+  set('view-notes', data.notes);
+
+  const warningEl = document.getElementById('view-warning-missing-info');
+  if (warningEl) {
+    const missingFields = getMissingFields(data);
+    if (missingFields.length > 0) {
+      warningEl.innerHTML = `⚠️ <strong>Infos manquantes :</strong> veuillez renseigner le/les champ(s) : ${missingFields.join(', ')}.`;
+      warningEl.style.display = 'block';
+    } else {
+      warningEl.style.display = 'none';
+    }
+  }
 
   document.getElementById('view-modal').style.display = 'flex';
 }
@@ -789,6 +1040,9 @@ function openEventModal(rowIndex = null, forceEdit = false) {
           if (el.type === 'date' && val) {
             val = String(val).split('T')[0];
           }
+          if (el.name === 'telephone' && val) {
+            val = normalizeFrenchPhone(val);
+          }
           el.value = val;
         }
       }
@@ -796,8 +1050,8 @@ function openEventModal(rowIndex = null, forceEdit = false) {
   } else {
     const now = new Date();
     const localToday = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-    form.elements['Date de la demande'].value = localToday;
-    form.elements['Statut traitement'].value  = 'Nouveau';
+    form.elements['date_reception'].value = localToday;
+    form.elements['statut'].value  = 'Nouvelle demande';
   }
 
   const btnDel = document.getElementById('btn-delete-event');
@@ -826,15 +1080,15 @@ function checkDateConflict(dateValue) {
 
   const conflicts = appData.filter(e => {
     if (editingRow && e._row === editingRow) return false;
-    if (!['Signé', 'Prestation en cours'].includes(e['Statut traitement'])) return false;
-    return String(e['Date de l\'événement'] || '').split('T')[0] === dateValue;
+    if (!['Signé', 'Devis signé', 'Prestation en cours'].includes(e.statut)) return false;
+    return String(e.date_evenement || '').includes(dateValue);
   });
 
   banner.style.display = 'block';
   if (conflicts.length) {
     const c = conflicts[0];
     banner.style.cssText = 'display:block;padding:8px 12px;border-radius:4px;font-size:12px;margin:4px 0 8px;background:rgba(245,166,35,0.15);color:#B86A00;border:1px solid rgba(245,166,35,0.4);';
-    banner.textContent = `⚠️ ${c['Nom client']} (${c['Type d\'événement']}) est déjà signé à cette date`;
+    banner.textContent = `⚠️ ${c.nom_client || 'Sans nom'} (${c.type_evenement || 'Autre'}) est déjà signé à cette date`;
   } else {
     banner.style.cssText = 'display:block;padding:8px 12px;border-radius:4px;font-size:12px;margin:4px 0 8px;background:rgba(74,103,65,0.12);color:#4A6741;border:1px solid rgba(74,103,65,0.3);';
     banner.textContent = '✓ Date disponible';
@@ -845,9 +1099,18 @@ document.getElementById('event-modal').addEventListener('click', e => {
   if (e.target === document.getElementById('event-modal')) closeEventModal();
 });
 
-// Vérification conflit de date sur changement du champ date événement
+// Vérification conflit de date
 document.getElementById('event-form').addEventListener('change', e => {
-  if (e.target.name === 'Date de l\'événement') checkDateConflict(e.target.value);
+  if (e.target.name === 'date_evenement') {
+    // Si la valeur ressemble à une date simple YYYY-MM-DD, lance le test de conflit
+    const dateMatch = e.target.value.match(/\d{4}-\d{2}-\d{2}/);
+    if (dateMatch) {
+      checkDateConflict(dateMatch[0]);
+    } else {
+      const banner = document.getElementById('date-conflict-banner');
+      if (banner) banner.style.display = 'none';
+    }
+  }
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeEventModal(); });
 
@@ -866,7 +1129,10 @@ document.getElementById('event-form').addEventListener('submit', async e => {
       result = await SheetsAPI.update(editingRow, data);
       if (result.success) {
         const row = appData.find(r => r._row === editingRow);
-        if (row) Object.assign(row, data);
+        if (row) {
+          Object.assign(row, data);
+          row.derniere_modification = new Date().toISOString();
+        }
         renderAll();
         closeEventModal();
         showNotification('Événement mis à jour', 'success');
@@ -1018,10 +1284,10 @@ function renderAgenda() {
   const monthPfx = `${agendaYear}-${String(agendaMonth + 1).padStart(2, '0')}`;
   const events = appData
     .filter(e => {
-      const d = e['Date de l\'événement'];
+      const d = e.date_evenement;
       return d && String(d).slice(0, 7) === monthPfx;
     })
-    .sort((a, b) => (a['Date de l\'événement'] || '').localeCompare(b['Date de l\'événement'] || ''));
+    .sort((a, b) => (a.date_evenement || '').localeCompare(b.date_evenement || ''));
 
   if (labelEl) labelEl.textContent = `${MONTHS_FR_AGENDA[agendaMonth]} ${agendaYear}`;
   if (subEl) subEl.textContent = events.length ? `${events.length} \u00e9v\u00e9nement${events.length > 1 ? 's' : ''}` : '';
@@ -1037,158 +1303,20 @@ function renderAgenda() {
     '<th style="padding-left:16px;width:16%">Date</th>' +
     '<th style="width:26%">Client</th>' +
     '<th style="width:18%">Type</th>' +
-    '<th style="width:18%">\u20ac</th>' +
+    '<th style="width:18%">Budget</th>' +
     '<th style="width:22%">Statut</th>' +
     '</tr></thead><tbody>' +
     events.map(e => {
-      const budget = parseFloat(e['Budget estimé (€)']);
       return `<tr style="cursor:pointer" onclick="openEventModal(${e._row})">
-        <td style="padding-left:16px;"><strong>${formatDateFR(e['Date de l\'événement'])}</strong></td>
-        <td>${e['Nom client']}</td>
-        <td>${e['Type d\'événement'] || '\u2014'}</td>
-        <td>${budget ? formatEuro(budget) : '\u2014'}</td>
-        <td><span class="pill ${STATUS_PILL[e['Statut traitement']] || 'pill-gray'}">${STATUS_LABEL[e['Statut traitement']] || e['Statut traitement']}</span></td>
+        <td style="padding-left:16px;"><strong>${formatDateFR(e.date_evenement)}</strong></td>
+        <td>${e.nom_client || '—'}</td>
+        <td>${e.type_evenement || '\u2014'}</td>
+        <td>${formatBudget(e.budget_estime)}</td>
+        <td><span class="pill ${STATUS_PILL[e.statut] || 'pill-gray'}">${STATUS_LABEL[e.statut] || e.statut}</span></td>
       </tr>`;
     }).join('') +
     '</tbody></table>';
 }
-
-// ── CALENDAR (supprimé) ──
-// Le panel Agenda a été retiré de l'interface.
-
-if (false) { // bloc conservé pour éviter les erreurs de référence
-const Calendar = (() => {
-  const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin',
-                     'Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
-  const DAYS_FR   = ['Lu','Ma','Me','Je','Ve','Sa','Di'];
-
-  const now = new Date();
-  let currentYear  = now.getFullYear();
-  let currentMonth = now.getMonth();
-  let selectedDate = null;
-
-  function toStr(y, m, d) {
-    return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-  }
-  function eventsForDate(ds) {
-    return appData.filter(e => {
-      const dbDate = e['Date de l\'événement'];
-      return dbDate && String(dbDate).startsWith(ds);
-    });
-  }
-  function eventsForMonth(y, m) {
-    const pfx = `${y}-${String(m+1).padStart(2,'0')}`;
-    return appData.filter(e => {
-      const dbDate = e['Date de l\'événement'];
-      return dbDate && String(dbDate).startsWith(pfx);
-    });
-  }
-
-  function renderGrid() {
-    const grid = document.getElementById('cal-grid');
-    if (!grid) return;
-    const todayStr     = toStr(now.getFullYear(), now.getMonth(), now.getDate());
-    const firstWkd     = (new Date(currentYear, currentMonth, 1).getDay() + 6) % 7;
-    const daysInMonth  = new Date(currentYear, currentMonth + 1, 0).getDate();
-    const daysInPrev   = new Date(currentYear, currentMonth, 0).getDate();
-
-    let html = DAYS_FR.map(d => `<div class="cal-hd">${d}</div>`).join('');
-    for (let i = firstWkd - 1; i >= 0; i--)
-      html += `<div class="cal-day other-month">${daysInPrev - i}</div>`;
-    for (let d = 1; d <= daysInMonth; d++) {
-      const ds  = toStr(currentYear, currentMonth, d);
-      const cls = ['cal-day',
-        ds === todayStr          ? 'today'     : '',
-        eventsForDate(ds).length ? 'has-event' : '',
-        ds === selectedDate      ? 'selected'  : '',
-      ].filter(Boolean).join(' ');
-      html += `<div class="${cls}" data-date="${ds}">${d}</div>`;
-    }
-    const tail = (firstWkd + daysInMonth) % 7;
-    for (let d = 1; d <= (tail ? 7 - tail : 0); d++)
-      html += `<div class="cal-day other-month">${d}</div>`;
-
-    grid.innerHTML = html;
-    grid.querySelectorAll('.cal-day[data-date]').forEach(el => {
-      el.addEventListener('click', () => {
-        const ds = el.getAttribute('data-date');
-        selectedDate = selectedDate === ds ? null : ds;
-        renderGrid(); renderDetail();
-      });
-    });
-  }
-
-  function renderDetail() {
-    const titleEl = document.getElementById('cal-detail-title');
-    const listEl  = document.getElementById('cal-detail-list');
-    if (!titleEl || !listEl) return;
-    let events;
-    if (selectedDate) {
-      events = eventsForDate(selectedDate);
-      titleEl.textContent = events.length ? `Événements \u2014 ${formatDateFR(selectedDate)}` : `Aucun événement \u2014 ${formatDateFR(selectedDate)}`;
-    } else {
-      events = eventsForMonth(currentYear, currentMonth);
-      titleEl.textContent = events.length
-        ? `${events.length} événement${events.length > 1 ? 's' : ''} ce mois`
-        : 'Aucun événement ce mois';
-    }
-    if (!events.length) { listEl.innerHTML = '<div class="cal-empty">Aucun événement.</div>'; return; }
-    listEl.innerHTML = events.map(e => `
-      <div class="activity-item" style="cursor:pointer" onclick="openEventModal(${e._row})">
-        <div class="act-dot terra"></div>
-        <div class="act-body">
-          <div class="act-text"><strong>${formatDateFR(e['Date de l\'événement'])} \u2014 ${e['Nom client']}</strong></div>
-          <div class="act-text" style="color:var(--muted);font-size:11px;">${e['Type d\'événement']} \xb7 ${e['Nb convives']} pers. \xb7 ${formatEuro(parseFloat(e['Budget estimé (€)']) || 0)}</div>
-        </div>
-      </div>`).join('');
-  }
-
-  function updateHeader() {
-    const hEl = document.getElementById('agenda-heading');
-    const sEl = document.getElementById('agenda-sub');
-    const mSel = document.getElementById('cal-month-sel');
-    const ySel = document.getElementById('cal-year-sel');
-    if (hEl) hEl.textContent = `Agenda \u2014 ${MONTHS_FR[currentMonth]} ${currentYear}`;
-    const count = eventsForMonth(currentYear, currentMonth).length;
-    if (sEl) sEl.textContent = '';
-    if (mSel) mSel.value = currentMonth;
-    if (ySel) ySel.value = currentYear;
-  }
-
-  function render() { renderGrid(); renderDetail(); updateHeader(); }
-
-  function init() {
-    const mSel = document.getElementById('cal-month-sel');
-    if (mSel) {
-      MONTHS_FR.forEach((m, i) => {
-        const o = document.createElement('option');
-        o.value = i; o.textContent = m; mSel.appendChild(o);
-      });
-      mSel.addEventListener('change', () => { currentMonth = parseInt(mSel.value); selectedDate = null; render(); });
-    }
-    const ySel = document.getElementById('cal-year-sel');
-    if (ySel) {
-      for (let y = 2023; y <= now.getFullYear() + 3; y++) {
-        const o = document.createElement('option');
-        o.value = y; o.textContent = y; ySel.appendChild(o);
-      }
-      ySel.addEventListener('change', () => { currentYear = parseInt(ySel.value); selectedDate = null; render(); });
-    }
-    document.getElementById('cal-prev')?.addEventListener('click', () => {
-      if (--currentMonth < 0) { currentMonth = 11; currentYear--; }
-      selectedDate = null; render();
-    });
-    document.getElementById('cal-next')?.addEventListener('click', () => {
-      if (++currentMonth > 11) { currentMonth = 0; currentYear++; }
-      selectedDate = null; render();
-    });
-    render();
-  }
-
-  return { init, refresh: render, getSelectedDate: () => selectedDate };
-})();
-Calendar.init();
-} // fin bloc Calendar désactivé
 
 // ── KPI MODALS ──
 
@@ -1208,19 +1336,26 @@ function showKpiModal(type) {
 
   if (type === 'ca') {
     title.textContent = `CA Estimé ${currentYear}`;
-    const CA_STATUTS = ['Signé', 'Prestation en cours', 'Terminé'];
+    const CA_STATUTS = ['Signé', 'Devis signé', 'Prestation en cours', 'Terminé', 'Prestation terminée'];
     const yearlySigned = appData.filter(e => {
-      if (!CA_STATUTS.includes(e['Statut traitement'])) return false;
-      if (!e['Date de l\'événement']) return false;
-      const d = new Date(String(e['Date de l\'événement']).split('T')[0]);
+      if (!CA_STATUTS.includes(e.statut)) return false;
+      if (!e.date_evenement) return false;
+      let dateStr = String(e.date_evenement).trim();
+      const dateMatch = dateStr.match(/\d{4}-\d{2}-\d{2}/);
+      if (dateMatch) dateStr = dateMatch[0];
+      const d = new Date(dateStr);
       return !isNaN(d.getTime()) && d.getFullYear() === currentYear;
     });
 
     const cm = {};
     yearlySigned.forEach(e => {
-      const n = e['Nom client'] || 'Inconnu';
+      const n = e.nom_client || 'Inconnu';
       if (!cm[n]) cm[n] = 0;
-      cm[n] += (parseFloat(e['Budget estimé (€)']) || 0);
+      
+      const sBudget = String(e.budget_estime || '').replace(/\s/g, '');
+      const numMatch = sBudget.match(/\d+/);
+      const budgetVal = numMatch ? parseFloat(numMatch[0]) : 0;
+      cm[n] += budgetVal;
     });
     const rows = Object.entries(cm).sort((a,b)=>b[1]-a[1]);
     
@@ -1231,35 +1366,45 @@ function showKpiModal(type) {
   } 
   else if (type === 'confirmes') {
     title.textContent = 'Événements confirmés';
-    const evts = actives.filter(e => e['Statut traitement'] === 'Signé');
-    evts.sort((a,b) => new Date(String(a['Date de l\'événement']||'').split('T')[0]).getTime() - new Date(String(b['Date de l\'événement']||'').split('T')[0]).getTime());
+    const CONF_STATUSES = ['Signé', 'Devis signé'];
+    const evts = actives.filter(e => CONF_STATUSES.includes(e.statut));
+    evts.sort((a,b) => {
+      let d1 = String(a.date_evenement||'').split('T')[0];
+      let d2 = String(b.date_evenement||'').split('T')[0];
+      return new Date(d1).getTime() - new Date(d2).getTime();
+    });
     
     thead.innerHTML = '<tr><th style="width:22%">Date</th><th style="width:36%">Client</th><th style="width:24%">Type</th><th style="width:18%">Montant</th></tr>';
     tbody.innerHTML = evts.length ? evts.map(e => {
-      const budget = parseFloat(e['Budget estimé (€)']);
-      return `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})"><td>${formatDateFR(e['Date de l\'événement'])}</td><td><strong>${e['Nom client']}</strong></td><td>${e['Type d\'événement'] || '—'}</td><td>${budget ? formatEuro(budget) : '—'}</td></tr>`;
+      return `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})"><td>${formatDateFR(e.date_evenement)}</td><td><strong>${e.nom_client || '—'}</strong></td><td>${e.type_evenement || '—'}</td><td>${formatBudget(e.budget_estime)}</td></tr>`;
     }).join('') : '<tr><td colspan="4" class="tbl-empty">Aucun événement signé</td></tr>';
   }
   else if (type === 'devis') {
     title.textContent = 'Devis en attente';
-    const evts = actives.filter(e => e['Statut traitement'] === 'Devis envoyé');
-    evts.sort((a,b) => new Date(String(a['Date de l\'événement']||'').split('T')[0]).getTime() - new Date(String(b['Date de l\'événement']||'').split('T')[0]).getTime());
+    const evts = actives.filter(e => e.statut === 'Devis envoyé');
+    evts.sort((a,b) => {
+      let d1 = String(a.date_evenement||'').split('T')[0];
+      let d2 = String(b.date_evenement||'').split('T')[0];
+      return new Date(d1).getTime() - new Date(d2).getTime();
+    });
     
     thead.innerHTML = '<tr><th style="width:30%">Date prévue</th><th style="width:45%">Client</th><th style="width:25%">Montant</th></tr>';
     tbody.innerHTML = evts.length ? evts.map(e => {
-      const budget = parseFloat(e['Budget estimé (€)']);
-      return `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})"><td>${formatDateFR(e['Date de l\'événement'])}</td><td><strong>${e['Nom client']}</strong></td><td>${budget ? formatEuro(budget) : '—'}</td></tr>`;
+      return `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})"><td>${formatDateFR(e.date_evenement)}</td><td><strong>${e.nom_client || '—'}</strong></td><td>${formatBudget(e.budget_estime)}</td></tr>`;
     }).join('') : '<tr><td colspan="3" class="tbl-empty">Aucun devis en attente</td></tr>';
   }
   else if (type === 'leads') {
     title.textContent = 'Nouvelles demandes';
-    const evts = actives.filter(e => e['Statut traitement'] === 'Nouveau');
-    evts.sort((a,b) => new Date(String(a['Date de l\'événement']||'').split('T')[0]).getTime() - new Date(String(b['Date de l\'événement']||'').split('T')[0]).getTime());
+    const evts = actives.filter(e => e.statut === 'Nouveau' || e.statut === 'Nouvelle demande');
+    evts.sort((a,b) => {
+      let d1 = String(a.date_evenement||'').split('T')[0];
+      let d2 = String(b.date_evenement||'').split('T')[0];
+      return new Date(d1).getTime() - new Date(d2).getTime();
+    });
     
     thead.innerHTML = '<tr><th style="width:32%">Client</th><th style="width:22%">Date</th><th style="width:22%">Montant</th><th style="width:24%">Statut</th></tr>';
     tbody.innerHTML = evts.length ? evts.map(e => {
-      const budget = parseFloat(e['Budget estimé (€)']);
-      return `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})"><td><strong>${e['Nom client']}</strong></td><td>${formatDateFR(e['Date de l\'événement']) || 'À dét.'}</td><td>${budget ? formatEuro(budget) : '—'}</td><td>${STATUS_LABEL[e['Statut traitement']]}</td></tr>`;
+      return `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})"><td><strong>${e.nom_client || '—'}</strong></td><td>${formatDateFR(e.date_evenement) || 'À dét.'}</td><td>${formatBudget(e.budget_estime)}</td><td>${STATUS_LABEL[e.statut] || e.statut}</td></tr>`;
     }).join('') : '<tr><td colspan="4" class="tbl-empty">Aucun nouveau lead</td></tr>';
   }
 
@@ -1296,10 +1441,10 @@ function showPanel(panelName, element) {
   const panel = document.getElementById('panel-' + panelName);
   if (panel) panel.classList.add('active');
   if (element) element.classList.add('active');
-  // Sync sidebar item si non déjà marqué
+  
   const sidebarItem = document.querySelector(`.nav-item[data-panel="${panelName}"]`);
   if (sidebarItem && sidebarItem !== element) sidebarItem.classList.add('active');
-  // Sync bottom nav item
+  
   const bnItem = document.getElementById('bn-' + panelName);
   if (bnItem && bnItem !== element) bnItem.classList.add('active');
   document.querySelector('.content').scrollTop = 0;
@@ -1328,9 +1473,78 @@ function showNotification(message, type = 'info', duration = 3000) {
   setTimeout(() => { n.style.transition = 'opacity .3s'; n.style.opacity = '0'; setTimeout(() => n.remove(), 300); }, duration);
 }
 
+// ── AUTHENTICATION HANDLERS ──
+
+function logout() {
+  localStorage.removeItem('cp_user');
+  localStorage.removeItem('cp_pass');
+  const overlay = document.getElementById('login-overlay');
+  if (overlay) {
+    overlay.style.display = 'flex';
+  }
+  const errorMsg = document.getElementById('login-error-msg');
+  if (errorMsg) {
+    errorMsg.textContent = "⚠️ Session expirée ou identifiants incorrects.";
+    errorMsg.style.display = 'block';
+  }
+}
+
+async function handleLoginSubmit(event) {
+  event.preventDefault();
+  const emailInput = document.getElementById('login-email');
+  const passInput = document.getElementById('login-password');
+  const errorMsg = document.getElementById('login-error-msg');
+  const btn = event.target.querySelector('button');
+
+  const userVal = emailInput.value.trim();
+  const passVal = passInput.value.trim();
+
+  btn.disabled = true;
+  btn.textContent = 'Connexion...';
+  if (errorMsg) errorMsg.style.display = 'none';
+
+  if (userVal !== 'demande.chezpapimaisongourmande@gmail.com' || passVal !== 'Niconina13/') {
+    btn.disabled = false;
+    btn.textContent = 'Se connecter';
+    if (errorMsg) {
+      errorMsg.textContent = "⚠️ Identifiants incorrects.";
+      errorMsg.style.display = 'block';
+    }
+    return;
+  }
+
+  localStorage.setItem('cp_user', userVal);
+  localStorage.setItem('cp_pass', passVal);
+
+  try {
+    await loadData();
+    const overlay = document.getElementById('login-overlay');
+    if (overlay) overlay.style.display = 'none';
+  } catch (err) {
+    localStorage.removeItem('cp_user');
+    localStorage.removeItem('cp_pass');
+    btn.disabled = false;
+    btn.textContent = 'Se connecter';
+    if (errorMsg) {
+      errorMsg.textContent = "⚠️ Connexion échouée : " + err.message;
+      errorMsg.style.display = 'block';
+    }
+  }
+}
+
+document.getElementById('login-form')?.addEventListener('submit', handleLoginSubmit);
+
 // ── INIT ──
 
-loadData();
+const savedUser = localStorage.getItem('cp_user');
+const savedPass = localStorage.getItem('cp_pass');
+if (savedUser === 'demande.chezpapimaisongourmande@gmail.com' && savedPass === 'Niconina13/') {
+  const overlay = document.getElementById('login-overlay');
+  if (overlay) overlay.style.display = 'none';
+  loadData();
+} else {
+  // Reste visible si non connecté, loadData sera appelé après connexion réussie
+}
 
 // ── EXPORT ──
 
@@ -1340,11 +1554,14 @@ window.ChezPapi = {
   renderAgenda, agendaPrevMonth, agendaNextMonth, agendaGoToday,
   toggleAgendaPicker, agendaPickerPrevYear, agendaPickerNextYear, selectAgendaMonth,
   addTodo, toggleTodo, deleteTodo, toggleFormMode, checkDateConflict,
-  // Diagnostic : testConnection() dans la console pour voir la réponse brute
+  logout,
   async testConnection() {
     console.log('Test connexion →', CONFIG.SHEETS_URL);
     try {
-      const res = await fetch(CONFIG.SHEETS_URL + '?action=getAll', { redirect: 'follow' });
+      const user = localStorage.getItem('cp_user') || '';
+      const pass = localStorage.getItem('cp_pass') || '';
+      const url = CONFIG.SHEETS_URL + '?action=getAll&user=' + encodeURIComponent(user) + '&pass=' + encodeURIComponent(pass);
+      const res = await fetch(url, { redirect: 'follow' });
       const text = await res.text();
       console.log('Status :', res.status);
       console.log('Réponse (200 premiers chars) :', text.slice(0, 200));

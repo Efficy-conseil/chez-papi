@@ -25,6 +25,29 @@
 
 <body>
 
+<!-- LOGIN OVERLAY -->
+<div id="login-overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#fcfaf7; z-index:99999; display:flex; justify-content:center; align-items:center; padding:20px;">
+  <div style="background:#fff; border:1px solid #eadecc; border-radius:12px; padding:32px 24px; max-width:380px; width:100%; box-shadow:0 8px 30px rgba(92, 61, 30, 0.08); text-align:center;">
+    <img src="icon-192x192.png" alt="Chez Papi" style="width:72px; height:72px; border-radius:16px; margin-bottom:16px; object-fit:cover;">
+    <h2 style="font-family:'Playfair Display', serif; color:#5C3D1E; margin:0 0 4px 0; font-size:24px;">Connexion</h2>
+    <p style="color:#8A7260; font-size:13px; margin:0 0 24px 0;">Chez Papi — Espace sécurisé</p>
+    <form id="login-form" style="display:flex; flex-direction:column; gap:16px; text-align:left;">
+      <div class="form-row" style="margin-bottom:0; display:flex; flex-direction:column; gap:6px;">
+        <label style="font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:0.05em; color:#8A7260;">Identifiant (Email)</label>
+        <input type="email" id="login-email" required placeholder="nom@email.com" style="width:100%; padding:10px 12px; border:1px solid #eadecc; border-radius:6px; font-family:inherit; font-size:14px; outline:none; background:#fff; color:#5C3D1E;" autocomplete="username">
+      </div>
+      <div class="form-row" style="margin-bottom:0; display:flex; flex-direction:column; gap:6px;">
+        <label style="font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:0.05em; color:#8A7260;">Mot de passe</label>
+        <input type="password" id="login-password" required placeholder="••••••••" style="width:100%; padding:10px 12px; border:1px solid #eadecc; border-radius:6px; font-family:inherit; font-size:14px; outline:none; background:#fff; color:#5C3D1E;" autocomplete="current-password">
+      </div>
+      <div id="login-error-msg" style="color:#C0453A; font-size:13px; font-weight:600; display:none; margin-top:4px;">
+        ⚠️ Identifiants incorrects.
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%; padding:12px; font-weight:700; border-radius:6px; cursor:pointer; text-align:center; border:none; margin-top:8px;">Se connecter</button>
+    </form>
+  </div>
+</div>
+
 <!-- ── PWA UPDATE BANNER ── -->
 
 <div id="pwa-update-banner" class="pwa-update-banner" style="display:none;">
@@ -57,16 +80,29 @@
   <span class="modal-close" onclick="closeViewModal()">&times;</span>
 </div>
 <div class="modal-bd" style="padding: 24px;">
-  <p style="margin: 0 0 12px 0; font-size: 14px;"><strong>Date de l'événement:</strong> <span id="view-date-evt">—</span></p>
-  <p style="margin: 0 0 12px 0; font-size: 14px;"><strong>Client:</strong> <span id="view-client">—</span></p>
-  <p style="margin: 0 0 12px 0; font-size: 14px;"><strong>Type complet:</strong> <span id="view-type">—</span></p>
-  <p style="margin: 0 0 12px 0; font-size: 14px;"><strong>Invités:</strong> <span id="view-invites">—</span></p>
-  <p style="margin: 0 0 12px 0; font-size: 14px;"><strong>Budget:</strong> <span id="view-budget">—</span></p>
-  <p style="margin: 0 0 12px 0; font-size: 14px;"><strong>Statut:</strong> <span id="view-statut">—</span></p>
-  <p style="margin: 0 0 12px 0; font-size: 14px;"><strong>Lieu:</strong> <span id="view-lieu">—</span></p>
-  <p style="margin: 0 0 12px 0; font-size: 14px;"><strong>Contact:</strong> <span id="view-contact">—</span></p>
-  <p style="margin: 0 0 12px 0; font-size: 14px;"><strong>Email:</strong> <span id="view-email">—</span></p>
-  <div style="background: var(--warm, #fdf6f0); padding: 12px; border-radius: 6px; font-size: 13px; margin-top: 16px;">
+  <!-- Jauge Infos manquantes -->
+  <div id="view-warning-missing-info" style="display:none; background:rgba(192,69,58,0.08); border: 1px solid rgba(192,69,58,0.25); color:#C0453A; padding:10px 14px; border-radius:6px; font-size:13px; font-weight:700; margin-bottom:16px; line-height:1.4;">
+    ⚠️ Infos manquantes : des informations clés (téléphone/e-mail, lieu ou nombre de convives) ne sont pas renseignées.
+  </div>
+  <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Date de l'événement:</strong> <span id="view-date-evt">—</span></p>
+  <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Client:</strong> <span id="view-client">—</span></p>
+  <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Type d'événement:</strong> <span id="view-type">—</span></p>
+  <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Invités:</strong> <span id="view-invites">—</span></p>
+  <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Budget:</strong> <span id="view-budget">—</span></p>
+  <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Statut:</strong> <span id="view-statut">—</span></p>
+  <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Lieu:</strong> <span id="view-lieu">—</span></p>
+  <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Téléphone:</strong> <span id="view-telephone">—</span></p>
+  <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Email:</strong> <span id="view-email">—</span></p>
+  <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Canal:</strong> <span id="view-canal">—</span></p>
+  <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Date réception:</strong> <span id="view-date-reception">—</span></p>
+  <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>E-mail d'origine:</strong> <span id="view-url-email">—</span></p>
+  <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Dossier Drive:</strong> <span id="view-url-drive">—</span></p>
+  <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Dernière modification:</strong> <span id="view-derniere-modif">—</span></p>
+  <div style="background: var(--warm, #fdf6f0); padding: 12px; border-radius: 6px; font-size: 13px; margin-top: 12px;">
+    <strong>Message original:</strong><br/>
+    <span id="view-message" style="white-space: pre-wrap;">—</span>
+  </div>
+  <div style="background: var(--warm, #fdf6f0); padding: 12px; border-radius: 6px; font-size: 13px; margin-top: 12px;">
     <strong>Notes:</strong><br/>
     <span id="view-notes" style="white-space: pre-wrap;">—</span>
   </div>
@@ -360,76 +396,101 @@ Tableau de bord · v1.0<br>Avril 2026
 </div>
 <form id="event-form" class="modal-form">
 
+<!-- ID Demande (masqué à l'utilisateur, mais nécessaire pour le suivi) -->
+<input type="hidden" name="id_demande">
+
 <!-- ── Champs toujours visibles (mode rapide) ── -->
 <div class="form-row">
 <label>Nom client *</label>
-<input type="text" name="Nom client" required placeholder="Famille Martin">
-</div>
-<div class="form-row">
-<label>Type d'événement</label>
-<select name="Type d'événement">
-<option>Mariage</option><option>Séminaire</option><option>Réception</option>
-<option>Cocktail</option><option>Baptême</option><option>Repas d'équipe</option><option>Autre</option>
-</select>
+<input type="text" name="nom_client" required placeholder="Ex: Céline GIORDANO">
 </div>
 <div class="form-row">
 <label>Date de l'événement *</label>
-<input type="date" name="Date de l'événement" required>
+<input type="text" name="date_evenement" required placeholder="Ex: 2026-06-10 ou 2026-06-30 au 2026-07-03">
 <div id="date-conflict-banner" style="display:none;"></div>
 </div>
 <div class="form-row">
-<label>Budget estimé (€)</label>
-<input type="number" name="Budget estimé (€)" min="0" placeholder="1800">
+<label>Budget estimé</label>
+<input type="text" name="budget_estime" placeholder="Ex: 1800 ou 850/900€ ou Entre 2000 et 2500€">
 </div>
 <div class="form-row">
-<label>Téléphone</label>
-<input type="tel" name="Contact" placeholder="06 12 34 56 78">
+<label>Téléphone client</label>
+<input type="tel" name="telephone" placeholder="Ex: 06 12 34 56 78">
+</div>
+<div class="form-row">
+<label>Email client</label>
+<input type="email" name="email_client" placeholder="Ex: client@email.com">
 </div>
 
 <!-- ── Champs mode complet (cachés en mode rapide) ── -->
 <div id="form-full-section" style="display:none;">
 <div class="form-row">
-<label>Canal</label>
-<select name="Canal">
-<option>Email</option><option>WhatsApp</option><option>SMS</option>
-<option>Formulaire</option><option>Instagram</option><option>Appel</option>
+<label>Type d'événement</label>
+<select name="type_evenement">
+<option value="Mariage">Mariage</option>
+<option value="Séminaire">Séminaire</option>
+<option value="Réception">Réception</option>
+<option value="Cocktail">Cocktail</option>
+<option value="Baptême">Baptême</option>
+<option value="Repas d'équipe">Repas d'équipe</option>
+<option value="Repas entre amis">Repas entre amis</option>
+<option value="Entreprise">Entreprise</option>
+<option value="Autre">Autre</option>
 </select>
 </div>
 <div class="form-row">
-<label>Date de la demande</label>
-<input type="date" name="Date de la demande">
+<label>Canal d'origine</label>
+<select name="canal">
+<option value="Email">Email</option>
+<option value="WhatsApp">WhatsApp</option>
+<option value="SMS">SMS</option>
+<option value="Formulaire Site">Formulaire Site</option>
+<option value="Réseaux sociaux">Réseaux sociaux</option>
+<option value="Téléphone">Téléphone</option>
+<option value="Instagram">Instagram</option>
+<option value="Appel">Appel</option>
+<option value="Autre">Autre</option>
+</select>
 </div>
 <div class="form-row">
-<label>Nb convives</label>
-<input type="number" name="Nb convives" min="1" placeholder="40">
+<label>Date de réception</label>
+<input type="date" name="date_reception">
+</div>
+<div class="form-row">
+<label>Nombre de convives</label>
+<input type="text" name="nb_convives" placeholder="Ex: 80 ou 45 le 30/06 ; 22 le 01/07...">
 </div>
 <div class="form-row">
 <label>Lieu de la prestation</label>
-<input type="text" name="Lieu de la prestation" placeholder="Salle des fêtes…">
+<input type="text" name="lieu_prestation" placeholder="Ex: Salle des fêtes de Miramas…">
 </div>
 <div class="form-row">
 <label>Statut</label>
-<select name="Statut traitement">
-<option value="Nouveau">Nouvelle demande</option>
-<option value="Contacté">Client contacté</option>
+<select name="statut">
+<option value="Nouvelle demande">Nouvelle demande</option>
+<option value="Client contacté">Client contacté</option>
 <option value="Devis envoyé">Devis envoyé</option>
-<option value="Signé">Devis signé</option>
+<option value="Devis signé">Devis signé</option>
 <option value="Prestation en cours">Prestation en cours</option>
-<option value="Terminé">Prestation terminée</option>
-<option value="Perdu">Client perdu</option>
+<option value="Prestation terminée">Prestation terminée</option>
+<option value="Client perdu">Client perdu</option>
 </select>
 </div>
 <div class="form-row">
-<label>Email client</label>
-<input type="email" name="Email client" placeholder="client@email.com">
+<label>Lien e-mail d'origine</label>
+<input type="url" name="url_email_origine" placeholder="Ex: https://mail.google.com/...">
+</div>
+<div class="form-row">
+<label>Lien dossier Drive</label>
+<input type="url" name="url_dossier_drive" placeholder="Ex: https://drive.google.com/...">
 </div>
 <div class="form-row">
 <label>Message original</label>
-<textarea name="Message original" rows="2" placeholder="Message du client..."></textarea>
+<textarea name="message_original" rows="3" placeholder="Message original reçu du client..."></textarea>
 </div>
 <div class="form-row">
 <label>Notes</label>
-<textarea name="Notes" rows="2" placeholder="Notes internes..."></textarea>
+<textarea name="notes" rows="3" placeholder="Notes de suivi interne..."></textarea>
 </div>
 </div>
 
