@@ -378,6 +378,19 @@ function hasMissingInfo(e) {
   return getMissingFields(e).length > 0;
 }
 
+function normalizeStatus(status) {
+  if (!status) return 'Nouvelle demande';
+  const s = String(status).trim();
+  if (s === 'Nouveau' || s === 'Nouvelle demande') return 'Nouvelle demande';
+  if (s === 'Contacté' || s === 'Client contacté' || s === 'À rappeler') return 'Client contacté';
+  if (s === 'Devis envoyé') return 'Devis envoyé';
+  if (s === 'Signé' || s === 'Devis signé') return 'Devis signé';
+  if (s === 'Prestation en cours') return 'Prestation en cours';
+  if (s === 'Terminé' || s === 'Prestation terminée') return 'Prestation terminée';
+  if (s === 'Perdu' || s === 'Client perdu') return 'Client perdu';
+  return s;
+}
+
 async function loadData() {
   if (!CONFIG.SHEETS_URL) { renderAll(); return; }
   setConnectionStatus('loading');
@@ -385,10 +398,13 @@ async function loadData() {
   try {
     const result = await SheetsAPI.load();
     if (result && result.rows) {
-      appData = result.rows;
+      appData = result.rows.map(row => {
+        row.statut = normalizeStatus(row.statut);
+        return row;
+      });
       lastSyncTime = Date.now(); lastSyncOk = true; updateSyncIndicator();
-      setConnectionStatus('ok', result.rows.length);
-      checkNewEvents(result.rows);
+      setConnectionStatus('ok', appData.length);
+      checkNewEvents(appData);
       requestNotifPermission();
       renderAll();
       
