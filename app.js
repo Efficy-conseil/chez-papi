@@ -120,6 +120,7 @@ function formatDateFR(ds) {
 
 const STATUS_PILL = {
   'Nouveau': 'pill-terra', 'Nouvelle demande': 'pill-terra',
+  'À rappeler': 'pill-orange',
   'Contacté': 'pill-gold', 'Client contacté': 'pill-gold',
   'Devis envoyé': 'pill-gold',
   'Signé': 'pill-green', 'Devis signé': 'pill-green',
@@ -130,6 +131,7 @@ const STATUS_PILL = {
 
 const STATUS_LABEL = {
   'Nouveau': '🆕 Nouvelle demande', 'Nouvelle demande': '🆕 Nouvelle demande',
+  'À rappeler': '📞 À rappeler',
   'Contacté': '☎️ Client contacté', 'Client contacté': '☎️ Client contacté',
   'Devis envoyé': '💬 Devis envoyé',
   'Signé': '✅ Devis signé', 'Devis signé': '✅ Devis signé',
@@ -142,6 +144,7 @@ const STATUS_DOT = {
   'Signé': 'green', 'Devis signé': 'green',
   'Devis envoyé': '',
   'Contacté': '', 'Client contacté': '',
+  'À rappeler': 'orange',
   'Nouveau': 'terra', 'Nouvelle demande': 'terra',
   'Terminé': 'gray', 'Prestation terminée': 'gray',
   'Perdu': 'red', 'Client perdu': 'red',
@@ -385,7 +388,8 @@ function normalizeStatus(status) {
   if (!status) return 'Nouvelle demande';
   const s = String(status).trim();
   if (s === 'Nouveau' || s === 'Nouvelle demande') return 'Nouvelle demande';
-  if (s === 'Contacté' || s === 'Client contacté' || s === 'À rappeler') return 'Client contacté';
+  if (s === 'À rappeler') return 'À rappeler';
+  if (s === 'Contacté' || s === 'Client contacté') return 'Client contacté';
   if (s === 'Devis envoyé') return 'Devis envoyé';
   if (s === 'Signé' || s === 'Devis signé') return 'Devis signé';
   if (s === 'Prestation en cours') return 'Prestation en cours';
@@ -538,7 +542,7 @@ function renderDashboard() {
   }
 
   // Demandes en cours (Contacté / Devis envoyé)
-  const PIPELINE_SCOPE_HOME = ['Contacté', 'Client contacté', 'Devis envoyé'];
+  const PIPELINE_SCOPE_HOME = ['Contacté', 'Client contacté', 'À rappeler', 'Devis envoyé'];
   const demandesHome = actives
     .filter(e => PIPELINE_SCOPE_HOME.includes(e.statut) && e.date_evenement)
     .sort((a, b) => (a.date_evenement || '').localeCompare(b.date_evenement || ''))
@@ -634,7 +638,7 @@ function renderPipeline() {
   today.setHours(0,0,0,0);
 
   // Scope: Nouveau, Nouvelle demande, Contacté, Client contacté, Devis envoyé
-  const PIPELINE_SCOPE = ['Nouveau', 'Nouvelle demande', 'Contacté', 'Client contacté', 'Devis envoyé'];
+  const PIPELINE_SCOPE = ['Nouveau', 'Nouvelle demande', 'Contacté', 'Client contacté', 'À rappeler', 'Devis envoyé'];
   const colsData = { 'urgent': [], 'prioritaire': [], 'important': [], 'normal': [] };
 
   appData.forEach(e => {
@@ -675,7 +679,7 @@ function renderPipeline() {
     colsData[key].sort(sortEventsByDate);
   });
 
-  const ALL_STATUSES = ['Nouvelle demande', 'Client contacté', 'Devis envoyé', 'Devis signé', 'Prestation en cours', 'Prestation terminée', 'Client perdu'];
+  const ALL_STATUSES = ['Nouvelle demande', 'À rappeler', 'Client contacté', 'Devis envoyé', 'Devis signé', 'Prestation en cours', 'Prestation terminée', 'Client perdu'];
 
   el.innerHTML = PIPELINE_COLS.map(col => {
     const events = colsData[col.id];
@@ -687,7 +691,7 @@ function renderPipeline() {
 
       // Badge ancienneté
       let ageBadge = '';
-      const isNewOrContacted = ['Nouveau', 'Nouvelle demande', 'Contacté', 'Client contacté'].includes(e.statut);
+      const isNewOrContacted = ['Nouveau', 'Nouvelle demande', 'À rappeler', 'Contacté', 'Client contacté'].includes(e.statut);
       if (isNewOrContacted && e.date_reception) {
         const demandDate = parseLocalDate(e.date_reception);
         const hours = demandDate ? Math.floor((Date.now() - demandDate.getTime()) / 3600000) : -1;
