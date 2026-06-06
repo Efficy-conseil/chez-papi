@@ -151,6 +151,30 @@ function ko(msg) {
 
 // ── Email & Trigger Security Functions ─────────────────────────
 
+function normalizeFrenchPhone(phone) {
+  if (!phone) return '';
+  const clean = String(phone).replace(/\s+/g, '').trim();
+  let digits = clean.replace(/\D/g, '');
+  
+  if (digits.indexOf('33') === 0) {
+    if (digits.indexOf('330') === 0) {
+      digits = digits.substring(2);
+    } else {
+      digits = '0' + digits.substring(2);
+    }
+  }
+  
+  if (digits.length === 9 && /^[1-9]/.test(digits)) {
+    digits = '0' + digits;
+  }
+  
+  if (digits.length === 10) {
+    return digits.replace(/(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/, '$1 $2 $3 $4 $5');
+  }
+  
+  return phone;
+}
+
 function getMissingFields(e) {
   const missing = [];
   const noPhone = !e.telephone || String(e.telephone).trim() === '' || String(e.telephone).trim() === '—';
@@ -213,7 +237,7 @@ function sendNewDemandEmail(r) {
         </tr>
         <tr>
           <td style="padding: 4px 0; color: #8A7260;"><strong>Téléphone:</strong></td>
-          <td style="padding: 4px 0;">${r.telephone || '—'}</td>
+          <td style="padding: 4px 0;">${normalizeFrenchPhone(r.telephone) || '—'}</td>
         </tr>
         <tr>
           <td style="padding: 4px 0; color: #8A7260;"><strong>Email:</strong></td>
@@ -339,7 +363,7 @@ function sendSummaryEmail(rows, dateString) {
           </tr>
           <tr>
             <td style="padding: 4px 0; color: #8A7260;"><strong>Téléphone:</strong></td>
-            <td style="padding: 4px 0;">${r.telephone || '—'}</td>
+            <td style="padding: 4px 0;">${normalizeFrenchPhone(r.telephone) || '—'}</td>
           </tr>
           <tr>
             <td style="padding: 4px 0; color: #8A7260;"><strong>Email:</strong></td>
