@@ -553,7 +553,7 @@ function renderDashboard() {
   const actives = appData.filter(e => !isEventPast(e));
   const confirmes = actives.filter(e => e.statut === 'Signé' || e.statut === 'Devis signé');
   const devisEnv  = actives.filter(e => e.statut === 'Devis envoyé');
-  const nouveaux = actives.filter(e => e.statut === 'Nouveau' || e.statut === 'Nouvelle demande');
+  const nouveaux = actives.filter(e => e.statut === 'Nouveau' || e.statut === 'Nouvelle demande' || e.statut === 'À rappeler');
 
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
   set('kpi-ca-val',          formatEuro(caConf));
@@ -564,7 +564,7 @@ function renderDashboard() {
 
   // Nouvelles demandes (Nouveau ou Nouvelle demande)
   const newDemandes = appData
-    .filter(e => e.statut === 'Nouveau' || e.statut === 'Nouvelle demande')
+    .filter(e => e.statut === 'Nouveau' || e.statut === 'Nouvelle demande' || e.statut === 'À rappeler')
     .sort((a, b) => (b.date_reception || '').localeCompare(a.date_reception || ''))
     .slice(0, 6);
 
@@ -599,7 +599,7 @@ function renderDashboard() {
   }
 
   // Demandes en cours (Contacté / Devis envoyé)
-  const PIPELINE_SCOPE_HOME = ['Contacté', 'Client contacté', 'À rappeler', 'Devis envoyé'];
+  const PIPELINE_SCOPE_HOME = ['Contacté', 'Client contacté', 'Devis envoyé'];
   const demandesHome = actives
     .filter(e => PIPELINE_SCOPE_HOME.includes(e.statut))
     .sort((a, b) => (a.date_evenement || '').localeCompare(b.date_evenement || ''))
@@ -1499,7 +1499,7 @@ function showKpiModal(type) {
   }
   else if (type === 'leads') {
     title.textContent = 'Nouvelles demandes';
-    const evts = actives.filter(e => e.statut === 'Nouveau' || e.statut === 'Nouvelle demande');
+    const evts = actives.filter(e => e.statut === 'Nouveau' || e.statut === 'Nouvelle demande' || e.statut === 'À rappeler');
     evts.sort((a,b) => {
       let d1 = String(a.date_evenement||'').split('T')[0];
       let d2 = String(b.date_evenement||'').split('T')[0];
