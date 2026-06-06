@@ -82,7 +82,7 @@ function addRow(rowData) {
     const yyyymmdd = today.getFullYear() + 
       String(today.getMonth() + 1).padStart(2, '0') + 
       String(today.getDate()).padStart(2, '0');
-    const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const rand = Math.random().toString(36).substring(2, 10).toUpperCase();
     rowData.id_demande = 'CP-' + yyyymmdd + '-' + rand;
   }
   

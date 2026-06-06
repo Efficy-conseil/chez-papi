@@ -71,6 +71,16 @@ window.addEventListener('appinstalled', () => { hideInstallBanner(); iosModal.st
 
 // ── HELPERS ──
 
+// Échappe les caractères HTML pour éviter les injections XSS
+function escHtml(s) {
+  return String(s === null || s === undefined ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // Convertit n'importe quelle date (ISO UTC ou YYYY-MM-DD) en minuit heure locale
 function parseLocalDate(ds) {
   if (!ds) return null;
@@ -385,8 +395,10 @@ function hasMissingInfo(e) {
 }
 
 function normalizeStatus(status) {
-  if (!status) return 'Nouvelle demande';
+  // Un statut vide reste vide — ne pas le promouvoir en 'Nouvelle demande'
+  if (status === null || status === undefined) return '';
   const s = String(status).trim();
+  if (!s) return '';
   const lower = s.toLowerCase();
   
   if (lower === 'nouveau' || lower === 'nouvelle demande') return 'Nouvelle demande';
@@ -414,58 +426,74 @@ async function loadData() {
         return row;
       });
 
-      // 2. Dédupliquer par id_demande en privilégiant le statut le plus avancé ou la modif la plus récente
-      const uniqueRows = [];
-      const seenIds = new Map();
+      // 2. Dédupliquer en deux passes :
+      //    Passe A — par id_demande (identifiant canonique)
+      //    Passe B — par (nom_client normalisé + date_evenement) pour les cas sans id commun
+      const statOrder = {
+        '': 0,
+        'Nouvelle demande': 1,
+        'À rappeler': 2,
+        'Client contacté': 3,
+        'Devis envoyé': 4,
+        'Devis signé': 5,
+        'Prestation en cours': 6,
+        'Prestation terminée': 7,
+        'Client perdu': 8
+      };
 
+      function bestRow(existing, challenger) {
+        const o1 = statOrder[existing.statut] ?? 0;
+        const o2 = statOrder[challenger.statut] ?? 0;
+        if (o2 > o1) return challenger;
+        if (o2 === o1) {
+          const d1 = new Date(existing.derniere_modification || 0).getTime();
+          const d2 = new Date(challenger.derniere_modification || 0).getTime();
+          return d2 > d1 ? challenger : existing;
+        }
+        return existing;
+      }
+
+      // Passe A — déduplication par id_demande
+      const seenIds = new Map();
       normalizedRows.forEach(row => {
-        const id = row.id_demande;
-        if (!id || String(id).trim() === '') {
-          // Sans id_demande, on conserve de toute façon
-          uniqueRows.push(row);
+        const id = String(row.id_demande || '').trim();
+        if (!id) return; // traité en passe B
+        const existing = seenIds.get(id);
+        seenIds.set(id, existing ? bestRow(existing, row) : row);
+      });
+
+      // Lignes sans id_demande → passe B (déduplication par nom+date)
+      const noIdRows = normalizedRows.filter(r => !String(r.id_demande || '').trim());
+      const seenNameDate = new Map();
+      noIdRows.forEach(row => {
+        // Clé : nom normalisé + date événement (ignoré si les deux sont vides)
+        const nameKey = String(row.nom_client || '').toLowerCase().replace(/\s+/g, ' ').trim();
+        const dateKey = String(row.date_evenement || '').split('T')[0];
+        const key = nameKey && dateKey ? nameKey + '|' + dateKey : null;
+        if (!key) {
+          // Pas assez d'info pour dédupliquer → on conserve
+          seenNameDate.set('__no_key_' + row._row, row);
           return;
         }
-
-        const existing = seenIds.get(id);
-        if (!existing) {
-          seenIds.set(id, row);
-        } else {
-          const statOrder = {
-            'Nouvelle demande': 1,
-            'À rappeler': 2,
-            'Client contacté': 3,
-            'Devis envoyé': 4,
-            'Devis signé': 5,
-            'Prestation en cours': 6,
-            'Prestation terminée': 7,
-            'Client perdu': 8
-          };
-          const order1 = statOrder[existing.statut] || 0;
-          const order2 = statOrder[row.statut] || 0;
-
-          if (order2 > order1) {
-            seenIds.set(id, row);
-          } else if (order2 === order1) {
-            const d1 = new Date(existing.derniere_modification || 0).getTime();
-            const d2 = new Date(row.derniere_modification || 0).getTime();
-            if (d2 > d1) {
-              seenIds.set(id, row);
-            }
-          }
-        }
+        const existing = seenNameDate.get(key);
+        seenNameDate.set(key, existing ? bestRow(existing, row) : row);
       });
 
-      // Remplir uniqueRows en préservant l'ordre d'origine
+      // Construire uniqueRows en préservant l'ordre d'origine
+      const uniqueRows = [];
+      const keptRows = new Set([
+        ...seenIds.values(),
+        ...seenNameDate.values()
+      ].map(r => r._row));
+
       normalizedRows.forEach(row => {
-        const id = row.id_demande;
-        if (!id || String(id).trim() === '') return;
-        const best = seenIds.get(id);
-        if (best && best._row === row._row) {
-          uniqueRows.push(row);
-        }
+        if (keptRows.has(row._row)) uniqueRows.push(row);
       });
 
-      appData = uniqueRows;
+      // Exclure les lignes sans statut ni nom (lignes parasites d'import)
+      const filteredRows = uniqueRows.filter(r => r.statut !== '' || String(r.nom_client || '').trim() !== '');
+
+      appData = filteredRows;
       lastSyncTime = Date.now(); lastSyncOk = true; updateSyncIndicator();
       setConnectionStatus('ok', appData.length);
       checkNewEvents(appData);
