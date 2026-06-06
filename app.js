@@ -387,14 +387,17 @@ function hasMissingInfo(e) {
 function normalizeStatus(status) {
   if (!status) return 'Nouvelle demande';
   const s = String(status).trim();
-  if (s === 'Nouveau' || s === 'Nouvelle demande') return 'Nouvelle demande';
-  if (s === 'À rappeler') return 'À rappeler';
-  if (s === 'Contacté' || s === 'Client contacté') return 'Client contacté';
-  if (s === 'Devis envoyé') return 'Devis envoyé';
-  if (s === 'Signé' || s === 'Devis signé') return 'Devis signé';
-  if (s === 'Prestation en cours') return 'Prestation en cours';
-  if (s === 'Terminé' || s === 'Prestation terminée') return 'Prestation terminée';
-  if (s === 'Perdu' || s === 'Client perdu') return 'Client perdu';
+  const lower = s.toLowerCase();
+  
+  if (lower === 'nouveau' || lower === 'nouvelle demande') return 'Nouvelle demande';
+  if (lower === 'à rappeler' || lower === 'a rappeler' || lower === 'rappeler') return 'À rappeler';
+  if (lower === 'contacté' || lower === 'client contacté' || lower === 'contacte') return 'Client contacté';
+  if (lower === 'devis envoyé' || lower === 'devis envoye') return 'Devis envoyé';
+  if (lower === 'signé' || lower === 'devis signé' || lower === 'signe') return 'Devis signé';
+  if (lower === 'prestation en cours') return 'Prestation en cours';
+  if (lower === 'terminé' || lower === 'prestation terminée' || lower === 'termine') return 'Prestation terminée';
+  if (lower === 'perdu' || lower === 'client perdu') return 'Client perdu';
+  
   return s;
 }
 
@@ -544,7 +547,7 @@ function renderDashboard() {
   // Demandes en cours (Contacté / Devis envoyé)
   const PIPELINE_SCOPE_HOME = ['Contacté', 'Client contacté', 'À rappeler', 'Devis envoyé'];
   const demandesHome = actives
-    .filter(e => PIPELINE_SCOPE_HOME.includes(e.statut) && e.date_evenement)
+    .filter(e => PIPELINE_SCOPE_HOME.includes(e.statut))
     .sort((a, b) => (a.date_evenement || '').localeCompare(b.date_evenement || ''))
     .slice(0, 6);
 
@@ -578,7 +581,7 @@ function renderDashboard() {
 
         const warningBadge = hasMissingInfo(e) ? ` <span class="pill pill-red" style="font-size:8px; font-weight:700; background:rgba(192,69,58,.15); color:var(--red-soft); margin-left:6px; flex-shrink:0; vertical-align:middle;">⚠️ Infos manquantes</span>` : '';
         return `<tr class="${urgClass}" style="cursor:pointer" onclick="openEventModal(${e._row})">
-          <td><strong>${formatDateFR(e.date_evenement)}</strong></td>
+          <td><strong>${formatDateFR(e.date_evenement) || '—'}</strong></td>
           <td>${e.nom_client || '—'}${warningBadge}</td>
           <td>${formatBudget(e.budget_estime)}</td>
           <td><span class="pill ${STATUS_PILL[e.statut] || 'pill-gray'}">${STATUS_LABEL[e.statut] || e.statut}</span></td>
