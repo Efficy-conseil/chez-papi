@@ -93,6 +93,14 @@ function addRow(rowData) {
   rowData.derniere_modification = new Date();
   
   sheet.appendRow(headers.map(h => rowData[h] ?? ''));
+  
+  // Envoyer une notification e-mail immédiate
+  try {
+    sendNewDemandEmail(rowData);
+  } catch (err) {
+    Logger.log("Erreur envoi email immédiat: " + err.message);
+  }
+  
   return ok({ success: true });
 }
 
@@ -139,5 +147,242 @@ function ko(msg) {
   return ContentService
     .createTextOutput(JSON.stringify({ error: msg }))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ── Email & Trigger Security Functions ─────────────────────────
+
+function getMissingFields(e) {
+  const missing = [];
+  const noPhone = !e.telephone || String(e.telephone).trim() === '' || String(e.telephone).trim() === '—';
+  const noEmail = !e.email_client || String(e.email_client).trim() === '' || String(e.email_client).trim() === '—';
+  const noLieu = !e.lieu_prestation || String(e.lieu_prestation).trim() === '' || String(e.lieu_prestation).trim() === '—';
+  const noConvives = !e.nb_convives || String(e.nb_convives).trim() === '' || String(e.nb_convives).trim() === '—' || String(e.nb_convives).trim() === '0';
+
+  if (noPhone && noEmail) {
+    missing.push('Téléphone & E-mail');
+  }
+  if (noLieu) {
+    missing.push('Lieu');
+  }
+  if (noConvives) {
+    missing.push('Nombre de convives');
+  }
+  return missing;
+}
+
+function sendNewDemandEmail(r) {
+  const recipient = "demande.chezpapimaisongourmande@gmail.com";
+  const subject = `[Chez Papi] Nouvelle demande : ${r.nom_client || 'Sans nom'}`;
+  
+  const missing = getMissingFields(r);
+  const isIncomplete = missing.length > 0;
+  
+  let borderStyle = isIncomplete ? "border-left: 4px solid #C0453A;" : "border-left: 4px solid #4A6741;";
+  let warningText = "";
+  if (isIncomplete) {
+    warningText = `<div style="color: #C0453A; font-weight: bold; margin-bottom: 12px; font-size: 13px;">
+      ⚠️ Infos manquantes : ${missing.join(', ')}
+    </div>`;
+  }
+  
+  let html = `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eadecc; border-radius: 8px; background-color: #fcfaf7; color: #5C3D1E;">
+    <h2 style="color: #5C3D1E; border-bottom: 2px solid #5C3D1E; padding-bottom: 10px; margin-top: 0; font-family: Georgia, serif;">
+      Chez Papi — Nouvelle Demande
+    </h2>
+    <div style="background-color: #fff; border: 1px solid #eadecc; border-radius: 6px; padding: 16px; margin-top: 16px; ${borderStyle}">
+      ${warningText}
+      <h3 style="margin: 0 0 12px 0; color: #5C3D1E; font-size: 18px;">
+        ${r.nom_client || 'Sans nom'}
+      </h3>
+      <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #5C3D1E;">
+        <tr>
+          <td style="width: 35%; padding: 4px 0; color: #8A7260;"><strong>Type d'événement:</strong></td>
+          <td style="padding: 4px 0;">${r.type_evenement || '—'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; color: #8A7260;"><strong>Date de l'événement:</strong></td>
+          <td style="padding: 4px 0;">${r.date_evenement || '—'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; color: #8A7260;"><strong>Nombre de convives:</strong></td>
+          <td style="padding: 4px 0;">${r.nb_convives || '—'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; color: #8A7260;"><strong>Lieu:</strong></td>
+          <td style="padding: 4px 0;">${r.lieu_prestation || '—'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; color: #8A7260;"><strong>Téléphone:</strong></td>
+          <td style="padding: 4px 0;">${r.telephone || '—'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; color: #8A7260;"><strong>Email:</strong></td>
+          <td style="padding: 4px 0;">${r.email_client || '—'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; color: #8A7260;"><strong>Budget:</strong></td>
+          <td style="padding: 4px 0;">${r.budget_estime || '—'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; color: #8A7260;"><strong>Canal:</strong></td>
+          <td style="padding: 4px 0;">${r.canal || '—'}</td>
+        </tr>
+      </table>
+      ${r.message_original ? `<div style="background-color: #fdf6f0; border-radius: 4px; padding: 12px; margin-top: 12px; font-size: 13px; color: #5C3D1E; white-space: pre-wrap;"><strong>Message original:</strong><br/>${r.message_original}</div>` : ''}
+    </div>
+    <p style="font-size: 11px; text-align: center; color: #8A7260; margin-top: 20px;">
+      Chez Papi Maison Gourmande • Cet e-mail est généré automatiquement.
+    </p>
+  </div>`;
+
+  MailApp.sendEmail({
+    to: recipient,
+    subject: subject,
+    htmlBody: html
+  });
+}
+
+function sendDailySummary() {
+  const sheet = getSheet();
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0].map(String);
+  
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+  
+  const yyyy = yesterday.getFullYear();
+  const mm = String(yesterday.getMonth() + 1).padStart(2, '0');
+  const dd = String(yesterday.getDate()).padStart(2, '0');
+  const yesterdayDateString = `${yyyy}-${mm}-${dd}`;
+  
+  const yesterdayRows = [];
+  
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    const rowData = {};
+    headers.forEach((h, j) => { rowData[h] = row[j]; });
+    
+    if (!rowData.id_demande && !rowData.nom_client) continue; // Ignorer les lignes vides
+    
+    let receptionDateStr = "";
+    if (rowData.date_reception instanceof Date) {
+      const ry = rowData.date_reception.getFullYear();
+      const rm = String(rowData.date_reception.getMonth() + 1).padStart(2, '0');
+      const rd = String(rowData.date_reception.getDate()).padStart(2, '0');
+      receptionDateStr = `${ry}-${rm}-${rd}`;
+    } else if (rowData.date_reception) {
+      const match = String(rowData.date_reception).match(/\d{4}-\d{2}-\d{2}/);
+      if (match) receptionDateStr = match[0];
+    }
+    
+    if (receptionDateStr === yesterdayDateString) {
+      yesterdayRows.push(rowData);
+    }
+  }
+  
+  sendSummaryEmail(yesterdayRows, yesterdayDateString);
+}
+
+function sendSummaryEmail(rows, dateString) {
+  const recipient = "demande.chezpapimaisongourmande@gmail.com";
+  const parts = dateString.split('-');
+  const formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
+  const subject = `[Chez Papi] Récapitulatif du ${formattedDate} : ${rows.length} demande(s)`;
+  
+  let html = `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eadecc; border-radius: 8px; background-color: #fcfaf7; color: #5C3D1E;">
+    <h2 style="color: #5C3D1E; border-bottom: 2px solid #5C3D1E; padding-bottom: 10px; margin-top: 0; font-family: Georgia, serif;">
+      Chez Papi — Récapitulatif quotidien
+    </h2>
+    <p style="font-size: 14px; color: #8A7260; margin-bottom: 20px;">
+      Demandes reçues le <strong>${formattedDate}</strong> :
+    </p>`;
+    
+  if (rows.length === 0) {
+    html += `<p style="padding: 16px; background-color: #fff; border: 1px solid #eadecc; border-radius: 6px; text-align: center; font-style: italic; color: #8A7260;">
+      Aucune nouvelle demande reçue hier.
+    </p>`;
+  } else {
+    rows.forEach((r, index) => {
+      const missing = getMissingFields(r);
+      const isIncomplete = missing.length > 0;
+      
+      let borderStyle = isIncomplete ? "border-left: 4px solid #C0453A;" : "border-left: 4px solid #4A6741;";
+      let warningText = "";
+      if (isIncomplete) {
+        warningText = `<div style="color: #C0453A; font-weight: bold; margin-bottom: 8px; font-size: 13px;">
+          ⚠️ Infos manquantes : ${missing.join(', ')}
+        </div>`;
+      }
+      
+      html += `<div style="background-color: #fff; border: 1px solid #eadecc; border-radius: 6px; padding: 16px; margin-bottom: 16px; ${borderStyle}">
+        ${warningText}
+        <h3 style="margin: 0 0 8px 0; color: #5C3D1E; font-size: 16px;">
+          ${r.nom_client || 'Sans nom'}
+        </h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #5C3D1E;">
+          <tr>
+            <td style="width: 35%; padding: 4px 0; color: #8A7260;"><strong>Type d'événement:</strong></td>
+            <td style="padding: 4px 0;">${r.type_evenement || '—'}</td>
+          </tr>
+          <tr>
+            <td style="padding: 4px 0; color: #8A7260;"><strong>Date de l'événement:</strong></td>
+            <td style="padding: 4px 0;">${r.date_evenement || '—'}</td>
+          </tr>
+          <tr>
+            <td style="padding: 4px 0; color: #8A7260;"><strong>Nombre de convives:</strong></td>
+            <td style="padding: 4px 0;">${r.nb_convives || '—'}</td>
+          </tr>
+          <tr>
+            <td style="padding: 4px 0; color: #8A7260;"><strong>Lieu:</strong></td>
+            <td style="padding: 4px 0;">${r.lieu_prestation || '—'}</td>
+          </tr>
+          <tr>
+            <td style="padding: 4px 0; color: #8A7260;"><strong>Téléphone:</strong></td>
+            <td style="padding: 4px 0;">${r.telephone || '—'}</td>
+          </tr>
+          <tr>
+            <td style="padding: 4px 0; color: #8A7260;"><strong>Email:</strong></td>
+            <td style="padding: 4px 0;">${r.email_client || '—'}</td>
+          </tr>
+          <tr>
+            <td style="padding: 4px 0; color: #8A7260;"><strong>Budget:</strong></td>
+            <td style="padding: 4px 0;">${r.budget_estime || '—'}</td>
+          </tr>
+          <tr>
+            <td style="padding: 4px 0; color: #8A7260;"><strong>Canal:</strong></td>
+            <td style="padding: 4px 0;">${r.canal || '—'}</td>
+          </tr>
+        </table>
+        ${r.message_original ? `<div style="background-color: #fdf6f0; border-radius: 4px; padding: 10px; margin-top: 10px; font-size: 12px; color: #5C3D1E; white-space: pre-wrap;"><strong>Message original:</strong><br/>${r.message_original}</div>` : ''}
+      </div>`;
+    });
+  }
+  
+  html += `<p style="font-size: 11px; text-align: center; color: #8A7260; margin-top: 20px;">
+    Chez Papi Maison Gourmande • Cet e-mail est généré automatiquement.
+  </p>
+  </div>`;
+  
+  MailApp.sendEmail({
+    to: recipient,
+    subject: subject,
+    htmlBody: html
+  });
+}
+
+function setupDailyTrigger() {
+  const triggers = ScriptApp.getProjectTriggers();
+  triggers.forEach(t => {
+    if (t.getHandlerFunction() === 'sendDailySummary') {
+      ScriptApp.deleteTrigger(t);
+    }
+  });
+  
+  ScriptApp.newTrigger('sendDailySummary')
+    .timeBased()
+    .everyDays(1)
+    .atHour(7)
+    .create();
 }
 
