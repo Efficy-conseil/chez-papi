@@ -1086,6 +1086,13 @@ function openEventModal(rowIndex = null, forceEdit = false) {
           if (el.name === 'telephone' && val) {
             val = normalizeFrenchPhone(val);
           }
+          if (el.name === 'statut' && el.tagName === 'SELECT') {
+            const hasOption = Array.from(el.options).some(opt => opt.value === val);
+            if (!hasOption && val) {
+              const label = STATUS_LABEL[val] || val;
+              el.add(new Option(label, val));
+            }
+          }
           el.value = val;
         }
       }
