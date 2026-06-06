@@ -94,6 +94,7 @@ function addRow(rowData) {
   rowData.derniere_modification = new Date();
   
   sheet.appendRow(headers.map(h => rowData[h] ?? ''));
+  rowData._row = sheet.getLastRow();
   
   // Envoyer une notification e-mail immédiate
   try {
@@ -290,7 +291,7 @@ function sendDailySummary() {
   
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
-    const rowData = {};
+    const rowData = { _row: i + 1 };
     headers.forEach((h, j) => { rowData[h] = row[j]; });
     
     if (!rowData.id_demande && !rowData.nom_client) continue; // Ignorer les lignes vides
