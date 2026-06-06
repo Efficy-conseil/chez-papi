@@ -191,26 +191,31 @@ function normalizeFrenchPhone(phone) {
 }
 
 // Rend un numéro de téléphone ou email cliquable, sinon retourne le texte brut
+// Sécurisé contre l'injection via href (encodeURIComponent + validation regex)
 function formatContact(contact) {
   if (contact === null || contact === undefined || contact === '') return '—';
   const c = String(contact).trim();
   if (!c) return '—';
-  
+
   const linkStyle = 'color:inherit;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px;';
-  
-  // Check if it's an email
-  if (c.includes('@') && c.includes('.')) {
-    return `<a href="mailto:${c}" style="${linkStyle}">${c}</a>`;
+  const displayText = escHtml(c);
+
+  // Email : validation stricte avant insertion dans href
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c)) {
+    return `<a href="mailto:${encodeURIComponent(c)}" style="${linkStyle}">${displayText}</a>`;
   }
-  
-  // Otherwise treat as a phone number
+
+  // Téléphone
   const normalized = normalizeFrenchPhone(c);
   if (normalized && normalized.replace(/\s/g, '').length >= 9) {
     const rawTel = normalized.replace(/\s/g, '');
-    return `<a href="tel:${rawTel}" style="${linkStyle}">${normalized}</a>`;
+    // Seuls les chiffres, +, espaces sont autorisés dans un tel:
+    if (/^[\d\s+]+$/.test(rawTel)) {
+      return `<a href="tel:${encodeURIComponent(rawTel)}" style="${linkStyle}">${escHtml(normalized)}</a>`;
+    }
   }
-  
-  return c;
+
+  return displayText;
 }
 
 // ── SYNC INDICATOR ──
@@ -395,12 +400,12 @@ function hasMissingInfo(e) {
 }
 
 function normalizeStatus(status) {
-  // Un statut vide reste vide — ne pas le promouvoir en 'Nouvelle demande'
-  if (status === null || status === undefined) return '';
+  // Statut vide ou absent → 'Nouvelle demande' (affiché avec badge «infos manquantes»)
+  if (status === null || status === undefined) return 'Nouvelle demande';
   const s = String(status).trim();
-  if (!s) return '';
+  if (!s) return 'Nouvelle demande';
   const lower = s.toLowerCase();
-  
+
   if (lower === 'nouveau' || lower === 'nouvelle demande') return 'Nouvelle demande';
   if (lower === 'à rappeler' || lower === 'a rappeler' || lower === 'rappeler') return 'À rappeler';
   if (lower === 'contacté' || lower === 'client contacté' || lower === 'contacte') return 'Client contacté';
@@ -409,7 +414,7 @@ function normalizeStatus(status) {
   if (lower === 'prestation en cours') return 'Prestation en cours';
   if (lower === 'terminé' || lower === 'prestation terminée' || lower === 'termine') return 'Prestation terminée';
   if (lower === 'perdu' || lower === 'client perdu') return 'Client perdu';
-  
+
   return s;
 }
 
@@ -426,11 +431,9 @@ async function loadData() {
         return row;
       });
 
-      // 2. Dédupliquer en deux passes :
-      //    Passe A — par id_demande (identifiant canonique)
-      //    Passe B — par (nom_client normalisé + date_evenement) pour les cas sans id commun
+      // 2. Dédupliquer par id_demande : conserver le statut le plus avancé
+      //    (la gestion des doublons sans id commun est faite en externe)
       const statOrder = {
-        '': 0,
         'Nouvelle demande': 1,
         'À rappeler': 2,
         'Client contacté': 3,
@@ -441,79 +444,60 @@ async function loadData() {
         'Client perdu': 8
       };
 
-      function bestRow(existing, challenger) {
-        const o1 = statOrder[existing.statut] ?? 0;
-        const o2 = statOrder[challenger.statut] ?? 0;
-        if (o2 > o1) return challenger;
-        if (o2 === o1) {
-          const d1 = new Date(existing.derniere_modification || 0).getTime();
-          const d2 = new Date(challenger.derniere_modification || 0).getTime();
-          return d2 > d1 ? challenger : existing;
-        }
-        return existing;
-      }
-
-      // Passe A — déduplication par id_demande
       const seenIds = new Map();
       normalizedRows.forEach(row => {
         const id = String(row.id_demande || '').trim();
-        if (!id) return; // traité en passe B
+        if (!id) return; // pas d'id → conservé systématiquement
         const existing = seenIds.get(id);
-        seenIds.set(id, existing ? bestRow(existing, row) : row);
-      });
-
-      // Lignes sans id_demande → passe B (déduplication par nom+date)
-      const noIdRows = normalizedRows.filter(r => !String(r.id_demande || '').trim());
-      const seenNameDate = new Map();
-      noIdRows.forEach(row => {
-        // Clé : nom normalisé + date événement (ignoré si les deux sont vides)
-        const nameKey = String(row.nom_client || '').toLowerCase().replace(/\s+/g, ' ').trim();
-        const dateKey = String(row.date_evenement || '').split('T')[0];
-        const key = nameKey && dateKey ? nameKey + '|' + dateKey : null;
-        if (!key) {
-          // Pas assez d'info pour dédupliquer → on conserve
-          seenNameDate.set('__no_key_' + row._row, row);
-          return;
+        if (!existing) {
+          seenIds.set(id, row);
+        } else {
+          const o1 = statOrder[existing.statut] || 0;
+          const o2 = statOrder[row.statut] || 0;
+          if (o2 > o1) {
+            seenIds.set(id, row);
+          } else if (o2 === o1) {
+            const d1 = new Date(existing.derniere_modification || 0).getTime();
+            const d2 = new Date(row.derniere_modification || 0).getTime();
+            if (d2 > d1) seenIds.set(id, row);
+          }
         }
-        const existing = seenNameDate.get(key);
-        seenNameDate.set(key, existing ? bestRow(existing, row) : row);
       });
 
-      // Construire uniqueRows en préservant l'ordre d'origine
+      // Reconstruire uniqueRows en préservant l'ordre d'origine
       const uniqueRows = [];
-      const keptRows = new Set([
-        ...seenIds.values(),
-        ...seenNameDate.values()
-      ].map(r => r._row));
-
       normalizedRows.forEach(row => {
-        if (keptRows.has(row._row)) uniqueRows.push(row);
+        const id = String(row.id_demande || '').trim();
+        if (!id) { uniqueRows.push(row); return; } // sans id, toujours inclus
+        const best = seenIds.get(id);
+        if (best && best._row === row._row) uniqueRows.push(row);
       });
 
-      // Exclure les lignes sans statut ni nom (lignes parasites d'import)
-      const filteredRows = uniqueRows.filter(r => r.statut !== '' || String(r.nom_client || '').trim() !== '');
-
-      appData = filteredRows;
+      appData = uniqueRows;
       lastSyncTime = Date.now(); lastSyncOk = true; updateSyncIndicator();
       setConnectionStatus('ok', appData.length);
       checkNewEvents(appData);
       requestNotifPermission();
       renderAll();
       
-      // Gestion du routage profond (Deep Linking) via paramètre URL ?row=X
+      // Gestion du routage profond (Deep Linking)
+      // Supporte ?id=<id_demande> (prioritaire) et ?row=<numéro> (rétrocompat)
       const urlParams = new URLSearchParams(window.location.search);
+      const idParam  = urlParams.get('id');
       const rowParam = urlParams.get('row');
-      if (rowParam) {
+      const cleanUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
+
+      if (idParam) {
+        const found = appData.find(e => String(e.id_demande || '') === idParam);
+        if (found) {
+          window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
+          setTimeout(() => openEventModal(found._row), 500);
+        }
+      } else if (rowParam) {
         const rowIndex = parseInt(rowParam, 10);
         if (!isNaN(rowIndex)) {
-          // Nettoyer l'URL pour éviter de réouvrir le modal au rafraîchissement
-          const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
-          window.history.replaceState({ path: newUrl }, '', newUrl);
-          
-          // Ouvrir la vue détaillée de la demande correspondante
-          setTimeout(() => {
-            openEventModal(rowIndex);
-          }, 500);
+          window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
+          setTimeout(() => openEventModal(rowIndex), 500);
         }
       }
     } else {
@@ -923,7 +907,7 @@ function renderTodos(rowId) {
   el.innerHTML = todos.map((t, i) => `
     <div class="pc-todo-item">
       <input type="checkbox" ${t.done ? 'checked' : ''} onclick="toggleTodo(${rowId},${i})">
-      <span class="pc-todo-text${t.done ? ' done' : ''}">${t.text}</span>
+      <span class="pc-todo-text${t.done ? ' done' : ''}">${escHtml(t.text)}</span>
       <button class="pc-todo-del" onclick="deleteTodo(${rowId},${i})">✕</button>
     </div>`).join('');
 }
@@ -1299,11 +1283,11 @@ async function deleteCurrentEvent() {
   try {
     const result = await SheetsAPI.remove(editingRow);
     if (result.success) {
-      appData = appData.filter(r => r._row !== editingRow);
-      renderAll();
+      // Recharger depuis le sheet pour que les _row soient cohérents après suppression
       if (typeof closeEventModal === 'function') closeEventModal();
       if (typeof closeViewModal === 'function') closeViewModal();
       showNotification('Événement supprimé', 'success');
+      await loadData();
     } else {
       showNotification('Erreur : ' + (result.error || 'inconnue'), 'error');
     }
@@ -1624,41 +1608,36 @@ function logout() {
 async function handleLoginSubmit(event) {
   event.preventDefault();
   const emailInput = document.getElementById('login-email');
-  const passInput = document.getElementById('login-password');
-  const errorMsg = document.getElementById('login-error-msg');
-  const btn = event.target.querySelector('button');
+  const passInput  = document.getElementById('login-password');
+  const errorMsg   = document.getElementById('login-error-msg');
+  const btn        = event.target.querySelector('button');
 
   const userVal = emailInput.value.trim();
   const passVal = passInput.value.trim();
+
+  if (!userVal || !passVal) return;
 
   btn.disabled = true;
   btn.textContent = 'Connexion...';
   if (errorMsg) errorMsg.style.display = 'none';
 
-  if (userVal !== 'demande.chezpapimaisongourmande@gmail.com' || passVal !== 'Niconina13/') {
-    btn.disabled = false;
-    btn.textContent = 'Se connecter';
-    if (errorMsg) {
-      errorMsg.textContent = "⚠️ Identifiants incorrects.";
-      errorMsg.style.display = 'block';
-    }
-    return;
-  }
-
+  // Stocker temporairement pour l'appel API
   localStorage.setItem('cp_user', userVal);
   localStorage.setItem('cp_pass', passVal);
 
   try {
+    // La validation réelle est faite par le backend (checkAuth dans code.gs)
     await loadData();
     const overlay = document.getElementById('login-overlay');
     if (overlay) overlay.style.display = 'none';
   } catch (err) {
+    // Échec = identifiants rejetés par le backend
     localStorage.removeItem('cp_user');
     localStorage.removeItem('cp_pass');
     btn.disabled = false;
     btn.textContent = 'Se connecter';
     if (errorMsg) {
-      errorMsg.textContent = "⚠️ Connexion échouée : " + err.message;
+      errorMsg.textContent = '⚠️ Identifiants incorrects ou connexion échouée.';
       errorMsg.style.display = 'block';
     }
   }
@@ -1670,12 +1649,18 @@ document.getElementById('login-form')?.addEventListener('submit', handleLoginSub
 
 const savedUser = localStorage.getItem('cp_user');
 const savedPass = localStorage.getItem('cp_pass');
-if (savedUser === 'demande.chezpapimaisongourmande@gmail.com' && savedPass === 'Niconina13/') {
+if (savedUser && savedPass) {
+  // Tentative de connexion automatique — le backend valide les credentials
   const overlay = document.getElementById('login-overlay');
   if (overlay) overlay.style.display = 'none';
-  loadData();
+  loadData().catch(() => {
+    // Credentials stockés invalides → afficher le login
+    localStorage.removeItem('cp_user');
+    localStorage.removeItem('cp_pass');
+    if (overlay) overlay.style.display = 'flex';
+  });
 } else {
-  // Reste visible si non connecté, loadData sera appelé après connexion réussie
+  // Aucun credential stocké
 }
 
 // ── EXPORT ──

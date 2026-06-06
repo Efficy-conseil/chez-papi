@@ -256,7 +256,7 @@ function sendNewDemandEmail(r) {
       </table>
       ${r.message_original ? `<div style="background-color: #fdf6f0; border-radius: 4px; padding: 12px; margin-top: 12px; font-size: 13px; color: #5C3D1E; white-space: pre-wrap;"><strong>Message original:</strong><br/>${r.message_original}</div>` : ''}
       <div style="margin-top: 20px; text-align: center;">
-        <a href="${FRONTEND_URL}?row=${r._row}" target="_blank" style="display: inline-block; background-color: #5C3D1E; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 13px; box-shadow: 0 4px 6px rgba(92, 61, 30, 0.15);">
+        <a href="${FRONTEND_URL}?id=${encodeURIComponent(r.id_demande || r._row)}" target="_blank" style="display: inline-block; background-color: #5C3D1E; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 13px; box-shadow: 0 4px 6px rgba(92, 61, 30, 0.15);">
           Consulter / Modifier dans le Tableau de Bord
         </a>
       </div>
@@ -311,8 +311,29 @@ function sendDailySummary() {
       yesterdayRows.push(rowData);
     }
   }
-  
-  sendSummaryEmail(yesterdayRows, yesterdayDateString);
+
+  // Dédoublonner par id_demande avant envoi (garder le statut le plus avancé)
+  const statOrder = {
+    'Nouvelle demande': 1, 'À rappeler': 2, 'Client contacté': 3,
+    'Devis envoyé': 4, 'Devis signé': 5, 'Prestation en cours': 6,
+    'Prestation terminée': 7, 'Client perdu': 8
+  };
+  const seenIds = new Map();
+  yesterdayRows.forEach(r => {
+    const id = String(r.id_demande || '').trim();
+    if (!id) return;
+    const existing = seenIds.get(id);
+    if (!existing) { seenIds.set(id, r); return; }
+    const o1 = statOrder[existing.statut] || 0;
+    const o2 = statOrder[r.statut] || 0;
+    if (o2 > o1) seenIds.set(id, r);
+  });
+  const deduped = yesterdayRows.filter(r => {
+    const id = String(r.id_demande || '').trim();
+    return !id || seenIds.get(id)._row === r._row;
+  });
+
+  sendSummaryEmail(deduped, yesterdayDateString);
 }
 
 function sendSummaryEmail(rows, dateString) {
@@ -387,7 +408,7 @@ function sendSummaryEmail(rows, dateString) {
         </table>
         ${r.message_original ? `<div style="background-color: #fdf6f0; border-radius: 4px; padding: 10px; margin-top: 10px; font-size: 12px; color: #5C3D1E; white-space: pre-wrap;"><strong>Message original:</strong><br/>${r.message_original}</div>` : ''}
         <div style="margin-top: 14px; text-align: right;">
-          <a href="${FRONTEND_URL}?row=${r._row}" target="_blank" style="display: inline-block; background-color: #5C3D1E; color: #fff; padding: 6px 14px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 12px; box-shadow: 0 2px 4px rgba(92, 61, 30, 0.12);">
+          <a href="${FRONTEND_URL}?id=${encodeURIComponent(r.id_demande || r._row)}" target="_blank" style="display: inline-block; background-color: #5C3D1E; color: #fff; padding: 6px 14px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 12px; box-shadow: 0 2px 4px rgba(92, 61, 30, 0.12);">
             Consulter / Modifier
           </a>
         </div>
