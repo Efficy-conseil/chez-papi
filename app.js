@@ -337,6 +337,9 @@ const SheetsAPI = {
 let appData = [];
 
 function isEventPast(e) {
+  if (!e) return false;
+  // Les prestations terminées ou clients perdus sont historisés (non actifs)
+  if (e.statut === 'Prestation terminée' || e.statut === 'Client perdu') return true;
   if (!e.date_evenement) return false;
   let dateStr = String(e.date_evenement).trim();
   if (dateStr.includes(' au ')) {
