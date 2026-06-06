@@ -408,10 +408,64 @@ async function loadData() {
   try {
     const result = await SheetsAPI.load();
     if (result && result.rows) {
-      appData = result.rows.map(row => {
+      // 1. Normaliser d'abord tous les statuts
+      const normalizedRows = result.rows.map(row => {
         row.statut = normalizeStatus(row.statut);
         return row;
       });
+
+      // 2. Dédupliquer par id_demande en privilégiant le statut le plus avancé ou la modif la plus récente
+      const uniqueRows = [];
+      const seenIds = new Map();
+
+      normalizedRows.forEach(row => {
+        const id = row.id_demande;
+        if (!id || String(id).trim() === '') {
+          // Sans id_demande, on conserve de toute façon
+          uniqueRows.push(row);
+          return;
+        }
+
+        const existing = seenIds.get(id);
+        if (!existing) {
+          seenIds.set(id, row);
+        } else {
+          const statOrder = {
+            'Nouvelle demande': 1,
+            'À rappeler': 2,
+            'Client contacté': 3,
+            'Devis envoyé': 4,
+            'Devis signé': 5,
+            'Prestation en cours': 6,
+            'Prestation terminée': 7,
+            'Client perdu': 8
+          };
+          const order1 = statOrder[existing.statut] || 0;
+          const order2 = statOrder[row.statut] || 0;
+
+          if (order2 > order1) {
+            seenIds.set(id, row);
+          } else if (order2 === order1) {
+            const d1 = new Date(existing.derniere_modification || 0).getTime();
+            const d2 = new Date(row.derniere_modification || 0).getTime();
+            if (d2 > d1) {
+              seenIds.set(id, row);
+            }
+          }
+        }
+      });
+
+      // Remplir uniqueRows en préservant l'ordre d'origine
+      normalizedRows.forEach(row => {
+        const id = row.id_demande;
+        if (!id || String(id).trim() === '') return;
+        const best = seenIds.get(id);
+        if (best && best._row === row._row) {
+          uniqueRows.push(row);
+        }
+      });
+
+      appData = uniqueRows;
       lastSyncTime = Date.now(); lastSyncOk = true; updateSyncIndicator();
       setConnectionStatus('ok', appData.length);
       checkNewEvents(appData);
