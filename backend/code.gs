@@ -46,7 +46,7 @@ function doGet(e) {
         headers.forEach((h, j) => { obj[h] = serialise(row[j]); });
         return obj;
       })
-      .filter(r => r.id_demande || r.nom_client || r.date_evenement); // ignore les lignes vides
+      .filter(r => headers.some(h => r[h] !== undefined && String(r[h]).trim() !== '')); // ignore les lignes vides
 
     return ok({ headers, rows });
   } catch (err) {
