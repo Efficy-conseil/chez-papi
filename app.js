@@ -129,36 +129,33 @@ function formatDateFR(ds) {
 }
 
 const STATUS_PILL = {
-  'Nouveau': 'pill-terra', 'Nouvelle demande': 'pill-terra',
+  'Nouvelle demande': 'pill-terra',
   'À rappeler': 'pill-orange',
-  'Contacté': 'pill-gold', 'Client contacté': 'pill-gold',
+  'Devis à préparer': 'pill-gold',
   'Devis envoyé': 'pill-gold',
-  'Signé': 'pill-green', 'Devis signé': 'pill-green',
-  'Prestation en cours': 'pill-green',
-  'Terminé': 'pill-gray', 'Prestation terminée': 'pill-gray',
-  'Perdu': 'pill-red', 'Client perdu': 'pill-red'
+  'Événement confirmé': 'pill-green',
+  'Événement terminé': 'pill-gray',
+  'Perdu / Sans suite': 'pill-red'
 };
 
 const STATUS_LABEL = {
-  'Nouveau': '🆕 Nouvelle demande', 'Nouvelle demande': '🆕 Nouvelle demande',
+  'Nouvelle demande': '🆕 Nouvelle demande',
   'À rappeler': '📞 À rappeler',
-  'Contacté': '☎️ Client contacté', 'Client contacté': '☎️ Client contacté',
-  'Devis envoyé': '💬 Devis envoyé',
-  'Signé': '✅ Devis signé', 'Devis signé': '✅ Devis signé',
-  'Prestation en cours': '🔄 Prestation en cours',
-  'Terminé': 'Prestation terminée', 'Prestation terminée': 'Prestation terminée',
-  'Perdu': '❌ Client perdu', 'Client perdu': '❌ Client perdu'
+  'Devis à préparer': '📝 Devis à préparer',
+  'Devis envoyé': '✉️ Devis envoyé',
+  'Événement confirmé': '📅 Événement confirmé',
+  'Événement terminé': '✅ Événement terminé',
+  'Perdu / Sans suite': '❌ Perdu / Sans suite'
 };
 
 const STATUS_DOT = {
-  'Signé': 'green', 'Devis signé': 'green',
-  'Devis envoyé': '',
-  'Contacté': '', 'Client contacté': '',
+  'Nouvelle demande': 'terra',
   'À rappeler': 'orange',
-  'Nouveau': 'terra', 'Nouvelle demande': 'terra',
-  'Terminé': 'gray', 'Prestation terminée': 'gray',
-  'Perdu': 'red', 'Client perdu': 'red',
-  'Prestation en cours': 'green'
+  'Devis à préparer': 'gold',
+  'Devis envoyé': 'gold',
+  'Événement confirmé': 'green',
+  'Événement terminé': 'gray',
+  'Perdu / Sans suite': 'red'
 };
 
 function normalizeFrenchPhone(phone) {
@@ -357,7 +354,7 @@ let appData = [];
 function isEventPast(e) {
   if (!e) return false;
   // Les prestations terminées ou clients perdus sont historisés (non actifs)
-  if (e.statut === 'Prestation terminée' || e.statut === 'Client perdu') return true;
+  if (e.statut === 'Événement terminé' || e.statut === 'Perdu / Sans suite') return true;
   if (!e.date_evenement) return false;
   let dateStr = String(e.date_evenement).trim();
   if (dateStr.includes(' au ')) {
@@ -408,12 +405,11 @@ function normalizeStatus(status) {
 
   if (lower === 'nouveau' || lower === 'nouvelle demande') return 'Nouvelle demande';
   if (lower === 'à rappeler' || lower === 'a rappeler' || lower === 'rappeler') return 'À rappeler';
-  if (lower === 'contacté' || lower === 'client contacté' || lower === 'contacte') return 'Client contacté';
+  if (lower === 'contacté' || lower === 'client contacté' || lower === 'contacte' || lower === 'devis à préparer' || lower === 'devis a preparer') return 'Devis à préparer';
   if (lower === 'devis envoyé' || lower === 'devis envoye') return 'Devis envoyé';
-  if (lower === 'signé' || lower === 'devis signé' || lower === 'signe') return 'Devis signé';
-  if (lower === 'prestation en cours') return 'Prestation en cours';
-  if (lower === 'terminé' || lower === 'prestation terminée' || lower === 'termine') return 'Prestation terminée';
-  if (lower === 'perdu' || lower === 'client perdu') return 'Client perdu';
+  if (lower === 'signé' || lower === 'devis signé' || lower === 'signe' || lower === 'prestation en cours' || lower === 'événement confirmé' || lower === 'evenement confirme' || lower === 'evenement confirmé' || lower === 'événement confirme') return 'Événement confirmé';
+  if (lower === 'terminé' || lower === 'prestation terminée' || lower === 'termine' || lower === 'événement terminé' || lower === 'evenement termine' || lower === 'evenement terminé' || lower === 'événement termine') return 'Événement terminé';
+  if (lower === 'perdu' || lower === 'client perdu' || lower === 'perdu / sans suite' || lower === 'perdu/sans suite' || lower === 'sans suite') return 'Perdu / Sans suite';
 
   return s;
 }
@@ -436,12 +432,11 @@ async function loadData() {
       const statOrder = {
         'Nouvelle demande': 1,
         'À rappeler': 2,
-        'Client contacté': 3,
+        'Devis à préparer': 3,
         'Devis envoyé': 4,
-        'Devis signé': 5,
-        'Prestation en cours': 6,
-        'Prestation terminée': 7,
-        'Client perdu': 8
+        'Événement confirmé': 5,
+        'Événement terminé': 6,
+        'Perdu / Sans suite': 7
       };
 
       const seenIds = new Map();
@@ -544,7 +539,7 @@ function renderAll() {
 
 function renderDashboard() {
   const currentYear = new Date().getFullYear();
-  const CA_STATUTS = ['Signé', 'Devis signé', 'Prestation en cours', 'Terminé', 'Prestation terminée'];
+  const CA_STATUTS = ['Événement confirmé', 'Événement terminé'];
   const yearlySigned = appData.filter(e => {
     if (!CA_STATUTS.includes(e.statut)) return false;
     if (!e.date_evenement) return false;
@@ -563,9 +558,9 @@ function renderDashboard() {
   }, 0);
 
   const actives = appData.filter(e => !isEventPast(e));
-  const confirmes = actives.filter(e => e.statut === 'Signé' || e.statut === 'Devis signé');
+  const confirmes = actives.filter(e => e.statut === 'Événement confirmé');
   const devisEnv  = actives.filter(e => e.statut === 'Devis envoyé');
-  const nouveaux = actives.filter(e => e.statut === 'Nouveau' || e.statut === 'Nouvelle demande' || e.statut === 'À rappeler');
+  const nouveaux = actives.filter(e => e.statut === 'Nouvelle demande' || e.statut === 'À rappeler');
 
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
   set('kpi-ca-val',          formatEuro(caConf));
@@ -574,9 +569,9 @@ function renderDashboard() {
   set('kpi-devis-val',       devisEnv.length || '—');
   set('kpi-leads-val',       nouveaux.length || '—');
 
-  // Nouvelles demandes (Nouveau ou Nouvelle demande)
+  // Nouvelles demandes
   const newDemandes = appData
-    .filter(e => e.statut === 'Nouveau' || e.statut === 'Nouvelle demande' || e.statut === 'À rappeler')
+    .filter(e => e.statut === 'Nouvelle demande' || e.statut === 'À rappeler')
     .sort((a, b) => (b.date_reception || '').localeCompare(a.date_reception || ''))
     .slice(0, 6);
 
@@ -610,8 +605,8 @@ function renderDashboard() {
     }
   }
 
-  // Demandes en cours (Contacté / Devis envoyé)
-  const PIPELINE_SCOPE_HOME = ['Contacté', 'Client contacté', 'Devis envoyé'];
+  // Demandes en cours (Devis à préparer / Devis envoyé)
+  const PIPELINE_SCOPE_HOME = ['Devis à préparer', 'Devis envoyé'];
   const demandesHome = actives
     .filter(e => PIPELINE_SCOPE_HOME.includes(e.statut))
     .sort((a, b) => (a.date_evenement || '').localeCompare(b.date_evenement || ''))
@@ -656,9 +651,9 @@ function renderDashboard() {
     }
   }
 
-  // Prestations en cours (Signé / Devis signé / Prestation en cours)
+  // Prestations en cours (Événement confirmé)
   const prestationsHome = actives
-    .filter(e => e.statut === 'Signé' || e.statut === 'Devis signé' || e.statut === 'Prestation en cours')
+    .filter(e => e.statut === 'Événement confirmé')
     .sort((a, b) => (a.date_evenement || '').localeCompare(b.date_evenement || ''))
     .slice(0, 5);
 
@@ -706,8 +701,7 @@ function renderPipeline() {
   const today = new Date();
   today.setHours(0,0,0,0);
 
-  // Scope: Nouveau, Nouvelle demande, Contacté, Client contacté, Devis envoyé
-  const PIPELINE_SCOPE = ['Nouveau', 'Nouvelle demande', 'Contacté', 'Client contacté', 'À rappeler', 'Devis envoyé'];
+  const PIPELINE_SCOPE = ['Nouvelle demande', 'À rappeler', 'Devis à préparer', 'Devis envoyé'];
   const colsData = { 'urgent': [], 'prioritaire': [], 'important': [], 'normal': [] };
 
   appData.forEach(e => {
@@ -748,19 +742,19 @@ function renderPipeline() {
     colsData[key].sort(sortEventsByDate);
   });
 
-  const ALL_STATUSES = ['Nouvelle demande', 'À rappeler', 'Client contacté', 'Devis envoyé', 'Devis signé', 'Prestation en cours', 'Prestation terminée', 'Client perdu'];
+  const ALL_STATUSES = ['Nouvelle demande', 'À rappeler', 'Devis à préparer', 'Devis envoyé', 'Événement confirmé', 'Événement terminé', 'Perdu / Sans suite'];
 
   el.innerHTML = PIPELINE_COLS.map(col => {
     const events = colsData[col.id];
 
     const cards = events.map(e => {
       const options = ALL_STATUSES.map(s =>
-        `<option value="${s}"${s === e.statut || (s === 'Nouvelle demande' && e.statut === 'Nouveau') || (s === 'Client contacté' && e.statut === 'Contacté') || (s === 'Devis signé' && e.statut === 'Signé') || (s === 'Prestation terminée' && e.statut === 'Terminé') || (s === 'Client perdu' && e.statut === 'Perdu') ? ' selected' : ''}>${STATUS_LABEL[s] || s}</option>`
+        `<option value="${s}"${s === e.statut ? ' selected' : ''}>${STATUS_LABEL[s] || s}</option>`
       ).join('');
 
       // Badge ancienneté
       let ageBadge = '';
-      const isNewOrContacted = ['Nouveau', 'Nouvelle demande', 'À rappeler', 'Contacté', 'Client contacté'].includes(e.statut);
+      const isNewOrContacted = ['Nouvelle demande', 'À rappeler', 'Devis à préparer'].includes(e.statut);
       if (isNewOrContacted && e.date_reception) {
         const demandDate = parseLocalDate(e.date_reception);
         const hours = demandDate ? Math.floor((Date.now() - demandDate.getTime()) / 3600000) : -1;
@@ -850,7 +844,7 @@ function renderClients() {
     return;
   }
 
-  const CLIENTS_SCOPE = ['Signé', 'Devis signé', 'Prestation en cours'];
+  const CLIENTS_SCOPE = ['Événement confirmé'];
   const prestations = appData
     .filter(e => CLIENTS_SCOPE.includes(e.statut) && !isEventPast(e))
     .sort((a, b) => (a.date_evenement || '').localeCompare(b.date_evenement || ''));
@@ -1249,7 +1243,7 @@ function checkDateConflict(dateValue) {
 
   const conflicts = appData.filter(e => {
     if (editingRow && e._row === editingRow) return false;
-    if (!['Signé', 'Devis signé', 'Prestation en cours'].includes(e.statut)) return false;
+    if (e.statut !== 'Événement confirmé') return false;
     return String(e.date_evenement || '').includes(dateValue);
   });
 
@@ -1257,7 +1251,7 @@ function checkDateConflict(dateValue) {
   if (conflicts.length) {
     const c = conflicts[0];
     banner.style.cssText = 'display:block;padding:8px 12px;border-radius:4px;font-size:12px;margin:4px 0 8px;background:rgba(245,166,35,0.15);color:#B86A00;border:1px solid rgba(245,166,35,0.4);';
-    banner.textContent = `⚠️ ${c.nom_client || 'Sans nom'} (${c.type_evenement || 'Autre'}) est déjà signé à cette date`;
+    banner.textContent = `⚠️ ${c.nom_client || 'Sans nom'} (${c.type_evenement || 'Autre'}) est déjà confirmé à cette date`;
   } else {
     banner.style.cssText = 'display:block;padding:8px 12px;border-radius:4px;font-size:12px;margin:4px 0 8px;background:rgba(74,103,65,0.12);color:#4A6741;border:1px solid rgba(74,103,65,0.3);';
     banner.textContent = '✓ Date disponible';
@@ -1505,7 +1499,7 @@ function showKpiModal(type) {
 
   if (type === 'ca') {
     title.textContent = `CA Estimé ${currentYear}`;
-    const CA_STATUTS = ['Signé', 'Devis signé', 'Prestation en cours', 'Terminé', 'Prestation terminée'];
+    const CA_STATUTS = ['Événement confirmé', 'Événement terminé'];
     const yearlySigned = appData.filter(e => {
       if (!CA_STATUTS.includes(e.statut)) return false;
       if (!e.date_evenement) return false;
@@ -1535,7 +1529,7 @@ function showKpiModal(type) {
   } 
   else if (type === 'confirmes') {
     title.textContent = 'Événements confirmés';
-    const CONF_STATUSES = ['Signé', 'Devis signé'];
+    const CONF_STATUSES = ['Événement confirmé'];
     const evts = actives.filter(e => CONF_STATUSES.includes(e.statut));
     evts.sort((a,b) => {
       let d1 = String(a.date_evenement||'').split('T')[0];
@@ -1564,7 +1558,7 @@ function showKpiModal(type) {
   }
   else if (type === 'leads') {
     title.textContent = 'Nouvelles demandes';
-    const evts = actives.filter(e => e.statut === 'Nouveau' || e.statut === 'Nouvelle demande' || e.statut === 'À rappeler');
+    const evts = actives.filter(e => e.statut === 'Nouvelle demande' || e.statut === 'À rappeler');
     evts.sort((a,b) => {
       let d1 = String(a.date_evenement||'').split('T')[0];
       let d2 = String(b.date_evenement||'').split('T')[0];

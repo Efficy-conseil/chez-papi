@@ -96,6 +96,13 @@ function addRow(rowData) {
   sheet.appendRow(headers.map(h => rowData[h] ?? ''));
   rowData._row = sheet.getLastRow();
   
+  // Synchroniser avec Google Calendar
+  try {
+    syncCalendarEvent(rowData);
+  } catch (err) {
+    Logger.log("Erreur de synchronisation Google Calendar dans addRow: " + err.message);
+  }
+  
   // Envoyer une notification e-mail immédiate
   try {
     sendNewDemandEmail(rowData);
@@ -117,11 +124,45 @@ function updateRow(rowIndex, fields) {
       sheet.getRange(rowIndex, i + 1).setValue(fields[h]);
     }
   });
+
+  // Synchroniser avec Google Calendar (récupération de la ligne complète mise à jour)
+  try {
+    const rowValues = sheet.getRange(rowIndex, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const rowData = {};
+    headers.forEach((h, i) => {
+      rowData[h] = rowValues[i];
+    });
+    syncCalendarEvent(rowData);
+  } catch (err) {
+    Logger.log("Erreur de synchronisation Google Calendar dans updateRow: " + err.message);
+  }
+  
   return ok({ success: true });
 }
 
 function deleteRow(rowIndex) {
   const sheet = getSheet();
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
+  
+  // Supprimer l'événement Google Calendar associé avant de supprimer la ligne
+  try {
+    const rowValues = sheet.getRange(rowIndex, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const idDemandeIndex = headers.indexOf('ID Demande');
+    if (idDemandeIndex !== -1) {
+      const idDemande = rowValues[idDemandeIndex];
+      if (idDemande) {
+        var calendar = CalendarApp.getDefaultCalendar();
+        var existingEvent = findCalendarEvent(calendar, idDemande);
+        if (existingEvent) {
+          existingEvent.deleteEvent();
+          Logger.log("Événement Google Calendar supprimé via deleteRow pour " + idDemande);
+        }
+      }
+    }
+  } catch (err) {
+    Logger.log("Erreur suppression Google Calendar dans deleteRow: " + err.message);
+  }
+  
   sheet.deleteRow(rowIndex);
   return ok({ success: true });
 }
@@ -314,9 +355,9 @@ function sendDailySummary() {
 
   // Dédoublonner par id_demande avant envoi (garder le statut le plus avancé)
   const statOrder = {
-    'Nouvelle demande': 1, 'À rappeler': 2, 'Client contacté': 3,
-    'Devis envoyé': 4, 'Devis signé': 5, 'Prestation en cours': 6,
-    'Prestation terminée': 7, 'Client perdu': 8
+    'Nouvelle demande': 1, 'À rappeler': 2, 'Devis à préparer': 3,
+    'Devis envoyé': 4, 'Événement confirmé': 5, 'Événement terminé': 6,
+    'Perdu / Sans suite': 7
   };
   const seenIds = new Map();
   yesterdayRows.forEach(r => {
@@ -441,5 +482,107 @@ function setupDailyTrigger() {
     .everyDays(1)
     .atHour(7)
     .create();
+}
+
+// ── GOOGLE CALENDAR SYNCHRONISATION ──────────────────────────────────────────
+
+function parseEventDate(dateStr) {
+  if (!dateStr) return null;
+  var s = String(dateStr).trim();
+  if (s === '' || s === '—') return null;
+
+  // Option 1: YYYY-MM-DD
+  var ymdMatch = s.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (ymdMatch) {
+    return new Date(Number(ymdMatch[1]), Number(ymdMatch[2]) - 1, Number(ymdMatch[3]));
+  }
+
+  // Option 2: DD/MM/YYYY
+  var dmyMatch = s.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+  if (dmyMatch) {
+    return new Date(Number(dmyMatch[3]), Number(dmyMatch[2]) - 1, Number(dmyMatch[1]));
+  }
+
+  // Option 3: Plages de dates "2026-06-30 au 2026-07-03" (on prend la première date)
+  if (s.indexOf(' au ') !== -1) {
+    var firstPart = s.split(' au ')[0].trim();
+    return parseEventDate(firstPart);
+  }
+
+  // Fallback standard parse
+  var d = new Date(s);
+  if (!isNaN(d.getTime())) {
+    return d;
+  }
+  return null;
+}
+
+function findCalendarEvent(calendar, idDemande) {
+  if (!idDemande) return null;
+  
+  // Plage de recherche large (-1 an à +2 ans)
+  var now = new Date();
+  var startTime = new Date(now.getFullYear() - 1, 0, 1);
+  var endTime = new Date(now.getFullYear() + 2, 11, 31);
+  
+  var events = calendar.getEvents(startTime, endTime, { search: idDemande });
+  if (events && events.length > 0) {
+    for (var i = 0; i < events.length; i++) {
+      var desc = events[i].getDescription();
+      if (desc && desc.indexOf(idDemande) !== -1) {
+        return events[i];
+      }
+    }
+  }
+  return null;
+}
+
+function syncCalendarEvent(rowData) {
+  if (!rowData || !rowData.id_demande) return;
+  
+  var calendar;
+  try {
+    calendar = CalendarApp.getDefaultCalendar();
+  } catch (err) {
+    Logger.log("Impossible d'accéder au calendrier par défaut : " + err.message);
+    return;
+  }
+  
+  var existingEvent = findCalendarEvent(calendar, rowData.id_demande);
+  var isConfirmed = String(rowData.statut).trim().toLowerCase() === 'événement confirmé';
+  
+  if (isConfirmed) {
+    var eventDate = parseEventDate(rowData.date_evenement);
+    if (!eventDate) {
+      Logger.log("Impossible de synchroniser avec Google Calendar : date d'événement manquante ou invalide.");
+      return;
+    }
+    
+    var title = (rowData.nom_client || 'Client inconnu') + ' - ' + (rowData.type_evenement || 'Événement');
+    var location = rowData.lieu_prestation || '';
+    var description = 'ID Demande: ' + rowData.id_demande + '\n' +
+                      'Nombre de convives: ' + (rowData.nb_convives || 'Non renseigné') + '\n' +
+                      'Budget estimé: ' + (rowData.budget_estime || 'Non renseigné') + '\n' +
+                      'Notes: ' + (rowData.notes || 'Aucune');
+                      
+    if (existingEvent) {
+      existingEvent.setTitle(title);
+      existingEvent.setLocation(location);
+      existingEvent.setDescription(description);
+      existingEvent.setAllDayDate(eventDate);
+      Logger.log("Événement Google Calendar mis à jour pour " + rowData.id_demande);
+    } else {
+      calendar.createAllDayEvent(title, eventDate, {
+        location: location,
+        description: description
+      });
+      Logger.log("Événement Google Calendar créé pour " + rowData.id_demande);
+    }
+  } else {
+    if (existingEvent) {
+      existingEvent.deleteEvent();
+      Logger.log("Événement Google Calendar supprimé pour " + rowData.id_demande);
+    }
+  }
 }
 
