@@ -272,6 +272,9 @@ const SheetsAPI = {
     const url = CONFIG.SHEETS_URL + '?action=getAll&user=' + encodeURIComponent(user) + '&pass=' + encodeURIComponent(pass);
     const res = await fetch(url, { redirect: 'follow' });
     const text = await res.text();
+    if (text && text.indexOf('Authorization is required') !== -1) {
+      throw new Error('Authorization required');
+    }
     try {
       const parsed = JSON.parse(text);
       if (parsed.error === 'Non autorisé') {
@@ -280,7 +283,7 @@ const SheetsAPI = {
       }
       return parsed;
     } catch (e) {
-      if (e.message === 'Identifiants invalides') throw e;
+      if (e.message === 'Identifiants invalides' || e.message === 'Authorization required') throw e;
       console.error('SheetsAPI: réponse non-JSON :', text.slice(0, 300));
       throw new Error('Réponse invalide du serveur (non-JSON)');
     }
@@ -294,6 +297,9 @@ const SheetsAPI = {
       body: JSON.stringify({ action: 'add', row, user, pass }),
     });
     const text = await res.text();
+    if (text && text.indexOf('Authorization is required') !== -1) {
+      throw new Error('Authorization required');
+    }
     try {
       const parsed = JSON.parse(text);
       if (parsed.error === 'Non autorisé') {
@@ -314,6 +320,9 @@ const SheetsAPI = {
       body: JSON.stringify({ action: 'update', rowIndex, fields, user, pass }),
     });
     const text = await res.text();
+    if (text && text.indexOf('Authorization is required') !== -1) {
+      throw new Error('Authorization required');
+    }
     try {
       const parsed = JSON.parse(text);
       if (parsed.error === 'Non autorisé') {
@@ -334,6 +343,9 @@ const SheetsAPI = {
       body: JSON.stringify({ action: 'delete', rowIndex, user, pass }),
     });
     const text = await res.text();
+    if (text && text.indexOf('Authorization is required') !== -1) {
+      throw new Error('Authorization required');
+    }
     try {
       const parsed = JSON.parse(text);
       if (parsed.error === 'Non autorisé') {
@@ -506,7 +518,11 @@ async function loadData() {
     console.error('loadData:', err);
     lastSyncOk = false; updateSyncIndicator();
     setConnectionStatus('error', err.message);
-    showNotification(err.message, 'error');
+    if (err && (err.message === 'Authorization required' || String(err).includes('Failed to fetch') || String(err).includes('NetworkError'))) {
+      handleCalendarAuthError(err);
+    } else {
+      showNotification(err.message, 'error');
+    }
   } finally {
     setLoading(false);
   }
@@ -825,9 +841,13 @@ async function updateEventStatus(selectEl, rowIndex) {
       selectEl.disabled = false;
       showNotification('Erreur : ' + (result.error || 'inconnue'), 'error');
     }
-  } catch {
+  } catch (err) {
     selectEl.disabled = false;
-    showNotification('Erreur réseau', 'error');
+    if (err && (err.message === 'Authorization required' || String(err).includes('Failed to fetch') || String(err).includes('NetworkError'))) {
+      handleCalendarAuthError(err);
+    } else {
+      showNotification('Erreur réseau', 'error');
+    }
   }
 }
 
@@ -1310,8 +1330,12 @@ document.getElementById('event-form').addEventListener('submit', async e => {
       }
     }
     if (!result.success) showNotification('Erreur : ' + (result.error || 'inconnue'), 'error');
-  } catch {
-    showNotification('Erreur réseau', 'error');
+  } catch (err) {
+    if (err && (err.message === 'Authorization required' || String(err).includes('Failed to fetch') || String(err).includes('NetworkError'))) {
+      handleCalendarAuthError(err);
+    } else {
+      showNotification('Erreur réseau', 'error');
+    }
   } finally {
     btn.disabled = false; btn.textContent = 'Enregistrer';
   }
@@ -1634,6 +1658,14 @@ function showNotification(message, type = 'info', duration = 3000) {
   n.textContent = message;
   document.body.appendChild(n);
   setTimeout(() => { n.style.transition = 'opacity .3s'; n.style.opacity = '0'; setTimeout(() => n.remove(), 300); }, duration);
+}
+
+function handleCalendarAuthError(err) {
+  console.error("Calendar Auth/CORS Error:", err);
+  const confirmMsg = "L'application a besoin de votre autorisation pour accéder à Google Calendar.\n\nCliquer sur OK pour ouvrir la page d'autorisation Google dans un nouvel onglet. Une fois l'accès accordé, revenez ici et rechargez la page.";
+  if (confirm(confirmMsg)) {
+    window.open(CONFIG.SHEETS_URL, '_blank');
+  }
 }
 
 // ── AUTHENTICATION HANDLERS ──
