@@ -586,3 +586,8 @@ function syncCalendarEvent(rowData) {
   }
 }
 
+function testCalendar() {
+  var calendar = CalendarApp.getDefaultCalendar();
+  Logger.log("Calendar Name: " + calendar.getName());
+}
+
