@@ -1095,8 +1095,61 @@ function showViewModal(rowIndex) {
   set('view-lieu', data.lieu_prestation);
   set('view-canal', data.canal);
   set('view-date-reception', formatDateFR(data.date_reception));
-  setHtml('view-url-email', data.url_email_origine ? `<a href="${data.url_email_origine}" target="_blank" style="color:var(--gold);text-decoration:underline;">Ouvrir l'e-mail</a>` : '—');
-  setHtml('view-url-drive', data.url_dossier_drive ? `<a href="${data.url_dossier_drive}" target="_blank" style="color:var(--gold);text-decoration:underline;">Ouvrir le dossier</a>` : '—');
+  const clientEmail = data.email_client ? String(data.email_client).trim() : '';
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const isEmailKnown = clientEmail && clientEmail !== '—' && emailRegex.test(clientEmail);
+
+  const replyContainer = document.getElementById('view-email-reply-container');
+  const replyBtn = document.getElementById('view-email-reply-btn');
+
+  if (isEmailKnown) {
+    if (replyContainer && replyBtn) {
+      replyContainer.style.display = 'block';
+
+      let subject = 'Votre demande Chez Papi';
+      if (data.type_evenement && String(data.type_evenement).trim() !== '—') {
+        subject += ` - ${String(data.type_evenement).trim()}`;
+      }
+
+      const clientName = data.nom_client && String(data.nom_client).trim() !== '—' ? String(data.nom_client).trim() : '';
+      const salutation = clientName ? `Bonjour ${clientName},\n\n` : `Bonjour,\n\n`;
+
+      let body = `${salutation}Merci pour votre intérêt pour Chez Papi.\n\n`;
+
+      const missing = [];
+      const noPhone = !data.telephone || String(data.telephone).trim() === '' || String(data.telephone).trim() === '—';
+      const noLieu = !data.lieu_prestation || String(data.lieu_prestation).trim() === '' || String(data.lieu_prestation).trim() === '—';
+      const noConvives = !data.nb_convives || String(data.nb_convives).trim() === '' || String(data.nb_convives).trim() === '—' || String(data.nb_convives).trim() === '0';
+      const noDate = !data.date_evenement || String(data.date_evenement).trim() === '' || String(data.date_evenement).trim() === '—';
+
+      if (noPhone) missing.push("votre numéro de téléphone");
+      if (noLieu) missing.push("le lieu de l'événement");
+      if (noConvives) missing.push("le nombre de convives attendu");
+      if (noDate) missing.push("la date souhaitée pour l'événement");
+
+      if (missing.length > 0) {
+        body += `Afin d'étudier au mieux votre demande, pourriez-vous nous préciser :\n`;
+        missing.forEach(item => {
+          body += `- ${item}\n`;
+        });
+        body += `\n`;
+      }
+
+      const origMsg = data.message_original ? String(data.message_original).trim() : '';
+      if (origMsg && origMsg !== '—') {
+        body += `Pour rappel, voici le message que vous nous avez fait parvenir :\n`;
+        body += `« ${origMsg} »\n\n`;
+      }
+
+      body += `Restant à votre entière disposition,\n\nL'équipe Chez Papi\nhttps://www.chez-papi.fr/`;
+
+      replyBtn.href = `https://mail.google.com/mail/u/demande.chezpapimaisongourmande@gmail.com/?view=cm&fs=1&to=${encodeURIComponent(clientEmail)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    }
+  } else {
+    if (replyContainer) {
+      replyContainer.style.display = 'none';
+    }
+  }
   
   let modifStr = '—';
   if (data.derniere_modification) {
