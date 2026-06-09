@@ -1066,6 +1066,140 @@ function exportHistoriqueCSV() {
   a.click();
 }
 
+// ── STATISTIQUES ──────────────────────────────────────────────────────────────
+
+const PIE_COLORS = [
+  '#C0453A', '#4A6741', '#D4A843', '#7B5EA7', '#2980B9',
+  '#E67E22', '#1ABC9C', '#8E44AD', '#C0392B', '#16A085'
+];
+
+function switchHistTab(tab, btn) {
+  document.getElementById('hist-view-liste').style.display = tab === 'liste' ? '' : 'none';
+  document.getElementById('hist-view-stats').style.display = tab === 'stats' ? '' : 'none';
+  document.querySelectorAll('.hist-tab-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  if (tab === 'stats') renderStats();
+}
+
+function renderStats() {
+  // Utilise TOUTES les demandes (pas seulement l'historique filtré)
+  const all = appData;
+  renderPieChart(all);
+  renderConversionTable(all);
+}
+
+function renderPieChart(rows) {
+  const svg    = document.getElementById('stats-pie-svg');
+  const legend = document.getElementById('stats-pie-legend');
+  if (!svg || !legend) return;
+
+  // Comptage par canal
+  const counts = {};
+  rows.forEach(e => {
+    const canal = String(e.canal || 'Non renseigné').trim() || 'Non renseigné';
+    counts[canal] = (counts[canal] || 0) + 1;
+  });
+  const total = rows.length;
+
+  const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+
+  // SVG pie (arc paths)
+  const cx = 100, cy = 100, r = 80;
+  let startAngle = -Math.PI / 2; // début en haut
+  let paths = '';
+  let legendHtml = '';
+
+  entries.forEach(([canal, count], i) => {
+    const pct   = count / total;
+    const angle = pct * 2 * Math.PI;
+    const endAngle = startAngle + angle;
+    const color = PIE_COLORS[i % PIE_COLORS.length];
+
+    const x1 = cx + r * Math.cos(startAngle);
+    const y1 = cy + r * Math.sin(startAngle);
+    const x2 = cx + r * Math.cos(endAngle);
+    const y2 = cy + r * Math.sin(endAngle);
+    const largeArc = angle > Math.PI ? 1 : 0;
+
+    if (entries.length === 1) {
+      // Cercle plein si un seul canal
+      paths += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${color}" />`;
+    } else {
+      paths += `<path d="M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${largeArc},1 ${x2},${y2} Z"
+        fill="${color}" stroke="#fcfaf7" stroke-width="2">
+        <title>${canal} : ${count} (${Math.round(pct * 100)}%)</title>
+      </path>`;
+    }
+
+    legendHtml += `
+      <div class="pie-legend-item">
+        <span class="pie-legend-dot" style="background:${color}"></span>
+        <span>${canal}</span>
+        <span class="pie-legend-pct">${Math.round(pct * 100)}%</span>
+        <span style="color:var(--muted);font-size:.72rem">(${count})</span>
+      </div>`;
+
+    startAngle = endAngle;
+  });
+
+  if (!entries.length) {
+    svg.innerHTML = `<text x="100" y="105" text-anchor="middle" font-size="13" fill="#8A7260">Aucune donnée</text>`;
+    legend.innerHTML = '';
+    return;
+  }
+
+  // Trou central (donut) + total
+  paths += `<circle cx="${cx}" cy="${cy}" r="44" fill="#fcfaf7"/>`;
+  paths += `<text x="${cx}" y="${cy - 8}" text-anchor="middle" font-size="13" font-weight="700" fill="#5C3D1E">${total}</text>`;
+  paths += `<text x="${cx}" y="${cy + 10}" text-anchor="middle" font-size="10" fill="#8A7260">demandes</text>`;
+
+  svg.innerHTML = paths;
+  legend.innerHTML = legendHtml;
+}
+
+function renderConversionTable(rows) {
+  const tbody = document.getElementById('stats-conversion-tbody');
+  if (!tbody) return;
+
+  const CONFIRMED = ['Événement confirmé', 'Événement terminé'];
+
+  // Comptage par canal
+  const byCanal = {};
+  rows.forEach(e => {
+    const canal = String(e.canal || 'Non renseigné').trim() || 'Non renseigné';
+    if (!byCanal[canal]) byCanal[canal] = { total: 0, confirmed: 0 };
+    byCanal[canal].total++;
+    if (CONFIRMED.includes(e.statut)) byCanal[canal].confirmed++;
+  });
+
+  const entries = Object.entries(byCanal).sort((a, b) => b[1].total - a[1].total);
+
+  if (!entries.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="tbl-empty">Aucune donnée</td></tr>';
+    return;
+  }
+
+  const maxPct = Math.max(...entries.map(([, v]) => v.total > 0 ? v.confirmed / v.total : 0));
+
+  tbody.innerHTML = entries.map(([canal, v]) => {
+    const pct  = v.total > 0 ? v.confirmed / v.total : 0;
+    const pctDisplay = Math.round(pct * 100);
+    // Largeur de la barre relative au maximum pour la lisibilité
+    const barWidth = maxPct > 0 ? Math.round((pct / maxPct) * 100) : 0;
+    return `<tr>
+      <td><strong>${escHtml(canal)}</strong></td>
+      <td style="text-align:center">${v.total}</td>
+      <td style="text-align:center">${v.confirmed}</td>
+      <td>
+        <div class="conv-bar-wrap">
+          <div class="conv-bar-bg"><div class="conv-bar-fill" style="width:${barWidth}%"></div></div>
+          <span class="conv-pct">${pctDisplay}%</span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
 // ── EVENT MODAL ──
 
 let editingRow = null;
@@ -1755,6 +1889,7 @@ if (savedUser && savedPass) {
 window.ChezPapi = {
   SheetsAPI, showPanel, toggleSidebar, showNotification, loadData, openEventModal, showViewModal, closeViewModal, deleteCurrentEvent, showKpiModal,
   renderHistorique, setHistoriqueFilter, applyHistoriqueDateRange, exportHistoriqueCSV,
+  switchHistTab,
   renderAgenda, agendaPrevMonth, agendaNextMonth, agendaGoToday,
   toggleAgendaPicker, agendaPickerPrevYear, agendaPickerNextYear, selectAgendaMonth,
   addTodo, toggleTodo, deleteTodo, toggleFormMode, checkDateConflict,

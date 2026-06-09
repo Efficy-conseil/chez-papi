@@ -357,33 +357,78 @@
 <span class="shd-sub" id="historique-sub"></span>
 </div>
 
-<div class="hist-filters">
-  <button class="hist-filter-btn active" onclick="setHistoriqueFilter('all',this)">Tout</button>
-  <button class="hist-filter-btn" onclick="setHistoriqueFilter('2026',this)">Exercice 2026</button>
-  <button class="hist-filter-btn" onclick="setHistoriqueFilter('T1',this)">T1 2026</button>
-  <button class="hist-filter-btn" onclick="setHistoriqueFilter('T2',this)">T2 2026</button>
-  <button class="hist-filter-btn" onclick="setHistoriqueFilter('T3',this)">T3 2026</button>
-  <button class="hist-filter-btn" onclick="setHistoriqueFilter('T4',this)">T4 2026</button>
-  <span class="hist-range">
-    Du <input type="date" id="hist-date-from"> Au <input type="date" id="hist-date-to">
-    <button class="btn-secondary" onclick="applyHistoriqueDateRange()">OK</button>
-  </span>
-  <button class="btn-secondary" onclick="exportHistoriqueCSV()">⬇ CSV</button>
+<!-- Onglets Historique / Statistiques -->
+<div class="hist-tabs">
+  <button class="hist-tab-btn active" id="hist-tab-liste" onclick="switchHistTab('liste',this)">📋 Liste</button>
+  <button class="hist-tab-btn" id="hist-tab-stats" onclick="switchHistTab('stats',this)">📊 Statistiques</button>
 </div>
 
-<div class="card">
-<div class="tbl-wrap">
-<table class="tbl">
-<thead><tr>
-  <th>Date</th><th>Client</th><th>Type</th><th>Lieu</th>
-  <th>Couverts</th><th>Budget</th><th>Statut</th>
-  <th>Email</th><th>Contact</th><th>Notes</th>
-</tr></thead>
-<tbody id="historique-tbody"><tr><td colspan="10" class="tbl-empty">Chargement…</td></tr></tbody>
-</table>
+<!-- ── Vue Liste ── -->
+<div id="hist-view-liste">
+  <div class="hist-filters">
+    <button class="hist-filter-btn active" onclick="setHistoriqueFilter('all',this)">Tout</button>
+    <button class="hist-filter-btn" onclick="setHistoriqueFilter('2026',this)">Exercice 2026</button>
+    <button class="hist-filter-btn" onclick="setHistoriqueFilter('T1',this)">T1 2026</button>
+    <button class="hist-filter-btn" onclick="setHistoriqueFilter('T2',this)">T2 2026</button>
+    <button class="hist-filter-btn" onclick="setHistoriqueFilter('T3',this)">T3 2026</button>
+    <button class="hist-filter-btn" onclick="setHistoriqueFilter('T4',this)">T4 2026</button>
+    <span class="hist-range">
+      Du <input type="date" id="hist-date-from"> Au <input type="date" id="hist-date-to">
+      <button class="btn-secondary" onclick="applyHistoriqueDateRange()">OK</button>
+    </span>
+    <button class="btn-secondary" onclick="exportHistoriqueCSV()">⬇ CSV</button>
+  </div>
+
+  <div class="card">
+  <div class="tbl-wrap">
+  <table class="tbl">
+  <thead><tr>
+    <th>Date</th><th>Client</th><th>Type</th><th>Lieu</th>
+    <th>Couverts</th><th>Budget</th><th>Statut</th>
+    <th>Email</th><th>Contact</th><th>Notes</th>
+  </tr></thead>
+  <tbody id="historique-tbody"><tr><td colspan="10" class="tbl-empty">Chargement…</td></tr></tbody>
+  </table>
+  </div>
+  </div>
 </div>
+
+<!-- ── Vue Statistiques ── -->
+<div id="hist-view-stats" style="display:none;">
+  <div class="stats-grid">
+
+    <!-- Camembert : répartition par canal -->
+    <div class="card stats-card">
+      <h3 class="stats-title">Origine des demandes par canal</h3>
+      <div class="stats-scope-note" id="stats-scope-note">Toutes les demandes</div>
+      <div class="pie-wrap">
+        <svg id="stats-pie-svg" viewBox="0 0 200 200" width="200" height="200"></svg>
+        <div class="pie-legend" id="stats-pie-legend"></div>
+      </div>
+    </div>
+
+    <!-- Tableau : taux de conversion par canal -->
+    <div class="card stats-card">
+      <h3 class="stats-title">Taux de conversion par canal</h3>
+      <div class="stats-scope-note">Toutes les demandes · Événements confirmés ou terminés</div>
+      <div class="tbl-wrap">
+      <table class="tbl stats-tbl" id="stats-conversion-tbl">
+        <thead><tr>
+          <th>Canal</th>
+          <th>Demandes</th>
+          <th>Confirmées</th>
+          <th>Taux</th>
+        </tr></thead>
+        <tbody id="stats-conversion-tbody"></tbody>
+      </table>
+      </div>
+    </div>
+
+  </div>
 </div>
+
 </div>
+
 
 </div><!-- /content -->
 </div><!-- /main -->
