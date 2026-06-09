@@ -125,14 +125,15 @@ function updateRow(rowIndex, fields) {
     }
   });
 
-  // Synchroniser avec Google Calendar (récupération de la ligne complète mise à jour)
+  // Forcer l'écriture dans le sheet avant de relire la ligne
+  SpreadsheetApp.flush();
+
+  // Synchroniser avec Google Calendar (ligne complète relue après écriture)
   try {
     const rowValues = sheet.getRange(rowIndex, 1, 1, sheet.getLastColumn()).getValues()[0];
-    const rowData = {};
-    headers.forEach((h, i) => {
-      rowData[h] = rowValues[i];
-    });
-    syncCalendarEvent(rowData);
+    const rawData = {};
+    headers.forEach((h, i) => { rawData[h] = rowValues[i]; });
+    syncCalendarEvent(rawData); // normalizeRowKeys est appelé à l'intérieur
   } catch (err) {
     Logger.log("Erreur de synchronisation Google Calendar dans updateRow: " + err.message);
   }
@@ -147,16 +148,16 @@ function deleteRow(rowIndex) {
   // Supprimer l'événement Google Calendar associé avant de supprimer la ligne
   try {
     const rowValues = sheet.getRange(rowIndex, 1, 1, sheet.getLastColumn()).getValues()[0];
-    const idDemandeIndex = headers.indexOf('ID Demande');
-    if (idDemandeIndex !== -1) {
-      const idDemande = rowValues[idDemandeIndex];
-      if (idDemande) {
-        var calendar = CalendarApp.getDefaultCalendar();
-        var existingEvent = findCalendarEvent(calendar, idDemande);
-        if (existingEvent) {
-          existingEvent.deleteEvent();
-          Logger.log("Événement Google Calendar supprimé via deleteRow pour " + idDemande);
-        }
+    const rawData = {};
+    headers.forEach((h, i) => { rawData[h] = rowValues[i]; });
+    const data = normalizeRowKeys(rawData); // robuste quel que soit le nom de colonne
+    const idDemande = data.id_demande;
+    if (idDemande) {
+      var calendar = CalendarApp.getDefaultCalendar();
+      var existingEvent = findCalendarEvent(calendar, idDemande);
+      if (existingEvent) {
+        existingEvent.deleteEvent();
+        Logger.log("Événement Google Calendar supprimé via deleteRow pour " + idDemande);
       }
     }
   } catch (err) {
@@ -537,51 +538,116 @@ function findCalendarEvent(calendar, idDemande) {
   return null;
 }
 
+// ── Normalise les clés d'un objet rowData quel que soit le format des en-têtes ──
+// Gère aussi bien {"ID Demande": "CP-.."} que {"id_demande": "CP-.."}
+function normalizeRowKeys(rawData) {
+  // Mapping : nom de colonne dans le sheet → clé snake_case attendue
+  var KEY_MAP = {
+    'id_demande': 'id_demande',
+    'ID Demande': 'id_demande',
+    'id demande': 'id_demande',
+    'statut': 'statut',
+    'Statut': 'statut',
+    'nom_client': 'nom_client',
+    'Nom Client': 'nom_client',
+    'Client': 'nom_client',
+    'date_evenement': 'date_evenement',
+    'Date Evenement': 'date_evenement',
+    'Date Événement': 'date_evenement',
+    'type_evenement': 'type_evenement',
+    'Type': 'type_evenement',
+    'Type Evenement': 'type_evenement',
+    'Type Événement': 'type_evenement',
+    'lieu_prestation': 'lieu_prestation',
+    'Lieu': 'lieu_prestation',
+    'Lieu Prestation': 'lieu_prestation',
+    'nb_convives': 'nb_convives',
+    'Convives': 'nb_convives',
+    'Nb Convives': 'nb_convives',
+    'budget_estime': 'budget_estime',
+    'Budget': 'budget_estime',
+    'Budget Estime': 'budget_estime',
+    'notes': 'notes',
+    'Notes': 'notes',
+    'telephone': 'telephone',
+    'Telephone': 'telephone',
+    'Téléphone': 'telephone',
+    'email_client': 'email_client',
+    'Email': 'email_client',
+    'Email Client': 'email_client',
+  };
+  var normalized = {};
+  var keys = Object.keys(rawData);
+  for (var i = 0; i < keys.length; i++) {
+    var k = keys[i];
+    var mapped = KEY_MAP[k] || k;
+    normalized[mapped] = rawData[k];
+  }
+  return normalized;
+}
+
 function syncCalendarEvent(rowData) {
-  if (!rowData || !rowData.id_demande) return;
+  // Normaliser les clés pour être robuste quelle que soit la source
+  var data = normalizeRowKeys(rowData || {});
+  
+  Logger.log("[syncCalendarEvent] id_demande=" + data.id_demande + ", statut=" + data.statut + ", date_evenement=" + data.date_evenement);
+  
+  if (!data.id_demande) {
+    Logger.log("[syncCalendarEvent] Annulé : id_demande manquant. Clés disponibles : " + Object.keys(rowData || {}).join(', '));
+    return;
+  }
   
   var calendar;
   try {
     calendar = CalendarApp.getDefaultCalendar();
+    Logger.log("[syncCalendarEvent] Calendrier : " + calendar.getName());
   } catch (err) {
-    Logger.log("Impossible d'accéder au calendrier par défaut : " + err.message);
+    Logger.log("[syncCalendarEvent] Impossible d'accéder au calendrier : " + err.message);
     return;
   }
   
-  var existingEvent = findCalendarEvent(calendar, rowData.id_demande);
-  var isConfirmed = String(rowData.statut).trim().toLowerCase() === 'événement confirmé';
+  var existingEvent = findCalendarEvent(calendar, data.id_demande);
+  var statutStr = String(data.statut || '').trim();
+  // Comparison insensible aux accents via normalisation
+  var isConfirmed = statutStr === 'Événement confirmé' ||
+                    statutStr === 'evenement confirme' ||
+                    statutStr.toLowerCase().replace(/[éèêë]/g,'e').replace(/[àâä]/g,'a') === 'evenement confirme';
+  
+  Logger.log("[syncCalendarEvent] isConfirmed=" + isConfirmed + ", statut brut='" + statutStr + "'");
   
   if (isConfirmed) {
-    var eventDate = parseEventDate(rowData.date_evenement);
+    var eventDate = parseEventDate(data.date_evenement);
     if (!eventDate) {
-      Logger.log("Impossible de synchroniser avec Google Calendar : date d'événement manquante ou invalide.");
+      Logger.log("[syncCalendarEvent] Annulé : date_evenement manquante ou invalide : '" + data.date_evenement + "'");
       return;
     }
     
-    var title = (rowData.nom_client || 'Client inconnu') + ' - ' + (rowData.type_evenement || 'Événement');
-    var location = rowData.lieu_prestation || '';
-    var description = 'ID Demande: ' + rowData.id_demande + '\n' +
-                      'Nombre de convives: ' + (rowData.nb_convives || 'Non renseigné') + '\n' +
-                      'Budget estimé: ' + (rowData.budget_estime || 'Non renseigné') + '\n' +
-                      'Notes: ' + (rowData.notes || 'Aucune');
-                      
+    var title = (data.nom_client || 'Client inconnu') + ' - ' + (data.type_evenement || 'Événement');
+    var location = data.lieu_prestation || '';
+    var description = 'ID Demande: ' + data.id_demande + '\n' +
+                      'Nombre de convives: ' + (data.nb_convives || 'Non renseigné') + '\n' +
+                      'Budget estimé: ' + (data.budget_estime || 'Non renseigné') + '\n' +
+                      'Notes: ' + (data.notes || 'Aucune');
+    
     if (existingEvent) {
       existingEvent.setTitle(title);
       existingEvent.setLocation(location);
       existingEvent.setDescription(description);
       existingEvent.setAllDayDate(eventDate);
-      Logger.log("Événement Google Calendar mis à jour pour " + rowData.id_demande);
+      Logger.log("[syncCalendarEvent] Événement MIS À JOUR pour " + data.id_demande);
     } else {
       calendar.createAllDayEvent(title, eventDate, {
         location: location,
         description: description
       });
-      Logger.log("Événement Google Calendar créé pour " + rowData.id_demande);
+      Logger.log("[syncCalendarEvent] Événement CRÉÉ pour " + data.id_demande);
     }
   } else {
     if (existingEvent) {
       existingEvent.deleteEvent();
-      Logger.log("Événement Google Calendar supprimé pour " + rowData.id_demande);
+      Logger.log("[syncCalendarEvent] Événement SUPPRIMÉ pour " + data.id_demande);
+    } else {
+      Logger.log("[syncCalendarEvent] Aucune action (statut non confirmé, pas d'event existant)");
     }
   }
 }
@@ -589,5 +655,29 @@ function syncCalendarEvent(rowData) {
 function testCalendar() {
   var calendar = CalendarApp.getDefaultCalendar();
   Logger.log("Calendar Name: " + calendar.getName());
+}
+
+// ── Fonction de test complète : appeler depuis l'éditeur pour diagnostiquer ──
+function testCalendarFull() {
+  // 1. Lire la première ligne de données du sheet
+  var sheet = getSheet();
+  var data = sheet.getDataRange().getValues();
+  var headers = data[0].map(String);
+  Logger.log("[testCalendarFull] En-têtes du sheet : " + JSON.stringify(headers));
+  
+  if (data.length < 2) {
+    Logger.log("[testCalendarFull] Aucune donnée dans le sheet.");
+    return;
+  }
+  
+  // Tester sur la dernière ligne non vide
+  var lastRowValues = data[data.length - 1];
+  var rowData = {};
+  headers.forEach(function(h, i) { rowData[h] = lastRowValues[i]; });
+  Logger.log("[testCalendarFull] rowData = " + JSON.stringify(rowData));
+  
+  // Tenter la synchronisation
+  syncCalendarEvent(rowData);
+  Logger.log("[testCalendarFull] Terminé.");
 }
 

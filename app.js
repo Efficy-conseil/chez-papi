@@ -1149,15 +1149,23 @@ function showViewModal(rowIndex) {
         body += `\n`;
       }
 
-      const origMsg = data.message_original ? String(data.message_original).trim() : '';
-      if (origMsg && origMsg !== '—') {
-        body += `Pour rappel, voici le message que vous nous avez fait parvenir :\n`;
-        body += `« ${origMsg} »\n\n`;
-      }
-
       body += `Restant à votre entière disposition,\n\nL'équipe Chez Papi\nhttps://www.chez-papi.fr/`;
 
-      replyBtn.href = `https://mail.google.com/mail/u/demande.chezpapimaisongourmande@gmail.com/?view=cm&fs=1&to=${encodeURIComponent(clientEmail)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      // Citation du message original en format standard email (lignes préfixées ">")
+      // Gmail reconnaît ce format et l'affiche dans la même conversation si l'objet correspond
+      const origMsg = data.message_original ? String(data.message_original).trim() : '';
+      if (origMsg && origMsg !== '—') {
+        const receptionDate = data.date_reception ? formatDateFR(data.date_reception) : '';
+        const quoted = origMsg.split('\n').map(line => `> ${line}`).join('\n');
+        body += `\n\n\n`;
+        body += `Le ${receptionDate}${receptionDate ? ', ' : ''}${clientEmail} a écrit :\n`;
+        body += quoted;
+      }
+
+      // Préfixe "Re:" → Gmail rattache ce mail au fil de conversation existant
+      const replySubject = `Re: ${subject}`;
+
+      replyBtn.href = `https://mail.google.com/mail/u/demande.chezpapimaisongourmande@gmail.com/?view=cm&fs=1&to=${encodeURIComponent(clientEmail)}&su=${encodeURIComponent(replySubject)}&body=${encodeURIComponent(body)}`;
     }
   } else {
     if (replyContainer) {
