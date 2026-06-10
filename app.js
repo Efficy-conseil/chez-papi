@@ -309,12 +309,9 @@ async function silentPoll() {
     if (result?.rows) {
       const normalized = result.rows.map(row => { row.statut = normalizeStatus(row.statut); return row; });
       checkNewEvents(normalized);
-      // Mettre à jour appData silencieusement si de nouvelles lignes ont été trouvées
-      const prevCount = appData.length;
-      if (normalized.length !== prevCount) {
-        appData = normalized;
-        renderAll();
-      }
+      // Toujours mettre à jour appData et re-render pour refléter toute modification externe
+      appData = normalized;
+      renderAll();
     }
   } catch { /* polling silencieux, on ignore les erreurs réseau */ }
 }
@@ -934,6 +931,8 @@ async function updateEventStatus(selectEl, rowIndex) {
       if (row) row.statut = newStatus;
       renderAll();
       showNotification('Statut mis à jour', 'success');
+      // Resynchronisation complète depuis le Sheet après un court délai
+      setTimeout(() => loadData().catch(() => {}), 2000);
     } else {
       selectEl.disabled = false;
       showNotification('Erreur : ' + (result.error || 'inconnue'), 'error');
@@ -1545,6 +1544,8 @@ document.getElementById('event-form').addEventListener('submit', async e => {
         renderAll();
         closeEventModal();
         showNotification('Événement mis à jour', 'success');
+        // Resynchronisation complète depuis le Sheet pour garantir la cohérence de tous les onglets
+        setTimeout(() => loadData().catch(() => {}), 2000);
       }
     } else {
       result = await SheetsAPI.add(data);
