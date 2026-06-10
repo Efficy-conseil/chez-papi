@@ -260,7 +260,90 @@ function checkNewEvents(rows) {
     seen.add(String(r._row));
   });
   localStorage.setItem(SEEN_EVENTS_KEY, JSON.stringify([...seen]));
+  // Synchroniser la liste des vus avec le SW pour le polling en arrière-plan
+  syncSeenRowsToSW([...seen]);
 }
+
+// ── Synchronisation des credentials et état avec le Service Worker ───────────
+
+function syncCredentialsToSW() {
+  const user = localStorage.getItem('cp_user') || '';
+  const pass = localStorage.getItem('cp_pass') || '';
+  if (!user || !CONFIG.SHEETS_URL) return;
+  navigator.serviceWorker?.controller?.postMessage({
+    type: 'SYNC_CREDENTIALS',
+    user, pass,
+    url: CONFIG.SHEETS_URL
+  });
+  // Aussi écrire dans IndexedDB (accessible au SW même après redémarrage)
+  try {
+    const req = indexedDB.open('chez-papi-sw', 1);
+    req.onupgradeneeded = e => { e.target.result.createObjectStore('state', { keyPath: 'key' }); };
+    req.onsuccess = e => {
+      const tx = e.target.result.transaction('state', 'readwrite');
+      tx.objectStore('state').put({ key: 'credentials', value: { user, pass, url: CONFIG.SHEETS_URL } });
+    };
+  } catch {}
+}
+
+function syncSeenRowsToSW(rows) {
+  navigator.serviceWorker?.controller?.postMessage({ type: 'SYNC_SEEN_ROWS', rows });
+  try {
+    const req = indexedDB.open('chez-papi-sw', 1);
+    req.onupgradeneeded = e => { e.target.result.createObjectStore('state', { keyPath: 'key' }); };
+    req.onsuccess = e => {
+      const tx = e.target.result.transaction('state', 'readwrite');
+      tx.objectStore('state').put({ key: 'seen_rows', value: rows });
+    };
+  } catch {}
+}
+
+// ── Polling toutes les 3 minutes (quand l'app est ouverte) ───────────────────
+
+let _pollingTimer = null;
+
+async function silentPoll() {
+  if (!CONFIG.SHEETS_URL || !localStorage.getItem('cp_user')) return;
+  try {
+    const result = await SheetsAPI.load();
+    if (result?.rows) {
+      const normalized = result.rows.map(row => { row.statut = normalizeStatus(row.statut); return row; });
+      checkNewEvents(normalized);
+      // Mettre à jour appData silencieusement si de nouvelles lignes ont été trouvées
+      const prevCount = appData.length;
+      if (normalized.length !== prevCount) {
+        appData = normalized;
+        renderAll();
+      }
+    }
+  } catch { /* polling silencieux, on ignore les erreurs réseau */ }
+}
+
+function startBackgroundPolling() {
+  if (_pollingTimer) clearInterval(_pollingTimer);
+  _pollingTimer = setInterval(silentPoll, 3 * 60 * 1000); // toutes les 3 min
+}
+
+function stopBackgroundPolling() {
+  if (_pollingTimer) { clearInterval(_pollingTimer); _pollingTimer = null; }
+}
+
+// ── Periodic Background Sync (Chrome Android, PWA installée) ─────────────────
+
+async function registerPeriodicSync() {
+  if (!('periodicSync' in ServiceWorkerRegistration.prototype)) return;
+  try {
+    const sw = await navigator.serviceWorker.ready;
+    const status = await navigator.permissions.query({ name: 'periodic-background-sync' });
+    if (status.state === 'granted') {
+      await sw.periodicSync.register('poll-new-events', { minInterval: 3 * 60 * 1000 });
+      console.log('[PWA] Periodic Background Sync enregistré');
+    }
+  } catch (err) {
+    console.log('[PWA] Periodic Background Sync non disponible :', err.message);
+  }
+}
+
 
 // ── SHEETS API ──
 
@@ -486,7 +569,12 @@ async function loadData() {
       checkNewEvents(appData);
       requestNotifPermission();
       renderAll();
-      
+
+      // Démarrer le polling en arrière-plan + synchroniser les credentials avec le SW
+      syncCredentialsToSW();
+      startBackgroundPolling();
+      registerPeriodicSync();
+
       // Gestion du routage profond (Deep Linking)
       // Supporte ?id=<id_demande> (prioritaire) et ?row=<numéro> (rétrocompat)
       const urlParams = new URLSearchParams(window.location.search);
