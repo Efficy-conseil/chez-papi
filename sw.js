@@ -1,8 +1,9 @@
-const CACHE_NAME = 'chez-papi-v1.70';
+const CACHE_NAME = 'chez-papi-v1.71';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
+  './apple-touch-icon.png',
   './icon-192x192.png',
   './icon-512x512.png'
 ];
