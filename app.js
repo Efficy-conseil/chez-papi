@@ -1446,30 +1446,7 @@ function openEventModal(rowIndex = null, forceEdit = false) {
   const form = document.getElementById('event-form');
   form.reset();
 
-  if (rowIndex) {
-    const data = appData.find(e => e._row === rowIndex);
-    if (data) {
-      for (const el of form.elements) {
-        if (el.name && data[el.name] !== undefined) {
-          let val = data[el.name];
-          if (el.type === 'date' && val) {
-            val = String(val).split('T')[0];
-          }
-          if (el.name === 'telephone' && val) {
-            val = normalizeFrenchPhone(val);
-          }
-          if (el.name === 'statut' && el.tagName === 'SELECT') {
-            const hasOption = Array.from(el.options).some(opt => opt.value === val);
-            if (!hasOption && val) {
-              const label = STATUS_LABEL[val] || val;
-              el.add(new Option(label, val));
-            }
-          }
-          el.value = val;
-        }
-      }
-    }
-  } else {
+  if (!rowIndex) {
     const now = new Date();
     const localToday = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
     form.elements['date_reception'].value = localToday;
