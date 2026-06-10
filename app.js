@@ -1554,6 +1554,16 @@ document.getElementById('event-form').addEventListener('submit', async e => {
         if (row) {
           Object.assign(row, data);
           row.derniere_modification = new Date().toISOString();
+
+          // Si la date de l'événement a changé, caler l'agenda sur le nouveau mois
+          const newDate = data.date_evenement ? String(data.date_evenement).slice(0, 10) : null;
+          if (newDate && newDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            const d = new Date(newDate + 'T12:00:00');
+            if (!isNaN(d.getTime())) {
+              agendaYear  = d.getFullYear();
+              agendaMonth = d.getMonth();
+            }
+          }
         }
         renderAll();
         closeEventModal();
