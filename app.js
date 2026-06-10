@@ -509,12 +509,21 @@ async function loadData() {
       }
     } else {
       const msg = result?.error || 'Réponse inattendue';
+      // Si le backend rejette les credentials → propager pour que handleLoginSubmit puisse l'attraper
+      if (msg === 'Non autorisé') {
+        throw new Error('Identifiants invalides');
+      }
       console.error('loadData: erreur API :', msg, result);
       lastSyncOk = false; updateSyncIndicator();
       setConnectionStatus('error', msg);
       showNotification('Erreur Google Sheet : ' + msg, 'error');
     }
   } catch (err) {
+    // Relancer les erreurs d'auth pour que handleLoginSubmit puisse les intercepter
+    if (err.message === 'Identifiants invalides') {
+      lastSyncOk = false; updateSyncIndicator();
+      throw err;
+    }
     console.error('loadData:', err);
     lastSyncOk = false; updateSyncIndicator();
     setConnectionStatus('error', err.message);
@@ -1831,15 +1840,20 @@ async function handleLoginSubmit(event) {
   const emailInput = document.getElementById('login-email');
   const passInput  = document.getElementById('login-password');
   const errorMsg   = document.getElementById('login-error-msg');
-  const btn        = event.target.querySelector('button');
+  const btn        = event.target.querySelector('button[type="submit"]') || event.target.querySelector('button');
 
-  const userVal = emailInput.value.trim();
-  const passVal = passInput.value.trim();
+  const userVal = emailInput?.value.trim();
+  const passVal = passInput?.value.trim();
 
-  if (!userVal || !passVal) return;
+  if (!userVal || !passVal) {
+    if (errorMsg) {
+      errorMsg.textContent = '⚠️ Veuillez renseigner votre identifiant et votre mot de passe.';
+      errorMsg.style.display = 'block';
+    }
+    return;
+  }
 
-  btn.disabled = true;
-  btn.textContent = 'Connexion...';
+  if (btn) { btn.disabled = true; btn.textContent = 'Connexion…'; }
   if (errorMsg) errorMsg.style.display = 'none';
 
   // Stocker temporairement pour l'appel API
@@ -1849,18 +1863,25 @@ async function handleLoginSubmit(event) {
   try {
     // La validation réelle est faite par le backend (checkAuth dans code.gs)
     await loadData();
+    // Succès : masquer l'overlay
     const overlay = document.getElementById('login-overlay');
     if (overlay) overlay.style.display = 'none';
   } catch (err) {
-    // Échec = identifiants rejetés par le backend
+    // Échec = identifiants rejetés par le backend ou erreur réseau
     localStorage.removeItem('cp_user');
     localStorage.removeItem('cp_pass');
-    btn.disabled = false;
-    btn.textContent = 'Se connecter';
+    if (btn) { btn.disabled = false; btn.textContent = 'Se connecter'; }
     if (errorMsg) {
-      errorMsg.textContent = '⚠️ Identifiants incorrects ou connexion échouée.';
+      const isAuthError = err.message === 'Identifiants invalides' || err.message === 'Authorization required';
+      errorMsg.textContent = isAuthError
+        ? '❌ Identifiant ou mot de passe incorrect.'
+        : '⚠️ Connexion impossible. Vérifiez votre réseau et réessayez.';
       errorMsg.style.display = 'block';
     }
+    // Secouer le formulaire pour feedback visuel
+    const form = event.target;
+    form.classList.add('login-shake');
+    setTimeout(() => form.classList.remove('login-shake'), 500);
   }
 }
 
