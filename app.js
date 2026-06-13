@@ -1446,6 +1446,8 @@ function openEventModal(rowIndex = null) {
             missing.forEach(item => { body += `- ${item}\n`; });
             body += `\n`;
           }
+          
+          body += `\nManon\n-\nChez Papi Maison Gourmande\n📞 06 09 30 34 41\n✉️ chezpapimaisongourmande@gmail.com\n`;
           const origMsg = existing.message_original ? String(existing.message_original).trim() : '';
           if (origMsg && origMsg !== '—') {
             const receptionDate = existing.date_reception ? formatDateFR(existing.date_reception) : '';
