@@ -1946,9 +1946,15 @@ function showKpiModal(type) {
       return new Date(d1).getTime() - new Date(d2).getTime();
     });
     
+    // Pour ne pas que la cellule statut cache le menu déroulant, on peut ajouter overflow:visible sur la ligne ou le tableau
     thead.innerHTML = '<tr><th style="width:32%">Client</th><th style="width:22%">Date</th><th style="width:22%">Montant</th><th style="width:24%">Statut</th></tr>';
     tbody.innerHTML = evts.length ? evts.map(e => {
-      return `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})"><td><strong>${e.nom_client || '—'}</strong></td><td>${formatDateFR(e.date_evenement) || 'À dét.'}</td><td>${formatBudget(e.budget_estime)}</td><td>${STATUS_LABEL[e.statut] || e.statut}</td></tr>`;
+      return `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})">
+        <td><strong>${e.nom_client || '—'}</strong></td>
+        <td>${formatDateFR(e.date_evenement) || 'À dét.'}</td>
+        <td>${formatBudget(e.budget_estime)}</td>
+        <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e)}</td>
+      </tr>`;
     }).join('') : '<tr><td colspan="4" class="tbl-empty">Aucun nouveau lead</td></tr>';
   }
 
