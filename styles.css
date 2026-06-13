@@ -1846,3 +1846,20 @@ body {
   border-color: transparent;
   outline: none;
 }
+.hist-search-row th {
+  padding: 4px;
+  background: var(--bg-color, #fdfdfc);
+}
+.tbl-search {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 4px 6px;
+  font-size: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: var(--font-sans);
+  outline: none;
+}
+.tbl-search:focus {
+  border-color: var(--brown);
+}

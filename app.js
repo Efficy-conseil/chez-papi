@@ -1105,33 +1105,56 @@ function applyHistoriqueDateRange() {
 }
 
 function getFilteredHistorique() {
-  const allPast = appData
+  let filtered = appData
     .filter(e => isEventPast(e))
     .sort((a, b) => (b.date_evenement || '').localeCompare(a.date_evenement || ''));
 
-  if (historiqueFilter === 'all') return allPast;
+  if (historiqueFilter !== 'all') {
+    const quarters = { T1: ['01','02','03'], T2: ['04','05','06'], T3: ['07','08','09'], T4: ['10','11','12'] };
 
-  const quarters = { T1: ['01','02','03'], T2: ['04','05','06'], T3: ['07','08','09'], T4: ['10','11','12'] };
+    if (historiqueFilter === '2026') {
+      filtered = filtered.filter(e => String(e.date_evenement || '').startsWith('2026-'));
+    } else if (quarters[historiqueFilter]) {
+      const months = quarters[historiqueFilter];
+      filtered = filtered.filter(e => {
+        const ds = String(e.date_evenement || '').split('T')[0];
+        return ds.startsWith('2026-') && months.includes(ds.slice(5, 7));
+      });
+    } else if (historiqueFilter === 'range') {
+      filtered = filtered.filter(e => {
+        const ds = String(e.date_evenement || '').split('T')[0];
+        if (historiqueDateFrom && ds < historiqueDateFrom) return false;
+        if (historiqueDateTo   && ds > historiqueDateTo)   return false;
+        return true;
+      });
+    }
+  }
 
-  if (historiqueFilter === '2026') {
-    return allPast.filter(e => String(e.date_evenement || '').startsWith('2026-'));
-  }
-  if (quarters[historiqueFilter]) {
-    const months = quarters[historiqueFilter];
-    return allPast.filter(e => {
-      const ds = String(e.date_evenement || '').split('T')[0];
-      return ds.startsWith('2026-') && months.includes(ds.slice(5, 7));
-    });
-  }
-  if (historiqueFilter === 'range') {
-    return allPast.filter(e => {
-      const ds = String(e.date_evenement || '').split('T')[0];
-      if (historiqueDateFrom && ds < historiqueDateFrom) return false;
-      if (historiqueDateTo   && ds > historiqueDateTo)   return false;
-      return true;
-    });
-  }
-  return allPast;
+  // Application des filtres par colonne (recherche)
+  const sDate     = document.getElementById('hist-search-date')?.value.toLowerCase();
+  const sClient   = document.getElementById('hist-search-client')?.value.toLowerCase();
+  const sType     = document.getElementById('hist-search-type')?.value.toLowerCase();
+  const sLieu     = document.getElementById('hist-search-lieu')?.value.toLowerCase();
+  const sCouverts = document.getElementById('hist-search-couverts')?.value.toLowerCase();
+  const sBudget   = document.getElementById('hist-search-budget')?.value.toLowerCase();
+  const sStatut   = document.getElementById('hist-search-statut')?.value.toLowerCase();
+  const sEmail    = document.getElementById('hist-search-email')?.value.toLowerCase();
+  const sContact  = document.getElementById('hist-search-contact')?.value.toLowerCase();
+  const sNotes    = document.getElementById('hist-search-notes')?.value.toLowerCase();
+
+  return filtered.filter(e => {
+    if (sDate     && !formatDateFR(e.date_evenement).toLowerCase().includes(sDate)) return false;
+    if (sClient   && !String(e.nom_client || '').toLowerCase().includes(sClient)) return false;
+    if (sType     && !String(e.type_evenement || '').toLowerCase().includes(sType)) return false;
+    if (sLieu     && !String(e.lieu_prestation || '').toLowerCase().includes(sLieu)) return false;
+    if (sCouverts && !String(e.nb_convives || '').toLowerCase().includes(sCouverts)) return false;
+    if (sBudget   && !formatBudget(e.budget_estime).toLowerCase().includes(sBudget)) return false;
+    if (sStatut   && !String(e.statut || '').toLowerCase().includes(sStatut)) return false;
+    if (sEmail    && !String(e.email_client || '').toLowerCase().includes(sEmail)) return false;
+    if (sContact  && !String(e.telephone || '').toLowerCase().includes(sContact)) return false;
+    if (sNotes    && !String(e.notes || '').toLowerCase().includes(sNotes)) return false;
+    return true;
+  });
 }
 
 function renderHistorique() {

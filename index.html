@@ -342,11 +342,25 @@
   <div class="card">
   <div class="tbl-wrap">
   <table class="tbl">
-  <thead><tr>
+  <thead>
+  <tr>
     <th>Date</th><th>Client</th><th>Type</th><th>Lieu</th>
     <th>Couverts</th><th>Budget</th><th>Statut</th>
     <th>Email</th><th>Contact</th><th>Notes</th>
-  </tr></thead>
+  </tr>
+  <tr class="hist-search-row">
+    <th><input type="text" id="hist-search-date" placeholder="Recherche..." onkeyup="renderHistorique()" class="tbl-search"></th>
+    <th><input type="text" id="hist-search-client" placeholder="Recherche..." onkeyup="renderHistorique()" class="tbl-search"></th>
+    <th><input type="text" id="hist-search-type" placeholder="Recherche..." onkeyup="renderHistorique()" class="tbl-search"></th>
+    <th><input type="text" id="hist-search-lieu" placeholder="Recherche..." onkeyup="renderHistorique()" class="tbl-search"></th>
+    <th><input type="text" id="hist-search-couverts" placeholder="Recherche..." onkeyup="renderHistorique()" class="tbl-search"></th>
+    <th><input type="text" id="hist-search-budget" placeholder="Recherche..." onkeyup="renderHistorique()" class="tbl-search"></th>
+    <th><input type="text" id="hist-search-statut" placeholder="Recherche..." onkeyup="renderHistorique()" class="tbl-search"></th>
+    <th><input type="text" id="hist-search-email" placeholder="Recherche..." onkeyup="renderHistorique()" class="tbl-search"></th>
+    <th><input type="text" id="hist-search-contact" placeholder="Recherche..." onkeyup="renderHistorique()" class="tbl-search"></th>
+    <th><input type="text" id="hist-search-notes" placeholder="Recherche..." onkeyup="renderHistorique()" class="tbl-search"></th>
+  </tr>
+  </thead>
   <tbody id="historique-tbody"><tr><td colspan="10" class="tbl-empty">Chargement…</td></tr></tbody>
   </table>
   </div>
