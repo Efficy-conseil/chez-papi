@@ -1836,20 +1836,22 @@ function renderAgenda() {
     '</tr></thead><tbody>' +
     events.map(e => {
       const isEntreprise = String(e.type_evenement || '').trim().toLowerCase() === 'entreprise';
+      const dateStr  = formatDateFR(e.date_evenement);
       const typeVal  = e.type_evenement || '\u2014';
-      const typeHtml = isEntreprise ? `<strong>${typeVal}</strong>` : typeVal;
       const client   = e.nom_client      || '—';
       const lieu     = e.lieu_prestation || '—';
       const convives = e.nb_convives     || '—';
       const budget   = formatBudget(e.budget_estime);
+      const statutLabel = STATUS_LABEL[e.statut] || e.statut;
+      const pillClass   = STATUS_PILL[e.statut]  || 'pill-gray';
       return `<tr style="cursor:pointer" onclick="openEventModal(${e._row})">
-        <td><strong>${formatDateFR(e.date_evenement)}</strong></td>
+        <td class="ag-date" title="${dateStr}">${dateStr}</td>
         <td title="${client}">${client}</td>
-        <td title="${typeVal}">${typeHtml}</td>
+        <td ${isEntreprise ? 'class="ag-entreprise"' : ''} title="${typeVal}">${typeVal}</td>
         <td title="${lieu}">${lieu}</td>
         <td title="${convives}">${convives}</td>
         <td title="${budget}">${budget}</td>
-        <td><span class="pill ${STATUS_PILL[e.statut] || 'pill-gray'}">${STATUS_LABEL[e.statut] || e.statut}</span></td>
+        <td class="ag-statut ${pillClass}" title="${statutLabel}">${statutLabel}</td>
       </tr>`;
     }).join('') +
     '</tbody></table>';
