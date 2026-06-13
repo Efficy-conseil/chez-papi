@@ -237,29 +237,29 @@
 </div>
 
 <div class="kpi-strip">
-<div class="kpi-card" onclick="showKpiModal('ca')" style="cursor:pointer">
-<div class="kpi-label">CA estimé 2026</div>
-<div class="kpi-val" id="kpi-ca-val">—</div>
+<div class="kpi-card terra" onclick="showKpiModal('leads')" style="cursor:pointer">
+<div class="kpi-label">Nouvelles demandes</div>
+<div class="kpi-val" id="kpi-leads-val">—</div>
+</div>
+<div class="kpi-card" onclick="showKpiModal('rappel')" style="cursor:pointer">
+<div class="kpi-label">À rappeler</div>
+<div class="kpi-val" id="kpi-rappel-val">—</div>
+</div>
+<div class="kpi-card" onclick="showKpiModal('devis')" style="cursor:pointer">
+<div class="kpi-label">Devis à préparer</div>
+<div class="kpi-val" id="kpi-devis-val">—</div>
 </div>
 <div class="kpi-card green" onclick="showKpiModal('confirmes')" style="cursor:pointer">
 <div class="kpi-label">Événements confirmés</div>
 <div class="kpi-val" id="kpi-confirmes-val">—</div>
 </div>
-<div class="kpi-card" onclick="showKpiModal('devis')" style="cursor:pointer">
-<div class="kpi-label">Devis en attente</div>
-<div class="kpi-val" id="kpi-devis-val">—</div>
-</div>
-<div class="kpi-card terra" onclick="showKpiModal('leads')" style="cursor:pointer">
-<div class="kpi-label">Nouvelles demandes</div>
-<div class="kpi-val" id="kpi-leads-val">—</div>
-</div>
 </div>
 
 <div class="ornement">· · ·</div>
 
-<!-- Nouvelles demandes (pleine largeur) -->
+<!-- Dernières demandes (pleine largeur) -->
 <div class="card" style="margin-bottom:16px;">
-<div class="card-title">Nouvelles demandes <span class="card-title-action" onclick="showPanel('devis',document.querySelector('[data-panel=devis]'))">Plus</span></div>
+<div class="card-title">Dernières demandes <span class="card-title-action" onclick="showPanel('devis',document.querySelector('[data-panel=devis]'))">Plus</span></div>
 <div class="tbl-wrap">
 <table class="tbl tbl-sm">
 <thead>

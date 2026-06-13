@@ -708,19 +708,19 @@ function renderDashboard() {
 
   const actives = appData.filter(e => !isEventPast(e));
   const confirmes = actives.filter(e => e.statut === 'Événement confirmé');
-  const devisEnv  = actives.filter(e => e.statut === 'Devis envoyé');
-  const nouveaux = actives.filter(e => e.statut === 'Nouvelle demande' || e.statut === 'À rappeler');
+  const devisAPreparer = actives.filter(e => e.statut === 'Devis à préparer');
+  const aRappeler = actives.filter(e => e.statut === 'À rappeler');
+  const nouveaux = actives.filter(e => e.statut === 'Nouvelle demande');
 
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-  set('kpi-ca-val',          formatEuro(caConf));
   set('kpi-confirmes-val',   confirmes.length || '—');
-  set('kpi-confirmes-delta', devisEnv.length + ' en cours de devis');
-  set('kpi-devis-val',       devisEnv.length || '—');
+  set('kpi-devis-val',       devisAPreparer.length || '—');
+  set('kpi-rappel-val',      aRappeler.length || '—');
   set('kpi-leads-val',       nouveaux.length || '—');
 
-  // Nouvelles demandes
+  // Dernières demandes
   const newDemandes = appData
-    .filter(e => e.statut === 'Nouvelle demande' || e.statut === 'À rappeler')
+    .slice()
     .sort((a, b) => (b.date_reception || '').localeCompare(a.date_reception || ''))
     .slice(0, 6);
 
@@ -729,7 +729,7 @@ function renderDashboard() {
     if (!CONFIG.SHEETS_URL) {
       newTbody.innerHTML = '<tr><td colspan="5" class="tbl-empty">\u2699 Configurez CONFIG.SHEETS_URL</td></tr>';
     } else if (!newDemandes.length) {
-      newTbody.innerHTML = '<tr><td colspan="5" class="tbl-empty">Aucune nouvelle demande</td></tr>';
+      newTbody.innerHTML = '<tr><td colspan="5" class="tbl-empty">Aucune demande récente</td></tr>';
     } else {
       newTbody.innerHTML = newDemandes.map(e => {
         let ageBadge = '—';
@@ -1879,36 +1879,65 @@ function showKpiModal(type) {
 
   const actives = appData.filter(e => !isEventPast(e));
 
-  if (type === 'ca') {
-    title.textContent = `CA Estimé ${currentYear}`;
-    const CA_STATUTS = ['Événement confirmé', 'Événement terminé'];
-    const yearlySigned = appData.filter(e => {
-      if (!CA_STATUTS.includes(e.statut)) return false;
-      if (!e.date_evenement) return false;
-      let dateStr = String(e.date_evenement).trim();
-      const dateMatch = dateStr.match(/\d{4}-\d{2}-\d{2}/);
-      if (dateMatch) dateStr = dateMatch[0];
-      const d = new Date(dateStr);
-      return !isNaN(d.getTime()) && d.getFullYear() === currentYear;
+  if (type === 'leads') {
+    title.textContent = 'Nouvelles demandes';
+    const evts = actives.filter(e => e.statut === 'Nouvelle demande');
+    evts.sort((a,b) => {
+      let d1 = String(a.date_evenement||'').split('T')[0];
+      let d2 = String(b.date_evenement||'').split('T')[0];
+      return new Date(d1).getTime() - new Date(d2).getTime();
     });
-
-    const cm = {};
-    yearlySigned.forEach(e => {
-      const n = e.nom_client || 'Inconnu';
-      if (!cm[n]) cm[n] = 0;
-      
-      const sBudget = String(e.budget_estime || '').replace(/\s/g, '');
-      const numMatch = sBudget.match(/\d+/);
-      const budgetVal = numMatch ? parseFloat(numMatch[0]) : 0;
-      cm[n] += budgetVal;
-    });
-    const rows = Object.entries(cm).sort((a,b)=>b[1]-a[1]);
     
-    thead.innerHTML = '<tr><th>Client</th><th>CA Signé</th></tr>';
-    tbody.innerHTML = rows.length ? rows.map(([c, v]) => `<tr><td>${c}</td><td><strong>${formatEuro(v)}</strong></td></tr>`).join('') : '<tr><td colspan="2" class="tbl-empty">Aucun CA</td></tr>';
-    const total = rows.reduce((s, r)=>s+r[1], 0);
-    if(rows.length) tfoot.innerHTML = `<tr><td><strong>TOTAL</strong></td><td><strong>${formatEuro(total)}</strong></td></tr>`;
-  } 
+    thead.innerHTML = '<tr><th style="width:32%">Client</th><th style="width:22%">Date</th><th style="width:22%">Montant</th><th style="width:24%">Statut</th></tr>';
+    tbody.innerHTML = evts.length ? evts.map(e => {
+      return `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})">
+        <td><strong>${e.nom_client || '—'}</strong></td>
+        <td>${formatDateFR(e.date_evenement) || 'À dét.'}</td>
+        <td>${formatBudget(e.budget_estime)}</td>
+        <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e)}</td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="4" class="tbl-empty">Aucune nouvelle demande</td></tr>';
+  }
+  else if (type === 'rappel') {
+    title.textContent = 'À rappeler';
+    const evts = actives.filter(e => e.statut === 'À rappeler');
+    evts.sort((a,b) => {
+      let d1 = String(a.date_evenement||'').split('T')[0];
+      let d2 = String(b.date_evenement||'').split('T')[0];
+      return new Date(d1).getTime() - new Date(d2).getTime();
+    });
+    
+    thead.innerHTML = '<tr><th style="width:18%">Date</th><th style="width:25%">Client</th><th style="width:20%">Type</th><th style="width:18%">Téléphone</th><th style="width:19%">Statut</th></tr>';
+    tbody.innerHTML = evts.length ? evts.map(e => {
+      const telHtml = e.telephone ? `<a href="tel:${e.telephone}" style="color:var(--gold);text-decoration:none;" onclick="event.stopPropagation()">${formatContact(e.telephone)}</a>` : '—';
+      return `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})">
+        <td>${formatDateFR(e.date_evenement) || 'À dét.'}</td>
+        <td><strong>${e.nom_client || '—'}</strong></td>
+        <td>${e.type_evenement || '—'}</td>
+        <td>${telHtml}</td>
+        <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e)}</td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="5" class="tbl-empty">Aucune demande à rappeler</td></tr>';
+  }
+  else if (type === 'devis') {
+    title.textContent = 'Devis à préparer';
+    const evts = actives.filter(e => e.statut === 'Devis à préparer');
+    evts.sort((a,b) => {
+      let d1 = String(a.date_evenement||'').split('T')[0];
+      let d2 = String(b.date_evenement||'').split('T')[0];
+      return new Date(d1).getTime() - new Date(d2).getTime();
+    });
+    
+    thead.innerHTML = '<tr><th style="width:20%">Date prévue</th><th style="width:30%">Client</th><th style="width:20%">Montant</th><th style="width:30%">Statut</th></tr>';
+    tbody.innerHTML = evts.length ? evts.map(e => {
+      return `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})">
+        <td>${formatDateFR(e.date_evenement) || 'À dét.'}</td>
+        <td><strong>${e.nom_client || '—'}</strong></td>
+        <td>${formatBudget(e.budget_estime)}</td>
+        <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e)}</td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="4" class="tbl-empty">Aucun devis à préparer</td></tr>';
+  }
   else if (type === 'confirmes') {
     title.textContent = 'Événements confirmés';
     const CONF_STATUSES = ['Événement confirmé'];
@@ -1919,44 +1948,15 @@ function showKpiModal(type) {
       return new Date(d1).getTime() - new Date(d2).getTime();
     });
     
-    thead.innerHTML = '<tr><th style="width:22%">Date</th><th style="width:36%">Client</th><th style="width:24%">Type</th><th style="width:18%">Montant</th></tr>';
-    tbody.innerHTML = evts.length ? evts.map(e => {
-      return `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})"><td>${formatDateFR(e.date_evenement)}</td><td><strong>${e.nom_client || '—'}</strong></td><td>${e.type_evenement || '—'}</td><td>${formatBudget(e.budget_estime)}</td></tr>`;
-    }).join('') : '<tr><td colspan="4" class="tbl-empty">Aucun événement signé</td></tr>';
-  }
-  else if (type === 'devis') {
-    title.textContent = 'Devis en attente';
-    const evts = actives.filter(e => e.statut === 'Devis envoyé');
-    evts.sort((a,b) => {
-      let d1 = String(a.date_evenement||'').split('T')[0];
-      let d2 = String(b.date_evenement||'').split('T')[0];
-      return new Date(d1).getTime() - new Date(d2).getTime();
-    });
-    
-    thead.innerHTML = '<tr><th style="width:30%">Date prévue</th><th style="width:45%">Client</th><th style="width:25%">Montant</th></tr>';
-    tbody.innerHTML = evts.length ? evts.map(e => {
-      return `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})"><td>${formatDateFR(e.date_evenement)}</td><td><strong>${e.nom_client || '—'}</strong></td><td>${formatBudget(e.budget_estime)}</td></tr>`;
-    }).join('') : '<tr><td colspan="3" class="tbl-empty">Aucun devis en attente</td></tr>';
-  }
-  else if (type === 'leads') {
-    title.textContent = 'Nouvelles demandes';
-    const evts = actives.filter(e => e.statut === 'Nouvelle demande' || e.statut === 'À rappeler');
-    evts.sort((a,b) => {
-      let d1 = String(a.date_evenement||'').split('T')[0];
-      let d2 = String(b.date_evenement||'').split('T')[0];
-      return new Date(d1).getTime() - new Date(d2).getTime();
-    });
-    
-    // Pour ne pas que la cellule statut cache le menu déroulant, on peut ajouter overflow:visible sur la ligne ou le tableau
-    thead.innerHTML = '<tr><th style="width:32%">Client</th><th style="width:22%">Date</th><th style="width:22%">Montant</th><th style="width:24%">Statut</th></tr>';
+    thead.innerHTML = '<tr><th style="width:22%">Date</th><th style="width:30%">Client</th><th style="width:20%">Type</th><th style="width:28%">Statut</th></tr>';
     tbody.innerHTML = evts.length ? evts.map(e => {
       return `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})">
-        <td><strong>${e.nom_client || '—'}</strong></td>
         <td>${formatDateFR(e.date_evenement) || 'À dét.'}</td>
-        <td>${formatBudget(e.budget_estime)}</td>
+        <td><strong>${e.nom_client || '—'}</strong></td>
+        <td>${e.type_evenement || '—'}</td>
         <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e)}</td>
       </tr>`;
-    }).join('') : '<tr><td colspan="4" class="tbl-empty">Aucun nouveau lead</td></tr>';
+    }).join('') : '<tr><td colspan="4" class="tbl-empty">Aucun événement signé</td></tr>';
   }
 
   document.getElementById('kpi-modal').style.display = 'flex';
