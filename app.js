@@ -1430,7 +1430,7 @@ function openEventModal(rowIndex = null) {
           }
           const clientName = existing.nom_client && String(existing.nom_client).trim() !== '—' ? String(existing.nom_client).trim() : '';
           const salutation = clientName ? `Bonjour ${clientName},\n\n` : `Bonjour,\n\n`;
-          let body = `${salutation}Merci pour votre intérêt pour Chez Papi.\n\n`;
+          let body = salutation;
           const missing = [];
           const noPhone = !existing.telephone || String(existing.telephone).trim() === '' || String(existing.telephone).trim() === '—';
           const noLieu = !existing.lieu_prestation || String(existing.lieu_prestation).trim() === '' || String(existing.lieu_prestation).trim() === '—';
@@ -1441,11 +1441,11 @@ function openEventModal(rowIndex = null) {
           if (noConvives) missing.push("le nombre de convives attendu");
           if (noDate) missing.push("la date souhaitée pour l'événement");
           if (missing.length > 0) {
+            body += `Merci pour votre intérêt pour Chez Papi.\n\n`;
             body += `Afin d'étudier au mieux votre demande, pourriez-vous nous préciser :\n`;
             missing.forEach(item => { body += `- ${item}\n`; });
             body += `\n`;
           }
-          body += `Restant à votre entière disposition,\n\nL'équipe Chez Papi\nhttps://www.chez-papi.fr/`;
           const origMsg = existing.message_original ? String(existing.message_original).trim() : '';
           if (origMsg && origMsg !== '—') {
             const receptionDate = existing.date_reception ? formatDateFR(existing.date_reception) : '';
