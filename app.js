@@ -810,7 +810,7 @@ function renderDashboard() {
   const actEl = document.getElementById('recent-activity');
   if (actEl) {
     if (!prestationsHome.length) {
-      actEl.innerHTML = '<div class="act-time" style="padding:12px 0;color:var(--muted);">Aucune prestation en cours</div>';
+      actEl.innerHTML = '<div class="act-time" style="padding:12px 0;color:var(--muted);">Aucun événement confirmé</div>';
     } else {
       const thead = '<table class="tbl tbl-sm"><thead><tr><th style="width:22%">Date</th><th style="width:36%">Client</th><th style="width:20%">Budget</th><th style="width:22%">Statut</th></tr></thead><tbody>';
       actEl.innerHTML = thead + prestationsHome.map(e => {
@@ -999,10 +999,10 @@ function renderClients() {
     .filter(e => CLIENTS_SCOPE.includes(e.statut) && !isEventPast(e))
     .sort((a, b) => (a.date_evenement || '').localeCompare(b.date_evenement || ''));
 
-  if (sub) sub.textContent = `${prestations.length} prestation${prestations.length > 1 ? 's' : ''} en cours`;
+  if (sub) sub.textContent = `${prestations.length} événement${prestations.length > 1 ? 's' : ''} confirmé${prestations.length > 1 ? 's' : ''}`;
 
   if (!prestations.length) {
-    container.innerHTML = '<div class="tbl-empty" style="padding:20px;">Aucune prestation en cours</div>';
+    container.innerHTML = '<div class="tbl-empty" style="padding:20px;">Aucun événement confirmé</div>';
     return;
   }
 

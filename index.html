@@ -190,7 +190,7 @@
 <span class="nav-icon">📋</span> Demandes
 </button>
 <button class="nav-item" onclick="showPanel('clients',this)" data-panel="clients">
-<span class="nav-icon">✅</span> Prestations en cours
+<span class="nav-icon">✅</span> Événements confirmés
 </button>
 <button class="nav-item" onclick="showPanel('agenda',this)" data-panel="agenda">
 <span class="nav-icon">📅</span> Agenda
@@ -300,9 +300,9 @@
 </div>
 </div>
 
-<!-- Prestations en cours -->
+<!-- Événements confirmés -->
 <div class="card">
-<div class="card-title">Prestations en cours <span class="card-title-action" onclick="showPanel('clients',document.querySelector('[data-panel=clients]'))">Plus</span></div>
+<div class="card-title">Événements confirmés <span class="card-title-action" onclick="showPanel('clients',document.querySelector('[data-panel=clients]'))">Plus</span></div>
 <div class="tbl-wrap" id="recent-activity">
 <div class="act-time" style="padding:12px 0;color:var(--muted);">Chargement…</div>
 </div>
@@ -325,7 +325,7 @@
 <!-- ══════════════════════ CLIENTS ══════════════════════ -->
 <div class="panel" id="panel-clients">
 <div class="section-hd">
-<h2>Prestations en cours</h2>
+<h2>Événements confirmés</h2>
 <span class="shd-sub" id="clients-sub">Chargement…</span>
 </div>
 <div id="clients-cards">
@@ -581,7 +581,7 @@
   </button>
   <button class="bn-item" id="bn-clients" onclick="showPanel('clients',this)">
     <span class="bn-icon">✅</span>
-    <span class="bn-label">Prestations</span>
+    <span class="bn-label">Confirmés</span>
   </button>
   <button class="bn-item" id="bn-agenda" onclick="showPanel('agenda',this)">
     <span class="bn-icon">📅</span>
