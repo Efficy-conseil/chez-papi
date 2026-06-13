@@ -104,9 +104,9 @@
   <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Statut:</strong> <span id="view-statut">—</span></p>
   <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Invités:</strong> <span id="view-invites">—</span></p>
   <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Lieu:</strong> <span id="view-lieu">—</span></p>
+  <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Budget:</strong> <span id="view-budget">—</span></p>
   <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Canal:</strong> <span id="view-canal">—</span></p>
   <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Date réception:</strong> <span id="view-date-reception">—</span></p>
-  <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Budget:</strong> <span id="view-budget">—</span></p>
   <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Dernière modification:</strong> <span id="view-derniere-modif">—</span></p>
   <div style="background: var(--warm, #fdf6f0); padding: 12px; border-radius: 6px; font-size: 13px; margin-top: 12px;">
     <strong>Message original:</strong><br/>
@@ -509,6 +509,10 @@
 <!-- ── Champs mode complet (cachés en mode rapide) ── -->
 <div id="form-full-section" style="display:none;">
 <div class="form-row">
+<label>Budget estimé</label>
+<input type="text" name="budget_estime" placeholder="Ex: 1800 ou 850/900€ ou Entre 2000 et 2500€">
+</div>
+<div class="form-row">
 <label>Canal d'origine</label>
 <select name="canal">
 <option value="Email">Email</option>
@@ -525,10 +529,6 @@
 <div class="form-row">
 <label>Date de réception</label>
 <input type="date" name="date_reception">
-</div>
-<div class="form-row">
-<label>Budget estimé</label>
-<input type="text" name="budget_estime" placeholder="Ex: 1800 ou 850/900€ ou Entre 2000 et 2500€">
 </div>
 <div class="form-row">
 <label>Lien e-mail d'origine</label>
