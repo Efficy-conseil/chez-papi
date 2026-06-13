@@ -1472,7 +1472,17 @@ function openEventModal(rowIndex = null, forceEdit = false) {
   const form = document.getElementById('event-form');
   form.reset();
 
-  if (!rowIndex) {
+  if (rowIndex) {
+    const existing = appData.find(e => e._row === rowIndex);
+    if (existing) {
+      for (const el of form.elements) {
+        if (el.name && el.name in existing) {
+          const val = existing[el.name];
+          el.value = (val === null || val === undefined || val === '—') ? '' : val;
+        }
+      }
+    }
+  } else {
     const now = new Date();
     const localToday = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
     form.elements['date_reception'].value = localToday;
@@ -1489,6 +1499,17 @@ function openEventModal(rowIndex = null, forceEdit = false) {
   // Réinitialiser la bannière conflit de date
   const conflictBanner = document.getElementById('date-conflict-banner');
   if (conflictBanner) conflictBanner.style.display = 'none';
+
+  if (rowIndex) {
+    const existing = appData.find(e => e._row === rowIndex);
+    if (existing) {
+      const dateVal = existing['date_evenement'];
+      const dateMatch = dateVal ? String(dateVal).match(/\d{4}-\d{2}-\d{2}/) : null;
+      if (dateMatch) {
+        checkDateConflict(dateMatch[0]);
+      }
+    }
+  }
 
   modal.style.display = 'flex';
 }
