@@ -727,9 +727,9 @@ function renderDashboard() {
   const newTbody = document.getElementById('new-demandes-tbody');
   if (newTbody) {
     if (!CONFIG.SHEETS_URL) {
-      newTbody.innerHTML = '<tr><td colspan="4" class="tbl-empty">\u2699 Configurez CONFIG.SHEETS_URL</td></tr>';
+      newTbody.innerHTML = '<tr><td colspan="5" class="tbl-empty">\u2699 Configurez CONFIG.SHEETS_URL</td></tr>';
     } else if (!newDemandes.length) {
-      newTbody.innerHTML = '<tr><td colspan="4" class="tbl-empty">Aucune nouvelle demande</td></tr>';
+      newTbody.innerHTML = '<tr><td colspan="5" class="tbl-empty">Aucune nouvelle demande</td></tr>';
     } else {
       newTbody.innerHTML = newDemandes.map(e => {
         let ageBadge = '—';
@@ -749,6 +749,7 @@ function renderDashboard() {
           <td>${e.nom_client || '—'}${warningBadge}</td>
           <td>${formatBudget(e.budget_estime)}</td>
           <td>${ageBadge}</td>
+          <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e)}</td>
         </tr>`;
       }).join('');
     }
