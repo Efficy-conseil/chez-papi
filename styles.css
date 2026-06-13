@@ -1595,26 +1595,9 @@ body {
 .agenda-tbl td.ag-date { font-weight: 700; }
 /* Type Entreprise en gras */
 .agenda-tbl td.ag-entreprise { font-weight: 700; }
-/* Colonne Statut : reprend les couleurs des pills directement sur le td */
-.agenda-tbl td.ag-statut {
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: .07em;
-  text-transform: uppercase;
-  border-radius: 4px;
-  padding-left: 8px;
-}
-/* Reprise des couleurs de chaque statut — héritage des variables CSS globales */
-.agenda-tbl td.pill-green  { background: rgba(74,103,65,.12);   color: var(--green); }
-.agenda-tbl td.pill-gold   { background: rgba(184,137,42,.12);  color: var(--gold); }
-.agenda-tbl td.pill-terra  { background: rgba(196,113,74,.12);  color: var(--terracotta); }
-.agenda-tbl td.pill-orange { background: rgba(212,120,30,.12);  color: #D4781E; }
-.agenda-tbl td.pill-gray   { background: rgba(138,114,96,.1);   color: var(--muted); }
-.agenda-tbl td.pill-red    { background: rgba(192,69,58,.1);    color: var(--red-soft); }
 @media (min-width: 768px) {
   .agenda-tbl th { font-size: 0.75rem; }
   .agenda-tbl td { font-size: 0.85rem; }
-  .agenda-tbl td.ag-statut { font-size: 0.72rem; }
 }
 
 /* ── HISTORIQUE TABLE ── */

@@ -158,6 +158,20 @@ const STATUS_DOT = {
   'Perdu / Sans suite': 'red'
 };
 
+const ALL_STATUSES = ['Nouvelle demande', 'À rappeler', 'Devis à préparer', 'Devis envoyé', 'Événement confirmé', 'Événement terminé', 'Perdu / Sans suite'];
+
+function generateStatusSelectHtml(e, extraClass = '') {
+  const options = ALL_STATUSES.map(s =>
+    `<option value="${s}"${s === e.statut ? ' selected' : ''}>${STATUS_LABEL[s] || s}</option>`
+  ).join('');
+  const pillClass = STATUS_PILL[e.statut] || 'pill-gray';
+  
+  // Le style en ligne garantit que le sélecteur ressemble à un badge et n'a pas de bordure native gênante
+  return `<select class="pill ${pillClass} ${extraClass}" style="border:none; outline:none; cursor:pointer; font-family:inherit; appearance:auto; padding-right:12px; background-color:transparent;" onchange="updateEventStatus(this,${e._row})" onclick="event.stopPropagation()">
+    ${options}
+  </select>`;
+}
+
 function normalizeFrenchPhone(phone) {
   if (!phone) return '';
   let clean = String(phone).replace(/\s+/g, '').trim();
@@ -780,7 +794,7 @@ function renderDashboard() {
           <td><strong>${formatDateFR(e.date_evenement) || '—'}</strong></td>
           <td>${e.nom_client || '—'}${warningBadge}</td>
           <td>${formatBudget(e.budget_estime)}</td>
-          <td><span class="pill ${STATUS_PILL[e.statut] || 'pill-gray'}">${STATUS_LABEL[e.statut] || e.statut}</span></td>
+          <td>${generateStatusSelectHtml(e)}</td>
         </tr>`;
       }).join('');
     }
@@ -804,7 +818,7 @@ function renderDashboard() {
           <td><strong>${formatDateFR(e.date_evenement)}</strong></td>
           <td>${e.nom_client || '—'}${warningBadge}</td>
           <td>${formatBudget(e.budget_estime)}</td>
-          <td><span class="pill ${STATUS_PILL[e.statut] || 'pill-gray'}">${STATUS_LABEL[e.statut] || e.statut}</span></td>
+          <td>${generateStatusSelectHtml(e)}</td>
         </tr>`;
       }).join('') + '</tbody></table>';
     }
@@ -877,16 +891,10 @@ function renderPipeline() {
     colsData[key].sort(sortEventsByDate);
   });
 
-  const ALL_STATUSES = ['Nouvelle demande', 'À rappeler', 'Devis à préparer', 'Devis envoyé', 'Événement confirmé', 'Événement terminé', 'Perdu / Sans suite'];
-
   el.innerHTML = PIPELINE_COLS.map(col => {
     const events = colsData[col.id];
 
     const cards = events.map(e => {
-      const options = ALL_STATUSES.map(s =>
-        `<option value="${s}"${s === e.statut ? ' selected' : ''}>${STATUS_LABEL[s] || s}</option>`
-      ).join('');
-
       // Badge ancienneté
       let ageBadge = '';
       const isNewOrContacted = ['Nouvelle demande', 'À rappeler', 'Devis à préparer'].includes(e.statut);
@@ -932,9 +940,7 @@ function renderPipeline() {
             <span class="pipe-amount" style="font-size:12px">${formatBudget(e.budget_estime)}</span>
             ${ageBadge}
           </div>
-          <select class="pipe-status-sel pill ${STATUS_PILL[e.statut] || 'pill-gray'}" style="border:none; outline:none; cursor:pointer; font-family:inherit;" onchange="updateEventStatus(this,${e._row})" onclick="event.stopPropagation()">
-            ${options}
-          </select>
+          ${generateStatusSelectHtml(e, 'pipe-status-sel')}
         </div>
       </div>`;
     }).join('') || '<div class="pipe-card-empty">\u2014</div>';
@@ -1000,7 +1006,7 @@ function renderClients() {
   }
 
   container.innerHTML = prestations.map(e => {
-    const pill   = `<span class="pill ${STATUS_PILL[e.statut] || 'pill-gray'}">${STATUS_LABEL[e.statut] || e.statut}</span>`;
+    const pill   = generateStatusSelectHtml(e);
     const contact = e.telephone ? formatContact(e.telephone) : '';
     const email   = e.email_client ? formatContact(e.email_client) : '';
     const contactLine = [contact, email].filter(v => v && v !== '—').join(' · ');
@@ -1150,7 +1156,7 @@ function renderHistorique() {
       <td>${e.lieu_prestation || '—'}</td>
       <td>${e.nb_convives || '—'}</td>
       <td>${formatBudget(e.budget_estime)}</td>
-      <td><span class="pill ${STATUS_PILL[e.statut] || 'pill-gray'}">${STATUS_LABEL[e.statut] || e.statut}</span></td>
+      <td>${generateStatusSelectHtml(e)}</td>
       <td>${e.email_client ? formatContact(e.email_client) : '—'}</td>
       <td>${e.telephone ? formatContact(e.telephone) : '—'}</td>
       <td title="${notes}">${notesTrunc || '—'}</td>
@@ -1843,7 +1849,6 @@ function renderAgenda() {
       const convives = e.nb_convives     || '—';
       const budget   = formatBudget(e.budget_estime);
       const statutLabel = STATUS_LABEL[e.statut] || e.statut;
-      const pillClass   = STATUS_PILL[e.statut]  || 'pill-gray';
       return `<tr style="cursor:pointer" onclick="openEventModal(${e._row})">
         <td class="ag-date" title="${dateStr}">${dateStr}</td>
         <td title="${client}">${client}</td>
@@ -1851,7 +1856,7 @@ function renderAgenda() {
         <td title="${lieu}">${lieu}</td>
         <td title="${convives}">${convives}</td>
         <td title="${budget}">${budget}</td>
-        <td class="ag-statut ${pillClass}" title="${statutLabel}">${statutLabel}</td>
+        <td class="ag-statut" title="${statutLabel}">${generateStatusSelectHtml(e)}</td>
       </tr>`;
     }).join('') +
     '</tbody></table>';
