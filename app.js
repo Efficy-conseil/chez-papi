@@ -720,7 +720,7 @@ function renderDashboard() {
 
   // Dernières demandes
   const newDemandes = appData
-    .filter(e => e.statut !== 'Événement confirmé' && e.statut !== 'Événement terminé')
+    .filter(e => e.statut === 'Nouvelle demande' || e.statut === 'À rappeler')
     .sort((a, b) => (b.date_reception || '').localeCompare(a.date_reception || ''))
     .slice(0, 6);
 
