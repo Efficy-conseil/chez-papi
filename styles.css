@@ -1572,18 +1572,30 @@ body {
 .pc-todo-btn:hover { background: var(--brown-dk); }
 
 /* ── AGENDA TABLE ── */
-.agenda-tbl th,
-.agenda-tbl td {
-  font-size: 0.82rem;
-  overflow: hidden;
-}
 .agenda-tbl th {
   font-size: 0.72rem;
   letter-spacing: .09em;
+  /* Padding symétrique haut/bas pour un en-tête plus lisible */
+  padding: 10px 6px 10px 0;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.agenda-tbl td .pill {
+.agenda-tbl th:first-child { padding-left: 16px; }
+.agenda-tbl td {
+  font-size: 0.82rem;
+  padding: 9px 6px 9px 0;
+  /* Troncature universelle : aucune cellule ne peut créer de renvoi à la ligne */
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 0; /* obligatoire avec table-layout:fixed pour que overflow fonctionne */
+}
+.agenda-tbl td:first-child { padding-left: 16px; }
+/* La pill de statut reste compacte */
+.agenda-tbl td .pill {
+  display: inline-block;
+  vertical-align: middle;
 }
 @media (min-width: 768px) {
   .agenda-tbl th { font-size: 0.75rem; }
