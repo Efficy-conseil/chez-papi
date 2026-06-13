@@ -166,8 +166,8 @@ function generateStatusSelectHtml(e, extraClass = '') {
   ).join('');
   const pillClass = STATUS_PILL[e.statut] || 'pill-gray';
   
-  // Le style en ligne garantit que le sélecteur ressemble à un badge et n'a pas de bordure native gênante
-  return `<select class="pill ${pillClass} ${extraClass}" style="border:none; outline:none; cursor:pointer; font-family:inherit; appearance:auto; padding-right:12px; background-color:transparent;" onchange="updateEventStatus(this,${e._row})" onclick="event.stopPropagation()">
+  // Style pill : police 10px, border-radius 4px, background et color natifs via la classe pill-*
+  return `<select class="pill ${pillClass} ${extraClass}" style="border:none; outline:none; cursor:pointer; font-family:inherit; font-size:10px; font-weight:700; border-radius:4px; padding:2px 4px; appearance:auto; width:auto; display:inline-block;" onchange="updateEventStatus(this,${e._row})" onclick="event.stopPropagation()">
     ${options}
   </select>`;
 }

@@ -1595,6 +1595,12 @@ body {
 .agenda-tbl td.ag-date { font-weight: 700; }
 /* Type Entreprise en gras */
 .agenda-tbl td.ag-entreprise { font-weight: 700; }
+/* La colonne statut ne doit pas tronquer le menu déroulant */
+.agenda-tbl td.ag-statut {
+  overflow: visible;
+  text-overflow: clip;
+  max-width: none;
+}
 @media (min-width: 768px) {
   .agenda-tbl th { font-size: 0.75rem; }
   .agenda-tbl td { font-size: 0.85rem; }
