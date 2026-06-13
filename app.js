@@ -298,6 +298,77 @@ function syncSeenRowsToSW(rows) {
   } catch {}
 }
 
+// ── Traitement des lignes brutes (normalisation + déduplication) ─────────────
+// Fonction partagée par loadData() et silentPoll() pour garantir la cohérence.
+
+function processRows(rawRows) {
+  const statOrder = {
+    'Nouvelle demande': 1,
+    'À rappeler': 2,
+    'Devis à préparer': 3,
+    'Devis envoyé': 4,
+    'Événement confirmé': 5,
+    'Événement terminé': 6,
+    'Perdu / Sans suite': 7
+  };
+
+  // 1. Normaliser les statuts
+  const normalized = rawRows.map(row => { row.statut = normalizeStatus(row.statut); return row; });
+
+  // 2. Dédupliquer par id_demande : conserver le statut le plus avancé
+  const seenIds = new Map();
+  normalized.forEach(row => {
+    const id = String(row.id_demande || '').trim();
+    if (!id) return;
+    const existing = seenIds.get(id);
+    if (!existing) {
+      seenIds.set(id, row);
+    } else {
+      const o1 = statOrder[existing.statut] || 0;
+      const o2 = statOrder[row.statut] || 0;
+      if (o2 > o1) {
+        seenIds.set(id, row);
+      } else if (o2 === o1) {
+        const d1 = new Date(existing.derniere_modification || 0).getTime();
+        const d2 = new Date(row.derniere_modification || 0).getTime();
+        if (d2 > d1) seenIds.set(id, row);
+      }
+    }
+  });
+
+  // 3. Reconstruire en préservant l'ordre d'origine
+  const uniqueRows = [];
+  normalized.forEach(row => {
+    const id = String(row.id_demande || '').trim();
+    if (!id) { uniqueRows.push(row); return; }
+    const best = seenIds.get(id);
+    if (best && best._row === row._row) uniqueRows.push(row);
+  });
+
+  return uniqueRows;
+}
+
+// ── Synchronisation multi-onglets via BroadcastChannel ───────────────────────
+// Permet de notifier instantanément tous les onglets ouverts après une mutation.
+
+const _tabsChannel = ('BroadcastChannel' in window)
+  ? new BroadcastChannel('chez-papi-tabs-sync')
+  : null;
+
+// Envoyer un signal de sync à tous les autres onglets
+function broadcastSync() {
+  try { _tabsChannel?.postMessage({ type: 'sync' }); } catch {}
+}
+
+// Réception du signal dans les onglets frères → silentPoll()
+if (_tabsChannel) {
+  _tabsChannel.onmessage = (e) => {
+    if (e.data?.type === 'sync') {
+      silentPoll();
+    }
+  };
+}
+
 // ── Polling toutes les 3 minutes (quand l'app est ouverte) ───────────────────
 
 let _pollingTimer = null;
@@ -307,10 +378,10 @@ async function silentPoll() {
   try {
     const result = await SheetsAPI.load();
     if (result?.rows) {
-      const normalized = result.rows.map(row => { row.statut = normalizeStatus(row.statut); return row; });
-      checkNewEvents(normalized);
+      const processed = processRows(result.rows);
+      checkNewEvents(processed);
       // Toujours mettre à jour appData et re-render pour refléter toute modification externe
-      appData = normalized;
+      appData = processed;
       renderAll();
     }
   } catch { /* polling silencieux, on ignore les erreurs réseau */ }
@@ -513,54 +584,8 @@ async function loadData() {
   try {
     const result = await SheetsAPI.load();
     if (result && result.rows) {
-      // 1. Normaliser d'abord tous les statuts
-      const normalizedRows = result.rows.map(row => {
-        row.statut = normalizeStatus(row.statut);
-        return row;
-      });
-
-      // 2. Dédupliquer par id_demande : conserver le statut le plus avancé
-      //    (la gestion des doublons sans id commun est faite en externe)
-      const statOrder = {
-        'Nouvelle demande': 1,
-        'À rappeler': 2,
-        'Devis à préparer': 3,
-        'Devis envoyé': 4,
-        'Événement confirmé': 5,
-        'Événement terminé': 6,
-        'Perdu / Sans suite': 7
-      };
-
-      const seenIds = new Map();
-      normalizedRows.forEach(row => {
-        const id = String(row.id_demande || '').trim();
-        if (!id) return; // pas d'id → conservé systématiquement
-        const existing = seenIds.get(id);
-        if (!existing) {
-          seenIds.set(id, row);
-        } else {
-          const o1 = statOrder[existing.statut] || 0;
-          const o2 = statOrder[row.statut] || 0;
-          if (o2 > o1) {
-            seenIds.set(id, row);
-          } else if (o2 === o1) {
-            const d1 = new Date(existing.derniere_modification || 0).getTime();
-            const d2 = new Date(row.derniere_modification || 0).getTime();
-            if (d2 > d1) seenIds.set(id, row);
-          }
-        }
-      });
-
-      // Reconstruire uniqueRows en préservant l'ordre d'origine
-      const uniqueRows = [];
-      normalizedRows.forEach(row => {
-        const id = String(row.id_demande || '').trim();
-        if (!id) { uniqueRows.push(row); return; } // sans id, toujours inclus
-        const best = seenIds.get(id);
-        if (best && best._row === row._row) uniqueRows.push(row);
-      });
-
-      appData = uniqueRows;
+      // Normalisation des statuts + déduplication via processRows()
+      appData = processRows(result.rows);
       lastSyncTime = Date.now(); lastSyncOk = true; updateSyncIndicator();
       setConnectionStatus('ok', appData.length);
       checkNewEvents(appData);
@@ -931,6 +956,8 @@ async function updateEventStatus(selectEl, rowIndex) {
       if (row) row.statut = newStatus;
       renderAll();
       showNotification('Statut mis à jour', 'success');
+      // Notifier les autres onglets immédiatement
+      broadcastSync();
       // Resynchronisation complète depuis le Sheet après un court délai
       setTimeout(() => loadData().catch(() => {}), 2000);
     } else {
@@ -1544,12 +1571,15 @@ document.getElementById('event-form').addEventListener('submit', async e => {
         renderAll();
         closeEventModal();
         showNotification('Événement mis à jour', 'success');
+        // Notifier les autres onglets immédiatement
+        broadcastSync();
         // Resynchronisation complète depuis le Sheet pour garantir la cohérence de tous les onglets
         setTimeout(() => loadData().catch(() => {}), 2000);
       }
     } else {
       result = await SheetsAPI.add(data);
       if (result.success) {
+        broadcastSync(); // Notifier les autres onglets
         await loadData();
         closeEventModal();
         showNotification('Événement ajouté', 'success');
@@ -1585,6 +1615,7 @@ async function deleteCurrentEvent() {
       if (typeof closeEventModal === 'function') closeEventModal();
       if (typeof closeViewModal === 'function') closeViewModal();
       showNotification('Événement supprimé', 'success');
+      broadcastSync(); // Notifier les autres onglets
       await loadData();
     } else {
       showNotification('Erreur : ' + (result.error || 'inconnue'), 'error');
@@ -1962,6 +1993,33 @@ async function handleLoginSubmit(event) {
 }
 
 document.getElementById('login-form')?.addEventListener('submit', handleLoginSubmit);
+
+// ── Synchronisation multi-onglets via localStorage (todos + session) ──────────
+
+window.addEventListener('storage', (e) => {
+  // Todos : une tâche a changé dans un autre onglet → re-render la liste concernée
+  if (e.key && e.key.startsWith('todos_')) {
+    const rowId = parseInt(e.key.replace('todos_', ''), 10);
+    if (!isNaN(rowId)) {
+      try { if (typeof renderTodos === 'function') renderTodos(rowId); } catch {}
+    }
+  }
+
+  // Session : connexion dans un autre onglet → charger les données
+  if (e.key === 'cp_user' && e.newValue && !e.oldValue) {
+    const overlay = document.getElementById('login-overlay');
+    if (overlay) overlay.style.display = 'none';
+    loadData().catch(() => {});
+  }
+
+  // Session : déconnexion dans un autre onglet → afficher le login
+  if (e.key === 'cp_user' && !e.newValue) {
+    localStorage.removeItem('cp_pass');
+    stopBackgroundPolling();
+    const overlay = document.getElementById('login-overlay');
+    if (overlay) overlay.style.display = 'flex';
+  }
+});
 
 // ── INIT ──
 
