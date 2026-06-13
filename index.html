@@ -426,12 +426,14 @@
 </div>
 <div class="form-row">
 <label>Email client</label>
-<input type="email" name="email_client" placeholder="Ex: client@email.com">
+<div style="display: flex; gap: 8px; align-items: center; width: 100%;">
+  <input type="email" name="email_client" placeholder="Ex: client@email.com" style="flex: 1;">
+  <div id="view-email-reply-container" style="display: none; flex-shrink: 0;">
+    <a href="#" id="view-email-reply-btn" target="_blank" class="btn-primary" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none; padding: 5px 10px; font-size: 11px;">
+      ✉️ Répondre
+    </a>
+  </div>
 </div>
-<div id="view-email-reply-container" style="margin: 0 0 12px 0; display: none;">
-  <a href="#" id="view-email-reply-btn" target="_blank" class="btn-primary" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
-    ✉️ Répondre par mail
-  </a>
 </div>
 <div class="form-row">
 <label>Type d'événement</label>
