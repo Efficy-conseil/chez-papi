@@ -1817,18 +1817,32 @@ body {
 }
 .view-mode .form-row.textarea-row {
   display: block;
+  margin-top: 12px;
 }
 .view-mode .form-row.textarea-row label {
-  width: auto;
+  display: block;
+  width: 100%;
   margin-bottom: 8px;
+  font-weight: 700;
 }
 .view-mode .form-row.textarea-row textarea {
+  display: block;
+  width: 100%;
   background: var(--warm, #fdf6f0);
   padding: 12px;
   border-radius: 6px;
   border: 1px solid transparent;
 }
-.view-mode .form-row.textarea-row textarea:focus {
+.view-mode .form-row.textarea-row textarea:not([readonly]):focus {
   border-color: #ddd;
   background: #fff;
+}
+.view-mode .form-row.textarea-row textarea[readonly] {
+  cursor: default;
+}
+.view-mode .form-row.textarea-row textarea[readonly]:hover,
+.view-mode .form-row.textarea-row textarea[readonly]:focus {
+  background: var(--warm, #fdf6f0);
+  border-color: transparent;
+  outline: none;
 }

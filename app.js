@@ -1333,6 +1333,7 @@ function renderConversionTable(rows) {
 // ── EVENT MODAL ──
 
 let editingRow = null;
+let initialFormValuesStr = null;
 let formMode = 'quick'; // 'quick' | 'full'
 
 function applyFormMode() {
@@ -1508,11 +1509,23 @@ function openEventModal(rowIndex = null) {
   }
 
   modal.style.display = 'flex';
+  const formData = new FormData(form);
+  initialFormValuesStr = JSON.stringify(Object.fromEntries(formData.entries()));
 }
 
-function closeEventModal() {
+function closeEventModal(force = false) {
+  if (!force) {
+    const form = document.getElementById('event-form');
+    const currentValuesStr = JSON.stringify(Object.fromEntries(new FormData(form).entries()));
+    if (initialFormValuesStr && currentValuesStr !== initialFormValuesStr) {
+      if (!confirm("Des modifications n'ont pas été enregistrées. Voulez-vous vraiment annuler ?")) {
+        return;
+      }
+    }
+  }
   document.getElementById('event-modal').style.display = 'none';
   editingRow = null;
+  initialFormValuesStr = null;
 }
 
 function checkDateConflict(dateValue) {
@@ -1559,6 +1572,18 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeEventMo
 document.getElementById('event-form').addEventListener('submit', async e => {
   e.preventDefault();
   const form = e.target;
+  
+  const currentValuesStr = JSON.stringify(Object.fromEntries(new FormData(form).entries()));
+  if (initialFormValuesStr && currentValuesStr === initialFormValuesStr) {
+    // Aucune modification, on ferme sans requêter l'API
+    closeEventModal(true);
+    return;
+  }
+  
+  if (!confirm("Voulez-vous enregistrer ces modifications ?")) {
+    return;
+  }
+  
   const data = {};
   new FormData(form).forEach((val, key) => { data[key] = val; });
 
