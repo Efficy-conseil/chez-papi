@@ -1249,7 +1249,10 @@ function renderPieChart(rows) {
   // Comptage par canal
   const counts = {};
   rows.forEach(e => {
-    const canal = String(e.canal || 'Non renseigné').trim() || 'Non renseigné';
+    let canal = String(e.canal || 'Non renseigné').trim() || 'Non renseigné';
+    if (canal.toLowerCase() === 'email direct' || canal.toLowerCase() === 'email') {
+      canal = 'Email';
+    }
     counts[canal] = (counts[canal] || 0) + 1;
   });
   const total = rows.length;
@@ -1319,7 +1322,10 @@ function renderConversionTable(rows) {
   // Comptage par canal
   const byCanal = {};
   rows.forEach(e => {
-    const canal = String(e.canal || 'Non renseigné').trim() || 'Non renseigné';
+    let canal = String(e.canal || 'Non renseigné').trim() || 'Non renseigné';
+    if (canal.toLowerCase() === 'email direct' || canal.toLowerCase() === 'email') {
+      canal = 'Email';
+    }
     if (!byCanal[canal]) byCanal[canal] = { total: 0, confirmed: 0 };
     byCanal[canal].total++;
     if (CONFIRMED.includes(e.statut)) byCanal[canal].confirmed++;
