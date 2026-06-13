@@ -187,7 +187,7 @@
 <span class="nav-icon">🏠</span> Accueil
 </button>
 <button class="nav-item" onclick="showPanel('devis',this)" data-panel="devis">
-<span class="nav-icon">📋</span> Demandes
+<span class="nav-icon">📋</span> Toutes les demandes
 </button>
 <button class="nav-item" onclick="showPanel('clients',this)" data-panel="clients">
 <span class="nav-icon">✅</span> Événements confirmés
@@ -314,7 +314,7 @@
 <!-- ══════════════════════ DEVIS ══════════════════════ -->
 <div class="panel" id="panel-devis">
 <div class="section-hd">
-<h2>Demandes</h2>
+<h2>Toutes les demandes</h2>
 <span class="shd-sub" id="devis-sub"></span>
 <button class="btn-new" onclick="openEventModal()">+ Nouvel événement</button>
 </div>
@@ -464,10 +464,6 @@
 <div id="date-conflict-banner" style="display:none;"></div>
 </div>
 <div class="form-row">
-<label>Budget estimé</label>
-<input type="text" name="budget_estime" placeholder="Ex: 1800 ou 850/900€ ou Entre 2000 et 2500€">
-</div>
-<div class="form-row">
 <label>Téléphone client</label>
 <input type="tel" name="telephone" placeholder="Ex: 06 12 34 56 78">
 </div>
@@ -475,9 +471,6 @@
 <label>Email client</label>
 <input type="email" name="email_client" placeholder="Ex: client@email.com">
 </div>
-
-<!-- ── Champs mode complet (cachés en mode rapide) ── -->
-<div id="form-full-section" style="display:none;">
 <div class="form-row">
 <label>Type d'événement</label>
 <select name="type_evenement">
@@ -492,6 +485,29 @@
 <option value="Autre">Autre</option>
 </select>
 </div>
+<div class="form-row">
+<label>Statut</label>
+<select name="statut">
+<option value="Nouvelle demande">Nouvelle demande</option>
+<option value="À rappeler">À rappeler</option>
+<option value="Devis à préparer">Devis à préparer</option>
+<option value="Devis envoyé">Devis envoyé</option>
+<option value="Événement confirmé">Événement confirmé</option>
+<option value="Événement terminé">Événement terminé</option>
+<option value="Perdu / Sans suite">Perdu / Sans suite</option>
+</select>
+</div>
+<div class="form-row">
+<label>Nombre de convives</label>
+<input type="text" name="nb_convives" placeholder="Ex: 80 ou 45 le 30/06 ; 22 le 01/07...">
+</div>
+<div class="form-row">
+<label>Lieu de la prestation</label>
+<input type="text" name="lieu_prestation" placeholder="Ex: Salle des fêtes de Miramas…">
+</div>
+
+<!-- ── Champs mode complet (cachés en mode rapide) ── -->
+<div id="form-full-section" style="display:none;">
 <div class="form-row">
 <label>Canal d'origine</label>
 <select name="canal">
@@ -511,24 +527,8 @@
 <input type="date" name="date_reception">
 </div>
 <div class="form-row">
-<label>Nombre de convives</label>
-<input type="text" name="nb_convives" placeholder="Ex: 80 ou 45 le 30/06 ; 22 le 01/07...">
-</div>
-<div class="form-row">
-<label>Lieu de la prestation</label>
-<input type="text" name="lieu_prestation" placeholder="Ex: Salle des fêtes de Miramas…">
-</div>
-<div class="form-row">
-<label>Statut</label>
-<select name="statut">
-<option value="Nouvelle demande">Nouvelle demande</option>
-<option value="À rappeler">À rappeler</option>
-<option value="Devis à préparer">Devis à préparer</option>
-<option value="Devis envoyé">Devis envoyé</option>
-<option value="Événement confirmé">Événement confirmé</option>
-<option value="Événement terminé">Événement terminé</option>
-<option value="Perdu / Sans suite">Perdu / Sans suite</option>
-</select>
+<label>Budget estimé</label>
+<input type="text" name="budget_estime" placeholder="Ex: 1800 ou 850/900€ ou Entre 2000 et 2500€">
 </div>
 <div class="form-row">
 <label>Lien e-mail d'origine</label>
@@ -574,7 +574,7 @@
   </button>
   <button class="bn-item" id="bn-devis" onclick="showPanel('devis',this)">
     <span class="bn-icon">📋</span>
-    <span class="bn-label">Demandes</span>
+    <span class="bn-label">Toutes les demandes</span>
   </button>
   <button class="bn-add" onclick="openEventModal()" aria-label="Nouvel événement">
     <span>+</span>
