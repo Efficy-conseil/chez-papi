@@ -79,55 +79,7 @@
 
 <!-- ══════════════════════ MODALS ══════════════════════ -->
 
-<!-- VIEW MODAL (Lecture seule) -->
-<div class="modal-overlay" id="view-modal" style="display:none;" onclick="if(event.target===this) closeViewModal()">
-<div class="modal-box">
-<div class="modal-hd">
-  <h3 id="view-title">Détail de la demande</h3>
-  <span class="modal-close" onclick="closeViewModal()">&times;</span>
-</div>
-<div class="modal-bd" style="padding: 24px;">
-  <!-- Jauge Infos manquantes -->
-  <div id="view-warning-missing-info" style="display:none; background:rgba(192,69,58,0.08); border: 1px solid rgba(192,69,58,0.25); color:#C0453A; padding:10px 14px; border-radius:6px; font-size:13px; font-weight:700; margin-bottom:16px; line-height:1.4;">
-    ⚠️ Infos manquantes : des informations clés (téléphone/e-mail, lieu ou nombre de convives) ne sont pas renseignées.
-  </div>
-  <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Client:</strong> <span id="view-client">—</span></p>
-  <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Date de l'événement:</strong> <span id="view-date-evt">—</span></p>
-  <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Téléphone:</strong> <span id="view-telephone">—</span></p>
-  <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Email:</strong> <span id="view-email">—</span></p>
-  <div id="view-email-reply-container" style="margin: 0 0 12px 0; display: none;">
-    <a href="#" id="view-email-reply-btn" target="_blank" class="btn-primary" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
-      ✉️ Répondre par mail
-    </a>
-  </div>
-  <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Type d'événement:</strong> <span id="view-type">—</span></p>
-  <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Statut:</strong> <span id="view-statut">—</span></p>
-  <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Invités:</strong> <span id="view-invites">—</span></p>
-  <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Lieu:</strong> <span id="view-lieu">—</span></p>
-  <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Budget:</strong> <span id="view-budget">—</span></p>
-  <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Canal:</strong> <span id="view-canal">—</span></p>
-  <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Date réception:</strong> <span id="view-date-reception">—</span></p>
-  <p style="margin: 0 0 10px 0; font-size: 14px;"><strong>Dernière modification:</strong> <span id="view-derniere-modif">—</span></p>
-  <div style="background: var(--warm, #fdf6f0); padding: 12px; border-radius: 6px; font-size: 13px; margin-top: 12px;">
-    <strong>Message original:</strong><br/>
-    <span id="view-message" style="white-space: pre-wrap;">—</span>
-  </div>
-  <div style="background: var(--warm, #fdf6f0); padding: 12px; border-radius: 6px; font-size: 13px; margin-top: 12px;">
-    <strong>Notes:</strong><br/>
-    <span id="view-notes" style="white-space: pre-wrap;">—</span>
-  </div>
-</div>
-<div class="modal-ft" style="justify-content: space-between; display: flex; margin-top: 20px;">
-  <div style="flex-shrink: 0;">
-    <button type="button" class="btn-danger" id="btn-delete-view-modal" onclick="deleteCurrentEvent()">Supprimer</button>
-  </div>
-  <div style="display:flex; gap:10px;">
-    <button type="button" class="btn-secondary" onclick="closeViewModal()">Fermer</button>
-    <button type="button" class="btn-primary" onclick="openEventModal(editingRow, true)">Modifier</button>
-  </div>
-</div>
-</div>
-</div>
+
 
 <!-- KPI DETAIL MODAL -->
 <div class="modal-overlay" id="kpi-modal" style="display:none;" onclick="if(event.target===this) document.getElementById('kpi-modal').style.display='none'">
@@ -453,6 +405,11 @@
 <!-- ID Demande (masqué à l'utilisateur, mais nécessaire pour le suivi) -->
 <input type="hidden" name="id_demande">
 
+<!-- Jauge Infos manquantes -->
+<div id="view-warning-missing-info" style="display:none; background:rgba(192,69,58,0.08); border: 1px solid rgba(192,69,58,0.25); color:#C0453A; padding:10px 14px; border-radius:6px; font-size:13px; font-weight:700; margin-bottom:16px; line-height:1.4;">
+  ⚠️ Infos manquantes : des informations clés (téléphone/e-mail, lieu ou nombre de convives) ne sont pas renseignées.
+</div>
+
 <!-- ── Champs toujours visibles (mode rapide) ── -->
 <div class="form-row">
 <label>Nom client *</label>
@@ -470,6 +427,11 @@
 <div class="form-row">
 <label>Email client</label>
 <input type="email" name="email_client" placeholder="Ex: client@email.com">
+</div>
+<div id="view-email-reply-container" style="margin: 0 0 12px 0; display: none;">
+  <a href="#" id="view-email-reply-btn" target="_blank" class="btn-primary" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
+    ✉️ Répondre par mail
+  </a>
 </div>
 <div class="form-row">
 <label>Type d'événement</label>
@@ -538,15 +500,19 @@
 <label>Lien dossier Drive</label>
 <input type="url" name="url_dossier_drive" placeholder="Ex: https://drive.google.com/...">
 </div>
-<div class="form-row">
+<div class="form-row textarea-row">
 <label>Message original</label>
 <textarea name="message_original" rows="3" placeholder="Message original reçu du client..."></textarea>
 </div>
-<div class="form-row">
+<div class="form-row textarea-row">
 <label>Notes</label>
 <textarea name="notes" rows="3" placeholder="Notes de suivi interne..."></textarea>
 </div>
 </div>
+
+<p id="event-derniere-modif-container" style="margin: 10px 0; font-size: 13px; color: var(--muted); display: none;">
+  <strong>Dernière modification:</strong> <span id="view-derniere-modif">—</span>
+</p>
 
 <!-- ── Lien bascule mode ── -->
 <div style="text-align:right; margin: 6px 0 10px;">

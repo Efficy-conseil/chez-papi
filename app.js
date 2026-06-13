@@ -1348,121 +1348,6 @@ function toggleFormMode(e) {
   applyFormMode();
 }
 
-function closeViewModal() {
-  const v = document.getElementById('view-modal');
-  if (v) v.style.display = 'none';
-  editingRow = null;
-}
-
-function showViewModal(rowIndex) {
-  editingRow = rowIndex;
-  const data = appData.find(e => e._row === rowIndex);
-  if (!data) return;
-
-  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val || '—'; };
-  const setHtml = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html || '—'; };
-  
-  set('view-date-evt', formatDateFR(data.date_evenement));
-  set('view-client', data.nom_client);
-  set('view-type', data.type_evenement);
-  set('view-invites', data.nb_convives);
-  set('view-budget', formatBudget(data.budget_estime));
-  set('view-statut', STATUS_LABEL[data.statut] || data.statut);
-  setHtml('view-telephone', data.telephone ? formatContact(data.telephone) : '—');
-  setHtml('view-email', data.email_client ? formatContact(data.email_client) : '—');
-  set('view-lieu', data.lieu_prestation);
-  set('view-canal', data.canal);
-  set('view-date-reception', formatDateFR(data.date_reception));
-  const clientEmail = data.email_client ? String(data.email_client).trim() : '';
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const isEmailKnown = clientEmail && clientEmail !== '—' && emailRegex.test(clientEmail);
-
-  const replyContainer = document.getElementById('view-email-reply-container');
-  const replyBtn = document.getElementById('view-email-reply-btn');
-
-  if (isEmailKnown) {
-    if (replyContainer && replyBtn) {
-      replyContainer.style.display = 'block';
-
-      let subject = 'Votre demande Chez Papi';
-      if (data.type_evenement && String(data.type_evenement).trim() !== '—') {
-        subject += ` - ${String(data.type_evenement).trim()}`;
-      }
-
-      const clientName = data.nom_client && String(data.nom_client).trim() !== '—' ? String(data.nom_client).trim() : '';
-      const salutation = clientName ? `Bonjour ${clientName},\n\n` : `Bonjour,\n\n`;
-
-      let body = `${salutation}Merci pour votre intérêt pour Chez Papi.\n\n`;
-
-      const missing = [];
-      const noPhone = !data.telephone || String(data.telephone).trim() === '' || String(data.telephone).trim() === '—';
-      const noLieu = !data.lieu_prestation || String(data.lieu_prestation).trim() === '' || String(data.lieu_prestation).trim() === '—';
-      const noConvives = !data.nb_convives || String(data.nb_convives).trim() === '' || String(data.nb_convives).trim() === '—' || String(data.nb_convives).trim() === '0';
-      const noDate = !data.date_evenement || String(data.date_evenement).trim() === '' || String(data.date_evenement).trim() === '—';
-
-      if (noPhone) missing.push("votre numéro de téléphone");
-      if (noLieu) missing.push("le lieu de l'événement");
-      if (noConvives) missing.push("le nombre de convives attendu");
-      if (noDate) missing.push("la date souhaitée pour l'événement");
-
-      if (missing.length > 0) {
-        body += `Afin d'étudier au mieux votre demande, pourriez-vous nous préciser :\n`;
-        missing.forEach(item => {
-          body += `- ${item}\n`;
-        });
-        body += `\n`;
-      }
-
-      body += `Restant à votre entière disposition,\n\nL'équipe Chez Papi\nhttps://www.chez-papi.fr/`;
-
-      // Citation du message original en format standard email (lignes préfixées ">")
-      // Gmail reconnaît ce format et l'affiche dans la même conversation si l'objet correspond
-      const origMsg = data.message_original ? String(data.message_original).trim() : '';
-      if (origMsg && origMsg !== '—') {
-        const receptionDate = data.date_reception ? formatDateFR(data.date_reception) : '';
-        const quoted = origMsg.split('\n').map(line => `> ${line}`).join('\n');
-        body += `\n\n\n`;
-        body += `Le ${receptionDate}${receptionDate ? ', ' : ''}${clientEmail} a écrit :\n`;
-        body += quoted;
-      }
-
-      // Préfixe "Re:" → Gmail rattache ce mail au fil de conversation existant
-      const replySubject = `Re: ${subject}`;
-
-      replyBtn.href = `https://mail.google.com/mail/u/demande.chezpapimaisongourmande@gmail.com/?view=cm&fs=1&to=${encodeURIComponent(clientEmail)}&su=${encodeURIComponent(replySubject)}&body=${encodeURIComponent(body)}`;
-    }
-  } else {
-    if (replyContainer) {
-      replyContainer.style.display = 'none';
-    }
-  }
-  
-  let modifStr = '—';
-  if (data.derniere_modification) {
-    const d = new Date(data.derniere_modification);
-    if (!isNaN(d.getTime())) {
-      modifStr = d.toLocaleString('fr-FR');
-    } else {
-      modifStr = String(data.derniere_modification);
-    }
-  }
-  set('view-derniere-modif', modifStr);
-  set('view-message', data.message_original);
-  set('view-notes', data.notes);
-
-  const warningEl = document.getElementById('view-warning-missing-info');
-  if (warningEl) {
-    const missingFields = getMissingFields(data);
-    if (missingFields.length > 0) {
-      warningEl.innerHTML = `⚠️ <strong>Infos manquantes :</strong> veuillez renseigner le/les champ(s) : ${missingFields.join(', ')}.`;
-      warningEl.style.display = 'block';
-    } else {
-      warningEl.style.display = 'none';
-    }
-  }
-
-  document.getElementById('view-modal').style.display = 'flex';
-}
 
 const FORM_PLACEHOLDERS = {
   nom_client: "Ex: Céline GIORDANO",
@@ -1478,19 +1363,20 @@ const FORM_PLACEHOLDERS = {
   notes: "Notes de suivi interne..."
 };
 
-function openEventModal(rowIndex = null, forceEdit = false) {
-  if (rowIndex && !forceEdit) {
-    showViewModal(rowIndex);
-    return;
-  }
-
-  closeViewModal();
+function openEventModal(rowIndex = null) {
   editingRow = rowIndex;
 
   const modal = document.getElementById('event-modal');
-  document.getElementById('modal-title').textContent = rowIndex ? "Modifier l'événement" : 'Nouvel événement';
-
   const form = document.getElementById('event-form');
+
+  if (rowIndex) {
+    document.getElementById('modal-title').textContent = "Détail de la demande";
+    form.classList.add('view-mode');
+  } else {
+    document.getElementById('modal-title').textContent = "Nouvel événement";
+    form.classList.remove('view-mode');
+  }
+
   form.reset();
 
   // Gérer dynamiquement les placeholders (masqués en modification, affichés en création)
@@ -1504,6 +1390,12 @@ function openEventModal(rowIndex = null, forceEdit = false) {
     }
   }
 
+  const warningEl = document.getElementById('view-warning-missing-info');
+  const replyContainer = document.getElementById('view-email-reply-container');
+  const replyBtn = document.getElementById('view-email-reply-btn');
+  const derniereModifContainer = document.getElementById('event-derniere-modif-container');
+  const derniereModif = document.getElementById('view-derniere-modif');
+
   if (rowIndex) {
     const existing = appData.find(e => e._row === rowIndex);
     if (existing) {
@@ -1513,12 +1405,84 @@ function openEventModal(rowIndex = null, forceEdit = false) {
           el.value = (val === null || val === undefined || val === '—') ? '' : val;
         }
       }
+
+      if (warningEl) {
+        const missingFields = getMissingFields(existing);
+        if (missingFields.length > 0) {
+          warningEl.innerHTML = `⚠️ <strong>Infos manquantes :</strong> veuillez renseigner le/les champ(s) : ${missingFields.join(', ')}.`;
+          warningEl.style.display = 'block';
+        } else {
+          warningEl.style.display = 'none';
+        }
+      }
+
+      const clientEmail = existing.email_client ? String(existing.email_client).trim() : '';
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const isEmailKnown = clientEmail && clientEmail !== '—' && emailRegex.test(clientEmail);
+
+      if (isEmailKnown) {
+        if (replyContainer && replyBtn) {
+          replyContainer.style.display = 'block';
+          let subject = 'Votre demande Chez Papi';
+          if (existing.type_evenement && String(existing.type_evenement).trim() !== '—') {
+            subject += ` - ${String(existing.type_evenement).trim()}`;
+          }
+          const clientName = existing.nom_client && String(existing.nom_client).trim() !== '—' ? String(existing.nom_client).trim() : '';
+          const salutation = clientName ? `Bonjour ${clientName},\n\n` : `Bonjour,\n\n`;
+          let body = `${salutation}Merci pour votre intérêt pour Chez Papi.\n\n`;
+          const missing = [];
+          const noPhone = !existing.telephone || String(existing.telephone).trim() === '' || String(existing.telephone).trim() === '—';
+          const noLieu = !existing.lieu_prestation || String(existing.lieu_prestation).trim() === '' || String(existing.lieu_prestation).trim() === '—';
+          const noConvives = !existing.nb_convives || String(existing.nb_convives).trim() === '' || String(existing.nb_convives).trim() === '—' || String(existing.nb_convives).trim() === '0';
+          const noDate = !existing.date_evenement || String(existing.date_evenement).trim() === '' || String(existing.date_evenement).trim() === '—';
+          if (noPhone) missing.push("votre numéro de téléphone");
+          if (noLieu) missing.push("le lieu de l'événement");
+          if (noConvives) missing.push("le nombre de convives attendu");
+          if (noDate) missing.push("la date souhaitée pour l'événement");
+          if (missing.length > 0) {
+            body += `Afin d'étudier au mieux votre demande, pourriez-vous nous préciser :\n`;
+            missing.forEach(item => { body += `- ${item}\n`; });
+            body += `\n`;
+          }
+          body += `Restant à votre entière disposition,\n\nL'équipe Chez Papi\nhttps://www.chez-papi.fr/`;
+          const origMsg = existing.message_original ? String(existing.message_original).trim() : '';
+          if (origMsg && origMsg !== '—') {
+            const receptionDate = existing.date_reception ? formatDateFR(existing.date_reception) : '';
+            const quoted = origMsg.split('\n').map(line => `> ${line}`).join('\n');
+            body += `\n\n\n`;
+            body += `Le ${receptionDate}${receptionDate ? ', ' : ''}${clientEmail} a écrit :\n`;
+            body += quoted;
+          }
+          const replySubject = `Re: ${subject}`;
+          replyBtn.href = `https://mail.google.com/mail/u/demande.chezpapimaisongourmande@gmail.com/?view=cm&fs=1&to=${encodeURIComponent(clientEmail)}&su=${encodeURIComponent(replySubject)}&body=${encodeURIComponent(body)}`;
+        }
+      } else {
+        if (replyContainer) replyContainer.style.display = 'none';
+      }
+
+      if (derniereModifContainer && derniereModif) {
+        let modifStr = '—';
+        if (existing.derniere_modification) {
+          const d = new Date(existing.derniere_modification);
+          if (!isNaN(d.getTime())) {
+            modifStr = d.toLocaleString('fr-FR');
+          } else {
+            modifStr = String(existing.derniere_modification);
+          }
+        }
+        derniereModif.textContent = modifStr;
+        derniereModifContainer.style.display = 'block';
+      }
     }
   } else {
     const now = new Date();
     const localToday = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
     form.elements['date_reception'].value = localToday;
     form.elements['statut'].value  = 'Nouvelle demande';
+    
+    if (warningEl) warningEl.style.display = 'none';
+    if (replyContainer) replyContainer.style.display = 'none';
+    if (derniereModifContainer) derniereModifContainer.style.display = 'none';
   }
 
   const btnDel = document.getElementById('btn-delete-event');
@@ -1666,7 +1630,7 @@ async function deleteCurrentEvent() {
     if (result.success) {
       // Recharger depuis le sheet pour que les _row soient cohérents après suppression
       if (typeof closeEventModal === 'function') closeEventModal();
-      if (typeof closeViewModal === 'function') closeViewModal();
+      if (typeof closeEventModal === 'function') closeEventModal();
       showNotification('Événement supprimé', 'success');
       broadcastSync(); // Notifier les autres onglets
       await loadData();
@@ -2148,7 +2112,7 @@ if (savedUser && savedPass) {
 // ── EXPORT ──
 
 window.ChezPapi = {
-  SheetsAPI, showPanel, toggleSidebar, showNotification, loadData, openEventModal, showViewModal, closeViewModal, deleteCurrentEvent, showKpiModal,
+  SheetsAPI, showPanel, toggleSidebar, showNotification, loadData, openEventModal, closeEventModal, deleteCurrentEvent, showKpiModal,
   renderHistorique, setHistoriqueFilter, applyHistoriqueDateRange, exportHistoriqueCSV,
   switchHistTab,
   renderAgenda, agendaPrevMonth, agendaNextMonth, agendaGoToday,

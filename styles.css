@@ -1778,3 +1778,57 @@ body {
   white-space: nowrap;
   min-width: 36px;
 }
+
+/* ── VIEW MODE INLINE EDITING ── */
+.view-mode .form-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.view-mode .form-row label {
+  margin-bottom: 0;
+  margin-right: 10px;
+  width: 140px;
+  flex-shrink: 0;
+}
+.view-mode .form-row input,
+.view-mode .form-row select,
+.view-mode .form-row textarea {
+  border-color: transparent;
+  background-color: transparent;
+  padding: 4px 8px;
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.view-mode .form-row input:hover,
+.view-mode .form-row select:hover,
+.view-mode .form-row textarea:hover {
+  background-color: rgba(0,0,0,0.03);
+}
+.view-mode .form-row input:focus,
+.view-mode .form-row select:focus,
+.view-mode .form-row textarea:focus {
+  border-color: var(--brown);
+  background-color: #fff;
+  appearance: auto;
+  -webkit-appearance: auto;
+}
+.view-mode .form-row.textarea-row {
+  display: block;
+}
+.view-mode .form-row.textarea-row label {
+  width: auto;
+  margin-bottom: 8px;
+}
+.view-mode .form-row.textarea-row textarea {
+  background: var(--warm, #fdf6f0);
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+}
+.view-mode .form-row.textarea-row textarea:focus {
+  border-color: #ddd;
+  background: #fff;
+}
