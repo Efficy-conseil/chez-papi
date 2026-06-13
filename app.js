@@ -1445,6 +1445,7 @@ function openEventModal(rowIndex = null) {
             body += `Afin d'étudier au mieux votre demande, pourriez-vous nous préciser :\n`;
             missing.forEach(item => { body += `- ${item}\n`; });
             body += `\n`;
+          }
           const replySubject = `Re: ${subject}`;
           replyBtn.href = `https://mail.google.com/mail/u/demande.chezpapimaisongourmande@gmail.com/?view=cm&fs=1&to=${encodeURIComponent(clientEmail)}&su=${encodeURIComponent(replySubject)}&body=${encodeURIComponent(body)}`;
         }
