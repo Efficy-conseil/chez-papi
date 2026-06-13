@@ -1792,17 +1792,24 @@ function renderAgenda() {
   listEl.innerHTML =
     '<table class="tbl" style="padding:0;">' +
     '<thead><tr>' +
-    '<th style="padding-left:16px;width:16%">Date</th>' +
-    '<th style="width:26%">Client</th>' +
-    '<th style="width:18%">Type</th>' +
-    '<th style="width:18%">Budget</th>' +
-    '<th style="width:22%">Statut</th>' +
+    '<th style="padding-left:16px;width:12%">Date</th>' +
+    '<th style="width:20%">Client</th>' +
+    '<th style="width:12%">Type</th>' +
+    '<th style="width:18%">Lieu</th>' +
+    '<th style="width:9%">Couverts</th>' +
+    '<th style="width:12%">Budget</th>' +
+    '<th style="width:17%">Statut</th>' +
     '</tr></thead><tbody>' +
     events.map(e => {
+      const isEntreprise = String(e.type_evenement || '').trim().toLowerCase() === 'entreprise';
+      const typeVal = e.type_evenement || '\u2014';
+      const typeHtml = isEntreprise ? `<strong>${typeVal}</strong>` : typeVal;
       return `<tr style="cursor:pointer" onclick="openEventModal(${e._row})">
         <td style="padding-left:16px;"><strong>${formatDateFR(e.date_evenement)}</strong></td>
         <td>${e.nom_client || '—'}</td>
-        <td>${e.type_evenement || '\u2014'}</td>
+        <td>${typeHtml}</td>
+        <td>${e.lieu_prestation || '—'}</td>
+        <td>${e.nb_convives || '—'}</td>
         <td>${formatBudget(e.budget_estime)}</td>
         <td><span class="pill ${STATUS_PILL[e.statut] || 'pill-gray'}">${STATUS_LABEL[e.statut] || e.statut}</span></td>
       </tr>`;
