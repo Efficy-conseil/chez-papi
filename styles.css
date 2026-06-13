@@ -1571,6 +1571,25 @@ body {
 }
 .pc-todo-btn:hover { background: var(--brown-dk); }
 
+/* ── AGENDA TABLE ── */
+.agenda-tbl th,
+.agenda-tbl td {
+  font-size: 0.82rem;
+  overflow: hidden;
+}
+.agenda-tbl th {
+  font-size: 0.72rem;
+  letter-spacing: .09em;
+  white-space: nowrap;
+}
+.agenda-tbl td .pill {
+  white-space: nowrap;
+}
+@media (min-width: 768px) {
+  .agenda-tbl th { font-size: 0.75rem; }
+  .agenda-tbl td { font-size: 0.85rem; }
+}
+
 /* ── HISTORIQUE TABLE ── */
 #historique .tbl th {
   font-size: 0.72rem;

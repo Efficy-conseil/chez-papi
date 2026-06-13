@@ -1814,28 +1814,44 @@ function renderAgenda() {
     return;
   }
 
+  // Style partagé pour tronquer le texte long dans les cellules
+  const tdClip = 'style="max-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"';
+
   listEl.innerHTML =
-    '<table class="tbl" style="padding:0;">' +
+    '<table class="tbl agenda-tbl" style="padding:0;table-layout:fixed;">' +
+    '<colgroup>' +
+    '<col style="width:11%">' +  /* Date */
+    '<col style="width:19%">' +  /* Client */
+    '<col style="width:14%">' +  /* Type */
+    '<col style="width:20%">' +  /* Lieu */
+    '<col style="width:8%">'  +  /* Couverts */
+    '<col style="width:11%">' +  /* Budget */
+    '<col style="width:17%">' +  /* Statut */
+    '</colgroup>' +
     '<thead><tr>' +
-    '<th style="padding-left:16px;width:12%">Date</th>' +
-    '<th style="width:20%">Client</th>' +
-    '<th style="width:12%">Type</th>' +
-    '<th style="width:18%">Lieu</th>' +
-    '<th style="width:9%">Couverts</th>' +
-    '<th style="width:12%">Budget</th>' +
-    '<th style="width:17%">Statut</th>' +
+    '<th style="padding-left:16px;">Date</th>' +
+    '<th>Client</th>' +
+    '<th>Type</th>' +
+    '<th>Lieu</th>' +
+    '<th>Couverts</th>' +
+    '<th>Budget</th>' +
+    '<th>Statut</th>' +
     '</tr></thead><tbody>' +
     events.map(e => {
       const isEntreprise = String(e.type_evenement || '').trim().toLowerCase() === 'entreprise';
       const typeVal = e.type_evenement || '\u2014';
       const typeHtml = isEntreprise ? `<strong>${typeVal}</strong>` : typeVal;
+      const client    = e.nom_client      || '—';
+      const lieu      = e.lieu_prestation || '—';
+      const convives  = e.nb_convives     || '—';
+      const budget    = formatBudget(e.budget_estime);
       return `<tr style="cursor:pointer" onclick="openEventModal(${e._row})">
-        <td style="padding-left:16px;"><strong>${formatDateFR(e.date_evenement)}</strong></td>
-        <td>${e.nom_client || '—'}</td>
-        <td>${typeHtml}</td>
-        <td>${e.lieu_prestation || '—'}</td>
-        <td>${e.nb_convives || '—'}</td>
-        <td>${formatBudget(e.budget_estime)}</td>
+        <td style="padding-left:16px;white-space:nowrap;"><strong>${formatDateFR(e.date_evenement)}</strong></td>
+        <td ${tdClip} title="${client}">${client}</td>
+        <td ${tdClip} title="${typeVal}">${typeHtml}</td>
+        <td ${tdClip} title="${lieu}">${lieu}</td>
+        <td style="white-space:nowrap;">${convives}</td>
+        <td style="white-space:nowrap;">${budget}</td>
         <td><span class="pill ${STATUS_PILL[e.statut] || 'pill-gray'}">${STATUS_LABEL[e.statut] || e.statut}</span></td>
       </tr>`;
     }).join('') +
