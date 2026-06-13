@@ -1748,18 +1748,44 @@ function renderAgenda() {
   if (!listEl) return;
 
   const monthPfx = `${agendaYear}-${String(agendaMonth + 1).padStart(2, '0')}`;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Statuts visibles dans l'agenda pour les événements passés
+  const AGENDA_PAST_STATUTS = ['Événement confirmé', 'Événement terminé'];
+
   const events = appData
     .filter(e => {
-      const d = e.date_evenement;
-      return d && String(d).slice(0, 7) === monthPfx;
+      // Toujours exclure Perdu / Sans suite
+      if (e.statut === 'Perdu / Sans suite') return false;
+
+      const raw = e.date_evenement;
+      if (!raw) return false;
+
+      // Extraire la première date YYYY-MM-DD (gère les plages "2026-06-30 au 2026-07-03")
+      const match = String(raw).match(/\d{4}-\d{2}-\d{2}/);
+      if (!match) return false;
+      const dateStr = match[0];
+
+      // Vérifier que la date est dans le mois affiché
+      if (dateStr.slice(0, 7) !== monthPfx) return false;
+
+      // Pour les événements passés, uniquement Confirmé ou Terminé
+      const d = parseLocalDate(dateStr);
+      if (d && d.getTime() < today.getTime()) {
+        return AGENDA_PAST_STATUTS.includes(e.statut);
+      }
+
+      // Événements futurs (ou aujourd'hui) : tous les statuts
+      return true;
     })
     .sort((a, b) => (a.date_evenement || '').localeCompare(b.date_evenement || ''));
 
   if (labelEl) labelEl.textContent = `${MONTHS_FR_AGENDA[agendaMonth]} ${agendaYear}`;
-  if (subEl) subEl.textContent = events.length ? `${events.length} \u00e9v\u00e9nement${events.length > 1 ? 's' : ''}` : '';
+  if (subEl) subEl.textContent = events.length ? `${events.length} événement${events.length > 1 ? 's' : ''}` : '';
 
   if (!events.length) {
-    listEl.innerHTML = '<div class="tbl-empty" style="padding:24px 16px;">Aucun \u00e9v\u00e9nement ce mois</div>';
+    listEl.innerHTML = '<div class="tbl-empty" style="padding:24px 16px;">Aucun événement ce mois</div>';
     return;
   }
 
