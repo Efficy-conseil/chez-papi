@@ -1457,6 +1457,20 @@ function showViewModal(rowIndex) {
   document.getElementById('view-modal').style.display = 'flex';
 }
 
+const FORM_PLACEHOLDERS = {
+  nom_client: "Ex: Céline GIORDANO",
+  date_evenement: "Ex: 2026-06-10 ou 2026-06-30 au 2026-07-03",
+  budget_estime: "Ex: 1800 ou 850/900€ ou Entre 2000 et 2500€",
+  telephone: "Ex: 06 12 34 56 78",
+  email_client: "Ex: client@email.com",
+  nb_convives: "Ex: 80 ou 45 le 30/06 ; 22 le 01/07...",
+  lieu_prestation: "Ex: Salle des fêtes de Miramas…",
+  url_email_origine: "Ex: https://mail.google.com/...",
+  url_dossier_drive: "Ex: https://drive.google.com/...",
+  message_original: "Message original reçu du client...",
+  notes: "Notes de suivi interne..."
+};
+
 function openEventModal(rowIndex = null, forceEdit = false) {
   if (rowIndex && !forceEdit) {
     showViewModal(rowIndex);
@@ -1471,6 +1485,17 @@ function openEventModal(rowIndex = null, forceEdit = false) {
 
   const form = document.getElementById('event-form');
   form.reset();
+
+  // Gérer dynamiquement les placeholders (masqués en modification, affichés en création)
+  for (const el of form.elements) {
+    if (el.name && el.name in FORM_PLACEHOLDERS) {
+      if (rowIndex) {
+        el.removeAttribute('placeholder');
+      } else {
+        el.setAttribute('placeholder', FORM_PLACEHOLDERS[el.name]);
+      }
+    }
+  }
 
   if (rowIndex) {
     const existing = appData.find(e => e._row === rowIndex);
