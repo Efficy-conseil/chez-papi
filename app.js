@@ -1446,6 +1446,14 @@ function openEventModal(rowIndex = null) {
             missing.forEach(item => { body += `- ${item}\n`; });
             body += `\n`;
           }
+          const origMsg = existing.message_original ? String(existing.message_original).trim() : '';
+          if (origMsg && origMsg !== '—') {
+            const receptionDate = existing.date_reception ? formatDateFR(existing.date_reception) : '';
+            const quoted = origMsg.split('\n').map(line => `> ${line}`).join('\n');
+            body += `\n\n\n`;
+            body += `Le ${receptionDate}${receptionDate ? ', ' : ''}${clientEmail} a écrit :\n`;
+            body += quoted;
+          }
           const replySubject = `Re: ${subject}`;
           replyBtn.href = `https://mail.google.com/mail/u/demande.chezpapimaisongourmande@gmail.com/?view=cm&fs=1&to=${encodeURIComponent(clientEmail)}&su=${encodeURIComponent(replySubject)}&body=${encodeURIComponent(body)}`;
         }
