@@ -730,11 +730,13 @@ body {
   border-radius: 4px;
   padding: 14px 12px;
   margin-bottom: 12px;
-  overflow-x: visible;
+  overflow: hidden;
+  min-width: 0;
 }
 
 .tbl-wrap {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   width: 100%;
 }
 
