@@ -1842,16 +1842,8 @@ function renderAgenda() {
   }
 
   listEl.innerHTML =
-    '<table class="tbl agenda-tbl" style="padding:0;table-layout:fixed;">' +
-    '<colgroup>' +
-    '<col style="width:10%">' +  /* Date */
-    '<col style="width:18%">' +  /* Client */
-    '<col style="width:11%">' +  /* Type */
-    '<col style="width:22%">' +  /* Lieu */
-    '<col style="width:8%">'  +  /* Couverts */
-    '<col style="width:12%">' +  /* Budget */
-    '<col style="width:19%">' +  /* Statut */
-    '</colgroup>' +
+    '<div class="tbl-wrap">' +
+    '<table class="tbl agenda-tbl" style="padding:0;min-width:540px;">' +
     '<thead><tr>' +
     '<th>Date</th>' +
     '<th>Client</th>' +
@@ -1880,7 +1872,7 @@ function renderAgenda() {
         <td class="ag-statut" title="${statutLabel}">${generateStatusSelectHtml(e)}</td>
       </tr>`;
     }).join('') +
-    '</tbody></table>';
+    '</tbody></table></div>';
 }
 
 // ── KPI MODALS ──

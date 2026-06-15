@@ -730,7 +730,7 @@ body {
   border-radius: 4px;
   padding: 14px 12px;
   margin-bottom: 12px;
-  overflow-x: hidden;
+  overflow-x: visible;
 }
 
 .tbl-wrap {
