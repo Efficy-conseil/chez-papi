@@ -795,7 +795,7 @@ function renderDashboard() {
           <td><strong>${formatDateFR(e.date_evenement) || '—'}</strong></td>
           <td>${e.nom_client || '—'}${warningBadge}</td>
           <td>${formatBudget(e.budget_estime)}</td>
-          <td>${generateStatusSelectHtml(e)}</td>
+          <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e)}</td>
         </tr>`;
       }).join('');
     }
@@ -819,7 +819,7 @@ function renderDashboard() {
           <td><strong>${formatDateFR(e.date_evenement)}</strong></td>
           <td>${e.nom_client || '—'}${warningBadge}</td>
           <td>${formatBudget(e.budget_estime)}</td>
-          <td>${generateStatusSelectHtml(e)}</td>
+          <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e)}</td>
         </tr>`;
       }).join('') + '</tbody></table></div>';
     }
