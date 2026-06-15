@@ -812,7 +812,7 @@ function renderDashboard() {
     if (!prestationsHome.length) {
       actEl.innerHTML = '<div class="act-time" style="padding:12px 0;color:var(--muted);">Aucun événement confirmé</div>';
     } else {
-      const thead = '<div class="tbl-wrap"><table class="tbl tbl-sm" style="min-width:360px;"><thead><tr><th>Date</th><th>Client</th><th>Budget</th><th>Statut</th></tr></thead><tbody>';
+      const thead = '<div class="tbl-wrap"><table class="tbl tbl-sm" style="min-width:400px;"><thead><tr><th>Date</th><th>Client</th><th>Budget</th><th style="min-width:130px;">Statut</th></tr></thead><tbody>';
       actEl.innerHTML = thead + prestationsHome.map(e => {
         const warningBadge = hasMissingInfo(e) ? ` <span class="pill pill-red" style="font-size:8px; font-weight:700; background:rgba(192,69,58,.15); color:var(--red-soft); margin-left:6px; flex-shrink:0; vertical-align:middle;">⚠️ Infos manquantes</span>` : '';
         return `<tr style="cursor:pointer" onclick="openEventModal(${e._row})">
