@@ -2032,6 +2032,29 @@ body.is-saving-event::after {
   appearance: auto;
   -webkit-appearance: auto;
 }
+.view-mode .form-row.is-readonly input,
+.view-mode .form-row.is-readonly textarea,
+.view-mode .form-row input[readonly],
+.view-mode .form-row textarea[readonly] {
+  background: #f2ede5;
+  color: #8A7260;
+  border: 1px solid var(--warm);
+  cursor: default;
+}
+.view-mode .form-row.is-readonly input:hover,
+.view-mode .form-row.is-readonly textarea:hover,
+.view-mode .form-row input[readonly]:hover,
+.view-mode .form-row textarea[readonly]:hover,
+.view-mode .form-row.is-readonly input:focus,
+.view-mode .form-row.is-readonly textarea:focus,
+.view-mode .form-row input[readonly]:focus,
+.view-mode .form-row textarea[readonly]:focus {
+  background: #f2ede5;
+  border-color: var(--warm);
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
 .view-mode .form-row.textarea-row {
   display: block;
   margin-top: 12px;
@@ -2059,8 +2082,8 @@ body.is-saving-event::after {
 }
 .view-mode .form-row.textarea-row textarea[readonly]:hover,
 .view-mode .form-row.textarea-row textarea[readonly]:focus {
-  background: var(--warm, #fdf6f0);
-  border-color: transparent;
+  background: #f2ede5;
+  border-color: var(--warm);
   outline: none;
 }
 .hist-search-row th {
