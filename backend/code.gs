@@ -76,15 +76,9 @@ function addRow(rowData) {
   const sheet = getSheet();
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
   
-  // Auto-génération de l'identifiant unique si absent
-  if (!rowData.id_demande) {
-    const today = new Date();
-    const yyyymmdd = today.getFullYear() + 
-      String(today.getMonth() + 1).padStart(2, '0') + 
-      String(today.getDate()).padStart(2, '0');
-    const rand = Math.random().toString(36).substring(2, 10).toUpperCase();
-    rowData.id_demande = 'CP-' + yyyymmdd + '-' + rand;
-  }
+  // Génération d'un identifiant unique côté serveur
+  // Pour une création manuelle, on ne fait pas confiance à l'ID envoyé par le dashboard.
+  rowData.id_demande = generateUniqueDemandId(sheet, headers);
   
   // Initialisation de la date de réception si absente
   if (!rowData.date_reception) {
@@ -104,12 +98,12 @@ function addRow(rowData) {
   }
   
   // Envoyer une notification e-mail immédiate
-  try {
+  /* try {
     sendNewDemandEmail(rowData);
   } catch (err) {
     Logger.log("Erreur envoi email immédiat: " + err.message);
   }
-  
+  */
   return ok({ success: true });
 }
 
@@ -125,15 +119,17 @@ function updateRow(rowIndex, fields) {
     }
   });
 
-  // Forcer l'écriture dans le sheet avant de relire la ligne
+  // CORRECTION : forcer l'écriture avant de relire la ligne pour la synchro Calendar
   SpreadsheetApp.flush();
 
-  // Synchroniser avec Google Calendar (ligne complète relue après écriture)
+  // Synchroniser avec Google Calendar (récupération de la ligne complète mise à jour)
   try {
     const rowValues = sheet.getRange(rowIndex, 1, 1, sheet.getLastColumn()).getValues()[0];
-    const rawData = {};
-    headers.forEach((h, i) => { rawData[h] = rowValues[i]; });
-    syncCalendarEvent(rawData); // normalizeRowKeys est appelé à l'intérieur
+    const rowData = {};
+    headers.forEach((h, i) => {
+      rowData[h] = rowValues[i];
+    });
+    syncCalendarEvent(rowData);
   } catch (err) {
     Logger.log("Erreur de synchronisation Google Calendar dans updateRow: " + err.message);
   }
@@ -146,11 +142,12 @@ function deleteRow(rowIndex) {
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
   
   // Supprimer l'événement Google Calendar associé avant de supprimer la ligne
+  // CORRECTION : utilisation de normalizeRowKeys() pour être robuste quel que soit le nom de colonne
   try {
     const rowValues = sheet.getRange(rowIndex, 1, 1, sheet.getLastColumn()).getValues()[0];
     const rawData = {};
     headers.forEach((h, i) => { rawData[h] = rowValues[i]; });
-    const data = normalizeRowKeys(rawData); // robuste quel que soit le nom de colonne
+    const data = normalizeRowKeys(rawData);
     const idDemande = data.id_demande;
     if (idDemande) {
       var calendar = CalendarApp.getDefaultCalendar();
@@ -375,7 +372,8 @@ function sendDailySummary() {
     return !id || seenIds.get(id)._row === r._row;
   });
 
-  sendSummaryEmail(deduped, yesterdayDateString);
+  // Récapitulatif désactivé pour le moment
+  //sendSummaryEmail(deduped, yesterdayDateString);
 }
 
 function sendSummaryEmail(rows, dateString) {
@@ -481,8 +479,41 @@ function setupDailyTrigger() {
   ScriptApp.newTrigger('sendDailySummary')
     .timeBased()
     .everyDays(1)
-    .atHour(7)
+    .atHour(0)
     .create();
+}
+
+function generateUniqueDemandId(sheet, headers) {
+  const idColIndex = headers.indexOf('id_demande') + 1;
+  if (idColIndex <= 0) {
+    throw new Error("Colonne id_demande introuvable");
+  }
+
+  const today = new Date();
+  const yyyymmdd = today.getFullYear() +
+    String(today.getMonth() + 1).padStart(2, '0') +
+    String(today.getDate()).padStart(2, '0');
+
+  const lastRow = sheet.getLastRow();
+
+  let existingIds = new Set();
+  if (lastRow >= 2) {
+    const values = sheet.getRange(2, idColIndex, lastRow - 1, 1).getValues();
+    existingIds = new Set(
+      values
+        .flat()
+        .map(v => String(v || '').trim())
+        .filter(Boolean)
+    );
+  }
+
+  let id;
+  do {
+    const rand = Math.random().toString(36).substring(2, 10).toUpperCase();
+    id = 'CP-' + yyyymmdd + '-' + rand;
+  } while (existingIds.has(id));
+
+  return id;
 }
 
 // ── GOOGLE CALENDAR SYNCHRONISATION ──────────────────────────────────────────
@@ -680,4 +711,3 @@ function testCalendarFull() {
   syncCalendarEvent(rowData);
   Logger.log("[testCalendarFull] Terminé.");
 }
-
