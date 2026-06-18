@@ -332,7 +332,7 @@ function findRowByDemandId(sheet, headers, idDemande) {
 function serialise(val) {
   if (val instanceof Date) {
     try {
-      return Utilities.formatDate(val, Session.getScriptTimeZone(), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+      return Utilities.formatDate(val, Session.getScriptTimeZone(), "yyyy-MM-dd'T'HH:mm:ss.SSS");
     } catch (e) {
       return val.toISOString();
     }

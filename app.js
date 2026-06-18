@@ -128,6 +128,14 @@ function parseDateTime(ds) {
   const raw = String(ds).trim();
   if (!raw) return null;
   const hasTime = /T\d{2}:\d{2}|\d{1,2}:\d{2}/.test(raw);
+  const googleUtcNoZone = raw.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?)Z$/);
+  if (googleUtcNoZone) {
+    const localCandidate = new Date(`${googleUtcNoZone[1]}T${googleUtcNoZone[2]}`);
+    if (!isNaN(localCandidate.getTime())) {
+      const utcCandidate = new Date(raw);
+      return utcCandidate.getTime() - Date.now() > 10 * 60 * 1000 ? localCandidate : utcCandidate;
+    }
+  }
   if (!hasTime && /^\d{4}-\d{2}-\d{2}$/.test(raw)) {
     const d = parseLocalDate(raw);
     if (d) d.setHours(12, 0, 0, 0);
@@ -142,7 +150,8 @@ function formatReceivedAge(value) {
   const d = parseDateTime(value);
   if (!d) return '—';
   const diffMs = Date.now() - d.getTime();
-  if (diffMs < 0) return 'à venir';
+  if (diffMs < -5 * 60000) return 'à venir';
+  if (diffMs < 0) return 'à l’instant';
   const minutes = Math.floor(diffMs / 60000);
   if (minutes < 2) return 'à l’instant';
   if (minutes < 60) return `il y a ${minutes} min`;
@@ -155,7 +164,7 @@ function formatReceivedAge(value) {
 function receivedAgeColor(value) {
   const d = parseDateTime(value);
   if (!d) return 'var(--muted)';
-  const hours = Math.floor((Date.now() - d.getTime()) / 3600000);
+  const hours = Math.max(0, Math.floor((Date.now() - d.getTime()) / 3600000));
   if (hours < 24) return '#4A6741';
   if (hours < 72) return '#B8860B';
   return '#C0453A';
@@ -212,6 +221,23 @@ function formatEventDateTime(e) {
   const date = formatDateFR(e?.date_evenement);
   const time = formatTime(e?.heure_evenement);
   return [date, time].filter(Boolean).join(' · ');
+}
+
+function localDateTimeInputValue(date = new Date()) {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0')
+  ].join('-') + 'T' + [
+    String(date.getHours()).padStart(2, '0'),
+    String(date.getMinutes()).padStart(2, '0')
+  ].join(':');
+}
+
+function setManualOnlyRowsVisible(visible) {
+  document.querySelectorAll('.source-email-row, .source-message-row').forEach(row => {
+    row.style.display = visible ? '' : 'none';
+  });
 }
 
 function dateSortValue(value) {
@@ -1490,9 +1516,11 @@ function openEventModal(rowIndex = null) {
   if (rowIndex) {
     document.getElementById('modal-title').textContent = "Détail de la demande";
     form.classList.add('view-mode');
+    setManualOnlyRowsVisible(true);
   } else {
     document.getElementById('modal-title').textContent = "Nouvel événement";
     form.classList.remove('view-mode');
+    setManualOnlyRowsVisible(false);
   }
 
   form.reset();
@@ -1584,9 +1612,7 @@ function openEventModal(rowIndex = null) {
       }
     }
   } else {
-    const now = new Date();
-    const localToday = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-    form.elements['date_reception'].value = localToday;
+    form.elements['date_reception'].value = localDateTimeInputValue();
     form.elements['statut'].value  = 'Nouvelle demande';
     form.elements['canal'].value = 'Saisie manuelle';
     
@@ -1638,6 +1664,7 @@ function closeEventModal(force = false) {
   }
   document.getElementById('event-modal').style.display = 'none';
   document.getElementById('event-form')?.classList.remove('is-saving');
+  document.body.classList.remove('is-saving-event');
   editingRow = null;
   initialFormValuesStr = null;
   eventSaveInFlight = false;
@@ -1705,7 +1732,7 @@ document.getElementById('event-form').addEventListener('submit', async e => {
   new FormData(form).forEach((val, key) => { data[key] = val; });
   if (!editingRow) {
     delete data.id_demande;
-    delete data.date_reception;
+    data.date_reception = data.date_reception || localDateTimeInputValue();
     data.canal = data.canal || 'Saisie manuelle';
   }
 
@@ -1714,6 +1741,7 @@ document.getElementById('event-form').addEventListener('submit', async e => {
     btn.textContent = 'Enregistrement…';
   }
   form.classList.add('is-saving');
+  document.body.classList.add('is-saving-event');
 
   try {
     let result;
@@ -1761,6 +1789,7 @@ document.getElementById('event-form').addEventListener('submit', async e => {
   } finally {
     eventSaveInFlight = false;
     form.classList.remove('is-saving');
+    document.body.classList.remove('is-saving-event');
     if (btn) {
       btn.disabled = false;
       btn.textContent = 'Enregistrer';

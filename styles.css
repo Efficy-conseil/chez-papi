@@ -1260,17 +1260,65 @@ body {
 body.is-loading-data .content::before {
   content: "Synchronisation en cours…";
   position: fixed;
-  top: 14px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--brown-dk);
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(46, 32, 24, .34);
   color: #fff;
-  padding: 7px 12px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 700;
-  z-index: 650;
-  box-shadow: 0 4px 14px rgba(46,32,24,.18);
+  font-size: 22px;
+  font-weight: 800;
+  z-index: 2400;
+  pointer-events: all;
+}
+
+body.is-loading-data .content::after {
+  content: "";
+  position: fixed;
+  top: calc(50% + 32px);
+  left: 50%;
+  width: 34px;
+  height: 34px;
+  margin-left: -17px;
+  border-radius: 50%;
+  border: 3px solid rgba(255,255,255,.45);
+  border-top-color: #fff;
+  animation: spin .8s linear infinite;
+  z-index: 2401;
+  pointer-events: none;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+body.is-saving-event::before {
+  content: "Enregistrement en cours…";
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(46, 32, 24, .38);
+  color: #fff;
+  font-size: 22px;
+  font-weight: 800;
+  z-index: 2600;
+  pointer-events: all;
+}
+
+body.is-saving-event::after {
+  content: "";
+  position: fixed;
+  top: calc(50% + 32px);
+  left: 50%;
+  width: 34px;
+  height: 34px;
+  margin-left: -17px;
+  border-radius: 50%;
+  border: 3px solid rgba(255,255,255,.45);
+  border-top-color: #fff;
+  animation: spin .8s linear infinite;
+  z-index: 2601;
+  pointer-events: none;
 }
 
 /* ── PIPELINE extras ── */
@@ -1296,9 +1344,9 @@ body.is-loading-data .content::before {
   margin-left: 6px;
   padding: 2px 6px;
   border-radius: 4px;
-  background: rgba(192,69,58,.12);
-  color: var(--red-soft);
-  border: 1px solid rgba(192,69,58,.2);
+  background: rgba(245,166,35,.16);
+  color: #9A5D00;
+  border: 1px solid rgba(245,166,35,.38);
   font-size: 9px;
   font-weight: 800;
   line-height: 1.2;
@@ -1483,20 +1531,7 @@ body.is-loading-data .content::before {
   font-weight: 700;
 }
 .modal-form.is-saving::after {
-  content: "Enregistrement en cours…";
-  position: sticky;
-  bottom: 72px;
-  display: block;
-  margin: 8px auto;
-  width: fit-content;
-  background: var(--brown-dk);
-  color: #fff;
-  border-radius: 6px;
-  padding: 8px 12px;
-  font-size: 12px;
-  font-weight: 700;
-  box-shadow: 0 4px 14px rgba(46,32,24,.18);
-  z-index: 2;
+  content: none;
 }
 
 .form-row2 {

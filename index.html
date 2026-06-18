@@ -414,7 +414,7 @@
 <input type="hidden" name="id_demande">
 
 <!-- Jauge Infos manquantes -->
-<div id="view-warning-missing-info" style="display:none; background:rgba(192,69,58,0.08); border: 1px solid rgba(192,69,58,0.25); color:#C0453A; padding:10px 14px; border-radius:6px; font-size:13px; font-weight:700; margin-bottom:16px; line-height:1.4;">
+<div id="view-warning-missing-info" style="display:none; background:rgba(245,166,35,0.14); border: 1px solid rgba(245,166,35,0.36); color:#9A5D00; padding:10px 14px; border-radius:6px; font-size:13px; font-weight:700; margin-bottom:16px; line-height:1.4;">
   ⚠️ Infos manquantes : des informations clés (téléphone/e-mail, lieu ou nombre de convives) ne sont pas renseignées.
 </div>
 
@@ -508,10 +508,10 @@
 </div>
 <div class="form-row">
 <label>Demande reçue le</label>
-<input type="date" name="date_reception">
+<input type="datetime-local" name="date_reception">
 </div>
-<div class="form-row readonly-row">
-<label>Fil e-mail Gmail</label>
+<div class="form-row readonly-row source-email-row">
+<label>Fil de discussion email</label>
 <div class="readonly-link-row">
   <input type="url" name="url_email_origine" placeholder="Ex: https://mail.google.com/..." readonly>
   <a href="#" id="view-email-thread-btn" target="_blank" rel="noopener noreferrer" class="btn-secondary field-action" style="display:none;">Ouvrir</a>
@@ -521,7 +521,7 @@
 <label>Lien dossier Drive</label>
 <input type="url" name="url_dossier_drive" placeholder="Ex: https://drive.google.com/...">
 </div>
-<div class="form-row textarea-row">
+<div class="form-row textarea-row source-message-row">
 <label>Message original</label>
 <textarea name="message_original" rows="3" placeholder="Message original reçu du client..." readonly></textarea>
 </div>
