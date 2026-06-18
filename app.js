@@ -474,7 +474,7 @@ async function silentPoll() {
 
 function startBackgroundPolling() {
   if (_pollingTimer) clearInterval(_pollingTimer);
-  _pollingTimer = setInterval(silentPoll, 3 * 60 * 1000); // toutes les 3 min
+  _pollingTimer = setInterval(silentPoll, 60 * 1000); // toutes les minutes
 }
 
 function stopBackgroundPolling() {
@@ -489,7 +489,7 @@ async function registerPeriodicSync() {
     const sw = await navigator.serviceWorker.ready;
     const status = await navigator.permissions.query({ name: 'periodic-background-sync' });
     if (status.state === 'granted') {
-      await sw.periodicSync.register('poll-new-events', { minInterval: 3 * 60 * 1000 });
+      await sw.periodicSync.register('poll-new-events', { minInterval: 60 * 1000 });
       console.log('[PWA] Periodic Background Sync enregistré');
     }
   } catch (err) {
@@ -601,6 +601,11 @@ function getMissingFields(e) {
 
 function hasMissingInfo(e) {
   return getMissingFields(e).length > 0;
+}
+
+function missingInfoBadge(e, compact = false) {
+  if (!hasMissingInfo(e)) return '';
+  return `<span class="missing-badge${compact ? ' compact' : ''}" title="Infos manquantes">⚠${compact ? '' : ' Infos manquantes'}</span>`;
 }
 
 function normalizeStatus(status) {
@@ -766,7 +771,7 @@ function renderDashboard() {
       newTbody.innerHTML = newDemandes.map(e => {
         const ageText = formatReceivedAge(e.date_reception);
         const ageBadge = `<span style="color:${receivedAgeColor(e.date_reception)};font-weight:600;">${safeText(ageText)}</span>`;
-        const warningBadge = hasMissingInfo(e) ? ` <span class="pill pill-red" style="font-size:8px; font-weight:700; background:rgba(192,69,58,.15); color:var(--red-soft); margin-left:6px; flex-shrink:0; vertical-align:middle;">⚠️ Infos manquantes</span>` : '';
+        const warningBadge = missingInfoBadge(e, true);
         return `<tr style="cursor:pointer" onclick="openEventModal(${e._row})">
           <td><strong>${safeText(formatDateFR(e.date_evenement) || '—')}</strong></td>
           <td>${safeText(e.nom_client)}${warningBadge}</td>
@@ -813,7 +818,7 @@ function renderDashboard() {
           }
         }
 
-        const warningBadge = hasMissingInfo(e) ? ` <span class="pill pill-red" style="font-size:8px; font-weight:700; background:rgba(192,69,58,.15); color:var(--red-soft); margin-left:6px; flex-shrink:0; vertical-align:middle;">⚠️ Infos manquantes</span>` : '';
+        const warningBadge = missingInfoBadge(e, true);
         return `<tr class="${urgClass}" style="cursor:pointer" onclick="openEventModal(${e._row})">
           <td><strong>${safeText(formatDateFR(e.date_evenement) || '—')}</strong></td>
           <td>${safeText(e.nom_client)}${warningBadge}</td>
@@ -836,7 +841,7 @@ function renderDashboard() {
     } else {
       const thead = '<div class="tbl-wrap"><table class="tbl tbl-sm" style="min-width:360px;"><thead><tr><th>Date</th><th>Client</th><th style="min-width:130px;">Statut</th></tr></thead><tbody>';
       actEl.innerHTML = thead + prestationsHome.map(e => {
-        const warningBadge = hasMissingInfo(e) ? ` <span class="pill pill-red" style="font-size:8px; font-weight:700; background:rgba(192,69,58,.15); color:var(--red-soft); margin-left:6px; flex-shrink:0; vertical-align:middle;">⚠️ Infos manquantes</span>` : '';
+        const warningBadge = missingInfoBadge(e, true);
         return `<tr style="cursor:pointer" onclick="openEventModal(${e._row})">
           <td><strong>${safeText(formatDateFR(e.date_evenement))}</strong></td>
           <td>${safeText(e.nom_client)}${warningBadge}</td>
@@ -857,7 +862,7 @@ const PIPELINE_COLS = [
   { label: 'Entreprise',       id: 'entreprise' },
   { label: 'Dans moins de 7j', id: 'urgent'     },
   { label: 'Dans moins de 30j', id: 'important' },
-  { label: 'Normal',           id: 'normal'     },
+  { label: 'Autres',           id: 'normal'     },
 ];
 
 function renderPipeline() {
@@ -939,10 +944,7 @@ function renderPipeline() {
         linksLine = `<div style="margin-top: 4px; font-size:14px;">${links.join(' ')}</div>`;
       }
 
-      let warningBadge = '';
-      if (hasMissingInfo(e)) {
-        warningBadge = `<span class="pill pill-red" style="font-size:8px; font-weight:700; background:rgba(192,69,58,.15); color:var(--red-soft); margin-left:6px; flex-shrink:0; vertical-align:middle;">⚠️ Infos manquantes</span>`;
-      }
+      const warningBadge = missingInfoBadge(e);
 
       return `
       <div class="pipe-card" onclick="openEventModal(${e._row})">
@@ -1483,7 +1485,7 @@ function openEventModal(rowIndex = null) {
           const val = existing[el.name];
           const cleanVal = (val === null || val === undefined || val === '—') ? '' : val;
           if (el.tagName === 'SELECT' && el.name === 'type_evenement') {
-            setSelectValue(el, cleanVal, '');
+            setSelectValue(el, cleanVal, 'Autres');
           } else if (el.tagName === 'SELECT' && el.name === 'canal') {
             setSelectValue(el, cleanVal, '');
           } else {
@@ -1596,6 +1598,7 @@ function closeEventModal(force = false) {
     }
   }
   document.getElementById('event-modal').style.display = 'none';
+  document.getElementById('event-form')?.classList.remove('is-saving');
   editingRow = null;
   initialFormValuesStr = null;
   eventSaveInFlight = false;
@@ -1672,6 +1675,7 @@ document.getElementById('event-form').addEventListener('submit', async e => {
     btn.disabled = true;
     btn.textContent = 'Enregistrement…';
   }
+  form.classList.add('is-saving');
 
   try {
     let result;
@@ -1721,6 +1725,7 @@ document.getElementById('event-form').addEventListener('submit', async e => {
     }
   } finally {
     eventSaveInFlight = false;
+    form.classList.remove('is-saving');
     if (btn) {
       btn.disabled = false;
       btn.textContent = 'Enregistrer';
@@ -2047,8 +2052,8 @@ function toggleSidebar() {
   sidebar.classList.toggle('open');
   sidebarOverlay.classList.toggle('open');
 }
-menuBtn.addEventListener('click', toggleSidebar);
-sidebarClose.addEventListener('click', toggleSidebar);
+menuBtn?.addEventListener('click', toggleSidebar);
+sidebarClose?.addEventListener('click', toggleSidebar);
 document.querySelectorAll('.nav-item').forEach(item => {
   item.addEventListener('click', () => {
     if (window.innerWidth < 900) {
