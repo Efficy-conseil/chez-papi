@@ -463,7 +463,8 @@
           "message_original": "{{1.fieldsById.question_g4BpBJ}}",
           "url_dossier_drive": "",
           "url_email_origine": "",
-          "derniere_modification": "{{1.createdAt}}"
+          "derniere_modification": "{{1.createdAt}}",
+          "heure_evenement": ""
         },
         "sheetId": "Demandes",
         "spreadsheetId": "/1KCHd6vdtlElV7wR9kg1ZhTsvEfE56BMDd_L32Q6KzgQ",
@@ -549,6 +550,11 @@
                       "label": "date_evenement (H)"
                     },
                     {
+                      "name": "heure_evenement",
+                      "type": "text",
+                      "label": "Heure evenement"
+                    },
+                    {
                       "name": "nb_convives",
                       "type": "text",
                       "label": "nb_convives (I)"
@@ -607,6 +613,7 @@
                         "email_client",
                         "type_evenement",
                         "date_evenement",
+                        "heure_evenement",
                         "nb_convives",
                         "lieu_prestation",
                         "budget_estime",
@@ -784,6 +791,11 @@
                 "label": "date_evenement (H)"
               },
               {
+                "name": "heure_evenement",
+                "type": "text",
+                "label": "Heure evenement"
+              },
+              {
                 "name": "nb_convives",
                 "type": "text",
                 "label": "nb_convives (I)"
@@ -842,6 +854,7 @@
                   "email_client",
                   "type_evenement",
                   "date_evenement",
+                  "heure_evenement",
                   "nb_convives",
                   "lieu_prestation",
                   "budget_estime",

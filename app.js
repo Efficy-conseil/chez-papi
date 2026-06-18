@@ -201,6 +201,19 @@ function formatDateFR(ds) {
   catch { return String(ds); }
 }
 
+function formatTime(value) {
+  if (!value) return '';
+  const match = String(value).trim().match(/\b([01]?\d|2[0-3])[:hH]([0-5]\d)\b/);
+  if (!match) return '';
+  return `${String(match[1]).padStart(2, '0')}:${match[2]}`;
+}
+
+function formatEventDateTime(e) {
+  const date = formatDateFR(e?.date_evenement);
+  const time = formatTime(e?.heure_evenement);
+  return [date, time].filter(Boolean).join(' · ');
+}
+
 function dateSortValue(value) {
   const d = parseLocalDate(value);
   return d ? d.getTime() : Number.MAX_SAFE_INTEGER;
@@ -808,7 +821,7 @@ function renderDashboard() {
         const ageBadge = `<span style="color:${receivedAgeColor(e.date_reception)};font-weight:600;">${safeText(ageText)}</span>`;
         const warningBadge = missingInfoBadge(e, true);
         return `<tr style="cursor:pointer" onclick="openEventModal(${e._row})">
-          <td><strong>${safeText(formatDateFR(e.date_evenement) || '—')}</strong></td>
+          <td><strong>${safeText(formatEventDateTime(e) || '—')}</strong></td>
           <td>${safeText(e.nom_client)}${warningBadge}</td>
           <td>${safeText(eventSummary(e))}</td>
           <td>${ageBadge}</td>
@@ -852,7 +865,7 @@ function renderDashboard() {
 
         const warningBadge = missingInfoBadge(e, true);
         return `<tr class="${urgClass}" style="cursor:pointer" onclick="openEventModal(${e._row})">
-          <td><strong>${safeText(formatDateFR(e.date_evenement) || '—')}</strong></td>
+          <td><strong>${safeText(formatEventDateTime(e) || '—')}</strong></td>
           <td>${safeText(e.nom_client)}${warningBadge}</td>
           <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e)}</td>
         </tr>`;
@@ -875,7 +888,7 @@ function renderDashboard() {
       actEl.innerHTML = thead + prestationsHome.map(e => {
         const warningBadge = missingInfoBadge(e, true);
         return `<tr style="cursor:pointer" onclick="openEventModal(${e._row})">
-          <td><strong>${safeText(formatDateFR(e.date_evenement))}</strong></td>
+          <td><strong>${safeText(formatEventDateTime(e))}</strong></td>
           <td>${safeText(e.nom_client)}${warningBadge}</td>
           <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e)}</td>
         </tr>`;
@@ -977,7 +990,7 @@ function renderPipeline() {
           <div class="pipe-client" style="margin-bottom:0;">${safeText(e.nom_client)}</div>
           ${warningBadge}
         </div>
-        <div class="pipe-event">${safeText(eventSummary(e))}${e.date_evenement ? ' \xb7 ' + safeText(formatDateFR(e.date_evenement)) : ''}</div>
+        <div class="pipe-event">${safeText(eventSummary(e))}${e.date_evenement ? ' \xb7 ' + safeText(formatEventDateTime(e)) : ''}</div>
         ${contactLine ? `<div class="pipe-contact" onclick="event.stopPropagation()">${contactLine}</div>` : ''}
         ${linksLine ? `<div onclick="event.stopPropagation()">${linksLine}</div>` : ''}
         <div class="pipe-footer" style="padding-top: 8px;">
@@ -1072,7 +1085,7 @@ function renderClients() {
 
     return `<div class="prestation-card">
       <div class="pc-header" onclick="openEventModal(${e._row})" style="cursor:pointer">
-        <div class="pc-line1"><strong>${safeText(e.nom_client)}</strong> · ${safeText(eventSummary(e))} · <em>${safeText(formatDateFR(e.date_evenement))}</em></div>
+        <div class="pc-line1"><strong>${safeText(e.nom_client)}</strong> · ${safeText(eventSummary(e))} · <em>${safeText(formatEventDateTime(e))}</em></div>
         <div class="pc-line2">${safeText(eventSummary(e))} &nbsp;${pill}</div>
         ${contactLine ? `<div class="pc-contact">${contactLine}</div>` : ''}
         ${linksLine ? `<div onclick="event.stopPropagation()">${linksLine}</div>` : ''}
@@ -1193,7 +1206,7 @@ function getFilteredHistorique() {
   const sNotes    = document.getElementById('hist-search-notes')?.value.toLowerCase();
 
   return filtered.filter(e => {
-    if (sDate     && !formatDateFR(e.date_evenement).toLowerCase().includes(sDate)) return false;
+    if (sDate     && !formatEventDateTime(e).toLowerCase().includes(sDate)) return false;
     if (sClient   && !String(e.nom_client || '').toLowerCase().includes(sClient)) return false;
     if (sType     && !String(e.type_evenement || '').toLowerCase().includes(sType)) return false;
     if (sLieu     && !String(e.lieu_prestation || '').toLowerCase().includes(sLieu)) return false;
@@ -1224,7 +1237,7 @@ function renderHistorique() {
     const notes  = String(e.notes || '');
     const notesTrunc = notes.length > 40 ? notes.slice(0, 40) + '…' : notes;
     return `<tr style="cursor:pointer" onclick="openEventModal(${e._row})">
-      <td><strong>${safeText(formatDateFR(e.date_evenement))}</strong></td>
+      <td><strong>${safeText(formatEventDateTime(e))}</strong></td>
       <td>${safeText(e.nom_client)}</td>
       <td>${safeText(e.type_evenement)}</td>
       <td>${safeText(e.lieu_prestation)}</td>
@@ -1242,7 +1255,7 @@ function exportHistoriqueCSV() {
   const rows = getFilteredHistorique();
   const BOM  = '\uFEFF';
   const esc  = v => '"' + String(v || '').replace(/"/g, '""') + '"';
-  const headers = ['ID Demande','Date Réception','Canal','Client','Téléphone','Email','Type','Date Événement','Convives','Lieu','Budget','Statut','Message','Email Origine','Notes','Dossier Drive','Dernière Modification'];
+  const headers = ['ID Demande','Date Réception','Canal','Client','Téléphone','Email','Type','Date Événement','Heure Événement','Convives','Lieu','Budget','Statut','Message','Email Origine','Notes','Dossier Drive','Dernière Modification'];
   const lines = [headers.join(';')].concat(rows.map(e => [
     e.id_demande || '',
     e.date_reception || '',
@@ -1252,6 +1265,7 @@ function exportHistoriqueCSV() {
     e.email_client || '',
     e.type_evenement || '',
     e.date_evenement || '',
+    e.heure_evenement || '',
     e.nb_convives || '',
     e.lieu_prestation || '',
     e.budget_estime || '',
@@ -1939,7 +1953,7 @@ function renderAgenda() {
     '</tr></thead><tbody>' +
     events.map(e => {
       const isEntreprise = String(e.type_evenement || '').trim().toLowerCase() === 'entreprise';
-      const dateStr  = formatDateFR(e.date_evenement);
+      const dateStr  = formatEventDateTime(e);
       const typeVal  = e.type_evenement || '\u2014';
       const client   = e.nom_client      || '—';
       const lieu     = e.lieu_prestation || '—';
@@ -1984,7 +1998,7 @@ function showKpiModal(type) {
     tbody.innerHTML = evts.length ? evts.map(e => {
       return `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})">
         <td><strong>${safeText(e.nom_client)}</strong></td>
-        <td>${safeText(formatDateFR(e.date_evenement) || 'À dét.')}</td>
+        <td>${safeText(formatEventDateTime(e) || 'À dét.')}</td>
         <td>${safeText(formatBudget(e.budget_estime))}</td>
         <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e)}</td>
       </tr>`;
@@ -2000,7 +2014,7 @@ function showKpiModal(type) {
       const tel = normalizeFrenchPhone(e.telephone || '').replace(/\s/g, '');
       const telHtml = e.telephone && /^[\d+]+$/.test(tel) ? `<a href="tel:${encodeURIComponent(tel)}" style="color:var(--gold);text-decoration:none;" onclick="event.stopPropagation()">${formatContact(e.telephone)}</a>` : '—';
       return `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})">
-        <td>${safeText(formatDateFR(e.date_evenement) || 'À dét.')}</td>
+        <td>${safeText(formatEventDateTime(e) || 'À dét.')}</td>
         <td><strong>${safeText(e.nom_client)}</strong></td>
         <td>${safeText(e.type_evenement)}</td>
         <td>${telHtml}</td>
@@ -2016,7 +2030,7 @@ function showKpiModal(type) {
     thead.innerHTML = '<tr><th style="width:20%">Date prévue</th><th style="width:30%">Client</th><th style="width:20%">Montant</th><th style="width:30%">Statut</th></tr>';
     tbody.innerHTML = evts.length ? evts.map(e => {
       return `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})">
-        <td>${safeText(formatDateFR(e.date_evenement) || 'À dét.')}</td>
+        <td>${safeText(formatEventDateTime(e) || 'À dét.')}</td>
         <td><strong>${safeText(e.nom_client)}</strong></td>
         <td>${safeText(formatBudget(e.budget_estime))}</td>
         <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e)}</td>
@@ -2032,7 +2046,7 @@ function showKpiModal(type) {
     thead.innerHTML = '<tr><th style="width:22%">Date</th><th style="width:30%">Client</th><th style="width:20%">Type</th><th style="width:28%">Statut</th></tr>';
     tbody.innerHTML = evts.length ? evts.map(e => {
       return `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})">
-        <td>${safeText(formatDateFR(e.date_evenement) || 'À dét.')}</td>
+        <td>${safeText(formatEventDateTime(e) || 'À dét.')}</td>
         <td><strong>${safeText(e.nom_client)}</strong></td>
         <td>${safeText(e.type_evenement)}</td>
         <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e)}</td>

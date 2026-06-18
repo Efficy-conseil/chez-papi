@@ -37,6 +37,7 @@ const ALLOWED_FIELDS = [
   "email_client",
   "type_evenement",
   "date_evenement",
+  "heure_evenement",
   "nb_convives",
   "lieu_prestation",
   "budget_estime",
@@ -60,6 +61,10 @@ const KEY_MAP = {
   "date_evenement": "date_evenement",
   "Date Evenement": "date_evenement",
   "Date Événement": "date_evenement",
+  "heure_evenement": "heure_evenement",
+  "Heure Evenement": "heure_evenement",
+  "Heure Événement": "heure_evenement",
+  "Heure": "heure_evenement",
   "type_evenement": "type_evenement",
   "Type": "type_evenement",
   "Type Evenement": "type_evenement",
@@ -707,6 +712,18 @@ function parseEventDate(dateStr) {
   return null;
 }
 
+function parseEventTime(timeStr) {
+  if (!timeStr) return null;
+  var s = String(timeStr).trim();
+  if (s === '' || s === '—') return null;
+  var match = s.match(/\b([01]?\d|2[0-3])[:hH]([0-5]\d)\b/);
+  if (!match) return null;
+  return {
+    hours: Number(match[1]),
+    minutes: Number(match[2])
+  };
+}
+
 function findCalendarEvent(calendar, idDemande) {
   if (!idDemande) return null;
   
@@ -775,25 +792,45 @@ function syncCalendarEvent(rowData) {
       Logger.log("[syncCalendarEvent] Annulé : date_evenement manquante ou invalide : '" + data.date_evenement + "'");
       return;
     }
+    var eventTime = parseEventTime(data.heure_evenement);
     
     var title = (data.nom_client || 'Client inconnu') + ' - ' + (data.type_evenement || 'Événement');
     var location = data.lieu_prestation || '';
     var description = 'ID Demande: ' + data.id_demande + '\n' +
+                      'Heure: ' + (data.heure_evenement || 'Non renseignée') + '\n' +
                       'Nombre de convives: ' + (data.nb_convives || 'Non renseigné') + '\n' +
                       'Budget estimé: ' + (data.budget_estime || 'Non renseigné') + '\n' +
                       'Notes: ' + (data.notes || 'Aucune');
+    var startTime = null;
+    var endTime = null;
+    if (eventTime) {
+      startTime = new Date(eventDate.getTime());
+      startTime.setHours(eventTime.hours, eventTime.minutes, 0, 0);
+      endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
+    }
     
     if (existingEvent) {
       existingEvent.setTitle(title);
       existingEvent.setLocation(location);
       existingEvent.setDescription(description);
-      existingEvent.setAllDayDate(eventDate);
+      if (startTime && endTime) {
+        existingEvent.setTime(startTime, endTime);
+      } else {
+        existingEvent.setAllDayDate(eventDate);
+      }
       Logger.log("[syncCalendarEvent] Événement MIS À JOUR pour " + data.id_demande);
     } else {
-      calendar.createAllDayEvent(title, eventDate, {
-        location: location,
-        description: description
-      });
+      if (startTime && endTime) {
+        calendar.createEvent(title, startTime, endTime, {
+          location: location,
+          description: description
+        });
+      } else {
+        calendar.createAllDayEvent(title, eventDate, {
+          location: location,
+          description: description
+        });
+      }
       Logger.log("[syncCalendarEvent] Événement CRÉÉ pour " + data.id_demande);
     }
   } else {
