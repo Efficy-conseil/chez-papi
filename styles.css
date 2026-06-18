@@ -619,6 +619,36 @@ body {
   letter-spacing: .04em;
 }
 
+#panel-accueil .section-hd {
+  position: relative;
+}
+
+#panel-accueil .sync-control {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+#panel-accueil .btn-new {
+  margin-left: auto;
+}
+
+@media (max-width: 640px) {
+  #panel-accueil .section-hd {
+    align-items: center;
+    flex-wrap: wrap;
+    row-gap: 10px;
+  }
+
+  #panel-accueil .sync-control {
+    position: static;
+    order: 3;
+    width: 100%;
+    transform: none;
+  }
+}
+
 /* ── KPI STRIP ── */
 .kpi-strip {
   display: grid;
