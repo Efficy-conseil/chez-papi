@@ -1675,20 +1675,25 @@ function checkDateConflict(dateValue) {
   if (!banner) return;
   if (!dateValue) { banner.style.display = 'none'; return; }
 
-  const conflicts = appData.filter(e => {
+  const sameDateEvents = appData.filter(e => {
     if (editingRow && e._row === editingRow) return false;
-    if (e.statut !== 'Événement confirmé') return false;
     return dateInputKey(e.date_evenement) === dateValue;
   });
+  const confirmedConflicts = sameDateEvents.filter(e => e.statut === 'Événement confirmé');
 
   banner.style.display = 'block';
-  if (conflicts.length) {
-    const c = conflicts[0];
+  if (confirmedConflicts.length) {
+    const c = confirmedConflicts[0];
     banner.style.cssText = 'display:block;padding:8px 12px;border-radius:4px;font-size:12px;margin:4px 0 8px;background:rgba(245,166,35,0.15);color:#B86A00;border:1px solid rgba(245,166,35,0.4);';
     banner.textContent = `⚠️ ${c.nom_client || 'Sans nom'} (${c.type_evenement || 'Non renseigné'}) est déjà confirmé à cette date`;
+  } else if (sameDateEvents.length) {
+    const c = sameDateEvents[0];
+    const suffix = sameDateEvents.length > 1 ? ` et ${sameDateEvents.length - 1} autre(s)` : '';
+    banner.style.cssText = 'display:block;padding:8px 12px;border-radius:4px;font-size:12px;margin:4px 0 8px;background:rgba(245,166,35,0.12);color:#9A5D00;border:1px solid rgba(245,166,35,0.32);';
+    banner.textContent = `⚠️ Autre demande à cette date : ${c.nom_client || 'Sans nom'} (${c.statut || 'Statut non renseigné'})${suffix}`;
   } else {
     banner.style.cssText = 'display:block;padding:8px 12px;border-radius:4px;font-size:12px;margin:4px 0 8px;background:rgba(74,103,65,0.12);color:#4A6741;border:1px solid rgba(74,103,65,0.3);';
-    banner.textContent = '✓ Date disponible';
+    banner.textContent = '✓ Aucune autre demande à cette date';
   }
 }
 
