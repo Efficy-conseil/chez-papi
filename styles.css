@@ -1322,7 +1322,7 @@ body.is-loading-data .content::after {
 }
 
 body.is-saving-event::before {
-  content: "Enregistrement en cours…";
+  content: var(--busy-label, "Enregistrement en cours…");
   position: fixed;
   inset: 0;
   display: grid;

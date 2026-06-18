@@ -240,6 +240,16 @@ function setManualOnlyRowsVisible(visible) {
   });
 }
 
+function showBusyOverlay(label) {
+  document.body.style.setProperty('--busy-label', `"${label}"`);
+  document.body.classList.add('is-saving-event');
+}
+
+function hideBusyOverlay() {
+  document.body.classList.remove('is-saving-event');
+  document.body.style.removeProperty('--busy-label');
+}
+
 function dateSortValue(value) {
   const d = parseLocalDate(value);
   return d ? d.getTime() : Number.MAX_SAFE_INTEGER;
@@ -1664,7 +1674,7 @@ function closeEventModal(force = false) {
   }
   document.getElementById('event-modal').style.display = 'none';
   document.getElementById('event-form')?.classList.remove('is-saving');
-  document.body.classList.remove('is-saving-event');
+  hideBusyOverlay();
   editingRow = null;
   initialFormValuesStr = null;
   eventSaveInFlight = false;
@@ -1746,7 +1756,7 @@ document.getElementById('event-form').addEventListener('submit', async e => {
     btn.textContent = 'Enregistrement…';
   }
   form.classList.add('is-saving');
-  document.body.classList.add('is-saving-event');
+  showBusyOverlay('Enregistrement en cours…');
 
   try {
     let result;
@@ -1794,7 +1804,7 @@ document.getElementById('event-form').addEventListener('submit', async e => {
   } finally {
     eventSaveInFlight = false;
     form.classList.remove('is-saving');
-    document.body.classList.remove('is-saving-event');
+    hideBusyOverlay();
     if (btn) {
       btn.disabled = false;
       btn.textContent = 'Enregistrer';
@@ -1816,6 +1826,7 @@ async function deleteCurrentEvent() {
     btnDel.disabled = true;
     btnDel.textContent = '...';
   }
+  showBusyOverlay('Suppression en cours…');
 
   try {
     const result = await SheetsAPI.remove(eventId(row));
@@ -1831,6 +1842,7 @@ async function deleteCurrentEvent() {
   } catch (err) {
     showNotification('Erreur réseau', 'error');
   } finally {
+    hideBusyOverlay();
     if (btnDel) {
       btnDel.disabled = false;
       btnDel.textContent = 'Supprimer';
