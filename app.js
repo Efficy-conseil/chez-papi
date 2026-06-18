@@ -1638,7 +1638,7 @@ document.getElementById('event-form').addEventListener('submit', async e => {
           }
         }
         renderAll();
-        closeEventModal();
+        closeEventModal(true);
         showNotification('Événement mis à jour', 'success');
         // Notifier les autres onglets immédiatement
         broadcastSync();
@@ -1650,7 +1650,7 @@ document.getElementById('event-form').addEventListener('submit', async e => {
       if (result.success) {
         broadcastSync(); // Notifier les autres onglets
         await loadData();
-        closeEventModal();
+        closeEventModal(true);
         showNotification('Événement ajouté', 'success');
         return;
       }
