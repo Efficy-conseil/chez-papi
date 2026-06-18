@@ -1611,10 +1611,6 @@ document.getElementById('event-form').addEventListener('submit', async e => {
     return;
   }
   
-  if (!confirm("Voulez-vous enregistrer ces modifications ?")) {
-    return;
-  }
-  
   const data = {};
   new FormData(form).forEach((val, key) => { data[key] = val; });
 
