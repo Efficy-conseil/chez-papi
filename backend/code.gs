@@ -3,14 +3,9 @@
  *  CHEZ PAPI — Google Apps Script Backend
  *  À déployer depuis : Extensions > Apps Script dans le Google Sheet
  * ─────────────────────────────────────────────────────────────────
- *  1. Ouvrez votre Google Sheet
- *  2. Menu Extensions > Apps Script
- *  3. Collez ce code dans Code.gs et sauvegardez (Ctrl+S)
- *  4. Déployez : Déployer > Nouveau déploiement
- *       Type : Application web
- *       Exécuter en tant que : Moi
- *       Qui a accès : Tout le monde
- *  5. Copiez l'URL du déploiement dans CONFIG.SHEETS_URL de app.js
+ *  Déploiement recommandé : GitHub + clasp.
+ *  Secrets requis dans PropertiesService :
+ *    AUTH_USER, AUTH_PASS
  * ─────────────────────────────────────────────────────────────────
  */
 
@@ -19,80 +14,178 @@ function getSheet() {
   return SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
 }
 
-const AUTH_USER = "demande.chezpapimaisongourmande@gmail.com";
-const AUTH_PASS = "Niconina13/";
 const FRONTEND_URL = "https://efficy-conseil.github.io/chez-papi/";
 
+const AUTH_USER_PROP = "AUTH_USER";
+const AUTH_PASS_PROP = "AUTH_PASS";
+
+const ALLOWED_STATUSES = [
+  "Nouvelle demande",
+  "À rappeler",
+  "Devis à préparer",
+  "Devis envoyé",
+  "Événement confirmé",
+  "Événement terminé",
+  "Perdu / Sans suite"
+];
+
+const ALLOWED_FIELDS = [
+  "date_reception",
+  "canal",
+  "nom_client",
+  "telephone",
+  "email_client",
+  "type_evenement",
+  "date_evenement",
+  "nb_convives",
+  "lieu_prestation",
+  "budget_estime",
+  "statut",
+  "message_original",
+  "url_email_origine",
+  "notes",
+  "url_dossier_drive",
+  "derniere_modification"
+];
+
+const KEY_MAP = {
+  "id_demande": "id_demande",
+  "ID Demande": "id_demande",
+  "id demande": "id_demande",
+  "statut": "statut",
+  "Statut": "statut",
+  "nom_client": "nom_client",
+  "Nom Client": "nom_client",
+  "Client": "nom_client",
+  "date_evenement": "date_evenement",
+  "Date Evenement": "date_evenement",
+  "Date Événement": "date_evenement",
+  "type_evenement": "type_evenement",
+  "Type": "type_evenement",
+  "Type Evenement": "type_evenement",
+  "Type Événement": "type_evenement",
+  "lieu_prestation": "lieu_prestation",
+  "Lieu": "lieu_prestation",
+  "Lieu Prestation": "lieu_prestation",
+  "nb_convives": "nb_convives",
+  "Convives": "nb_convives",
+  "Nb Convives": "nb_convives",
+  "budget_estime": "budget_estime",
+  "Budget": "budget_estime",
+  "Budget Estime": "budget_estime",
+  "notes": "notes",
+  "Notes": "notes",
+  "telephone": "telephone",
+  "Telephone": "telephone",
+  "Téléphone": "telephone",
+  "email_client": "email_client",
+  "Email": "email_client",
+  "Email Client": "email_client",
+  "date_reception": "date_reception",
+  "Date Réception": "date_reception",
+  "Date Reception": "date_reception",
+  "canal": "canal",
+  "Canal": "canal",
+  "message_original": "message_original",
+  "Message Original": "message_original",
+  "url_email_origine": "url_email_origine",
+  "URL Email Origine": "url_email_origine",
+  "url_dossier_drive": "url_dossier_drive",
+  "URL Dossier Drive": "url_dossier_drive",
+  "derniere_modification": "derniere_modification",
+  "Dernière Modification": "derniere_modification"
+};
+
 function checkAuth(user, pass) {
-  return user === AUTH_USER && pass === AUTH_PASS;
+  const props = PropertiesService.getScriptProperties();
+  return user === props.getProperty(AUTH_USER_PROP) && pass === props.getProperty(AUTH_PASS_PROP);
 }
 
-// ── GET : lecture de toutes les lignes ──────────────────────────
+// À exécuter une seule fois depuis l'éditeur Apps Script, puis supprimer les valeurs.
+function setupAuthSecrets() {
+  PropertiesService.getScriptProperties().setProperties({
+    AUTH_USER: "REMPLACER_PAR_EMAIL",
+    AUTH_PASS: "REMPLACER_PAR_MOT_DE_PASSE"
+  }, true);
+}
+
+// ── GET : désactivé pour ne pas exposer les identifiants en URL ─────────────
 
 function doGet(e) {
   try {
-    const user = e.parameter.user;
-    const pass = e.parameter.pass;
-    if (!checkAuth(user, pass)) {
-      return ko("Non autorisé");
-    }
-    
-    const sheet = getSheet();
-    const data = sheet.getDataRange().getValues();
-    const headers = data[0].map(String);
-    const rows = data.slice(1)
-      .map((row, i) => {
-        const obj = { _row: i + 2 }; // numéro de ligne réel dans le sheet
-        headers.forEach((h, j) => { obj[h] = serialise(row[j]); });
-        return obj;
-      })
-      .filter(r => headers.some(h => r[h] !== undefined && String(r[h]).trim() !== '')); // ignore les lignes vides
-
-    return ok({ headers, rows });
+    return ko("Utilisez POST");
   } catch (err) {
     return ko(err.message);
   }
 }
 
-// ── POST : écriture (add / update) ─────────────────────────────
+// ── POST : lecture / écriture ──────────────────────────────────
 
 function doPost(e) {
   try {
     const body = JSON.parse(e.postData.contents);
-    if (!checkAuth(body.user, body.pass)) {
+    const auth = body.auth || { user: body.user, pass: body.pass };
+    if (!checkAuth(auth.user, auth.pass)) {
       return ko("Non autorisé");
     }
-    
-    if (body.action === 'add')    return addRow(body.row);
-    if (body.action === 'update') return updateRow(body.rowIndex, body.fields);
-    if (body.action === 'delete') return deleteRow(body.rowIndex);
+
+    if (body.action === 'list' || body.action === 'getAll') return listRows();
+    if (body.action === 'add')    return withDocumentLock(function() { return addRow(body.row || {}); });
+    if (body.action === 'update') return withDocumentLock(function() { return updateRowById(body.id_demande, body.fields || {}); });
+    if (body.action === 'delete') return withDocumentLock(function() { return deleteRowById(body.id_demande); });
     return ko('Action inconnue : ' + body.action);
   } catch (err) {
     return ko(err.message);
   }
 }
 
+function withDocumentLock(fn) {
+  const lock = LockService.getDocumentLock() || LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    return fn();
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function listRows() {
+  const sheet = getSheet();
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0].map(String);
+  const rows = data.slice(1)
+    .map((row, i) => {
+      const obj = { _row: i + 2 };
+      headers.forEach((h, j) => { obj[canonicalKey(h)] = serialise(row[j]); });
+      return obj;
+    })
+    .filter(r => Object.keys(r).some(k => k !== "_row" && r[k] !== undefined && String(r[k]).trim() !== ""));
+
+  return ok({ headers, rows });
+}
+
 function addRow(rowData) {
   const sheet = getSheet();
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
+  const clean = sanitizeFields(rowData || {}, false);
   
   // Génération d'un identifiant unique côté serveur
   // Pour une création manuelle, on ne fait pas confiance à l'ID envoyé par le dashboard.
-  rowData.id_demande = generateUniqueDemandId(sheet, headers);
+  clean.id_demande = generateUniqueDemandId(sheet, headers);
   
   // Initialisation de la date de réception si absente
-  if (!rowData.date_reception) {
-    rowData.date_reception = new Date();
+  if (!clean.date_reception) {
+    clean.date_reception = new Date();
   }
   
-  rowData.derniere_modification = new Date();
+  clean.derniere_modification = new Date();
   
-  sheet.appendRow(headers.map(h => rowData[h] ?? ''));
-  rowData._row = sheet.getLastRow();
+  sheet.appendRow(headers.map(h => clean[canonicalKey(h)] ?? ''));
+  clean._row = sheet.getLastRow();
   
   // Synchroniser avec Google Calendar
   try {
-    syncCalendarEvent(rowData);
+    syncCalendarEvent(clean);
   } catch (err) {
     Logger.log("Erreur de synchronisation Google Calendar dans addRow: " + err.message);
   }
@@ -104,18 +197,23 @@ function addRow(rowData) {
     Logger.log("Erreur envoi email immédiat: " + err.message);
   }
   */
-  return ok({ success: true });
+  return ok({ id_demande: clean.id_demande });
 }
 
-function updateRow(rowIndex, fields) {
+function updateRowById(idDemande, fields) {
+  if (!idDemande) throw new Error("id_demande manquant");
   const sheet = getSheet();
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
+  const found = findRowByDemandId(sheet, headers, idDemande);
+  if (!found) throw new Error("Demande introuvable : " + idDemande);
+  const clean = sanitizeFields(fields || {}, true);
   
-  fields.derniere_modification = new Date();
+  clean.derniere_modification = new Date();
   
   headers.forEach((h, i) => {
-    if (fields[h] !== undefined) {
-      sheet.getRange(rowIndex, i + 1).setValue(fields[h]);
+    const key = canonicalKey(h);
+    if (clean[key] !== undefined) {
+      sheet.getRange(found.rowIndex, i + 1).setValue(clean[key]);
     }
   });
 
@@ -124,48 +222,107 @@ function updateRow(rowIndex, fields) {
 
   // Synchroniser avec Google Calendar (récupération de la ligne complète mise à jour)
   try {
-    const rowValues = sheet.getRange(rowIndex, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const rowValues = sheet.getRange(found.rowIndex, 1, 1, sheet.getLastColumn()).getValues()[0];
     const rowData = {};
     headers.forEach((h, i) => {
-      rowData[h] = rowValues[i];
+      rowData[canonicalKey(h)] = rowValues[i];
     });
     syncCalendarEvent(rowData);
   } catch (err) {
     Logger.log("Erreur de synchronisation Google Calendar dans updateRow: " + err.message);
   }
   
-  return ok({ success: true });
+  return ok({ id_demande: idDemande });
 }
 
-function deleteRow(rowIndex) {
+function deleteRowById(idDemande) {
+  if (!idDemande) throw new Error("id_demande manquant");
   const sheet = getSheet();
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
+  const found = findRowByDemandId(sheet, headers, idDemande);
+  if (!found) throw new Error("Demande introuvable : " + idDemande);
   
   // Supprimer l'événement Google Calendar associé avant de supprimer la ligne
   // CORRECTION : utilisation de normalizeRowKeys() pour être robuste quel que soit le nom de colonne
   try {
-    const rowValues = sheet.getRange(rowIndex, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const rowValues = sheet.getRange(found.rowIndex, 1, 1, sheet.getLastColumn()).getValues()[0];
     const rawData = {};
-    headers.forEach((h, i) => { rawData[h] = rowValues[i]; });
+    headers.forEach((h, i) => { rawData[canonicalKey(h)] = rowValues[i]; });
     const data = normalizeRowKeys(rawData);
-    const idDemande = data.id_demande;
-    if (idDemande) {
+    if (data.id_demande) {
       var calendar = CalendarApp.getDefaultCalendar();
-      var existingEvent = findCalendarEvent(calendar, idDemande);
+      var existingEvent = findCalendarEvent(calendar, data.id_demande);
       if (existingEvent) {
         existingEvent.deleteEvent();
-        Logger.log("Événement Google Calendar supprimé via deleteRow pour " + idDemande);
+        Logger.log("Événement Google Calendar supprimé via deleteRow pour " + data.id_demande);
       }
     }
   } catch (err) {
     Logger.log("Erreur suppression Google Calendar dans deleteRow: " + err.message);
   }
   
-  sheet.deleteRow(rowIndex);
-  return ok({ success: true });
+  sheet.deleteRow(found.rowIndex);
+  return ok({ id_demande: idDemande });
 }
 
 // ── Helpers ─────────────────────────────────────────────────────
+
+function canonicalKey(header) {
+  return KEY_MAP[String(header || '').trim()] || String(header || '').trim();
+}
+
+function sanitizeFields(rawFields, isUpdate) {
+  const raw = normalizeRowKeys(rawFields || {});
+  const clean = {};
+  Object.keys(raw).forEach(function(key) {
+    if (key === "id_demande") return;
+    if (ALLOWED_FIELDS.indexOf(key) === -1) return;
+    clean[key] = raw[key];
+  });
+
+  if (clean.statut !== undefined && ALLOWED_STATUSES.indexOf(String(clean.statut)) === -1) {
+    throw new Error("Statut invalide : " + clean.statut);
+  }
+
+  ["url_email_origine", "url_dossier_drive"].forEach(function(key) {
+    if (clean[key] !== undefined && !isSafeBusinessUrl(clean[key])) {
+      throw new Error("URL invalide : " + key);
+    }
+  });
+
+  return clean;
+}
+
+function isSafeBusinessUrl(value) {
+  const s = String(value || '').trim();
+  if (!s || s === '—') return true;
+  return s.indexOf("https://mail.google.com/") === 0 || s.indexOf("https://drive.google.com/") === 0;
+}
+
+function escapeHtml(value) {
+  return String(value === null || value === undefined ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function findRowByDemandId(sheet, headers, idDemande) {
+  const idCol = headers.findIndex(function(h) { return canonicalKey(h) === "id_demande"; }) + 1;
+  if (idCol <= 0) throw new Error("Colonne id_demande introuvable");
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return null;
+
+  const target = String(idDemande || '').trim();
+  const values = sheet.getRange(2, idCol, lastRow - 1, 1).getValues();
+  for (var i = 0; i < values.length; i++) {
+    if (String(values[i][0] || '').trim() === target) {
+      return { rowIndex: i + 2 };
+    }
+  }
+  return null;
+}
 
 function serialise(val) {
   if (val instanceof Date) {
@@ -180,13 +337,13 @@ function serialise(val) {
 
 function ok(data) {
   return ContentService
-    .createTextOutput(JSON.stringify(data))
+    .createTextOutput(JSON.stringify({ ok: true, data: data }))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
 function ko(msg) {
   return ContentService
-    .createTextOutput(JSON.stringify({ error: msg }))
+    .createTextOutput(JSON.stringify({ ok: false, error: msg }))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
@@ -238,6 +395,7 @@ function getMissingFields(e) {
 function sendNewDemandEmail(r) {
   const recipient = "demande.chezpapimaisongourmande@gmail.com";
   const subject = `[Chez Papi] Nouvelle demande : ${r.nom_client || 'Sans nom'}`;
+  const clientName = escapeHtml(r.nom_client || 'Sans nom');
   
   const missing = getMissingFields(r);
   const isIncomplete = missing.length > 0;
@@ -257,43 +415,43 @@ function sendNewDemandEmail(r) {
     <div style="background-color: #fff; border: 1px solid #eadecc; border-radius: 6px; padding: 16px; margin-top: 16px; ${borderStyle}">
       ${warningText}
       <h3 style="margin: 0 0 12px 0; color: #5C3D1E; font-size: 18px;">
-        ${r.nom_client || 'Sans nom'}
+        ${clientName}
       </h3>
       <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #5C3D1E;">
         <tr>
           <td style="width: 35%; padding: 4px 0; color: #8A7260;"><strong>Type d'événement:</strong></td>
-          <td style="padding: 4px 0;">${r.type_evenement || '—'}</td>
+          <td style="padding: 4px 0;">${escapeHtml(r.type_evenement || '—')}</td>
         </tr>
         <tr>
           <td style="padding: 4px 0; color: #8A7260;"><strong>Date de l'événement:</strong></td>
-          <td style="padding: 4px 0;">${r.date_evenement || '—'}</td>
+          <td style="padding: 4px 0;">${escapeHtml(r.date_evenement || '—')}</td>
         </tr>
         <tr>
           <td style="padding: 4px 0; color: #8A7260;"><strong>Nombre de convives:</strong></td>
-          <td style="padding: 4px 0;">${r.nb_convives || '—'}</td>
+          <td style="padding: 4px 0;">${escapeHtml(r.nb_convives || '—')}</td>
         </tr>
         <tr>
           <td style="padding: 4px 0; color: #8A7260;"><strong>Lieu:</strong></td>
-          <td style="padding: 4px 0;">${r.lieu_prestation || '—'}</td>
+          <td style="padding: 4px 0;">${escapeHtml(r.lieu_prestation || '—')}</td>
         </tr>
         <tr>
           <td style="padding: 4px 0; color: #8A7260;"><strong>Téléphone:</strong></td>
-          <td style="padding: 4px 0;">${normalizeFrenchPhone(r.telephone) || '—'}</td>
+          <td style="padding: 4px 0;">${escapeHtml(normalizeFrenchPhone(r.telephone) || '—')}</td>
         </tr>
         <tr>
           <td style="padding: 4px 0; color: #8A7260;"><strong>Email:</strong></td>
-          <td style="padding: 4px 0;">${r.email_client || '—'}</td>
+          <td style="padding: 4px 0;">${escapeHtml(r.email_client || '—')}</td>
         </tr>
         <tr>
           <td style="padding: 4px 0; color: #8A7260;"><strong>Budget:</strong></td>
-          <td style="padding: 4px 0;">${r.budget_estime || '—'}</td>
+          <td style="padding: 4px 0;">${escapeHtml(r.budget_estime || '—')}</td>
         </tr>
         <tr>
           <td style="padding: 4px 0; color: #8A7260;"><strong>Canal:</strong></td>
-          <td style="padding: 4px 0;">${r.canal || '—'}</td>
+          <td style="padding: 4px 0;">${escapeHtml(r.canal || '—')}</td>
         </tr>
       </table>
-      ${r.message_original ? `<div style="background-color: #fdf6f0; border-radius: 4px; padding: 12px; margin-top: 12px; font-size: 13px; color: #5C3D1E; white-space: pre-wrap;"><strong>Message original:</strong><br/>${r.message_original}</div>` : ''}
+      ${r.message_original ? `<div style="background-color: #fdf6f0; border-radius: 4px; padding: 12px; margin-top: 12px; font-size: 13px; color: #5C3D1E; white-space: pre-wrap;"><strong>Message original:</strong><br/>${escapeHtml(r.message_original)}</div>` : ''}
       <div style="margin-top: 20px; text-align: center;">
         <a href="${FRONTEND_URL}?id=${encodeURIComponent(r.id_demande || r._row)}" target="_blank" style="display: inline-block; background-color: #5C3D1E; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 13px; box-shadow: 0 4px 6px rgba(92, 61, 30, 0.15);">
           Consulter / Modifier dans le Tableau de Bord
@@ -410,43 +568,43 @@ function sendSummaryEmail(rows, dateString) {
       html += `<div style="background-color: #fff; border: 1px solid #eadecc; border-radius: 6px; padding: 16px; margin-bottom: 16px; ${borderStyle}">
         ${warningText}
         <h3 style="margin: 0 0 8px 0; color: #5C3D1E; font-size: 16px;">
-          ${r.nom_client || 'Sans nom'}
+          ${escapeHtml(r.nom_client || 'Sans nom')}
         </h3>
         <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #5C3D1E;">
           <tr>
             <td style="width: 35%; padding: 4px 0; color: #8A7260;"><strong>Type d'événement:</strong></td>
-            <td style="padding: 4px 0;">${r.type_evenement || '—'}</td>
+            <td style="padding: 4px 0;">${escapeHtml(r.type_evenement || '—')}</td>
           </tr>
           <tr>
             <td style="padding: 4px 0; color: #8A7260;"><strong>Date de l'événement:</strong></td>
-            <td style="padding: 4px 0;">${r.date_evenement || '—'}</td>
+            <td style="padding: 4px 0;">${escapeHtml(r.date_evenement || '—')}</td>
           </tr>
           <tr>
             <td style="padding: 4px 0; color: #8A7260;"><strong>Nombre de convives:</strong></td>
-            <td style="padding: 4px 0;">${r.nb_convives || '—'}</td>
+            <td style="padding: 4px 0;">${escapeHtml(r.nb_convives || '—')}</td>
           </tr>
           <tr>
             <td style="padding: 4px 0; color: #8A7260;"><strong>Lieu:</strong></td>
-            <td style="padding: 4px 0;">${r.lieu_prestation || '—'}</td>
+            <td style="padding: 4px 0;">${escapeHtml(r.lieu_prestation || '—')}</td>
           </tr>
           <tr>
             <td style="padding: 4px 0; color: #8A7260;"><strong>Téléphone:</strong></td>
-            <td style="padding: 4px 0;">${normalizeFrenchPhone(r.telephone) || '—'}</td>
+            <td style="padding: 4px 0;">${escapeHtml(normalizeFrenchPhone(r.telephone) || '—')}</td>
           </tr>
           <tr>
             <td style="padding: 4px 0; color: #8A7260;"><strong>Email:</strong></td>
-            <td style="padding: 4px 0;">${r.email_client || '—'}</td>
+            <td style="padding: 4px 0;">${escapeHtml(r.email_client || '—')}</td>
           </tr>
           <tr>
             <td style="padding: 4px 0; color: #8A7260;"><strong>Budget:</strong></td>
-            <td style="padding: 4px 0;">${r.budget_estime || '—'}</td>
+            <td style="padding: 4px 0;">${escapeHtml(r.budget_estime || '—')}</td>
           </tr>
           <tr>
             <td style="padding: 4px 0; color: #8A7260;"><strong>Canal:</strong></td>
-            <td style="padding: 4px 0;">${r.canal || '—'}</td>
+            <td style="padding: 4px 0;">${escapeHtml(r.canal || '—')}</td>
           </tr>
         </table>
-        ${r.message_original ? `<div style="background-color: #fdf6f0; border-radius: 4px; padding: 10px; margin-top: 10px; font-size: 12px; color: #5C3D1E; white-space: pre-wrap;"><strong>Message original:</strong><br/>${r.message_original}</div>` : ''}
+        ${r.message_original ? `<div style="background-color: #fdf6f0; border-radius: 4px; padding: 10px; margin-top: 10px; font-size: 12px; color: #5C3D1E; white-space: pre-wrap;"><strong>Message original:</strong><br/>${escapeHtml(r.message_original)}</div>` : ''}
         <div style="margin-top: 14px; text-align: right;">
           <a href="${FRONTEND_URL}?id=${encodeURIComponent(r.id_demande || r._row)}" target="_blank" style="display: inline-block; background-color: #5C3D1E; color: #fff; padding: 6px 14px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 12px; box-shadow: 0 2px 4px rgba(92, 61, 30, 0.12);">
             Consulter / Modifier
@@ -484,7 +642,7 @@ function setupDailyTrigger() {
 }
 
 function generateUniqueDemandId(sheet, headers) {
-  const idColIndex = headers.indexOf('id_demande') + 1;
+  const idColIndex = headers.findIndex(function(h) { return canonicalKey(h) === 'id_demande'; }) + 1;
   if (idColIndex <= 0) {
     throw new Error("Colonne id_demande introuvable");
   }
@@ -572,46 +730,11 @@ function findCalendarEvent(calendar, idDemande) {
 // ── Normalise les clés d'un objet rowData quel que soit le format des en-têtes ──
 // Gère aussi bien {"ID Demande": "CP-.."} que {"id_demande": "CP-.."}
 function normalizeRowKeys(rawData) {
-  // Mapping : nom de colonne dans le sheet → clé snake_case attendue
-  var KEY_MAP = {
-    'id_demande': 'id_demande',
-    'ID Demande': 'id_demande',
-    'id demande': 'id_demande',
-    'statut': 'statut',
-    'Statut': 'statut',
-    'nom_client': 'nom_client',
-    'Nom Client': 'nom_client',
-    'Client': 'nom_client',
-    'date_evenement': 'date_evenement',
-    'Date Evenement': 'date_evenement',
-    'Date Événement': 'date_evenement',
-    'type_evenement': 'type_evenement',
-    'Type': 'type_evenement',
-    'Type Evenement': 'type_evenement',
-    'Type Événement': 'type_evenement',
-    'lieu_prestation': 'lieu_prestation',
-    'Lieu': 'lieu_prestation',
-    'Lieu Prestation': 'lieu_prestation',
-    'nb_convives': 'nb_convives',
-    'Convives': 'nb_convives',
-    'Nb Convives': 'nb_convives',
-    'budget_estime': 'budget_estime',
-    'Budget': 'budget_estime',
-    'Budget Estime': 'budget_estime',
-    'notes': 'notes',
-    'Notes': 'notes',
-    'telephone': 'telephone',
-    'Telephone': 'telephone',
-    'Téléphone': 'telephone',
-    'email_client': 'email_client',
-    'Email': 'email_client',
-    'Email Client': 'email_client',
-  };
   var normalized = {};
   var keys = Object.keys(rawData);
   for (var i = 0; i < keys.length; i++) {
     var k = keys[i];
-    var mapped = KEY_MAP[k] || k;
+    var mapped = canonicalKey(k);
     normalized[mapped] = rawData[k];
   }
   return normalized;

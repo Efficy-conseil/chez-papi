@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chez-papi-v2.11';
+const CACHE_NAME = 'chez-papi-v2.12';
 const ASSETS = [
   './',
   './index.html',
@@ -67,13 +67,21 @@ async function pollForNewEvents() {
   if (!creds?.url || !creds?.user) return;
 
   try {
-    const url = `${creds.url}?user=${encodeURIComponent(creds.user)}&pass=${encodeURIComponent(creds.pass)}`;
-    const res  = await fetch(url, { cache: 'no-store' });
+    const res  = await fetch(creds.url, {
+      method: 'POST',
+      cache: 'no-store',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'list',
+        auth: { user: creds.user, pass: creds.pass }
+      })
+    });
     const data = await res.json();
-    if (!data?.rows) return;
+    const rows = data?.ok === true ? data.data?.rows : data?.rows;
+    if (!rows) return;
 
     // Demandes au statut "Nouvelle demande" uniquement
-    const newLeads = data.rows.filter(r => {
+    const newLeads = rows.filter(r => {
       const s = String(r.statut || '').trim().toLowerCase();
       return s === 'nouvelle demande' || s === 'nouveau';
     });

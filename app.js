@@ -81,6 +81,29 @@ function escHtml(s) {
     .replace(/'/g, '&#39;');
 }
 
+function escAttr(s) {
+  return escHtml(s);
+}
+
+function safeText(value, fallback = '—') {
+  const s = value === null || value === undefined || value === '' ? fallback : value;
+  return escHtml(s);
+}
+
+function safeUrl(url, allowedPrefixes = ['https://mail.google.com/', 'https://drive.google.com/']) {
+  const s = String(url || '').trim();
+  if (!s || s === '—') return '';
+  return allowedPrefixes.some(prefix => s.startsWith(prefix)) ? s : '';
+}
+
+function eventId(e) {
+  return String(e?.id_demande || '').trim();
+}
+
+function eventIdArg(e) {
+  return JSON.stringify(eventId(e));
+}
+
 // Convertit n'importe quelle date (ISO UTC ou YYYY-MM-DD) en minuit heure locale
 function parseLocalDate(ds) {
   if (!ds) return null;
@@ -165,9 +188,10 @@ function generateStatusSelectHtml(e, extraClass = '') {
     `<option value="${s}"${s === e.statut ? ' selected' : ''}>${STATUS_LABEL[s] || s}</option>`
   ).join('');
   const pillClass = STATUS_PILL[e.statut] || 'pill-gray';
+  const id = eventIdArg(e);
   
   // Style pill : police 10px, border-radius 4px, background et color natifs via la classe pill-*
-  return `<select class="pill ${pillClass} ${extraClass}" style="border:none; outline:none; cursor:pointer; font-family:inherit; font-size:10px; font-weight:700; border-radius:4px; padding:2px 4px; appearance:auto; width:auto; min-width:125px; display:inline-block;" onchange="updateEventStatus(this,${e._row})" onclick="event.stopPropagation()">
+  return `<select class="pill ${pillClass} ${extraClass}" style="border:none; outline:none; cursor:pointer; font-family:inherit; font-size:10px; font-weight:700; border-radius:4px; padding:2px 4px; appearance:auto; width:auto; min-width:125px; display:inline-block;" onchange="updateEventStatus(this,${id})" onclick="event.stopPropagation()">
     ${options}
   </select>`;
 }
@@ -430,97 +454,56 @@ async function registerPeriodicSync() {
 // ── SHEETS API ──
 
 const SheetsAPI = {
-  async load() {
-    if (!CONFIG.SHEETS_URL) return null;
-    const user = localStorage.getItem('cp_user') || '';
-    const pass = localStorage.getItem('cp_pass') || '';
-    const url = CONFIG.SHEETS_URL + '?action=getAll&user=' + encodeURIComponent(user) + '&pass=' + encodeURIComponent(pass);
-    const res = await fetch(url, { redirect: 'follow' });
+  auth() {
+    return {
+      user: localStorage.getItem('cp_user') || '',
+      pass: localStorage.getItem('cp_pass') || ''
+    };
+  },
+  async request(payload) {
+    const res = await fetch(CONFIG.SHEETS_URL, {
+      method: 'POST',
+      redirect: 'follow',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ ...payload, auth: this.auth() }),
+    });
     const text = await res.text();
     if (text && text.indexOf('Authorization is required') !== -1) {
       throw new Error('Authorization required');
     }
+    let parsed;
     try {
-      const parsed = JSON.parse(text);
-      if (parsed.error === 'Non autorisé') {
-        logout();
-        throw new Error('Identifiants invalides');
-      }
-      return parsed;
-    } catch (e) {
-      if (e.message === 'Identifiants invalides' || e.message === 'Authorization required') throw e;
+      parsed = JSON.parse(text);
+    } catch {
       console.error('SheetsAPI: réponse non-JSON :', text.slice(0, 300));
       throw new Error('Réponse invalide du serveur (non-JSON)');
     }
+    if (parsed?.error === 'Non autorisé' || (parsed?.ok === false && parsed?.error === 'Non autorisé')) {
+      throw new Error('Identifiants invalides');
+    }
+    if (parsed?.ok === false) {
+      return { success: false, error: parsed.error || 'Erreur inconnue' };
+    }
+    if (parsed?.ok === true) {
+      return { success: true, ...(parsed.data || {}) };
+    }
+    return parsed;
+  },
+  async load() {
+    if (!CONFIG.SHEETS_URL) return null;
+    return this.request({ action: 'list' });
   },
   async add(row) {
     if (!CONFIG.SHEETS_URL) return { error: 'Non configuré' };
-    const user = localStorage.getItem('cp_user') || '';
-    const pass = localStorage.getItem('cp_pass') || '';
-    const res = await fetch(CONFIG.SHEETS_URL, {
-      method: 'POST', redirect: 'follow',
-      body: JSON.stringify({ action: 'add', row, user, pass }),
-    });
-    const text = await res.text();
-    if (text && text.indexOf('Authorization is required') !== -1) {
-      throw new Error('Authorization required');
-    }
-    try {
-      const parsed = JSON.parse(text);
-      if (parsed.error === 'Non autorisé') {
-        logout();
-        return { error: 'Session expirée ou non autorisée' };
-      }
-      return parsed;
-    } catch {
-      throw new Error('Réponse invalide : ' + text.slice(0, 100));
-    }
+    return this.request({ action: 'add', row });
   },
-  async update(rowIndex, fields) {
+  async update(id_demande, fields) {
     if (!CONFIG.SHEETS_URL) return { error: 'Non configuré' };
-    const user = localStorage.getItem('cp_user') || '';
-    const pass = localStorage.getItem('cp_pass') || '';
-    const res = await fetch(CONFIG.SHEETS_URL, {
-      method: 'POST', redirect: 'follow',
-      body: JSON.stringify({ action: 'update', rowIndex, fields, user, pass }),
-    });
-    const text = await res.text();
-    if (text && text.indexOf('Authorization is required') !== -1) {
-      throw new Error('Authorization required');
-    }
-    try {
-      const parsed = JSON.parse(text);
-      if (parsed.error === 'Non autorisé') {
-        logout();
-        return { error: 'Session expirée ou non autorisée' };
-      }
-      return parsed;
-    } catch {
-      throw new Error('Réponse invalide : ' + text.slice(0, 100));
-    }
+    return this.request({ action: 'update', id_demande, fields });
   },
-  async remove(rowIndex) {
+  async remove(id_demande) {
     if (!CONFIG.SHEETS_URL) return { error: 'Non configuré' };
-    const user = localStorage.getItem('cp_user') || '';
-    const pass = localStorage.getItem('cp_pass') || '';
-    const res = await fetch(CONFIG.SHEETS_URL, {
-      method: 'POST', redirect: 'follow',
-      body: JSON.stringify({ action: 'delete', rowIndex, user, pass }),
-    });
-    const text = await res.text();
-    if (text && text.indexOf('Authorization is required') !== -1) {
-      throw new Error('Authorization required');
-    }
-    try {
-      const parsed = JSON.parse(text);
-      if (parsed.error === 'Non autorisé') {
-        logout();
-        return { error: 'Session expirée ou non autorisée' };
-      }
-      return parsed;
-    } catch {
-      throw new Error('Réponse invalide : ' + text.slice(0, 100));
-    }
+    return this.request({ action: 'delete', id_demande });
   }
 };
 
@@ -745,9 +728,9 @@ function renderDashboard() {
         }
         const warningBadge = hasMissingInfo(e) ? ` <span class="pill pill-red" style="font-size:8px; font-weight:700; background:rgba(192,69,58,.15); color:var(--red-soft); margin-left:6px; flex-shrink:0; vertical-align:middle;">⚠️ Infos manquantes</span>` : '';
         return `<tr style="cursor:pointer" onclick="openEventModal(${e._row})">
-          <td><strong>${formatDateFR(e.date_evenement) || '—'}</strong></td>
-          <td>${e.nom_client || '—'}${warningBadge}</td>
-          <td>${formatBudget(e.budget_estime)}</td>
+          <td><strong>${safeText(formatDateFR(e.date_evenement) || '—')}</strong></td>
+          <td>${safeText(e.nom_client)}${warningBadge}</td>
+          <td>${safeText(formatBudget(e.budget_estime))}</td>
           <td>${ageBadge}</td>
           <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e)}</td>
         </tr>`;
@@ -792,9 +775,9 @@ function renderDashboard() {
 
         const warningBadge = hasMissingInfo(e) ? ` <span class="pill pill-red" style="font-size:8px; font-weight:700; background:rgba(192,69,58,.15); color:var(--red-soft); margin-left:6px; flex-shrink:0; vertical-align:middle;">⚠️ Infos manquantes</span>` : '';
         return `<tr class="${urgClass}" style="cursor:pointer" onclick="openEventModal(${e._row})">
-          <td><strong>${formatDateFR(e.date_evenement) || '—'}</strong></td>
-          <td>${e.nom_client || '—'}${warningBadge}</td>
-          <td>${formatBudget(e.budget_estime)}</td>
+          <td><strong>${safeText(formatDateFR(e.date_evenement) || '—')}</strong></td>
+          <td>${safeText(e.nom_client)}${warningBadge}</td>
+          <td>${safeText(formatBudget(e.budget_estime))}</td>
           <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e)}</td>
         </tr>`;
       }).join('');
@@ -816,9 +799,9 @@ function renderDashboard() {
       actEl.innerHTML = thead + prestationsHome.map(e => {
         const warningBadge = hasMissingInfo(e) ? ` <span class="pill pill-red" style="font-size:8px; font-weight:700; background:rgba(192,69,58,.15); color:var(--red-soft); margin-left:6px; flex-shrink:0; vertical-align:middle;">⚠️ Infos manquantes</span>` : '';
         return `<tr style="cursor:pointer" onclick="openEventModal(${e._row})">
-          <td><strong>${formatDateFR(e.date_evenement)}</strong></td>
-          <td>${e.nom_client || '—'}${warningBadge}</td>
-          <td>${formatBudget(e.budget_estime)}</td>
+          <td><strong>${safeText(formatDateFR(e.date_evenement))}</strong></td>
+          <td>${safeText(e.nom_client)}${warningBadge}</td>
+          <td>${safeText(formatBudget(e.budget_estime))}</td>
           <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e)}</td>
         </tr>`;
       }).join('') + '</tbody></table></div>';
@@ -916,8 +899,10 @@ function renderPipeline() {
       // Liens e-mail et drive sous forme d'icônes
       let linksLine = '';
       const links = [];
-      if (e.url_email_origine) links.push(`<a href="${e.url_email_origine}" target="_blank" title="Email d'origine" style="text-decoration:none; margin-right:6px;">✉️</a>`);
-      if (e.url_dossier_drive) links.push(`<a href="${e.url_dossier_drive}" target="_blank" title="Dossier Drive" style="text-decoration:none;">📂</a>`);
+      const emailUrl = safeUrl(e.url_email_origine, ['https://mail.google.com/']);
+      const driveUrl = safeUrl(e.url_dossier_drive, ['https://drive.google.com/']);
+      if (emailUrl) links.push(`<a href="${escAttr(emailUrl)}" target="_blank" rel="noopener noreferrer" title="Email d'origine" style="text-decoration:none; margin-right:6px;">✉️</a>`);
+      if (driveUrl) links.push(`<a href="${escAttr(driveUrl)}" target="_blank" rel="noopener noreferrer" title="Dossier Drive" style="text-decoration:none;">📂</a>`);
       if (links.length) {
         linksLine = `<div style="margin-top: 4px; font-size:14px;">${links.join(' ')}</div>`;
       }
@@ -930,15 +915,15 @@ function renderPipeline() {
       return `
       <div class="pipe-card" onclick="openEventModal(${e._row})">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
-          <div class="pipe-client" style="margin-bottom:0;">${e.nom_client || '—'}</div>
+          <div class="pipe-client" style="margin-bottom:0;">${safeText(e.nom_client)}</div>
           ${warningBadge}
         </div>
-        <div class="pipe-event">${e.type_evenement || 'Autre'} \xb7 ${e.nb_convives || '—'} pers.${e.date_evenement ? ' \xb7 ' + formatDateFR(e.date_evenement) : ''}</div>
+        <div class="pipe-event">${safeText(e.type_evenement || 'Autre')} \xb7 ${safeText(e.nb_convives)} pers.${e.date_evenement ? ' \xb7 ' + safeText(formatDateFR(e.date_evenement)) : ''}</div>
         ${contactLine ? `<div class="pipe-contact" onclick="event.stopPropagation()">${contactLine}</div>` : ''}
         ${linksLine ? `<div onclick="event.stopPropagation()">${linksLine}</div>` : ''}
         <div class="pipe-footer" style="padding-top: 8px;">
           <div>
-            <span class="pipe-amount" style="font-size:12px">${formatBudget(e.budget_estime)}</span>
+            <span class="pipe-amount" style="font-size:12px">${safeText(formatBudget(e.budget_estime))}</span>
             ${ageBadge}
           </div>
           ${generateStatusSelectHtml(e, 'pipe-status-sel')}
@@ -953,13 +938,13 @@ function renderPipeline() {
   }).join('');
 }
 
-async function updateEventStatus(selectEl, rowIndex) {
+async function updateEventStatus(selectEl, idDemande) {
   const newStatus = selectEl.value;
   selectEl.disabled = true;
   try {
-    const result = await SheetsAPI.update(rowIndex, { 'statut': newStatus });
+    const result = await SheetsAPI.update(idDemande, { 'statut': newStatus });
     if (result.success) {
-      const row = appData.find(e => e._row === rowIndex);
+      const row = appData.find(e => eventId(e) === idDemande);
       if (row) row.statut = newStatus;
       renderAll();
       showNotification('Statut mis à jour', 'success');
@@ -1014,16 +999,18 @@ function renderClients() {
 
     let linksLine = '';
     const links = [];
-    if (e.url_email_origine) links.push(`<a href="${e.url_email_origine}" target="_blank" style="color:var(--gold);text-decoration:underline;margin-right:12px;">✉️ Ouvrir l'e-mail</a>`);
-    if (e.url_dossier_drive) links.push(`<a href="${e.url_dossier_drive}" target="_blank" style="color:var(--gold);text-decoration:underline;">📂 Ouvrir le dossier Drive</a>`);
+    const emailUrl = safeUrl(e.url_email_origine, ['https://mail.google.com/']);
+    const driveUrl = safeUrl(e.url_dossier_drive, ['https://drive.google.com/']);
+    if (emailUrl) links.push(`<a href="${escAttr(emailUrl)}" target="_blank" rel="noopener noreferrer" style="color:var(--gold);text-decoration:underline;margin-right:12px;">✉️ Ouvrir l'e-mail</a>`);
+    if (driveUrl) links.push(`<a href="${escAttr(driveUrl)}" target="_blank" rel="noopener noreferrer" style="color:var(--gold);text-decoration:underline;">📂 Ouvrir le dossier Drive</a>`);
     if (links.length) {
       linksLine = `<div style="margin-top: 6px; font-size:12px;">${links.join('')}</div>`;
     }
 
     return `<div class="prestation-card">
       <div class="pc-header" onclick="openEventModal(${e._row})" style="cursor:pointer">
-        <div class="pc-line1"><strong>${e.nom_client || '—'}</strong> · ${e.type_evenement || 'Autre'} · <em>${formatDateFR(e.date_evenement)}</em></div>
-        <div class="pc-line2">${formatBudget(e.budget_estime)} &nbsp;${pill}</div>
+        <div class="pc-line1"><strong>${safeText(e.nom_client)}</strong> · ${safeText(e.type_evenement || 'Autre')} · <em>${safeText(formatDateFR(e.date_evenement))}</em></div>
+        <div class="pc-line2">${safeText(formatBudget(e.budget_estime))} &nbsp;${pill}</div>
         ${contactLine ? `<div class="pc-contact">${contactLine}</div>` : ''}
         ${linksLine ? `<div onclick="event.stopPropagation()">${linksLine}</div>` : ''}
       </div>
@@ -1174,16 +1161,16 @@ function renderHistorique() {
     const notes  = String(e.notes || '');
     const notesTrunc = notes.length > 40 ? notes.slice(0, 40) + '…' : notes;
     return `<tr style="cursor:pointer" onclick="openEventModal(${e._row})">
-      <td><strong>${formatDateFR(e.date_evenement)}</strong></td>
-      <td>${e.nom_client || '—'}</td>
-      <td>${e.type_evenement || '—'}</td>
-      <td>${e.lieu_prestation || '—'}</td>
-      <td>${e.nb_convives || '—'}</td>
-      <td>${formatBudget(e.budget_estime)}</td>
+      <td><strong>${safeText(formatDateFR(e.date_evenement))}</strong></td>
+      <td>${safeText(e.nom_client)}</td>
+      <td>${safeText(e.type_evenement)}</td>
+      <td>${safeText(e.lieu_prestation)}</td>
+      <td>${safeText(e.nb_convives)}</td>
+      <td>${safeText(formatBudget(e.budget_estime))}</td>
       <td>${generateStatusSelectHtml(e)}</td>
       <td>${e.email_client ? formatContact(e.email_client) : '—'}</td>
       <td>${e.telephone ? formatContact(e.telephone) : '—'}</td>
-      <td title="${notes}">${notesTrunc || '—'}</td>
+      <td title="${escAttr(notes)}">${safeText(notesTrunc)}</td>
     </tr>`;
   }).join('');
 }
@@ -1283,14 +1270,14 @@ function renderPieChart(rows) {
     } else {
       paths += `<path d="M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${largeArc},1 ${x2},${y2} Z"
         fill="${color}" stroke="#fcfaf7" stroke-width="2">
-        <title>${canal} : ${count} (${Math.round(pct * 100)}%)</title>
+        <title>${safeText(canal)} : ${count} (${Math.round(pct * 100)}%)</title>
       </path>`;
     }
 
     legendHtml += `
       <div class="pie-legend-item">
         <span class="pie-legend-dot" style="background:${color}"></span>
-        <span>${canal}</span>
+        <span>${safeText(canal)}</span>
         <span class="pie-legend-pct">${Math.round(pct * 100)}%</span>
         <span style="color:var(--muted);font-size:.72rem">(${count})</span>
       </div>`;
@@ -1620,9 +1607,10 @@ document.getElementById('event-form').addEventListener('submit', async e => {
   try {
     let result;
     if (editingRow) {
-      result = await SheetsAPI.update(editingRow, data);
+      const row = appData.find(r => r._row === editingRow);
+      if (!row || !eventId(row)) throw new Error('Demande introuvable');
+      result = await SheetsAPI.update(eventId(row), data);
       if (result.success) {
-        const row = appData.find(r => r._row === editingRow);
         if (row) {
           Object.assign(row, data);
           row.derniere_modification = new Date().toISOString();
@@ -1669,6 +1657,11 @@ document.getElementById('event-form').addEventListener('submit', async e => {
 
 async function deleteCurrentEvent() {
   if (!editingRow) return;
+  const row = appData.find(r => r._row === editingRow);
+  if (!row || !eventId(row)) {
+    showNotification('Demande introuvable', 'error');
+    return;
+  }
   if (!confirm("Voulez-vous vraiment supprimer cet événement ? Cette action est irréversible.")) return;
 
   const btnDel = document.getElementById('btn-delete-view-modal') || document.getElementById('btn-delete-event');
@@ -1678,10 +1671,9 @@ async function deleteCurrentEvent() {
   }
 
   try {
-    const result = await SheetsAPI.remove(editingRow);
+    const result = await SheetsAPI.remove(eventId(row));
     if (result.success) {
       // Recharger depuis le sheet pour que les _row soient cohérents après suppression
-      if (typeof closeEventModal === 'function') closeEventModal();
       if (typeof closeEventModal === 'function') closeEventModal();
       showNotification('Événement supprimé', 'success');
       broadcastSync(); // Notifier les autres onglets
@@ -1859,13 +1851,13 @@ function renderAgenda() {
       const budget   = formatBudget(e.budget_estime);
       const statutLabel = STATUS_LABEL[e.statut] || e.statut;
       return `<tr style="cursor:pointer" onclick="openEventModal(${e._row})">
-        <td class="ag-date" title="${dateStr}">${dateStr}</td>
-        <td title="${client}">${client}</td>
-        <td ${isEntreprise ? 'class="ag-entreprise"' : ''} title="${typeVal}">${typeVal}</td>
-        <td title="${lieu}">${lieu}</td>
-        <td title="${convives}">${convives}</td>
-        <td title="${budget}">${budget}</td>
-        <td class="ag-statut" title="${statutLabel}">${generateStatusSelectHtml(e)}</td>
+        <td class="ag-date" title="${escAttr(dateStr)}">${safeText(dateStr)}</td>
+        <td title="${escAttr(client)}">${safeText(client)}</td>
+        <td ${isEntreprise ? 'class="ag-entreprise"' : ''} title="${escAttr(typeVal)}">${safeText(typeVal)}</td>
+        <td title="${escAttr(lieu)}">${safeText(lieu)}</td>
+        <td title="${escAttr(convives)}">${safeText(convives)}</td>
+        <td title="${escAttr(budget)}">${safeText(budget)}</td>
+        <td class="ag-statut" title="${escAttr(statutLabel)}">${generateStatusSelectHtml(e)}</td>
       </tr>`;
     }).join('') +
     '</tbody></table></div>';
@@ -1899,9 +1891,9 @@ function showKpiModal(type) {
     thead.innerHTML = '<tr><th style="width:32%">Client</th><th style="width:22%">Date</th><th style="width:22%">Montant</th><th style="width:24%">Statut</th></tr>';
     tbody.innerHTML = evts.length ? evts.map(e => {
       return `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})">
-        <td><strong>${e.nom_client || '—'}</strong></td>
-        <td>${formatDateFR(e.date_evenement) || 'À dét.'}</td>
-        <td>${formatBudget(e.budget_estime)}</td>
+        <td><strong>${safeText(e.nom_client)}</strong></td>
+        <td>${safeText(formatDateFR(e.date_evenement) || 'À dét.')}</td>
+        <td>${safeText(formatBudget(e.budget_estime))}</td>
         <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e)}</td>
       </tr>`;
     }).join('') : '<tr><td colspan="4" class="tbl-empty">Aucune nouvelle demande</td></tr>';
@@ -1917,11 +1909,12 @@ function showKpiModal(type) {
     
     thead.innerHTML = '<tr><th style="width:18%">Date</th><th style="width:25%">Client</th><th style="width:20%">Type</th><th style="width:18%">Téléphone</th><th style="width:19%">Statut</th></tr>';
     tbody.innerHTML = evts.length ? evts.map(e => {
-      const telHtml = e.telephone ? `<a href="tel:${e.telephone}" style="color:var(--gold);text-decoration:none;" onclick="event.stopPropagation()">${formatContact(e.telephone)}</a>` : '—';
+      const tel = normalizeFrenchPhone(e.telephone || '').replace(/\s/g, '');
+      const telHtml = e.telephone && /^[\d+]+$/.test(tel) ? `<a href="tel:${encodeURIComponent(tel)}" style="color:var(--gold);text-decoration:none;" onclick="event.stopPropagation()">${formatContact(e.telephone)}</a>` : '—';
       return `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})">
-        <td>${formatDateFR(e.date_evenement) || 'À dét.'}</td>
-        <td><strong>${e.nom_client || '—'}</strong></td>
-        <td>${e.type_evenement || '—'}</td>
+        <td>${safeText(formatDateFR(e.date_evenement) || 'À dét.')}</td>
+        <td><strong>${safeText(e.nom_client)}</strong></td>
+        <td>${safeText(e.type_evenement)}</td>
         <td>${telHtml}</td>
         <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e)}</td>
       </tr>`;
@@ -1939,9 +1932,9 @@ function showKpiModal(type) {
     thead.innerHTML = '<tr><th style="width:20%">Date prévue</th><th style="width:30%">Client</th><th style="width:20%">Montant</th><th style="width:30%">Statut</th></tr>';
     tbody.innerHTML = evts.length ? evts.map(e => {
       return `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})">
-        <td>${formatDateFR(e.date_evenement) || 'À dét.'}</td>
-        <td><strong>${e.nom_client || '—'}</strong></td>
-        <td>${formatBudget(e.budget_estime)}</td>
+        <td>${safeText(formatDateFR(e.date_evenement) || 'À dét.')}</td>
+        <td><strong>${safeText(e.nom_client)}</strong></td>
+        <td>${safeText(formatBudget(e.budget_estime))}</td>
         <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e)}</td>
       </tr>`;
     }).join('') : '<tr><td colspan="4" class="tbl-empty">Aucun devis à préparer</td></tr>';
@@ -1959,9 +1952,9 @@ function showKpiModal(type) {
     thead.innerHTML = '<tr><th style="width:22%">Date</th><th style="width:30%">Client</th><th style="width:20%">Type</th><th style="width:28%">Statut</th></tr>';
     tbody.innerHTML = evts.length ? evts.map(e => {
       return `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})">
-        <td>${formatDateFR(e.date_evenement) || 'À dét.'}</td>
-        <td><strong>${e.nom_client || '—'}</strong></td>
-        <td>${e.type_evenement || '—'}</td>
+        <td>${safeText(formatDateFR(e.date_evenement) || 'À dét.')}</td>
+        <td><strong>${safeText(e.nom_client)}</strong></td>
+        <td>${safeText(e.type_evenement)}</td>
         <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e)}</td>
       </tr>`;
     }).join('') : '<tr><td colspan="4" class="tbl-empty">Aucun événement signé</td></tr>';
@@ -2168,8 +2161,12 @@ window.ChezPapi = {
     try {
       const user = localStorage.getItem('cp_user') || '';
       const pass = localStorage.getItem('cp_pass') || '';
-      const url = CONFIG.SHEETS_URL + '?action=getAll&user=' + encodeURIComponent(user) + '&pass=' + encodeURIComponent(pass);
-      const res = await fetch(url, { redirect: 'follow' });
+      const res = await fetch(CONFIG.SHEETS_URL, {
+        method: 'POST',
+        redirect: 'follow',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'list', auth: { user, pass } })
+      });
       const text = await res.text();
       console.log('Status :', res.status);
       console.log('Réponse (200 premiers chars) :', text.slice(0, 200));
