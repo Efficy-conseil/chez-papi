@@ -113,9 +113,10 @@ function parseLocalDate(ds) {
     return new Date(Number(ymdMatch[1]), Number(ymdMatch[2]) - 1, Number(ymdMatch[3]));
   }
 
-  const dmyMatch = cleanDs.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  const dmyMatch = cleanDs.match(/(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})/);
   if (dmyMatch) {
-    return new Date(Number(dmyMatch[3]), Number(dmyMatch[2]) - 1, Number(dmyMatch[1]));
+    const year = dmyMatch[3].length === 2 ? 2000 + Number(dmyMatch[3]) : Number(dmyMatch[3]);
+    return new Date(year, Number(dmyMatch[2]) - 1, Number(dmyMatch[1]));
   }
 
   const d = new Date(cleanDs);
@@ -1685,9 +1686,12 @@ function checkDateConflict(dateValue) {
   if (!banner) return;
   if (!dateValue) { banner.style.display = 'none'; return; }
 
+  const targetKey = dateInputKey(dateValue);
+  if (!targetKey) { banner.style.display = 'none'; return; }
+
   const sameDateEvents = appData.filter(e => {
     if (editingRow && e._row === editingRow) return false;
-    return dateInputKey(e.date_evenement) === dateValue;
+    return dateInputKey(e.date_evenement) === targetKey;
   });
   const confirmedConflicts = sameDateEvents.filter(e => e.statut === 'Événement confirmé');
 
@@ -1721,6 +1725,16 @@ document.getElementById('event-form').addEventListener('change', e => {
       const banner = document.getElementById('date-conflict-banner');
       if (banner) banner.style.display = 'none';
     }
+  }
+});
+document.getElementById('event-form').addEventListener('input', e => {
+  if (e.target.name !== 'date_evenement') return;
+  const dateKey = dateInputKey(e.target.value);
+  if (dateKey) {
+    checkDateConflict(dateKey);
+  } else {
+    const banner = document.getElementById('date-conflict-banner');
+    if (banner) banner.style.display = 'none';
   }
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeEventModal(); });
