@@ -100,15 +100,24 @@ function eventId(e) {
   return String(e?.id_demande || '').trim();
 }
 
-// Convertit n'importe quelle date (ISO UTC ou YYYY-MM-DD) en minuit heure locale
+// Convertit n'importe quelle date (ISO, YYYY-MM-DD ou JJ/MM/AAAA) en minuit heure locale
 function parseLocalDate(ds) {
   if (!ds) return null;
   let cleanDs = String(ds).trim();
-  // Extrait la première date YYYY-MM-DD trouvée
-  const dateMatch = cleanDs.match(/\d{4}-\d{2}-\d{2}/);
-  if (dateMatch) {
-    cleanDs = dateMatch[0];
+  if (cleanDs.includes(' au ')) {
+    cleanDs = cleanDs.split(' au ')[0].trim();
   }
+
+  const ymdMatch = cleanDs.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (ymdMatch) {
+    return new Date(Number(ymdMatch[1]), Number(ymdMatch[2]) - 1, Number(ymdMatch[3]));
+  }
+
+  const dmyMatch = cleanDs.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (dmyMatch) {
+    return new Date(Number(dmyMatch[3]), Number(dmyMatch[2]) - 1, Number(dmyMatch[1]));
+  }
+
   const d = new Date(cleanDs);
   if (isNaN(d.getTime())) return null;
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -176,19 +185,48 @@ function formatBudget(val) {
 function formatDateFR(ds) {
   if (!ds) return '';
   try {
-    // Si c'est une plage comme "2026-06-30 au 2026-07-03", on formate les composants individuellement
+    // Si c'est une plage, on formate les composants individuellement.
     let cleanDs = String(ds).trim();
     if (cleanDs.includes(' au ')) {
       return cleanDs.split(' au ').map(part => formatDateFR(part)).join(' au ');
     }
     const d = parseLocalDate(cleanDs);
     if (!d) return cleanDs;
-    const currentYear = new Date().getFullYear();
-    const opts = { day: 'numeric', month: 'short' };
-    if (d.getFullYear() !== currentYear) opts.year = 'numeric';
-    return d.toLocaleDateString('fr-FR', opts);
+    return [
+      String(d.getDate()).padStart(2, '0'),
+      String(d.getMonth() + 1).padStart(2, '0'),
+      d.getFullYear()
+    ].join('/');
   }
   catch { return String(ds); }
+}
+
+function dateSortValue(value) {
+  const d = parseLocalDate(value);
+  return d ? d.getTime() : Number.MAX_SAFE_INTEGER;
+}
+
+function dateInputKey(value) {
+  const d = parseLocalDate(value);
+  if (!d) return '';
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, '0'),
+    String(d.getDate()).padStart(2, '0')
+  ].join('-');
+}
+
+function compareEventDatesAsc(a, b) {
+  return dateSortValue(a?.date_evenement) - dateSortValue(b?.date_evenement);
+}
+
+function compareEventDatesDesc(a, b) {
+  const av = dateSortValue(a?.date_evenement);
+  const bv = dateSortValue(b?.date_evenement);
+  if (av === Number.MAX_SAFE_INTEGER && bv === Number.MAX_SAFE_INTEGER) return 0;
+  if (av === Number.MAX_SAFE_INTEGER) return 1;
+  if (bv === Number.MAX_SAFE_INTEGER) return -1;
+  return bv - av;
 }
 
 const STATUS_PILL = {
@@ -729,11 +767,8 @@ function renderDashboard() {
   const yearlySigned = appData.filter(e => {
     if (!CA_STATUTS.includes(e.statut)) return false;
     if (!e.date_evenement) return false;
-    let dateStr = String(e.date_evenement).trim();
-    const dateMatch = dateStr.match(/\d{4}-\d{2}-\d{2}/);
-    if (dateMatch) dateStr = dateMatch[0];
-    const d = new Date(dateStr);
-    return !isNaN(d.getTime()) && d.getFullYear() === currentYear;
+    const d = parseLocalDate(e.date_evenement);
+    return !!d && d.getFullYear() === currentYear;
   });
   
   const caConf = yearlySigned.reduce((s, e) => {
@@ -787,7 +822,7 @@ function renderDashboard() {
   const PIPELINE_SCOPE_HOME = ['Devis à préparer', 'Devis envoyé'];
   const demandesHome = actives
     .filter(e => PIPELINE_SCOPE_HOME.includes(e.statut))
-    .sort((a, b) => (a.date_evenement || '').localeCompare(b.date_evenement || ''))
+    .sort(compareEventDatesAsc)
     .slice(0, 6);
 
   const tbody = document.getElementById('upcoming-tbody');
@@ -800,10 +835,7 @@ function renderDashboard() {
       const todayDate = new Date();
       todayDate.setHours(0,0,0,0);
       tbody.innerHTML = demandesHome.map(e => {
-        let dateStr = String(e.date_evenement).trim();
-        const dateMatch = dateStr.match(/\d{4}-\d{2}-\d{2}/);
-        if (dateMatch) dateStr = dateMatch[0];
-        const d = parseLocalDate(dateStr);
+        const d = parseLocalDate(e.date_evenement);
         const diffDays = d ? Math.ceil((d.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24)) : 999;
         
         const isEnterprise = String(e.type_evenement).trim().toLowerCase() === 'entreprise';
@@ -831,7 +863,7 @@ function renderDashboard() {
   // Prestations en cours (Événement confirmé)
   const prestationsHome = actives
     .filter(e => e.statut === 'Événement confirmé')
-    .sort((a, b) => (a.date_evenement || '').localeCompare(b.date_evenement || ''))
+    .sort(compareEventDatesAsc)
     .slice(0, 5);
 
   const actEl = document.getElementById('recent-activity');
@@ -891,11 +923,8 @@ function renderPipeline() {
     }
 
     if (!e.date_evenement) { colsData['normal'].push(e); return; }
-    let dateStr = String(e.date_evenement).trim();
-    const dateMatch = dateStr.match(/\d{4}-\d{2}-\d{2}/);
-    if (dateMatch) dateStr = dateMatch[0];
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) { colsData['normal'].push(e); return; }
+    const d = parseLocalDate(e.date_evenement);
+    if (!d) { colsData['normal'].push(e); return; }
 
     const diffDays = Math.ceil((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     
@@ -909,11 +938,7 @@ function renderPipeline() {
   });
 
   // Sort events in each column by date
-  const sortEventsByDate = (a, b) => {
-    const da = a.date_evenement || '';
-    const db = b.date_evenement || '';
-    return da.localeCompare(db);
-  };
+  const sortEventsByDate = compareEventDatesAsc;
   Object.keys(colsData).forEach(key => {
     colsData[key].sort(sortEventsByDate);
   });
@@ -1020,7 +1045,7 @@ function renderClients() {
   const CLIENTS_SCOPE = ['Événement confirmé'];
   const prestations = appData
     .filter(e => CLIENTS_SCOPE.includes(e.statut) && !isEventPast(e))
-    .sort((a, b) => (a.date_evenement || '').localeCompare(b.date_evenement || ''));
+    .sort(compareEventDatesAsc);
 
   if (sub) sub.textContent = `${prestations.length} événement${prestations.length > 1 ? 's' : ''} confirmé${prestations.length > 1 ? 's' : ''}`;
 
@@ -1132,22 +1157,22 @@ function applyHistoriqueDateRange() {
 function getFilteredHistorique() {
   let filtered = appData
     .filter(e => isEventPast(e))
-    .sort((a, b) => (b.date_evenement || '').localeCompare(a.date_evenement || ''));
+    .sort(compareEventDatesDesc);
 
   if (historiqueFilter !== 'all') {
     const quarters = { T1: ['01','02','03'], T2: ['04','05','06'], T3: ['07','08','09'], T4: ['10','11','12'] };
 
     if (historiqueFilter === '2026') {
-      filtered = filtered.filter(e => String(e.date_evenement || '').startsWith('2026-'));
+      filtered = filtered.filter(e => dateInputKey(e.date_evenement).startsWith('2026-'));
     } else if (quarters[historiqueFilter]) {
       const months = quarters[historiqueFilter];
       filtered = filtered.filter(e => {
-        const ds = String(e.date_evenement || '').split('T')[0];
+        const ds = dateInputKey(e.date_evenement);
         return ds.startsWith('2026-') && months.includes(ds.slice(5, 7));
       });
     } else if (historiqueFilter === 'range') {
       filtered = filtered.filter(e => {
-        const ds = String(e.date_evenement || '').split('T')[0];
+        const ds = dateInputKey(e.date_evenement);
         if (historiqueDateFrom && ds < historiqueDateFrom) return false;
         if (historiqueDateTo   && ds > historiqueDateTo)   return false;
         return true;
@@ -1412,7 +1437,7 @@ function toggleFormMode(e) {
 
 const FORM_PLACEHOLDERS = {
   nom_client: "Ex: Céline GIORDANO",
-  date_evenement: "Ex: 2026-06-10 ou 2026-06-30 au 2026-07-03",
+  date_evenement: "Ex: 10/06/2026 ou 30/06/2026 au 03/07/2026",
   budget_estime: "Ex: 1800 ou 850/900€ ou Entre 2000 et 2500€",
   telephone: "Ex: 06 12 34 56 78",
   email_client: "Ex: client@email.com",
@@ -1575,9 +1600,9 @@ function openEventModal(rowIndex = null) {
     const existing = appData.find(e => e._row === rowIndex);
     if (existing) {
       const dateVal = existing['date_evenement'];
-      const dateMatch = dateVal ? String(dateVal).match(/\d{4}-\d{2}-\d{2}/) : null;
-      if (dateMatch) {
-        checkDateConflict(dateMatch[0]);
+      const dateKey = dateInputKey(dateVal);
+      if (dateKey) {
+        checkDateConflict(dateKey);
       }
     }
   }
@@ -1612,7 +1637,7 @@ function checkDateConflict(dateValue) {
   const conflicts = appData.filter(e => {
     if (editingRow && e._row === editingRow) return false;
     if (e.statut !== 'Événement confirmé') return false;
-    return String(e.date_evenement || '').includes(dateValue);
+    return dateInputKey(e.date_evenement) === dateValue;
   });
 
   banner.style.display = 'block';
@@ -1633,10 +1658,9 @@ document.getElementById('event-modal').addEventListener('click', e => {
 // Vérification conflit de date
 document.getElementById('event-form').addEventListener('change', e => {
   if (e.target.name === 'date_evenement') {
-    // Si la valeur ressemble à une date simple YYYY-MM-DD, lance le test de conflit
-    const dateMatch = e.target.value.match(/\d{4}-\d{2}-\d{2}/);
-    if (dateMatch) {
-      checkDateConflict(dateMatch[0]);
+    const dateKey = dateInputKey(e.target.value);
+    if (dateKey) {
+      checkDateConflict(dateKey);
     } else {
       const banner = document.getElementById('date-conflict-banner');
       if (banner) banner.style.display = 'none';
@@ -1689,13 +1713,10 @@ document.getElementById('event-form').addEventListener('submit', async e => {
           row.derniere_modification = new Date().toISOString();
 
           // Si la date de l'événement a changé, caler l'agenda sur le nouveau mois
-          const newDate = data.date_evenement ? String(data.date_evenement).slice(0, 10) : null;
-          if (newDate && newDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
-            const d = new Date(newDate + 'T12:00:00');
-            if (!isNaN(d.getTime())) {
-              agendaYear  = d.getFullYear();
-              agendaMonth = d.getMonth();
-            }
+          const d = parseLocalDate(data.date_evenement);
+          if (d) {
+            agendaYear  = d.getFullYear();
+            agendaMonth = d.getMonth();
           }
         }
         renderAll();
@@ -1880,24 +1901,21 @@ function renderAgenda() {
       const raw = e.date_evenement;
       if (!raw) return false;
 
-      // Extraire la première date YYYY-MM-DD (gère les plages "2026-06-30 au 2026-07-03")
-      const match = String(raw).match(/\d{4}-\d{2}-\d{2}/);
-      if (!match) return false;
-      const dateStr = match[0];
+      const eventDate = parseLocalDate(raw);
+      if (!eventDate) return false;
 
       // Vérifier que la date est dans le mois affiché
-      if (dateStr.slice(0, 7) !== monthPfx) return false;
+      if (dateInputKey(raw).slice(0, 7) !== monthPfx) return false;
 
       // Pour les événements passés, uniquement Confirmé ou Terminé
-      const d = parseLocalDate(dateStr);
-      if (d && d.getTime() < today.getTime()) {
+      if (eventDate.getTime() < today.getTime()) {
         return AGENDA_PAST_STATUTS.includes(e.statut);
       }
 
       // Événements futurs (ou aujourd'hui) : tous les statuts
       return true;
     })
-    .sort((a, b) => (a.date_evenement || '').localeCompare(b.date_evenement || ''));
+    .sort(compareEventDatesAsc);
 
   if (labelEl) labelEl.textContent = `${MONTHS_FR_AGENDA[agendaMonth]} ${agendaYear}`;
   if (subEl) subEl.textContent = events.length ? `${events.length} événement${events.length > 1 ? 's' : ''}` : '';
@@ -1960,11 +1978,7 @@ function showKpiModal(type) {
   if (type === 'leads') {
     title.textContent = 'Nouvelles demandes';
     const evts = actives.filter(e => e.statut === 'Nouvelle demande');
-    evts.sort((a,b) => {
-      let d1 = String(a.date_evenement||'').split('T')[0];
-      let d2 = String(b.date_evenement||'').split('T')[0];
-      return new Date(d1).getTime() - new Date(d2).getTime();
-    });
+    evts.sort(compareEventDatesAsc);
     
     thead.innerHTML = '<tr><th style="width:32%">Client</th><th style="width:22%">Date</th><th style="width:22%">Montant</th><th style="width:24%">Statut</th></tr>';
     tbody.innerHTML = evts.length ? evts.map(e => {
@@ -1979,11 +1993,7 @@ function showKpiModal(type) {
   else if (type === 'rappel') {
     title.textContent = 'À rappeler';
     const evts = actives.filter(e => e.statut === 'À rappeler');
-    evts.sort((a,b) => {
-      let d1 = String(a.date_evenement||'').split('T')[0];
-      let d2 = String(b.date_evenement||'').split('T')[0];
-      return new Date(d1).getTime() - new Date(d2).getTime();
-    });
+    evts.sort(compareEventDatesAsc);
     
     thead.innerHTML = '<tr><th style="width:18%">Date</th><th style="width:25%">Client</th><th style="width:20%">Type</th><th style="width:18%">Téléphone</th><th style="width:19%">Statut</th></tr>';
     tbody.innerHTML = evts.length ? evts.map(e => {
@@ -2001,11 +2011,7 @@ function showKpiModal(type) {
   else if (type === 'devis') {
     title.textContent = 'Devis à préparer';
     const evts = actives.filter(e => e.statut === 'Devis à préparer');
-    evts.sort((a,b) => {
-      let d1 = String(a.date_evenement||'').split('T')[0];
-      let d2 = String(b.date_evenement||'').split('T')[0];
-      return new Date(d1).getTime() - new Date(d2).getTime();
-    });
+    evts.sort(compareEventDatesAsc);
     
     thead.innerHTML = '<tr><th style="width:20%">Date prévue</th><th style="width:30%">Client</th><th style="width:20%">Montant</th><th style="width:30%">Statut</th></tr>';
     tbody.innerHTML = evts.length ? evts.map(e => {
@@ -2021,11 +2027,7 @@ function showKpiModal(type) {
     title.textContent = 'Événements confirmés';
     const CONF_STATUSES = ['Événement confirmé'];
     const evts = actives.filter(e => CONF_STATUSES.includes(e.statut));
-    evts.sort((a,b) => {
-      let d1 = String(a.date_evenement||'').split('T')[0];
-      let d2 = String(b.date_evenement||'').split('T')[0];
-      return new Date(d1).getTime() - new Date(d2).getTime();
-    });
+    evts.sort(compareEventDatesAsc);
     
     thead.innerHTML = '<tr><th style="width:22%">Date</th><th style="width:30%">Client</th><th style="width:20%">Type</th><th style="width:28%">Statut</th></tr>';
     tbody.innerHTML = evts.length ? evts.map(e => {
