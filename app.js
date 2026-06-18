@@ -100,10 +100,6 @@ function eventId(e) {
   return String(e?.id_demande || '').trim();
 }
 
-function eventIdArg(e) {
-  return JSON.stringify(eventId(e));
-}
-
 // Convertit n'importe quelle date (ISO UTC ou YYYY-MM-DD) en minuit heure locale
 function parseLocalDate(ds) {
   if (!ds) return null;
@@ -116,6 +112,50 @@ function parseLocalDate(ds) {
   const d = new Date(cleanDs);
   if (isNaN(d.getTime())) return null;
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+function parseDateTime(ds) {
+  if (!ds) return null;
+  const raw = String(ds).trim();
+  if (!raw) return null;
+  const hasTime = /T\d{2}:\d{2}|\d{1,2}:\d{2}/.test(raw);
+  if (!hasTime && /^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    const d = parseLocalDate(raw);
+    if (d) d.setHours(12, 0, 0, 0);
+    return d;
+  }
+  const d = new Date(raw);
+  if (!isNaN(d.getTime())) return d;
+  return parseLocalDate(raw);
+}
+
+function formatReceivedAge(value) {
+  const d = parseDateTime(value);
+  if (!d) return '—';
+  const diffMs = Date.now() - d.getTime();
+  if (diffMs < 0) return 'à venir';
+  const minutes = Math.floor(diffMs / 60000);
+  if (minutes < 2) return 'à l’instant';
+  if (minutes < 60) return `il y a ${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `il y a ${hours}h`;
+  const days = Math.floor(hours / 24);
+  return `il y a ${days}j`;
+}
+
+function receivedAgeColor(value) {
+  const d = parseDateTime(value);
+  if (!d) return 'var(--muted)';
+  const hours = Math.floor((Date.now() - d.getTime()) / 3600000);
+  if (hours < 24) return '#4A6741';
+  if (hours < 72) return '#B8860B';
+  return '#C0453A';
+}
+
+function eventSummary(e) {
+  const type = String(e?.type_evenement || '').trim() || 'Non renseigné';
+  const convives = String(e?.nb_convives || '').trim();
+  return convives && convives !== '—' ? `${type} · ${convives} pers.` : type;
 }
 
 function formatEuro(n) {
@@ -185,13 +225,13 @@ const ALL_STATUSES = ['Nouvelle demande', 'À rappeler', 'Devis à préparer', '
 
 function generateStatusSelectHtml(e, extraClass = '') {
   const options = ALL_STATUSES.map(s =>
-    `<option value="${s}"${s === e.statut ? ' selected' : ''}>${STATUS_LABEL[s] || s}</option>`
+    `<option value="${escAttr(s)}"${s === e.statut ? ' selected' : ''}>${safeText(STATUS_LABEL[s] || s)}</option>`
   ).join('');
   const pillClass = STATUS_PILL[e.statut] || 'pill-gray';
-  const id = eventIdArg(e);
+  const id = escAttr(eventId(e));
   
   // Style pill : police 10px, border-radius 4px, background et color natifs via la classe pill-*
-  return `<select class="pill ${pillClass} ${extraClass}" style="border:none; outline:none; cursor:pointer; font-family:inherit; font-size:10px; font-weight:700; border-radius:4px; padding:2px 4px; appearance:auto; width:auto; min-width:125px; display:inline-block;" onchange="updateEventStatus(this,${id})" onclick="event.stopPropagation()">
+  return `<select class="pill ${pillClass} ${extraClass}" data-id="${id}" style="border:none; outline:none; cursor:pointer; font-family:inherit; font-size:10px; font-weight:700; border-radius:4px; padding:2px 4px; appearance:auto; width:auto; min-width:125px; display:inline-block;" onchange="updateEventStatus(this)" onclick="event.stopPropagation()">
     ${options}
   </select>`;
 }
@@ -253,6 +293,12 @@ function formatContact(contact) {
   return displayText;
 }
 
+function telHref(phone) {
+  const normalized = normalizeFrenchPhone(phone || '');
+  const rawTel = String(normalized || '').replace(/\s/g, '');
+  return /^[\d+]{9,}$/.test(rawTel) ? `tel:${encodeURIComponent(rawTel)}` : '';
+}
+
 // ── SYNC INDICATOR ──
 
 let lastSyncTime = null;
@@ -283,19 +329,20 @@ function requestNotifPermission() {
 function checkNewEvents(rows) {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
   const seen = new Set(JSON.parse(localStorage.getItem(SEEN_EVENTS_KEY) || '[]'));
-  const newLeads = rows.filter(r => (r.statut === 'Nouveau' || r.statut === 'Nouvelle demande') && !seen.has(String(r._row)));
+  const eventKey = r => String(r.id_demande || r._row || '').trim();
+  const newLeads = rows.filter(r => (r.statut === 'Nouveau' || r.statut === 'Nouvelle demande') && !seen.has(eventKey(r)));
   newLeads.forEach(r => {
-    const sBudget = String(r.budget_estime || '').replace(/\s/g, '');
-    const numMatch = sBudget.match(/\d+/);
-    const budgetVal = numMatch ? parseFloat(numMatch[0]) : 0;
-    const body = `${r.nom_client || 'Sans nom'} · ${r.type_evenement || ''}${budgetVal ? ' · ' + formatEuro(budgetVal) : ''}`;
-    const tag = 'lead-' + r._row;
+    const key = eventKey(r);
+    const body = `${r.nom_client || 'Sans nom'} · ${eventSummary(r)}`;
+    const tag = 'lead-' + key;
     if (navigator.serviceWorker?.controller) {
       navigator.serviceWorker.controller.postMessage({ type: 'SHOW_NOTIFICATION', title: 'Nouvelle demande', body, tag });
     } else {
-      new Notification('Nouvelle demande', { body, icon: './icon-192x192.png', tag }).catch(() => {});
+      try {
+        new Notification('Nouvelle demande', { body, icon: './icon-192x192.png', tag });
+      } catch {}
     }
-    seen.add(String(r._row));
+    seen.add(key);
   });
   localStorage.setItem(SEEN_EVENTS_KEY, JSON.stringify([...seen]));
   // Synchroniser la liste des vus avec le SW pour le polling en arrière-plan
@@ -653,9 +700,11 @@ function setConnectionStatus(state, info = '') {
 }
 
 function setLoading(on) {
+  document.body.classList.toggle('is-loading-data', !!on);
   document.querySelectorAll('.btn-refresh').forEach(b => {
     b.textContent = on ? '\u2026' : '\u21bb';
     b.disabled = on;
+    b.title = on ? 'Synchronisation en cours' : 'Actualiser';
   });
 }
 
@@ -715,22 +764,13 @@ function renderDashboard() {
       newTbody.innerHTML = '<tr><td colspan="5" class="tbl-empty">Aucune demande récente</td></tr>';
     } else {
       newTbody.innerHTML = newDemandes.map(e => {
-        let ageBadge = '—';
-        if (e.date_reception) {
-          const demandDate = parseLocalDate(e.date_reception);
-          const hours = demandDate ? Math.floor((Date.now() - demandDate.getTime()) / 3600000) : -1;
-          if (hours >= 0) {
-            const color = hours < 24 ? '#4A6741' : hours < 72 ? '#B8860B' : '#C0453A';
-            ageBadge = hours < 24
-              ? `<span style="color:${color};font-weight:600;">il y a ${hours}h</span>`
-              : `<span style="color:${color};font-weight:600;">il y a ${Math.floor(hours/24)}j</span>`;
-          }
-        }
+        const ageText = formatReceivedAge(e.date_reception);
+        const ageBadge = `<span style="color:${receivedAgeColor(e.date_reception)};font-weight:600;">${safeText(ageText)}</span>`;
         const warningBadge = hasMissingInfo(e) ? ` <span class="pill pill-red" style="font-size:8px; font-weight:700; background:rgba(192,69,58,.15); color:var(--red-soft); margin-left:6px; flex-shrink:0; vertical-align:middle;">⚠️ Infos manquantes</span>` : '';
         return `<tr style="cursor:pointer" onclick="openEventModal(${e._row})">
           <td><strong>${safeText(formatDateFR(e.date_evenement) || '—')}</strong></td>
           <td>${safeText(e.nom_client)}${warningBadge}</td>
-          <td>${safeText(formatBudget(e.budget_estime))}</td>
+          <td>${safeText(eventSummary(e))}</td>
           <td>${ageBadge}</td>
           <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e)}</td>
         </tr>`;
@@ -748,9 +788,9 @@ function renderDashboard() {
   const tbody = document.getElementById('upcoming-tbody');
   if (tbody) {
     if (!CONFIG.SHEETS_URL) {
-      tbody.innerHTML = '<tr><td colspan="4" class="tbl-empty">\u2699 Configurez CONFIG.SHEETS_URL dans app.js</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="3" class="tbl-empty">\u2699 Configurez CONFIG.SHEETS_URL dans app.js</td></tr>';
     } else if (!demandesHome.length) {
-      tbody.innerHTML = '<tr><td colspan="4" class="tbl-empty">Aucune demande en cours</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="3" class="tbl-empty">Aucune demande en cours</td></tr>';
     } else {
       const todayDate = new Date();
       todayDate.setHours(0,0,0,0);
@@ -777,7 +817,6 @@ function renderDashboard() {
         return `<tr class="${urgClass}" style="cursor:pointer" onclick="openEventModal(${e._row})">
           <td><strong>${safeText(formatDateFR(e.date_evenement) || '—')}</strong></td>
           <td>${safeText(e.nom_client)}${warningBadge}</td>
-          <td>${safeText(formatBudget(e.budget_estime))}</td>
           <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e)}</td>
         </tr>`;
       }).join('');
@@ -795,13 +834,12 @@ function renderDashboard() {
     if (!prestationsHome.length) {
       actEl.innerHTML = '<div class="act-time" style="padding:12px 0;color:var(--muted);">Aucun événement confirmé</div>';
     } else {
-      const thead = '<div class="tbl-wrap"><table class="tbl tbl-sm" style="min-width:400px;"><thead><tr><th>Date</th><th>Client</th><th>Budget</th><th style="min-width:130px;">Statut</th></tr></thead><tbody>';
+      const thead = '<div class="tbl-wrap"><table class="tbl tbl-sm" style="min-width:360px;"><thead><tr><th>Date</th><th>Client</th><th style="min-width:130px;">Statut</th></tr></thead><tbody>';
       actEl.innerHTML = thead + prestationsHome.map(e => {
         const warningBadge = hasMissingInfo(e) ? ` <span class="pill pill-red" style="font-size:8px; font-weight:700; background:rgba(192,69,58,.15); color:var(--red-soft); margin-left:6px; flex-shrink:0; vertical-align:middle;">⚠️ Infos manquantes</span>` : '';
         return `<tr style="cursor:pointer" onclick="openEventModal(${e._row})">
           <td><strong>${safeText(formatDateFR(e.date_evenement))}</strong></td>
           <td>${safeText(e.nom_client)}${warningBadge}</td>
-          <td>${safeText(formatBudget(e.budget_estime))}</td>
           <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e)}</td>
         </tr>`;
       }).join('') + '</tbody></table></div>';
@@ -816,10 +854,10 @@ const URGENCE_JOURS_PRIORITAIRE = 45;
 const URGENCE_SEUIL_CA = 3000;
 
 const PIPELINE_COLS = [
-  { label: 'Urgent',      id: 'urgent'      },
-  { label: 'Prioritaire', id: 'prioritaire' },
-  { label: 'Important',   id: 'important'   },
-  { label: 'Normal',      id: 'normal'      },
+  { label: 'Entreprise',       id: 'entreprise' },
+  { label: 'Dans moins de 7j', id: 'urgent'     },
+  { label: 'Dans moins de 30j', id: 'important' },
+  { label: 'Normal',           id: 'normal'     },
 ];
 
 function renderPipeline() {
@@ -835,7 +873,7 @@ function renderPipeline() {
   today.setHours(0,0,0,0);
 
   const PIPELINE_SCOPE = ['Nouvelle demande', 'À rappeler', 'Devis à préparer', 'Devis envoyé'];
-  const colsData = { 'urgent': [], 'prioritaire': [], 'important': [], 'normal': [] };
+  const colsData = { 'entreprise': [], 'urgent': [], 'important': [], 'normal': [] };
 
   appData.forEach(e => {
     if (!PIPELINE_SCOPE.includes(e.statut)) return;
@@ -843,7 +881,7 @@ function renderPipeline() {
 
     const isEnterprise = String(e.type_evenement).trim().toLowerCase() === 'entreprise';
     if (isEnterprise) {
-      colsData['prioritaire'].push(e);
+      colsData['entreprise'].push(e);
       return;
     }
 
@@ -883,13 +921,7 @@ function renderPipeline() {
       let ageBadge = '';
       const isNewOrContacted = ['Nouvelle demande', 'À rappeler', 'Devis à préparer'].includes(e.statut);
       if (isNewOrContacted && e.date_reception) {
-        const demandDate = parseLocalDate(e.date_reception);
-        const hours = demandDate ? Math.floor((Date.now() - demandDate.getTime()) / 3600000) : -1;
-        if (hours >= 0) {
-          const badgeColor = hours < 24 ? '#4A6741' : hours < 72 ? '#B8860B' : '#C0453A';
-          const badgeText  = hours < 24 ? `Reçu il y a ${hours}h` : `Reçu il y a ${Math.floor(hours/24)} jour${Math.floor(hours/24) > 1 ? 's' : ''}`;
-          ageBadge = `<div style="font-size:10px;font-weight:600;color:${badgeColor};margin-top:4px;">${badgeText}</div>`;
-        }
+        ageBadge = `<div style="font-size:10px;font-weight:600;color:${receivedAgeColor(e.date_reception)};margin-top:4px;">Reçu ${safeText(formatReceivedAge(e.date_reception))}</div>`;
       }
 
       const contactRaw = e.telephone ? formatContact(e.telephone) : '';
@@ -918,12 +950,11 @@ function renderPipeline() {
           <div class="pipe-client" style="margin-bottom:0;">${safeText(e.nom_client)}</div>
           ${warningBadge}
         </div>
-        <div class="pipe-event">${safeText(e.type_evenement || 'Autre')} \xb7 ${safeText(e.nb_convives)} pers.${e.date_evenement ? ' \xb7 ' + safeText(formatDateFR(e.date_evenement)) : ''}</div>
+        <div class="pipe-event">${safeText(eventSummary(e))}${e.date_evenement ? ' \xb7 ' + safeText(formatDateFR(e.date_evenement)) : ''}</div>
         ${contactLine ? `<div class="pipe-contact" onclick="event.stopPropagation()">${contactLine}</div>` : ''}
         ${linksLine ? `<div onclick="event.stopPropagation()">${linksLine}</div>` : ''}
         <div class="pipe-footer" style="padding-top: 8px;">
           <div>
-            <span class="pipe-amount" style="font-size:12px">${safeText(formatBudget(e.budget_estime))}</span>
             ${ageBadge}
           </div>
           ${generateStatusSelectHtml(e, 'pipe-status-sel')}
@@ -938,7 +969,12 @@ function renderPipeline() {
   }).join('');
 }
 
-async function updateEventStatus(selectEl, idDemande) {
+async function updateEventStatus(selectEl) {
+  const idDemande = String(selectEl?.dataset?.id || '').trim();
+  if (!idDemande) {
+    showNotification('Demande introuvable', 'error');
+    return;
+  }
   const newStatus = selectEl.value;
   selectEl.disabled = true;
   try {
@@ -1009,8 +1045,8 @@ function renderClients() {
 
     return `<div class="prestation-card">
       <div class="pc-header" onclick="openEventModal(${e._row})" style="cursor:pointer">
-        <div class="pc-line1"><strong>${safeText(e.nom_client)}</strong> · ${safeText(e.type_evenement || 'Autre')} · <em>${safeText(formatDateFR(e.date_evenement))}</em></div>
-        <div class="pc-line2">${safeText(formatBudget(e.budget_estime))} &nbsp;${pill}</div>
+        <div class="pc-line1"><strong>${safeText(e.nom_client)}</strong> · ${safeText(eventSummary(e))} · <em>${safeText(formatDateFR(e.date_evenement))}</em></div>
+        <div class="pc-line2">${safeText(eventSummary(e))} &nbsp;${pill}</div>
         ${contactLine ? `<div class="pc-contact">${contactLine}</div>` : ''}
         ${linksLine ? `<div onclick="event.stopPropagation()">${linksLine}</div>` : ''}
       </div>
@@ -1237,8 +1273,11 @@ function renderPieChart(rows) {
   const counts = {};
   rows.forEach(e => {
     let canal = String(e.canal || 'Non renseigné').trim() || 'Non renseigné';
-    if (canal.toLowerCase() === 'email direct' || canal.toLowerCase() === 'email') {
-      canal = 'Email';
+    if (canal.toLowerCase() === 'email') {
+      canal = 'Email direct';
+    }
+    if (canal.toLowerCase() === 'formulaire site' || canal.toLowerCase() === 'site web') {
+      canal = 'Formulaire Site';
     }
     counts[canal] = (counts[canal] || 0) + 1;
   });
@@ -1310,8 +1349,11 @@ function renderConversionTable(rows) {
   const byCanal = {};
   rows.forEach(e => {
     let canal = String(e.canal || 'Non renseigné').trim() || 'Non renseigné';
-    if (canal.toLowerCase() === 'email direct' || canal.toLowerCase() === 'email') {
-      canal = 'Email';
+    if (canal.toLowerCase() === 'email') {
+      canal = 'Email direct';
+    }
+    if (canal.toLowerCase() === 'formulaire site' || canal.toLowerCase() === 'site web') {
+      canal = 'Formulaire Site';
     }
     if (!byCanal[canal]) byCanal[canal] = { total: 0, confirmed: 0 };
     byCanal[canal].total++;
@@ -1380,6 +1422,24 @@ const FORM_PLACEHOLDERS = {
   notes: "Notes de suivi interne..."
 };
 
+function syncReadOnlyFieldStyles(form) {
+  if (!form) return;
+  Array.from(form.elements).forEach(el => {
+    if (!el.name) return;
+    el.closest('.form-row')?.classList.toggle('is-readonly', !!el.readOnly || !!el.disabled);
+  });
+}
+
+function setSelectValue(select, value, fallback) {
+  const raw = String(value || '').trim();
+  const options = Array.from(select.options).map(o => o.value);
+  if (options.includes(raw)) {
+    select.value = raw;
+    return;
+  }
+  select.value = fallback;
+}
+
 function openEventModal(rowIndex = null) {
   editingRow = rowIndex;
 
@@ -1410,6 +1470,8 @@ function openEventModal(rowIndex = null) {
   const warningEl = document.getElementById('view-warning-missing-info');
   const replyContainer = document.getElementById('view-email-reply-container');
   const replyBtn = document.getElementById('view-email-reply-btn');
+  const phoneCallBtn = document.getElementById('view-phone-call-btn');
+  const emailThreadBtn = document.getElementById('view-email-thread-btn');
   const derniereModifContainer = document.getElementById('event-derniere-modif-container');
   const derniereModif = document.getElementById('view-derniere-modif');
 
@@ -1419,7 +1481,14 @@ function openEventModal(rowIndex = null) {
       for (const el of form.elements) {
         if (el.name && el.name in existing) {
           const val = existing[el.name];
-          el.value = (val === null || val === undefined || val === '—') ? '' : val;
+          const cleanVal = (val === null || val === undefined || val === '—') ? '' : val;
+          if (el.tagName === 'SELECT' && el.name === 'type_evenement') {
+            setSelectValue(el, cleanVal, '');
+          } else if (el.tagName === 'SELECT' && el.name === 'canal') {
+            setSelectValue(el, cleanVal, '');
+          } else {
+            el.value = cleanVal;
+          }
         }
       }
 
@@ -1433,47 +1502,27 @@ function openEventModal(rowIndex = null) {
         }
       }
 
+      const phoneLink = telHref(existing.telephone);
+      if (phoneCallBtn) {
+        phoneCallBtn.href = phoneLink || '#';
+        phoneCallBtn.style.display = phoneLink ? 'inline-flex' : 'none';
+      }
+
+      const threadUrl = safeUrl(existing.url_email_origine, ['https://mail.google.com/']);
+      if (emailThreadBtn) {
+        emailThreadBtn.href = threadUrl || '#';
+        emailThreadBtn.style.display = threadUrl ? 'inline-flex' : 'none';
+      }
+
       const clientEmail = existing.email_client ? String(existing.email_client).trim() : '';
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       const isEmailKnown = clientEmail && clientEmail !== '—' && emailRegex.test(clientEmail);
 
-      if (isEmailKnown) {
+      if (threadUrl || isEmailKnown) {
         if (replyContainer && replyBtn) {
           replyContainer.style.display = 'block';
-          let subject = 'Votre demande Chez Papi';
-          if (existing.type_evenement && String(existing.type_evenement).trim() !== '—') {
-            subject += ` - ${String(existing.type_evenement).trim()}`;
-          }
-          const clientName = existing.nom_client && String(existing.nom_client).trim() !== '—' ? String(existing.nom_client).trim() : '';
-          const salutation = clientName ? `Bonjour ${clientName},\n\n` : `Bonjour,\n\n`;
-          let body = salutation;
-          const missing = [];
-          const noPhone = !existing.telephone || String(existing.telephone).trim() === '' || String(existing.telephone).trim() === '—';
-          const noLieu = !existing.lieu_prestation || String(existing.lieu_prestation).trim() === '' || String(existing.lieu_prestation).trim() === '—';
-          const noConvives = !existing.nb_convives || String(existing.nb_convives).trim() === '' || String(existing.nb_convives).trim() === '—' || String(existing.nb_convives).trim() === '0';
-          const noDate = !existing.date_evenement || String(existing.date_evenement).trim() === '' || String(existing.date_evenement).trim() === '—';
-          if (noPhone) missing.push("votre numéro de téléphone");
-          if (noLieu) missing.push("le lieu de l'événement");
-          if (noConvives) missing.push("le nombre de convives attendu");
-          if (noDate) missing.push("la date souhaitée pour l'événement");
-          if (missing.length > 0) {
-            body += `Merci pour votre intérêt pour Chez Papi.\n\n`;
-            body += `Afin d'étudier au mieux votre demande, pourriez-vous nous préciser :\n`;
-            missing.forEach(item => { body += `- ${item}\n`; });
-            body += `\n`;
-          }
-          
-          body += `\nManon\n-\nChez Papi Maison Gourmande\n📞 06 09 30 34 41\n✉️ chezpapimaisongourmande@gmail.com\n`;
-          const origMsg = existing.message_original ? String(existing.message_original).trim() : '';
-          if (origMsg && origMsg !== '—') {
-            const receptionDate = existing.date_reception ? formatDateFR(existing.date_reception) : '';
-            const quoted = origMsg.split('\n').map(line => `> ${line}`).join('\n');
-            body += `\n\n\n`;
-            body += `Le ${receptionDate}${receptionDate ? ', ' : ''}${clientEmail} a écrit :\n`;
-            body += quoted;
-          }
-          const replySubject = `Re: ${subject}`;
-          replyBtn.href = `https://mail.google.com/mail/u/demande.chezpapimaisongourmande@gmail.com/?view=cm&fs=1&to=${encodeURIComponent(clientEmail)}&su=${encodeURIComponent(replySubject)}&body=${encodeURIComponent(body)}`;
+          replyBtn.textContent = threadUrl ? '✉️ Ouvrir le fil' : '✉️ Répondre';
+          replyBtn.href = threadUrl || `https://mail.google.com/mail/u/demande.chezpapimaisongourmande@gmail.com/?view=cm&fs=1&to=${encodeURIComponent(clientEmail)}`;
         }
       } else {
         if (replyContainer) replyContainer.style.display = 'none';
@@ -1498,11 +1547,16 @@ function openEventModal(rowIndex = null) {
     const localToday = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
     form.elements['date_reception'].value = localToday;
     form.elements['statut'].value  = 'Nouvelle demande';
+    form.elements['canal'].value = 'Saisie manuelle';
     
     if (warningEl) warningEl.style.display = 'none';
     if (replyContainer) replyContainer.style.display = 'none';
+    if (phoneCallBtn) phoneCallBtn.style.display = 'none';
+    if (emailThreadBtn) emailThreadBtn.style.display = 'none';
     if (derniereModifContainer) derniereModifContainer.style.display = 'none';
   }
+
+  syncReadOnlyFieldStyles(form);
 
   const btnDel = document.getElementById('btn-delete-event');
   if (btnDel) btnDel.style.display = rowIndex ? 'block' : 'none';
@@ -1544,6 +1598,7 @@ function closeEventModal(force = false) {
   document.getElementById('event-modal').style.display = 'none';
   editingRow = null;
   initialFormValuesStr = null;
+  eventSaveInFlight = false;
 }
 
 function checkDateConflict(dateValue) {
@@ -1561,7 +1616,7 @@ function checkDateConflict(dateValue) {
   if (conflicts.length) {
     const c = conflicts[0];
     banner.style.cssText = 'display:block;padding:8px 12px;border-radius:4px;font-size:12px;margin:4px 0 8px;background:rgba(245,166,35,0.15);color:#B86A00;border:1px solid rgba(245,166,35,0.4);';
-    banner.textContent = `⚠️ ${c.nom_client || 'Sans nom'} (${c.type_evenement || 'Autre'}) est déjà confirmé à cette date`;
+    banner.textContent = `⚠️ ${c.nom_client || 'Sans nom'} (${c.type_evenement || 'Non renseigné'}) est déjà confirmé à cette date`;
   } else {
     banner.style.cssText = 'display:block;padding:8px 12px;border-radius:4px;font-size:12px;margin:4px 0 8px;background:rgba(74,103,65,0.12);color:#4A6741;border:1px solid rgba(74,103,65,0.3);';
     banner.textContent = '✓ Date disponible';
@@ -1587,22 +1642,36 @@ document.getElementById('event-form').addEventListener('change', e => {
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeEventModal(); });
 
+let eventSaveInFlight = false;
+
 document.getElementById('event-form').addEventListener('submit', async e => {
   e.preventDefault();
+  if (eventSaveInFlight) return;
+  eventSaveInFlight = true;
+
   const form = e.target;
+  const btn = form.querySelector('.btn-primary');
   
   const currentValuesStr = JSON.stringify(Object.fromEntries(new FormData(form).entries()));
   if (initialFormValuesStr && currentValuesStr === initialFormValuesStr) {
     // Aucune modification, on ferme sans requêter l'API
+    eventSaveInFlight = false;
     closeEventModal(true);
     return;
   }
   
   const data = {};
   new FormData(form).forEach((val, key) => { data[key] = val; });
+  if (!editingRow) {
+    delete data.id_demande;
+    delete data.date_reception;
+    data.canal = data.canal || 'Saisie manuelle';
+  }
 
-  const btn = form.querySelector('.btn-primary');
-  btn.disabled = true; btn.textContent = '\u2026';
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Enregistrement…';
+  }
 
   try {
     let result;
@@ -1651,7 +1720,11 @@ document.getElementById('event-form').addEventListener('submit', async e => {
       showNotification('Erreur réseau', 'error');
     }
   } finally {
-    btn.disabled = false; btn.textContent = 'Enregistrer';
+    eventSaveInFlight = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Enregistrer';
+    }
   }
 });
 

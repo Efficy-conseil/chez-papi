@@ -668,7 +668,7 @@ function generateUniqueDemandId(sheet, headers) {
   let id;
   do {
     const rand = Math.random().toString(36).substring(2, 10).toUpperCase();
-    id = 'CP-' + yyyymmdd + '-' + rand;
+    id = 'MANUAL-' + yyyymmdd + '-' + rand;
   } while (existingIds.has(id));
 
   return id;

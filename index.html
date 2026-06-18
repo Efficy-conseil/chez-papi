@@ -169,10 +169,8 @@
 <div class="main">
 <div class="topbar">
 <button class="topbar-menu-btn" id="menu-btn">☰</button>
-<div class="topbar-title" id="topbar-title">Tableau de bord</div>
-<div class="topbar-right">
-<span id="sync-indicator" class="sync-indicator"></span>
-</div>
+<div class="topbar-title" id="topbar-title"></div>
+<div class="topbar-right"></div>
 </div>
 
 <div class="content">
@@ -182,8 +180,9 @@
 <div class="section-hd">
 <h2>Accueil</h2>
 <span class="shd-sub" id="accueil-sub"></span>
-<div style="display:flex; gap:10px;">
+<div class="section-actions">
 <button class="btn-new" onclick="openEventModal()">+ Nouvel événement</button>
+<span id="sync-indicator" class="sync-indicator"></span>
 <button class="btn-refresh" onclick="loadData()" title="Actualiser">↻</button>
 </div>
 </div>
@@ -218,7 +217,7 @@
 <tr>
 <th>Date</th>
 <th>Client</th>
-<th>€</th>
+<th>Événement</th>
 <th>Reçu</th>
 <th style="min-width:130px;">Statut</th>
 </tr>
@@ -241,12 +240,11 @@
 <tr>
 <th>Date</th>
 <th>Client</th>
-<th>€</th>
 <th style="min-width:130px;">Statut</th>
 </tr>
 </thead>
 <tbody id="upcoming-tbody">
-<tr><td colspan="4" class="tbl-empty">Chargement…</td></tr>
+<tr><td colspan="3" class="tbl-empty">Chargement…</td></tr>
 </tbody>
 </table>
 </div>
@@ -436,7 +434,10 @@
 </div>
 <div class="form-row">
 <label>Téléphone client</label>
-<input type="tel" name="telephone" placeholder="Ex: 06 12 34 56 78">
+<div class="field-with-action">
+  <input type="tel" name="telephone" placeholder="Ex: 06 12 34 56 78">
+  <a href="#" id="view-phone-call-btn" class="btn-secondary field-action" style="display:none;">Appeler</a>
+</div>
 </div>
 <div class="form-row">
 <label>Email client</label>
@@ -453,26 +454,9 @@
 <label>Type d'événement</label>
 <select name="type_evenement">
 <option value="Mariage">Mariage</option>
-<option value="Séminaire">Séminaire</option>
-<option value="Réception">Réception</option>
-<option value="Cocktail">Cocktail</option>
 <option value="Baptême">Baptême</option>
-<option value="Repas d'équipe">Repas d'équipe</option>
-<option value="Repas entre amis">Repas entre amis</option>
+<option value="Anniversaire">Anniversaire</option>
 <option value="Entreprise">Entreprise</option>
-<option value="Autre">Autre</option>
-</select>
-</div>
-<div class="form-row">
-<label>Statut</label>
-<select name="statut">
-<option value="Nouvelle demande">Nouvelle demande</option>
-<option value="À rappeler">À rappeler</option>
-<option value="Devis à préparer">Devis à préparer</option>
-<option value="Devis envoyé">Devis envoyé</option>
-<option value="Événement confirmé">Événement confirmé</option>
-<option value="Événement terminé">Événement terminé</option>
-<option value="Perdu / Sans suite">Perdu / Sans suite</option>
 </select>
 </div>
 <div class="form-row">
@@ -482,6 +466,18 @@
 <div class="form-row">
 <label>Lieu de la prestation</label>
 <input type="text" name="lieu_prestation" placeholder="Ex: Salle des fêtes de Miramas…">
+</div>
+<div class="form-row">
+<label>Statut de la demande</label>
+<select name="statut">
+<option value="Nouvelle demande">Nouvelle demande</option>
+<option value="À rappeler">À rappeler</option>
+<option value="Devis à préparer">Devis à préparer</option>
+<option value="Devis envoyé">Devis envoyé</option>
+<option value="Événement confirmé">Événement confirmé</option>
+<option value="Événement terminé">Événement terminé</option>
+<option value="Perdu / Sans suite">Perdu / Sans suite</option>
+</select>
 </div>
 
 <!-- ── Champs mode complet (cachés en mode rapide) ── -->
@@ -493,24 +489,23 @@
 <div class="form-row">
 <label>Canal d'origine</label>
 <select name="canal">
-<option value="Email">Email</option>
-<option value="WhatsApp">WhatsApp</option>
-<option value="SMS">SMS</option>
+<option value="Téléphone">Téléphone</option>
+<option value="Email direct">Email direct</option>
 <option value="Formulaire Site">Formulaire Site</option>
 <option value="Réseaux sociaux">Réseaux sociaux</option>
-<option value="Téléphone">Téléphone</option>
-<option value="Instagram">Instagram</option>
-<option value="Appel">Appel</option>
-<option value="Autre">Autre</option>
+<option value="Saisie manuelle">Saisie manuelle</option>
 </select>
 </div>
 <div class="form-row">
-<label>Date de réception</label>
+<label>Demande reçue le</label>
 <input type="date" name="date_reception">
 </div>
-<div class="form-row">
-<label>Lien e-mail d'origine</label>
-<input type="url" name="url_email_origine" placeholder="Ex: https://mail.google.com/...">
+<div class="form-row readonly-row">
+<label>Fil e-mail Gmail</label>
+<div class="readonly-link-row">
+  <input type="url" name="url_email_origine" placeholder="Ex: https://mail.google.com/..." readonly>
+  <a href="#" id="view-email-thread-btn" target="_blank" rel="noopener noreferrer" class="btn-secondary field-action" style="display:none;">Ouvrir</a>
+</div>
 </div>
 <div class="form-row">
 <label>Lien dossier Drive</label>

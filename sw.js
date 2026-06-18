@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chez-papi-v2.12';
+const CACHE_NAME = 'chez-papi-v2.13';
 const ASSETS = [
   './',
   './index.html',
@@ -89,7 +89,8 @@ async function pollForNewEvents() {
     // Comparaison avec les lignes déjà vues (stockées par _row)
     const seenRaw = await swDbGet('seen_rows');
     const seen    = new Set(Array.isArray(seenRaw) ? seenRaw : []);
-    const unseen  = newLeads.filter(r => !seen.has(String(r._row)));
+    const eventKey = r => String(r.id_demande || r._row || '').trim();
+    const unseen  = newLeads.filter(r => !seen.has(eventKey(r)));
 
     if (unseen.length > 0) {
       const first = unseen[0];
@@ -109,7 +110,7 @@ async function pollForNewEvents() {
       });
 
       // Marquer comme vues
-      unseen.forEach(r => seen.add(String(r._row)));
+      unseen.forEach(r => seen.add(eventKey(r)));
       await swDbSet('seen_rows', [...seen]);
     }
   } catch (err) {

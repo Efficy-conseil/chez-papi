@@ -1,0 +1,1453 @@
+{
+  "name": "Integration Tally - sécurisé",
+  "flow": [
+    {
+      "id": 1,
+      "module": "tally:watchNewResponse",
+      "version": 1,
+      "parameters": {
+        "__IMTHOOK__": 3172762
+      },
+      "mapper": {},
+      "metadata": {
+        "designer": {
+          "x": 0,
+          "y": 150
+        },
+        "restore": {
+          "parameters": {
+            "__IMTHOOK__": {
+              "data": {
+                "editable": "false"
+              },
+              "label": "My New Response webhook"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "__IMTHOOK__",
+            "type": "hook:tally",
+            "label": "Webhook",
+            "required": true
+          }
+        ],
+        "interface": [
+          {
+            "name": "eventId",
+            "type": "text",
+            "label": "Event ID"
+          },
+          {
+            "name": "responseId",
+            "type": "text",
+            "label": "Response ID"
+          },
+          {
+            "name": "submissionId",
+            "type": "text",
+            "label": "Submission ID"
+          },
+          {
+            "name": "respondentId",
+            "type": "text",
+            "label": "Respondent ID"
+          },
+          {
+            "name": "formId",
+            "type": "text",
+            "label": "Form ID"
+          },
+          {
+            "name": "formName",
+            "type": "text",
+            "label": "Form Name"
+          },
+          {
+            "name": "createdAt",
+            "type": "date",
+            "label": "Created at"
+          },
+          {
+            "name": "fields",
+            "spec": [
+              {
+                "name": "Date de l'événement",
+                "type": "text"
+              },
+              {
+                "name": "Type d'événement",
+                "spec": {
+                  "type": "text"
+                },
+                "type": "array"
+              },
+              {
+                "name": "Nombre de convives",
+                "type": "number"
+              },
+              {
+                "name": "Lieu de la prestation",
+                "type": "text"
+              },
+              {
+                "name": "Souhaitez-vous nous détailler vos envies ?",
+                "spec": {
+                  "type": "text"
+                },
+                "type": "array"
+              },
+              {
+                "name": "Quel type de prestation souhaitez-vous ?",
+                "spec": {
+                  "type": "text"
+                },
+                "type": "array"
+              },
+              {
+                "name": "Options les plus demandées",
+                "spec": {
+                  "type": "text"
+                },
+                "type": "array"
+              },
+              {
+                "name": "Options les plus demandées (Atelier plancha)",
+                "type": "boolean"
+              },
+              {
+                "name": "Options les plus demandées (Atelier Spritz)",
+                "type": "boolean"
+              },
+              {
+                "name": "Options les plus demandées (Formule clés en main)",
+                "type": "boolean"
+              },
+              {
+                "name": "Options les plus demandées (Je ne sais pas encore)",
+                "type": "boolean"
+              },
+              {
+                "name": "Options les plus demandées (Autre option à préciser)",
+                "type": "boolean"
+              },
+              {
+                "name": "Budget estimé",
+                "type": "text"
+              },
+              {
+                "name": "Si besoin, précisez librement votre demande ici",
+                "type": "text"
+              },
+              {
+                "name": "Nom / Prénom",
+                "type": "text"
+              },
+              {
+                "name": "Adresse email",
+                "type": "email"
+              },
+              {
+                "name": "Numéro de téléphone",
+                "type": "text"
+              },
+              {
+                "name": "Dernière étape avant l'envoi de votre demande",
+                "spec": {
+                  "type": "text"
+                },
+                "type": "array"
+              },
+              {
+                "name": "Dernière étape avant l'envoi de votre demande (J’accepte que les informations transmises via ce formulaire soient utilisées par Chez Papi - Maison Gourmande pour traiter ma demande de prestation et me recontacter.)",
+                "type": "boolean"
+              }
+            ],
+            "type": "collection",
+            "label": "Fields"
+          },
+          {
+            "name": "fieldsById",
+            "spec": [
+              {
+                "name": "question_BBvgv1",
+                "type": "text",
+                "label": "Date de l'événement"
+              },
+              {
+                "name": "question_kZLpLZ",
+                "spec": {
+                  "type": "text"
+                },
+                "type": "array",
+                "label": "Type d'événement"
+              },
+              {
+                "name": "question_K0XgXD",
+                "type": "number",
+                "label": "Nombre de convives"
+              },
+              {
+                "name": "question_L08g8J",
+                "type": "text",
+                "label": "Lieu de la prestation"
+              },
+              {
+                "name": "question_pVgMgP",
+                "spec": {
+                  "type": "text"
+                },
+                "type": "array",
+                "label": "Souhaitez-vous nous détailler vos envies ?"
+              },
+              {
+                "name": "question_1Ejxjb",
+                "spec": {
+                  "type": "text"
+                },
+                "type": "array",
+                "label": "Quel type de prestation souhaitez-vous ?"
+              },
+              {
+                "name": "question_M50g08",
+                "spec": {
+                  "type": "text"
+                },
+                "type": "array",
+                "label": "Options les plus demandées"
+              },
+              {
+                "name": "question_M50g08_b29e815f-feca-4e21-b559-e6fe1bedd1bc",
+                "type": "boolean",
+                "label": "Options les plus demandées (Atelier plancha)"
+              },
+              {
+                "name": "question_M50g08_34e9db65-f3bd-4d90-8087-4d7d764493a7",
+                "type": "boolean",
+                "label": "Options les plus demandées (Atelier Spritz)"
+              },
+              {
+                "name": "question_M50g08_d7c68487-4f8d-45aa-81a0-32b024fd9493",
+                "type": "boolean",
+                "label": "Options les plus demandées (Formule clés en main)"
+              },
+              {
+                "name": "question_M50g08_1cf5b1ab-6ad4-4469-b4fc-0d9994b83256",
+                "type": "boolean",
+                "label": "Options les plus demandées (Je ne sais pas encore)"
+              },
+              {
+                "name": "question_M50g08_4c155482-696f-4cb3-b805-c4569060ff30",
+                "type": "boolean",
+                "label": "Options les plus demandées (Autre option à préciser)"
+              },
+              {
+                "name": "question_J0ygyX",
+                "type": "text",
+                "label": "Budget estimé"
+              },
+              {
+                "name": "question_g4BpBJ",
+                "type": "text",
+                "label": "Si besoin, précisez librement votre demande ici"
+              },
+              {
+                "name": "question_7ZQeQ2",
+                "type": "text",
+                "label": "Nom / Prénom"
+              },
+              {
+                "name": "question_bOaDa7",
+                "type": "email",
+                "label": "Adresse email"
+              },
+              {
+                "name": "question_A8k0kl",
+                "type": "text",
+                "label": "Numéro de téléphone"
+              },
+              {
+                "name": "question_yDOGOd",
+                "spec": {
+                  "type": "text"
+                },
+                "type": "array",
+                "label": "Dernière étape avant l'envoi de votre demande"
+              },
+              {
+                "name": "question_yDOGOd_e6bd200f-d089-4d09-ab84-ece9cf96a325",
+                "type": "boolean",
+                "label": "Dernière étape avant l'envoi de votre demande (J’accepte que les informations transmises via ce formulaire soient utilisées par Chez Papi - Maison Gourmande pour traiter ma demande de prestation et me recontacter.)"
+              }
+            ],
+            "type": "collection",
+            "label": "Fields by ID"
+          }
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "module": "google-sheets:filterRowsAdvanced",
+      "version": 2,
+      "parameters": {
+        "__IMTCONN__": 7978056
+      },
+      "filter": {
+        "name": "Filtre sécurité - formulaire Tally production uniquement",
+        "conditions": [
+          [
+            {
+              "a": "{{1.formId}}",
+              "b": "Gx52AQ",
+              "o": "text:equal"
+            }
+          ]
+        ]
+      },
+      "mapper": {
+        "tq": "select count(A) where A = 'TALLY-{{1.submissionId}}' or A = '{{1.submissionId}}' label count(A) ''",
+        "from": "drive",
+        "limit": "1",
+        "select": "list",
+        "sheetId": "Demandes",
+        "spreadsheetId": "/1KCHd6vdtlElV7wR9kg1ZhTsvEfE56BMDd_L32Q6KzgQ"
+      },
+      "metadata": {
+        "designer": {
+          "x": 300,
+          "y": 150,
+          "name": "Anti-doublon - compte id_demande"
+        },
+        "restore": {
+          "expect": {
+            "from": {
+              "label": "My Drive"
+            },
+            "select": {
+              "label": "Search by path"
+            },
+            "sheetId": {
+              "label": "Demandes"
+            },
+            "spreadsheetId": {
+              "path": [
+                "demande-chez-papi-maison-gourmande"
+              ]
+            }
+          },
+          "parameters": {
+            "__IMTCONN__": {
+              "data": {
+                "scoped": "true",
+                "connection": "google"
+              },
+              "label": "My Google connection (demande.chezpapimaisongourmande@gmail.com)"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "__IMTCONN__",
+            "type": "account:google",
+            "label": "Connection",
+            "required": true
+          }
+        ],
+        "expect": [
+          {
+            "name": "select",
+            "type": "select",
+            "label": "Search Method",
+            "required": true,
+            "validate": {
+              "enum": [
+                "list",
+                "fromAll",
+                "map"
+              ]
+            }
+          },
+          {
+            "name": "tq",
+            "type": "text",
+            "label": "Query",
+            "required": true
+          },
+          {
+            "name": "limit",
+            "type": "uinteger",
+            "label": "Limit"
+          },
+          {
+            "name": "from",
+            "type": "select",
+            "label": "Drive",
+            "required": true,
+            "validate": {
+              "enum": [
+                "drive",
+                "share",
+                "team"
+              ]
+            }
+          },
+          {
+            "name": "spreadsheetId",
+            "type": "file",
+            "label": "Spreadsheet ID",
+            "required": true
+          },
+          {
+            "name": "sheetId",
+            "type": "select",
+            "label": "Sheet ID",
+            "required": true
+          }
+        ],
+        "interface": [
+          {
+            "name": "__IMTLENGTH__",
+            "type": "uinteger",
+            "label": "Total number of bundles"
+          },
+          {
+            "name": "__IMTINDEX__",
+            "type": "uinteger",
+            "label": "Bundle order position"
+          },
+          {
+            "name": "0",
+            "type": "number",
+            "label": "count(A)"
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "module": "google-sheets:addRow",
+      "version": 2,
+      "parameters": {
+        "__IMTCONN__": 7978056
+      },
+      "filter": {
+        "name": "Anti-doublon - créer si count vide ou égal à 0",
+        "conditions": [
+          [
+            {
+              "a": "{{ifempty(4.`0`; 0)}}",
+              "b": "0",
+              "o": "number:equal"
+            }
+          ]
+        ]
+      },
+      "mapper": {
+        "from": "drive",
+        "mode": "select",
+        "values": {
+          "canal": "Réseaux sociaux",
+          "notes": "Type de prestation : {{ifempty(1.fieldsById.question_1Ejxjb; \"Non renseigné\")}}\nOptions : {{ifempty(1.fieldsById.question_M50g08; \"Non renseigné\")}}\nEnvies détaillées : {{ifempty(1.fieldsById.question_pVgMgP; \"Non renseigné\")}}",
+          "statut": "Nouvelle demande",
+          "telephone": "{{1.fieldsById.question_A8k0kl}}",
+          "id_demande": "TALLY-{{1.submissionId}}",
+          "nom_client": "{{1.fieldsById.question_7ZQeQ2}}",
+          "nb_convives": "{{1.fieldsById.question_K0XgXD}}",
+          "email_client": "{{1.fieldsById.question_bOaDa7}}",
+          "budget_estime": "{{1.fieldsById.question_J0ygyX}}",
+          "date_evenement": "{{1.fieldsById.question_BBvgv1}}",
+          "date_reception": "{{1.createdAt}}",
+          "type_evenement": "{{1.fieldsById.question_kZLpLZ}}",
+          "lieu_prestation": "{{1.fieldsById.question_L08g8J}}",
+          "message_original": "{{1.fieldsById.question_g4BpBJ}}",
+          "url_dossier_drive": "",
+          "url_email_origine": "",
+          "derniere_modification": "{{1.createdAt}}"
+        },
+        "sheetId": "Demandes",
+        "spreadsheetId": "/1KCHd6vdtlElV7wR9kg1ZhTsvEfE56BMDd_L32Q6KzgQ",
+        "includesHeaders": true,
+        "insertDataOption": "INSERT_ROWS",
+        "useColumnHeaders": true,
+        "valueInputOption": "RAW",
+        "insertUnformatted": true
+      },
+      "metadata": {
+        "designer": {
+          "x": 600,
+          "y": 150,
+          "name": "Ajouter demande Tally dans Google Sheet"
+        },
+        "restore": {
+          "expect": {
+            "from": {
+              "label": "My Drive"
+            },
+            "mode": {
+              "label": "Search by path"
+            },
+            "sheetId": {
+              "label": "Demandes"
+            },
+            "spreadsheetId": {
+              "path": [
+                "demande-chez-papi-maison-gourmande"
+              ]
+            },
+            "includesHeaders": {
+              "label": "Yes"
+            },
+            "insertDataOption": {
+              "mode": "chose",
+              "label": "Insert rows"
+            },
+            "useColumnHeaders": {
+              "label": "Yes",
+              "nested": [
+                {
+                  "name": "values",
+                  "spec": [
+                    {
+                      "name": "id_demande",
+                      "type": "text",
+                      "label": "id_demande (A)"
+                    },
+                    {
+                      "name": "date_reception",
+                      "type": "text",
+                      "label": "date_reception (B)"
+                    },
+                    {
+                      "name": "canal",
+                      "type": "text",
+                      "label": "canal (C)"
+                    },
+                    {
+                      "name": "nom_client",
+                      "type": "text",
+                      "label": "nom_client (D)"
+                    },
+                    {
+                      "name": "telephone",
+                      "type": "text",
+                      "label": "telephone (E)"
+                    },
+                    {
+                      "name": "email_client",
+                      "type": "text",
+                      "label": "email_client (F)"
+                    },
+                    {
+                      "name": "type_evenement",
+                      "type": "text",
+                      "label": "type_evenement (G)"
+                    },
+                    {
+                      "name": "date_evenement",
+                      "type": "text",
+                      "label": "date_evenement (H)"
+                    },
+                    {
+                      "name": "nb_convives",
+                      "type": "text",
+                      "label": "nb_convives (I)"
+                    },
+                    {
+                      "name": "lieu_prestation",
+                      "type": "text",
+                      "label": "lieu_prestation (J)"
+                    },
+                    {
+                      "name": "budget_estime",
+                      "type": "text",
+                      "label": "budget_estime (K)"
+                    },
+                    {
+                      "name": "statut",
+                      "type": "text",
+                      "label": "statut (L)"
+                    },
+                    {
+                      "name": "message_original",
+                      "type": "text",
+                      "label": "message_original (M)"
+                    },
+                    {
+                      "name": "url_email_origine",
+                      "type": "text",
+                      "label": "url_email_origine (N)"
+                    },
+                    {
+                      "name": "notes",
+                      "type": "text",
+                      "label": "notes (O)"
+                    },
+                    {
+                      "name": "url_dossier_drive",
+                      "type": "text",
+                      "label": "url_dossier_drive (P)"
+                    },
+                    {
+                      "name": "derniere_modification",
+                      "type": "text",
+                      "label": "derniere_modification (Q)"
+                    }
+                  ],
+                  "type": "collection",
+                  "label": "Values in columns",
+                  "metadata": [
+                    [
+                      [
+                        "id_demande",
+                        "date_reception",
+                        "canal",
+                        "nom_client",
+                        "telephone",
+                        "email_client",
+                        "type_evenement",
+                        "date_evenement",
+                        "nb_convives",
+                        "lieu_prestation",
+                        "budget_estime",
+                        "statut",
+                        "message_original",
+                        "url_email_origine",
+                        "notes",
+                        "url_dossier_drive",
+                        "derniere_modification"
+                      ]
+                    ]
+                  ]
+                }
+              ]
+            },
+            "valueInputOption": {
+              "mode": "chose",
+              "label": "Raw"
+            },
+            "insertUnformatted": {
+              "mode": "chose"
+            }
+          },
+          "parameters": {
+            "__IMTCONN__": {
+              "data": {
+                "scoped": "true",
+                "connection": "google"
+              },
+              "label": "My Google connection (demande.chezpapimaisongourmande@gmail.com)"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "__IMTCONN__",
+            "type": "account:google",
+            "label": "Connection",
+            "required": true
+          }
+        ],
+        "expect": [
+          {
+            "name": "mode",
+            "type": "select",
+            "label": "Search Method",
+            "required": true,
+            "validate": {
+              "enum": [
+                "select",
+                "fromAll",
+                "map"
+              ]
+            }
+          },
+          {
+            "name": "insertUnformatted",
+            "type": "boolean",
+            "label": "Unformatted",
+            "required": true
+          },
+          {
+            "name": "valueInputOption",
+            "type": "select",
+            "label": "Value input option",
+            "required": true,
+            "validate": {
+              "enum": [
+                "USER_ENTERED",
+                "RAW"
+              ]
+            }
+          },
+          {
+            "name": "insertDataOption",
+            "type": "select",
+            "label": "Insert data option",
+            "validate": {
+              "enum": [
+                "INSERT_ROWS",
+                "OVERWRITE"
+              ]
+            }
+          },
+          {
+            "name": "from",
+            "type": "select",
+            "label": "Drive",
+            "required": true,
+            "validate": {
+              "enum": [
+                "drive",
+                "share",
+                "team"
+              ]
+            }
+          },
+          {
+            "name": "spreadsheetId",
+            "type": "file",
+            "label": "Spreadsheet Name",
+            "required": true
+          },
+          {
+            "name": "sheetId",
+            "type": "select",
+            "label": "Sheet Name",
+            "required": true
+          },
+          {
+            "name": "includesHeaders",
+            "type": "select",
+            "label": "Table contains headers",
+            "required": true,
+            "validate": {
+              "enum": [
+                true,
+                false
+              ]
+            }
+          },
+          {
+            "name": "useColumnHeaders",
+            "type": "select",
+            "label": "Use column headers as IDs of the columns",
+            "required": true,
+            "validate": {
+              "enum": [
+                true,
+                false
+              ]
+            }
+          },
+          {
+            "name": "values",
+            "spec": [
+              {
+                "name": "id_demande",
+                "type": "text",
+                "label": "id_demande (A)"
+              },
+              {
+                "name": "date_reception",
+                "type": "text",
+                "label": "date_reception (B)"
+              },
+              {
+                "name": "canal",
+                "type": "text",
+                "label": "canal (C)"
+              },
+              {
+                "name": "nom_client",
+                "type": "text",
+                "label": "nom_client (D)"
+              },
+              {
+                "name": "telephone",
+                "type": "text",
+                "label": "telephone (E)"
+              },
+              {
+                "name": "email_client",
+                "type": "text",
+                "label": "email_client (F)"
+              },
+              {
+                "name": "type_evenement",
+                "type": "text",
+                "label": "type_evenement (G)"
+              },
+              {
+                "name": "date_evenement",
+                "type": "text",
+                "label": "date_evenement (H)"
+              },
+              {
+                "name": "nb_convives",
+                "type": "text",
+                "label": "nb_convives (I)"
+              },
+              {
+                "name": "lieu_prestation",
+                "type": "text",
+                "label": "lieu_prestation (J)"
+              },
+              {
+                "name": "budget_estime",
+                "type": "text",
+                "label": "budget_estime (K)"
+              },
+              {
+                "name": "statut",
+                "type": "text",
+                "label": "statut (L)"
+              },
+              {
+                "name": "message_original",
+                "type": "text",
+                "label": "message_original (M)"
+              },
+              {
+                "name": "url_email_origine",
+                "type": "text",
+                "label": "url_email_origine (N)"
+              },
+              {
+                "name": "notes",
+                "type": "text",
+                "label": "notes (O)"
+              },
+              {
+                "name": "url_dossier_drive",
+                "type": "text",
+                "label": "url_dossier_drive (P)"
+              },
+              {
+                "name": "derniere_modification",
+                "type": "text",
+                "label": "derniere_modification (Q)"
+              }
+            ],
+            "type": "collection",
+            "label": "Values in columns",
+            "metadata": [
+              [
+                [
+                  "id_demande",
+                  "date_reception",
+                  "canal",
+                  "nom_client",
+                  "telephone",
+                  "email_client",
+                  "type_evenement",
+                  "date_evenement",
+                  "nb_convives",
+                  "lieu_prestation",
+                  "budget_estime",
+                  "statut",
+                  "message_original",
+                  "url_email_origine",
+                  "notes",
+                  "url_dossier_drive",
+                  "derniere_modification"
+                ]
+              ]
+            ]
+          }
+        ],
+        "advanced": true
+      },
+      "onerror": [
+        {
+          "id": 101,
+          "module": "google-email:sendAnEmail",
+          "version": 4,
+          "parameters": {
+            "__IMTCONN__": 7978131
+          },
+          "mapper": {
+            "to": [
+              "courtois.florian@efficy-conseil.fr"
+            ],
+            "content": "<p>Erreur détectée dans le scénario Make <strong>Integration Tally</strong>.</p>\n<p><strong>Module concerné :</strong> Google Sheets - Add Row</p>\n<p><strong>submissionId :</strong> {{1.submissionId}}<br>\n<strong>responseId :</strong> {{1.responseId}}<br>\n<strong>formId :</strong> {{1.formId}}<br>\n<strong>Nom :</strong> {{1.fields.`Nom / Prénom`}}<br>\n<strong>Email :</strong> {{1.fields.`Adresse email`}}</p>\n<p>Action requise : consulter l'historique Make, corriger l'erreur, puis reprendre manuellement la demande depuis les soumissions Tally si nécessaire.</p>",
+            "subject": "[ERREUR MAKE] Integration Tally - Google Sheets - Add Row",
+            "bodyType": "rawHtml"
+          },
+          "metadata": {
+            "designer": {
+              "x": 900,
+              "y": 300,
+              "name": "Alerte erreur Efficy"
+            },
+            "restore": {
+              "expect": {
+                "cc": {
+                  "mode": "chose"
+                },
+                "to": {
+                  "mode": "chose",
+                  "items": [
+                    null
+                  ]
+                },
+                "bcc": {
+                  "mode": "chose"
+                },
+                "from": {
+                  "mode": "chose"
+                },
+                "bodyType": {
+                  "label": "Raw HTML"
+                },
+                "attachments": {
+                  "mode": "chose"
+                },
+                "emailHeaders": {
+                  "mode": "chose"
+                }
+              },
+              "parameters": {
+                "__IMTCONN__": {
+                  "data": {
+                    "scoped": "true",
+                    "connection": "google-email"
+                  },
+                  "label": "My Gmail connection (demande.chezpapimaisongourmande@gmail.com)"
+                }
+              }
+            },
+            "parameters": [
+              {
+                "name": "__IMTCONN__",
+                "type": "account:google-email",
+                "label": "Connection",
+                "required": true
+              }
+            ],
+            "expect": [
+              {
+                "name": "to",
+                "spec": {
+                  "name": "value",
+                  "type": "email",
+                  "label": "Recipient email address",
+                  "required": true,
+                  "validate": true
+                },
+                "type": "array",
+                "label": "To",
+                "required": true
+              },
+              {
+                "name": "subject",
+                "type": "text",
+                "label": "Subject"
+              },
+              {
+                "name": "bodyType",
+                "type": "select",
+                "label": "Body type",
+                "required": true,
+                "validate": {
+                  "enum": [
+                    "rawHtml",
+                    "collection"
+                  ]
+                }
+              },
+              {
+                "name": "attachments",
+                "spec": {
+                  "name": "value",
+                  "spec": [
+                    {
+                      "name": "filename",
+                      "type": "filename",
+                      "label": "File name",
+                      "required": true,
+                      "semantic": "file:name"
+                    },
+                    {
+                      "name": "data",
+                      "type": "buffer",
+                      "label": "Data",
+                      "required": true,
+                      "semantic": "file:data"
+                    }
+                  ],
+                  "type": "collection",
+                  "label": "Attachment"
+                },
+                "type": "array",
+                "label": "Attachments"
+              },
+              {
+                "name": "from",
+                "type": "select",
+                "label": "From"
+              },
+              {
+                "name": "cc",
+                "spec": {
+                  "name": "value",
+                  "type": "email",
+                  "label": "Recipient email address"
+                },
+                "type": "array",
+                "label": "CC recipients"
+              },
+              {
+                "name": "bcc",
+                "spec": {
+                  "name": "value",
+                  "type": "email",
+                  "label": "Recipient email address"
+                },
+                "type": "array",
+                "label": "BCC recipients"
+              },
+              {
+                "name": "emailHeaders",
+                "spec": {
+                  "name": "value",
+                  "spec": [
+                    {
+                      "name": "key",
+                      "type": "text",
+                      "label": "Key",
+                      "required": true
+                    },
+                    {
+                      "name": "value",
+                      "type": "text",
+                      "label": "Value"
+                    }
+                  ],
+                  "type": "collection",
+                  "label": "Email header"
+                },
+                "type": "array",
+                "label": "Additional email headers"
+              },
+              {
+                "name": "content",
+                "type": "text",
+                "label": "Content"
+              }
+            ]
+          }
+        },
+        {
+          "id": 102,
+          "module": "builtin:Commit",
+          "version": 1,
+          "parameters": {},
+          "mapper": {},
+          "metadata": {
+            "designer": {
+              "x": 1200,
+              "y": 300,
+              "name": "Stop propre sans retry"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "module": "google-email:sendAnEmail",
+      "version": 4,
+      "parameters": {
+        "__IMTCONN__": 7978131
+      },
+      "mapper": {
+        "to": [
+          "{{1.fieldsById.question_bOaDa7}}"
+        ],
+        "content": "<p>Bonjour {{1.fieldsById.question_7ZQeQ2}},</p>\n\n<p>Nous avons bien reçu votre demande.<br><br>\nNous allons l’étudier avec attention afin de vous proposer une réponse adaptée à votre événement.</p>\n\n<p><strong>Rappel de votre demande :</strong><br><br>\n<strong>Votre événement</strong><br>\n• Date de l'événement : {{ifempty(1.fieldsById.question_BBvgv1; \"Non renseignée\")}}<br>\n• Type d'événement : {{ifempty(1.fieldsById.question_kZLpLZ; \"Non renseigné\")}}<br>\n• Nombre de convives : {{ifempty(1.fieldsById.question_K0XgXD; \"Non renseigné\")}}<br>\n• Lieu de la prestation : {{ifempty(1.fieldsById.question_L08g8J; \"Non renseigné\")}}</p>\n\n<p><strong>Vos envies :</strong><br>\n• Type de prestation souhaitée : {{ifempty(1.fieldsById.question_1Ejxjb; \"Non renseigné\")}}<br>\n• Options : {{ifempty(1.fieldsById.question_M50g08; \"Non renseignées\")}}</p>\n\n<p>À très vite.<br><br>\nManon<br><br>\nChez Papi Maison Gourmande<br>\n📞 06 09 30 34 41<br>\n✉️ chezpapimaisongourmande@gmail.com</p>",
+        "subject": "Chez Papi Maison Gourmande - Accusé de votre demande",
+        "bodyType": "rawHtml"
+      },
+      "metadata": {
+        "designer": {
+          "x": 900,
+          "y": 0,
+          "name": "Envoyer accusé Tally propre"
+        },
+        "restore": {
+          "expect": {
+            "cc": {
+              "mode": "chose"
+            },
+            "to": {
+              "mode": "chose",
+              "items": [
+                null
+              ]
+            },
+            "bcc": {
+              "mode": "chose"
+            },
+            "from": {
+              "mode": "chose"
+            },
+            "bodyType": {
+              "label": "Raw HTML"
+            },
+            "attachments": {
+              "mode": "chose"
+            },
+            "emailHeaders": {
+              "mode": "chose"
+            }
+          },
+          "parameters": {
+            "__IMTCONN__": {
+              "data": {
+                "scoped": "true",
+                "connection": "google-email"
+              },
+              "label": "My Gmail connection (demande.chezpapimaisongourmande@gmail.com)"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "__IMTCONN__",
+            "type": "account:google-email",
+            "label": "Connection",
+            "required": true
+          }
+        ],
+        "expect": [
+          {
+            "name": "to",
+            "spec": {
+              "name": "value",
+              "type": "email",
+              "label": "Recipient email address",
+              "required": true,
+              "validate": true
+            },
+            "type": "array",
+            "label": "To",
+            "required": true
+          },
+          {
+            "name": "subject",
+            "type": "text",
+            "label": "Subject"
+          },
+          {
+            "name": "bodyType",
+            "type": "select",
+            "label": "Body type",
+            "required": true,
+            "validate": {
+              "enum": [
+                "rawHtml",
+                "collection"
+              ]
+            }
+          },
+          {
+            "name": "attachments",
+            "spec": {
+              "name": "value",
+              "spec": [
+                {
+                  "name": "filename",
+                  "type": "filename",
+                  "label": "File name",
+                  "required": true,
+                  "semantic": "file:name"
+                },
+                {
+                  "name": "data",
+                  "type": "buffer",
+                  "label": "Data",
+                  "required": true,
+                  "semantic": "file:data"
+                }
+              ],
+              "type": "collection",
+              "label": "Attachment"
+            },
+            "type": "array",
+            "label": "Attachments"
+          },
+          {
+            "name": "from",
+            "type": "select",
+            "label": "From"
+          },
+          {
+            "name": "cc",
+            "spec": {
+              "name": "value",
+              "type": "email",
+              "label": "Recipient email address"
+            },
+            "type": "array",
+            "label": "CC recipients"
+          },
+          {
+            "name": "bcc",
+            "spec": {
+              "name": "value",
+              "type": "email",
+              "label": "Recipient email address"
+            },
+            "type": "array",
+            "label": "BCC recipients"
+          },
+          {
+            "name": "emailHeaders",
+            "spec": {
+              "name": "value",
+              "spec": [
+                {
+                  "name": "key",
+                  "type": "text",
+                  "label": "Key",
+                  "required": true
+                },
+                {
+                  "name": "value",
+                  "type": "text",
+                  "label": "Value"
+                }
+              ],
+              "type": "collection",
+              "label": "Email header"
+            },
+            "type": "array",
+            "label": "Additional email headers"
+          },
+          {
+            "name": "content",
+            "type": "text",
+            "label": "Content"
+          }
+        ]
+      },
+      "onerror": [
+        {
+          "id": 103,
+          "module": "google-email:sendAnEmail",
+          "version": 4,
+          "parameters": {
+            "__IMTCONN__": 7978131
+          },
+          "mapper": {
+            "to": [
+              "courtois.florian@efficy-conseil.fr"
+            ],
+            "content": "<p>Erreur détectée dans le scénario Make <strong>Integration Tally</strong>.</p>\n<p><strong>Module concerné :</strong> Gmail - Accusé de réception</p>\n<p><strong>submissionId :</strong> {{1.submissionId}}<br>\n<strong>responseId :</strong> {{1.responseId}}<br>\n<strong>formId :</strong> {{1.formId}}<br>\n<strong>Nom :</strong> {{1.fields.`Nom / Prénom`}}<br>\n<strong>Email :</strong> {{1.fields.`Adresse email`}}</p>\n<p>Action requise : consulter l'historique Make, corriger l'erreur, puis reprendre manuellement la demande depuis les soumissions Tally si nécessaire.</p>",
+            "subject": "[ERREUR MAKE] Integration Tally - Gmail - Accusé de réception",
+            "bodyType": "rawHtml"
+          },
+          "metadata": {
+            "designer": {
+              "x": 1200,
+              "y": 0,
+              "name": "Alerte erreur Efficy"
+            },
+            "restore": {
+              "expect": {
+                "cc": {
+                  "mode": "chose"
+                },
+                "to": {
+                  "mode": "chose",
+                  "items": [
+                    null
+                  ]
+                },
+                "bcc": {
+                  "mode": "chose"
+                },
+                "from": {
+                  "mode": "chose"
+                },
+                "bodyType": {
+                  "label": "Raw HTML"
+                },
+                "attachments": {
+                  "mode": "chose"
+                },
+                "emailHeaders": {
+                  "mode": "chose"
+                }
+              },
+              "parameters": {
+                "__IMTCONN__": {
+                  "data": {
+                    "scoped": "true",
+                    "connection": "google-email"
+                  },
+                  "label": "My Gmail connection (demande.chezpapimaisongourmande@gmail.com)"
+                }
+              }
+            },
+            "parameters": [
+              {
+                "name": "__IMTCONN__",
+                "type": "account:google-email",
+                "label": "Connection",
+                "required": true
+              }
+            ],
+            "expect": [
+              {
+                "name": "to",
+                "spec": {
+                  "name": "value",
+                  "type": "email",
+                  "label": "Recipient email address",
+                  "required": true,
+                  "validate": true
+                },
+                "type": "array",
+                "label": "To",
+                "required": true
+              },
+              {
+                "name": "subject",
+                "type": "text",
+                "label": "Subject"
+              },
+              {
+                "name": "bodyType",
+                "type": "select",
+                "label": "Body type",
+                "required": true,
+                "validate": {
+                  "enum": [
+                    "rawHtml",
+                    "collection"
+                  ]
+                }
+              },
+              {
+                "name": "attachments",
+                "spec": {
+                  "name": "value",
+                  "spec": [
+                    {
+                      "name": "filename",
+                      "type": "filename",
+                      "label": "File name",
+                      "required": true,
+                      "semantic": "file:name"
+                    },
+                    {
+                      "name": "data",
+                      "type": "buffer",
+                      "label": "Data",
+                      "required": true,
+                      "semantic": "file:data"
+                    }
+                  ],
+                  "type": "collection",
+                  "label": "Attachment"
+                },
+                "type": "array",
+                "label": "Attachments"
+              },
+              {
+                "name": "from",
+                "type": "select",
+                "label": "From"
+              },
+              {
+                "name": "cc",
+                "spec": {
+                  "name": "value",
+                  "type": "email",
+                  "label": "Recipient email address"
+                },
+                "type": "array",
+                "label": "CC recipients"
+              },
+              {
+                "name": "bcc",
+                "spec": {
+                  "name": "value",
+                  "type": "email",
+                  "label": "Recipient email address"
+                },
+                "type": "array",
+                "label": "BCC recipients"
+              },
+              {
+                "name": "emailHeaders",
+                "spec": {
+                  "name": "value",
+                  "spec": [
+                    {
+                      "name": "key",
+                      "type": "text",
+                      "label": "Key",
+                      "required": true
+                    },
+                    {
+                      "name": "value",
+                      "type": "text",
+                      "label": "Value"
+                    }
+                  ],
+                  "type": "collection",
+                  "label": "Email header"
+                },
+                "type": "array",
+                "label": "Additional email headers"
+              },
+              {
+                "name": "content",
+                "type": "text",
+                "label": "Content"
+              }
+            ]
+          }
+        },
+        {
+          "id": 104,
+          "module": "builtin:Commit",
+          "version": 1,
+          "parameters": {},
+          "mapper": {},
+          "metadata": {
+            "designer": {
+              "x": 1500,
+              "y": 0,
+              "name": "Stop propre sans retry"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "instant": true,
+    "version": 1,
+    "scenario": {
+      "roundtrips": 1,
+      "maxErrors": 3,
+      "autoCommit": true,
+      "autoCommitTriggerLast": true,
+      "sequential": true,
+      "slots": null,
+      "confidential": false,
+      "dataloss": false,
+      "dlq": false,
+      "freshVariables": false
+    },
+    "designer": {
+      "orphans": []
+    },
+    "zone": "eu1.make.com",
+    "notes": []
+  }
+}

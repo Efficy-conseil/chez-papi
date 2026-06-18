@@ -1242,6 +1242,29 @@ body {
 .btn-refresh:hover { color: var(--brown-dk); border-color: var(--brown); }
 .btn-refresh:disabled { opacity: .4; cursor: default; }
 
+.section-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-left: auto;
+}
+
+body.is-loading-data .content::before {
+  content: "Synchronisation en cours…";
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--brown-dk);
+  color: #fff;
+  padding: 7px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  z-index: 650;
+  box-shadow: 0 4px 14px rgba(46,32,24,.18);
+}
+
 /* ── PIPELINE extras ── */
 .pipe-status-sel {
   background: none;
@@ -1359,6 +1382,40 @@ body {
 .form-row select:focus,
 .form-row textarea:focus { outline: none; border-color: var(--brown); }
 .form-row textarea { resize: vertical; }
+
+.field-with-action,
+.readonly-link-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.field-with-action input,
+.readonly-link-row input {
+  flex: 1;
+  min-width: 0;
+}
+.field-action {
+  padding: 8px 10px;
+  font-size: 12px;
+  text-decoration: none;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.form-row.is-readonly input,
+.form-row.is-readonly textarea {
+  background: #f7f2ea;
+  color: var(--muted);
+  border-style: dashed;
+}
+.form-row.is-readonly label::after {
+  content: " · non modifiable";
+  font-weight: 400;
+  color: var(--faint);
+  text-transform: none;
+  letter-spacing: 0;
+}
 
 .form-row2 {
   display: grid;
