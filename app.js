@@ -319,6 +319,11 @@ function localDateTimeInputValue(date = new Date()) {
   ].join(':');
 }
 
+function dateTimeInputValue(value) {
+  const d = value instanceof Date ? value : parseDateTime(value);
+  return d ? localDateTimeInputValue(d) : '';
+}
+
 function setManualOnlyRowsVisible(visible) {
   document.querySelectorAll('.source-email-row, .source-message-row').forEach(row => {
     row.style.display = visible ? '' : 'none';
@@ -1640,6 +1645,8 @@ function openEventModal(rowIndex = null) {
             setSelectValue(el, normalizeCanal(cleanVal), '');
           } else if (el.name === 'date_evenement') {
             el.value = formatDateFR(cleanVal);
+          } else if (el.name === 'date_reception') {
+            el.value = dateTimeInputValue(cleanVal);
           } else {
             el.value = cleanVal;
           }
