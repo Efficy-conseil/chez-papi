@@ -347,7 +347,7 @@
       },
       "filter": null,
       "mapper": {
-        "tq": "select count(A) where A = '{{if(1.fromEmail = \"notifications@wix-forms.com\"; concat(\"WIX-\"; 1.id); if(1.fromEmail = \"message@voxist.com\"; concat(\"VOXIST-\"; 1.id); concat(\"GMAIL-\"; 1.threadId)))}}' or A = '{{if(1.fromEmail = \"notifications@wix-forms.com\"; 1.threadId; if(1.fromEmail = \"message@voxist.com\"; 1.threadId; 1.threadId))}}' label count(A) ''",
+        "tq": "select count(A) where A = '{{if(1.fromEmail = \"notifications@wix-forms.com\"; \"WIX-\"; if(1.fromEmail = \"message@voxist.com\"; \"VOXIST-\"; \"GMAIL-\"))}}{{if(1.fromEmail = \"notifications@wix-forms.com\"; 1.id; if(1.fromEmail = \"message@voxist.com\"; 1.id; 1.threadId))}}' or A = '{{1.threadId}}' label count(A) ''",
         "from": "drive",
         "limit": "1",
         "select": "list",
@@ -522,7 +522,7 @@
                   },
                   {
                     "role": "user",
-                    "content": "Source : Wix\nCanal : Formulaire Site\nDate de réception : {{1.internalDate}}\nExpéditeur : {{1.fromEmail}}\nObjet : {{1.subject}}\n\nEmail Wix brut limité :\n{{substring(1.fullTextBody; 0; 4000)}}\n\nRègles spécifiques Wix :\n- Le formulaire est déjà qualifiant : recopier les champs au maximum.\n- Ne pas reformuler les champs libres.\n- Ne pas interpréter inutilement.\n- email_client = valeur après E-mail / E-mail *.\n- nom_client = valeur après Nom / Prénom / Nom.\n- type_evenement = valeur après Type d'événement si présente.\n- lieu_prestation = valeur après Lieu de l'événement si présente.\n- nb_convives = valeur brute après Nombre de convives, même si c'est une phrase.\n- message_original = recopier les champs utiles sous forme Libellé : valeur.\n- canal = Formulaire Site ; source = Wix ; send_ack = true si email_client présent ; ack_mode = send_email ; archive_label = Historique_Wix.\n\nRègle resume_court :\n- resume_court est obligatoire.\n- Il doit résumer les champs du formulaire en 1 phrase courte, sans interprétation excessive.\n- Exemple : \"Demande de devis pour un anniversaire à Grans pour 24 convives. Message : test nouveau formulaire.\"\n",
+                    "content": "Source : Wix\nCanal : Site Internet\nDate de réception : {{1.internalDate}}\nExpéditeur : {{1.fromEmail}}\nObjet : {{1.subject}}\n\nEmail Wix brut limité :\n{{substring(1.fullTextBody; 0; 4000)}}\n\nRègles spécifiques Wix :\n- Le formulaire est déjà qualifiant : recopier les champs au maximum.\n- Ne pas reformuler les champs libres.\n- Ne pas interpréter inutilement.\n- email_client = valeur après E-mail / E-mail *.\n- nom_client = valeur après Nom / Prénom / Nom.\n- type_evenement = valeur après Type d'événement si présente.\n- lieu_prestation = valeur après Lieu de l'événement si présente.\n- nb_convives = valeur brute après Nombre de convives, même si c'est une phrase.\n- message_original = recopier les champs utiles sous forme Libellé : valeur.\n- canal = Site Internet ; source = Wix ; send_ack = true si email_client présent ; ack_mode = send_email ; archive_label = Historique_Wix.\n\nRègle resume_court :\n- resume_court est obligatoire.\n- Il doit résumer les champs du formulaire en 1 phrase courte, sans interprétation excessive.\n- Exemple : \"Demande de devis pour un anniversaire à Grans pour 24 convives. Message : test nouveau formulaire.\"\n",
                     "imageDetail": "auto"
                   }
                 ],
@@ -1963,7 +1963,7 @@
                 "values": {
                   "id_demande": "WIX-{{1.id}}",
                   "date_reception": "{{1.internalDate}}",
-                  "canal": "Formulaire Site",
+                  "canal": "Site Internet",
                   "nom_client": "{{42.nom_client}}",
                   "telephone": "{{42.telephone}}",
                   "email_client": "{{42.email_client}}",
@@ -10757,7 +10757,7 @@
                   },
                   {
                     "role": "user",
-                    "content": "Source : Email direct\nCanal : Email\nDate de réception : {{1.internalDate}}\nNom expéditeur : {{1.fromName}}\nEmail expéditeur : {{1.fromEmail}}\nObjet : {{1.subject}}\n\nCorps limité :\n{{substring(1.fullTextBody; 0; 4000)}}\n\nRègles spécifiques email direct :\n- is_demande = false si newsletter, publicité, facture, fournisseur, spam ou email non lié à une demande client.\n- email_client = email expéditeur sauf autre email explicite dans le corps.\n- canal = Email direct; source = Email direct.\n- send_ack = true si is_demande=true et email_client présent ; ack_mode = reply.\n- archive_label = Historique_Email_Direct si demande réelle, Hors_scope_Make sinon.\n\nRègle resume_court :\n- resume_court est obligatoire si is_demande=true.\n- Il doit reprendre les informations principales : type d'événement, date, lieu, nombre de convives, prestation souhaitée et téléphone si utile.\n",
+                    "content": "Source : Email direct\nCanal : Email\nDate de réception : {{1.internalDate}}\nNom expéditeur : {{1.fromName}}\nEmail expéditeur : {{1.fromEmail}}\nObjet : {{1.subject}}\n\nCorps limité :\n{{substring(1.fullTextBody; 0; 4000)}}\n\nRègles spécifiques email direct :\n- is_demande = false si newsletter, publicité, facture, fournisseur, spam ou email non lié à une demande client.\n- is_demande = true si l'email demande un devis, une disponibilité ou une prestation pour un événement, repas, cocktail, buffet, réception, concert, entreprise, mairie, collectivité ou association.\n- is_demande = true si l'email contient une date ou période, un lieu, un nombre de personnes/convives et une prestation alimentaire attendue, même si l'expéditeur est une mairie, une institution, une association ou un organisme public.\n- Exemple à accepter : demande de devis pour un cocktail de 140 personnes avant concert avec pièces salées/sucrées, nappage ou mange-debout.\n- email_client = email expéditeur sauf autre email explicite dans le corps.\n- canal = Email; source = Email direct.\n- send_ack = true si is_demande=true et email_client présent ; ack_mode = reply.\n- archive_label = Historique_Email_Direct si demande réelle, Hors_scope_Make sinon.\n\nRègle resume_court :\n- resume_court est obligatoire si is_demande=true.\n- Il doit reprendre les informations principales : type d'événement, date, lieu, nombre de convives, prestation souhaitée et téléphone si utile.\n",
                     "imageDetail": "auto"
                   }
                 ],
@@ -12215,7 +12215,7 @@
                         "values": {
                           "id_demande": "GMAIL-{{1.threadId}}",
                           "date_reception": "{{1.internalDate}}",
-                          "canal": "Email direct",
+                          "canal": "Email",
                           "nom_client": "{{38.nom_client}}",
                           "telephone": "{{38.telephone}}",
                           "email_client": "{{38.email_client}}",

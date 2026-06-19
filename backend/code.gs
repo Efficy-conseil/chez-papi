@@ -29,6 +29,14 @@ const ALLOWED_STATUSES = [
   "Perdu / Sans suite"
 ];
 
+const ALLOWED_CHANNELS = [
+  "Téléphone",
+  "Email",
+  "Site Internet",
+  "Réseaux sociaux",
+  "Saisie manuelle"
+];
+
 const ALLOWED_FIELDS = [
   "date_reception",
   "canal",
@@ -289,6 +297,13 @@ function sanitizeFields(rawFields, isUpdate) {
     throw new Error("Statut invalide : " + clean.statut);
   }
 
+  if (clean.canal !== undefined) {
+    clean.canal = normalizeCanal(clean.canal);
+    if (clean.canal && ALLOWED_CHANNELS.indexOf(String(clean.canal)) === -1) {
+      throw new Error("Canal invalide : " + clean.canal);
+    }
+  }
+
   ["url_email_origine", "url_dossier_drive"].forEach(function(key) {
     if (clean[key] !== undefined && !isSafeBusinessUrl(clean[key])) {
       throw new Error("URL invalide : " + key);
@@ -302,6 +317,18 @@ function isSafeBusinessUrl(value) {
   const s = String(value || '').trim();
   if (!s || s === '—') return true;
   return s.indexOf("https://mail.google.com/") === 0 || s.indexOf("https://drive.google.com/") === 0;
+}
+
+function normalizeCanal(canal) {
+  const raw = String(canal || '').trim();
+  if (!raw || raw === '—') return '';
+  const lower = raw.toLowerCase();
+  if (lower === 'email direct' || lower === 'email') return 'Email';
+  if (lower === 'formulaire site' || lower === 'site web' || lower === 'site internet' || lower === 'wix') return 'Site Internet';
+  if (lower === 'voxist' || lower === 'telephone' || lower === 'téléphone') return 'Téléphone';
+  if (lower === 'réseaux sociaux' || lower === 'reseaux sociaux' || lower === 'réseau social' || lower === 'reseau social') return 'Réseaux sociaux';
+  if (lower === 'saisie manuelle' || lower === 'manuel' || lower === 'manual') return 'Saisie manuelle';
+  return raw;
 }
 
 function escapeHtml(value) {
@@ -712,6 +739,24 @@ function parseEventDate(dateStr) {
   return null;
 }
 
+function splitEventDateRange(dateStr) {
+  var s = String(dateStr || '').trim();
+  var match = s.match(/^(?:du\s+)?(.+?)\s+au\s+(.+)$/i);
+  if (!match) return null;
+  return { start: match[1].trim(), end: match[2].trim() };
+}
+
+function parseEventEndDate(dateStr) {
+  var range = splitEventDateRange(dateStr);
+  return parseEventDate(range ? range.end : dateStr);
+}
+
+function addDays(date, days) {
+  var d = new Date(date.getTime());
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
 function parseEventTime(timeStr) {
   if (!timeStr) return null;
   var s = String(timeStr).trim();
@@ -792,6 +837,11 @@ function syncCalendarEvent(rowData) {
       Logger.log("[syncCalendarEvent] Annulé : date_evenement manquante ou invalide : '" + data.date_evenement + "'");
       return;
     }
+    var eventEndDate = parseEventEndDate(data.date_evenement) || eventDate;
+    if (eventEndDate.getTime() < eventDate.getTime()) {
+      eventEndDate = eventDate;
+    }
+    var allDayEndDate = addDays(eventEndDate, 1);
     var eventTime = parseEventTime(data.heure_evenement);
     
     var title = (data.nom_client || 'Client inconnu') + ' - ' + (data.type_evenement || 'Événement');
@@ -816,7 +866,7 @@ function syncCalendarEvent(rowData) {
       if (startTime && endTime) {
         existingEvent.setTime(startTime, endTime);
       } else {
-        existingEvent.setAllDayDate(eventDate);
+        existingEvent.setAllDayDates(eventDate, allDayEndDate);
       }
       Logger.log("[syncCalendarEvent] Événement MIS À JOUR pour " + data.id_demande);
     } else {
@@ -826,7 +876,7 @@ function syncCalendarEvent(rowData) {
           description: description
         });
       } else {
-        calendar.createAllDayEvent(title, eventDate, {
+        calendar.createAllDayEvent(title, eventDate, allDayEndDate, {
           location: location,
           description: description
         });
