@@ -101,22 +101,51 @@ function eventId(e) {
 }
 
 // Convertit n'importe quelle date (ISO, YYYY-MM-DD ou JJ/MM/AAAA) en minuit heure locale
-function parseLocalDate(ds) {
-  if (!ds) return null;
+function dateFromParts(year, month, day) {
+  if (!year || month < 1 || month > 12 || day < 1 || day > 31) return null;
+  const d = new Date(year, month - 1, day);
+  if (d.getFullYear() !== year || d.getMonth() !== month - 1 || d.getDate() !== day) return null;
+  return d;
+}
+
+function parseSheetSerialDate(value) {
+  const n = typeof value === 'number'
+    ? value
+    : (/^\d{5}(?:[.,]\d+)?$/.test(String(value || '').trim()) ? Number(String(value).replace(',', '.')) : NaN);
+  if (!isFinite(n) || n < 20000 || n > 80000) return null;
+  const wholeDays = Math.floor(n);
+  const msInDay = 24 * 60 * 60 * 1000;
+  const date = new Date(Date.UTC(1899, 11, 30) + wholeDays * msInDay);
+  return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+}
+
+function splitDateRange(value) {
+  const raw = String(value || '').trim();
+  const match = raw.match(/^(?:du\s+)?(.+?)\s+au\s+(.+)$/i);
+  if (!match) return null;
+  return { start: match[1].trim(), end: match[2].trim() };
+}
+
+function parseSingleLocalDate(ds) {
+  const sheetDate = parseSheetSerialDate(ds);
+  if (sheetDate) return sheetDate;
+
   let cleanDs = String(ds).trim();
-  if (cleanDs.includes(' au ')) {
-    cleanDs = cleanDs.split(' au ')[0].trim();
-  }
 
   const ymdMatch = cleanDs.match(/(\d{4})-(\d{2})-(\d{2})/);
   if (ymdMatch) {
-    return new Date(Number(ymdMatch[1]), Number(ymdMatch[2]) - 1, Number(ymdMatch[3]));
+    return dateFromParts(Number(ymdMatch[1]), Number(ymdMatch[2]), Number(ymdMatch[3]));
   }
 
-  const dmyMatch = cleanDs.match(/(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})/);
+  const dmyMatch = cleanDs.match(/(\d{1,2})\/(\d{1,2})\/(\d{4}|\d{2})/);
   if (dmyMatch) {
     const year = dmyMatch[3].length === 2 ? 2000 + Number(dmyMatch[3]) : Number(dmyMatch[3]);
-    return new Date(year, Number(dmyMatch[2]) - 1, Number(dmyMatch[1]));
+    const day = Number(dmyMatch[1]);
+    const month = Number(dmyMatch[2]);
+    const frenchDate = dateFromParts(year, month, day);
+    if (frenchDate) return frenchDate;
+    if (day <= 12 && month > 12) return dateFromParts(year, day, month);
+    return null;
   }
 
   const d = new Date(cleanDs);
@@ -124,8 +153,27 @@ function parseLocalDate(ds) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
+function parseLocalDate(ds) {
+  if (ds === null || ds === undefined || ds === '') return null;
+  const range = splitDateRange(ds);
+  return parseSingleLocalDate(range ? range.start : ds);
+}
+
+function parseEventEndDate(ds) {
+  if (ds === null || ds === undefined || ds === '') return null;
+  const range = splitDateRange(ds);
+  return parseSingleLocalDate(range ? range.end : ds);
+}
+
 function parseDateTime(ds) {
-  if (!ds) return null;
+  if (ds === null || ds === undefined || ds === '') return null;
+  const sheetDate = parseSheetSerialDate(ds);
+  if (sheetDate) {
+    const n = Number(String(ds).replace(',', '.'));
+    const fraction = isFinite(n) ? n - Math.floor(n) : 0;
+    if (fraction > 0) sheetDate.setMilliseconds(Math.round(fraction * 24 * 60 * 60 * 1000));
+    return sheetDate;
+  }
   const raw = String(ds).trim();
   if (!raw) return null;
   const hasTime = /T\d{2}:\d{2}|\d{1,2}:\d{2}/.test(raw);
@@ -197,8 +245,9 @@ function formatDateFR(ds) {
   try {
     // Si c'est une plage, on formate les composants individuellement.
     let cleanDs = String(ds).trim();
-    if (cleanDs.includes(' au ')) {
-      return cleanDs.split(' au ').map(part => formatDateFR(part)).join(' au ');
+    const range = splitDateRange(cleanDs);
+    if (range) {
+      return [formatDateFR(range.start), formatDateFR(range.end)].filter(Boolean).join(' au ');
     }
     const d = parseLocalDate(cleanDs);
     if (!d) return cleanDs;
@@ -254,6 +303,11 @@ function hideBusyOverlay() {
 function dateSortValue(value) {
   const d = parseLocalDate(value);
   return d ? d.getTime() : Number.MAX_SAFE_INTEGER;
+}
+
+function dateTimeSortValue(value) {
+  const d = parseDateTime(value);
+  return d ? d.getTime() : 0;
 }
 
 function dateInputKey(value) {
@@ -651,16 +705,7 @@ function isEventPast(e) {
   // Les prestations terminées ou clients perdus sont historisés (non actifs)
   if (e.statut === 'Événement terminé' || e.statut === 'Perdu / Sans suite') return true;
   if (!e.date_evenement) return false;
-  let dateStr = String(e.date_evenement).trim();
-  if (dateStr.includes(' au ')) {
-    const parts = dateStr.split(' au ');
-    dateStr = parts[parts.length - 1].trim();
-  }
-  const dateMatch = dateStr.match(/\d{4}-\d{2}-\d{2}/);
-  if (dateMatch) {
-    dateStr = dateMatch[0];
-  }
-  const d = parseLocalDate(dateStr);
+  const d = parseEventEndDate(e.date_evenement);
   if (!d) return false;
   const today = new Date();
   today.setHours(0,0,0,0);
@@ -843,7 +888,7 @@ function renderDashboard() {
   // Dernières demandes
   const newDemandes = appData
     .filter(e => e.statut === 'Nouvelle demande' || e.statut === 'À rappeler')
-    .sort((a, b) => (b.date_reception || '').localeCompare(a.date_reception || ''))
+    .sort((a, b) => dateTimeSortValue(b.date_reception) - dateTimeSortValue(a.date_reception))
     .slice(0, 6);
 
   const newTbody = document.getElementById('new-demandes-tbody');
