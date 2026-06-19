@@ -96,6 +96,21 @@ function safeUrl(url, allowedPrefixes = ['https://mail.google.com/', 'https://dr
   return allowedPrefixes.some(prefix => s.startsWith(prefix)) ? s : '';
 }
 
+function gmailLabelForEvent(e) {
+  const canal = normalizeCanal(e?.canal);
+  if (canal === 'Site Internet') return 'Historique_Wix';
+  if (canal === 'Téléphone') return 'Historique_Voxist';
+  return 'Historique_Email';
+}
+
+function emailThreadUrl(e) {
+  const rawUrl = safeUrl(e?.url_email_origine, ['https://mail.google.com/']);
+  if (!rawUrl) return '';
+  const messageIdMatch = rawUrl.match(/(FMfc[A-Za-z0-9_-]+)/);
+  if (!messageIdMatch) return rawUrl;
+  return `https://mail.google.com/mail/u/0/#label/${encodeURIComponent(gmailLabelForEvent(e))}/${messageIdMatch[1]}`;
+}
+
 function eventId(e) {
   return String(e?.id_demande || '').trim();
 }
@@ -1080,7 +1095,7 @@ function renderPipeline() {
       // Liens e-mail et drive sous forme d'icônes
       let linksLine = '';
       const links = [];
-      const emailUrl = safeUrl(e.url_email_origine, ['https://mail.google.com/']);
+      const emailUrl = emailThreadUrl(e);
       const driveUrl = safeUrl(e.url_dossier_drive, ['https://drive.google.com/']);
       if (emailUrl) links.push(`<a href="${escAttr(emailUrl)}" target="_blank" rel="noopener noreferrer" title="Email d'origine" style="text-decoration:none; margin-right:6px;">✉️</a>`);
       if (driveUrl) links.push(`<a href="${escAttr(driveUrl)}" target="_blank" rel="noopener noreferrer" title="Dossier Drive" style="text-decoration:none;">📂</a>`);
@@ -1181,7 +1196,7 @@ function renderClients() {
 
     let linksLine = '';
     const links = [];
-    const emailUrl = safeUrl(e.url_email_origine, ['https://mail.google.com/']);
+    const emailUrl = emailThreadUrl(e);
     const driveUrl = safeUrl(e.url_dossier_drive, ['https://drive.google.com/']);
     if (emailUrl) links.push(`<a href="${escAttr(emailUrl)}" target="_blank" rel="noopener noreferrer" style="color:var(--gold);text-decoration:underline;margin-right:12px;">✉️ Ouvrir l'e-mail</a>`);
     if (driveUrl) links.push(`<a href="${escAttr(driveUrl)}" target="_blank" rel="noopener noreferrer" style="color:var(--gold);text-decoration:underline;">📂 Ouvrir le dossier Drive</a>`);
@@ -1647,7 +1662,7 @@ function openEventModal(rowIndex = null) {
         phoneCallBtn.style.display = phoneLink ? 'inline-flex' : 'none';
       }
 
-      const threadUrl = safeUrl(existing.url_email_origine, ['https://mail.google.com/']);
+      const threadUrl = emailThreadUrl(existing);
       if (emailThreadBtn) {
         emailThreadBtn.href = threadUrl || '#';
         emailThreadBtn.style.display = threadUrl ? 'inline-flex' : 'none';

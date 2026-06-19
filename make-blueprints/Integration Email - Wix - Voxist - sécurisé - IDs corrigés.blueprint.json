@@ -1975,7 +1975,7 @@
                   "budget_estime": "{{42.budget_estime}}",
                   "statut": "Nouvelle demande",
                   "message_original": "{{42.message_original}}",
-                  "url_email_origine": "https://mail.google.com/mail/u/demande.chezpapimaisongourmande@gmail.com/#all/{{1.threadId}}",
+                  "url_email_origine": "https://mail.google.com/mail/u/0/#label/Historique_Wix/{{1.id}}",
                   "notes": "{{42.notes}}",
                   "derniere_modification": "{{now}}"
                 }
@@ -4463,7 +4463,7 @@
                           "budget_estime": "{{61.budget_estime}}",
                           "statut": "Nouvelle demande",
                           "message_original": "{{61.message_original}}",
-                          "url_email_origine": "https://mail.google.com/mail/u/demande.chezpapimaisongourmande@gmail.com/#all/{{1.threadId}}",
+                          "url_email_origine": "https://mail.google.com/mail/u/0/#label/Historique_Voxist/{{1.id}}",
                           "notes": "{{61.notes}}",
                           "url_dossier_drive": "{{61.url_dossier_drive}}",
                           "derniere_modification": "{{now}}"
@@ -8821,7 +8821,7 @@
                                   "budget_estime": "{{14.budget_estime}}",
                                   "statut": "Nouvelle demande",
                                   "message_original": "{{14.message_original}}",
-                                  "url_email_origine": "https://mail.google.com/mail/u/demande.chezpapimaisongourmande@gmail.com/#all/{{1.threadId}}",
+                                  "url_email_origine": "https://mail.google.com/mail/u/0/#label/Historique_Voxist/{{1.id}}",
                                   "notes": "{{14.notes}}",
                                   "url_dossier_drive": "{{14.url_dossier_drive}}",
                                   "derniere_modification": "{{now}}"
@@ -12227,7 +12227,7 @@
                           "budget_estime": "{{38.budget_estime}}",
                           "statut": "Nouvelle demande",
                           "message_original": "{{38.message_original}}",
-                          "url_email_origine": "https://mail.google.com/mail/u/demande.chezpapimaisongourmande@gmail.com/#all/{{1.threadId}}",
+                          "url_email_origine": "https://mail.google.com/mail/u/0/#label/Historique_Email/{{1.id}}",
                           "notes": "{{38.notes}}",
                           "url_dossier_drive": "{{38.url_dossier_drive}}",
                           "derniere_modification": "{{now}}"
