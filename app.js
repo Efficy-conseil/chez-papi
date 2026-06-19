@@ -1611,6 +1611,8 @@ function openEventModal(rowIndex = null) {
             setSelectValue(el, cleanVal, 'Autres');
           } else if (el.tagName === 'SELECT' && el.name === 'canal') {
             setSelectValue(el, cleanVal, '');
+          } else if (el.name === 'date_evenement') {
+            el.value = formatDateFR(cleanVal);
           } else {
             el.value = cleanVal;
           }
