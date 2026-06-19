@@ -225,6 +225,26 @@ function eventSummary(e) {
   return convives && convives !== '—' ? `${type} · ${convives} pers.` : type;
 }
 
+const CANAL_OPTIONS = [
+  'Téléphone',
+  'Email',
+  'Site Internet',
+  'Réseaux sociaux',
+  'Saisie manuelle'
+];
+
+function normalizeCanal(canal) {
+  const raw = String(canal || '').trim();
+  if (!raw || raw === '—') return '';
+  const lower = raw.toLowerCase();
+  if (lower === 'email direct' || lower === 'email') return 'Email';
+  if (lower === 'formulaire site' || lower === 'site web' || lower === 'site internet' || lower === 'wix') return 'Site Internet';
+  if (lower === 'voxist' || lower === 'telephone' || lower === 'téléphone') return 'Téléphone';
+  if (lower === 'réseaux sociaux' || lower === 'reseaux sociaux' || lower === 'réseau social' || lower === 'reseau social') return 'Réseaux sociaux';
+  if (lower === 'saisie manuelle' || lower === 'manuel' || lower === 'manual') return 'Saisie manuelle';
+  return raw;
+}
+
 function formatEuro(n) {
   return (isNaN(n) ? 0 : Math.round(n)).toLocaleString('fr-FR') + ' \u20ac';
 }
@@ -540,7 +560,11 @@ function processRows(rawRows) {
   };
 
   // 1. Normaliser les statuts
-  const normalized = rawRows.map(row => { row.statut = normalizeStatus(row.statut); return row; });
+  const normalized = rawRows.map(row => {
+    row.statut = normalizeStatus(row.statut);
+    row.canal = normalizeCanal(row.canal);
+    return row;
+  });
 
   // 2. Dédupliquer par id_demande : conserver le statut le plus avancé
   const seenIds = new Map();
@@ -1395,13 +1419,7 @@ function renderPieChart(rows) {
   // Comptage par canal
   const counts = {};
   rows.forEach(e => {
-    let canal = String(e.canal || 'Non renseigné').trim() || 'Non renseigné';
-    if (canal.toLowerCase() === 'email') {
-      canal = 'Email direct';
-    }
-    if (canal.toLowerCase() === 'formulaire site' || canal.toLowerCase() === 'site web') {
-      canal = 'Formulaire Site';
-    }
+    const canal = normalizeCanal(e.canal) || 'Non renseigné';
     counts[canal] = (counts[canal] || 0) + 1;
   });
   const total = rows.length;
@@ -1471,13 +1489,7 @@ function renderConversionTable(rows) {
   // Comptage par canal
   const byCanal = {};
   rows.forEach(e => {
-    let canal = String(e.canal || 'Non renseigné').trim() || 'Non renseigné';
-    if (canal.toLowerCase() === 'email') {
-      canal = 'Email direct';
-    }
-    if (canal.toLowerCase() === 'formulaire site' || canal.toLowerCase() === 'site web') {
-      canal = 'Formulaire Site';
-    }
+    const canal = normalizeCanal(e.canal) || 'Non renseigné';
     if (!byCanal[canal]) byCanal[canal] = { total: 0, confirmed: 0 };
     byCanal[canal].total++;
     if (CONFIRMED.includes(e.statut)) byCanal[canal].confirmed++;
@@ -1610,7 +1622,7 @@ function openEventModal(rowIndex = null) {
           if (el.tagName === 'SELECT' && el.name === 'type_evenement') {
             setSelectValue(el, cleanVal, 'Autres');
           } else if (el.tagName === 'SELECT' && el.name === 'canal') {
-            setSelectValue(el, cleanVal, '');
+            setSelectValue(el, normalizeCanal(cleanVal), '');
           } else if (el.name === 'date_evenement') {
             el.value = formatDateFR(cleanVal);
           } else {
