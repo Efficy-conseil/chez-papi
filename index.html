@@ -27,7 +27,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
 
-<link rel="stylesheet" href="styles.css?v=2.23">
+<link rel="stylesheet" href="styles.css?v=2.27">
 </head>
 
 <body>
@@ -457,9 +457,9 @@
 </div>
 <div class="form-row">
 <label>Email client</label>
-<div style="display: flex; gap: 8px; align-items: center; width: 100%;">
-  <input type="email" name="email_client" placeholder="Ex: client@email.com" style="flex: 1;">
-  <div id="view-email-reply-container" style="display: none; flex-shrink: 0;">
+<div class="field-with-action">
+  <input type="email" name="email_client" placeholder="Ex: client@email.com">
+  <div id="view-email-reply-container" style="display: none;">
     <a href="#" id="view-email-reply-btn" target="_blank" class="btn-primary contact-action-btn">
       ✉️ Répondre
     </a>
@@ -550,7 +550,7 @@
 </div>
 </div>
 
-<script src="app.js?v=2.26"></script>
+<script src="app.js?v=2.27"></script>
 
 <!-- ── BOTTOM NAVIGATION (mobile uniquement) ── -->
 <nav class="bottom-nav" id="bottom-nav">

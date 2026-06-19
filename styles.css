@@ -1515,12 +1515,17 @@ body.is-saving-event::after {
   justify-content: center;
 }
 .contact-action-btn {
-  padding: 7px 10px;
-  font-size: 11px;
+  width: 118px;
+  min-height: 38px;
+  padding: 8px 12px;
+  font-size: 12px;
   gap: 5px;
   text-decoration: none;
   white-space: nowrap;
-  min-width: 88px;
+  flex: 0 0 118px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .form-row.is-readonly input,
 .form-row.is-readonly textarea {
