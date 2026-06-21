@@ -931,7 +931,7 @@ function renderDashboard() {
 
   // Dernières demandes
   const newDemandes = appData
-    .filter(e => e.statut === 'Nouvelle demande' || e.statut === 'À rappeler')
+    .filter(e => !isEventPast(e) && (e.statut === 'Nouvelle demande' || e.statut === 'À rappeler'))
     .sort((a, b) => dateTimeSortValue(b.date_reception) - dateTimeSortValue(a.date_reception))
     .slice(0, 6);
 
