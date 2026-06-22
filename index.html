@@ -139,7 +139,7 @@
 <span class="nav-icon">🏠</span> Accueil
 </button>
 <button class="nav-item" onclick="showPanel('devis',this)" data-panel="devis">
-<span class="nav-icon">📋</span> Toutes les demandes
+<span class="nav-icon">📋</span> Demandes en cours
 </button>
 <button class="nav-item" onclick="showPanel('clients',this)" data-panel="clients">
 <span class="nav-icon">✅</span> Événements confirmés
@@ -258,7 +258,7 @@
 <!-- ══════════════════════ DEVIS ══════════════════════ -->
 <div class="panel" id="panel-devis">
 <div class="section-hd">
-<h2>Toutes les demandes</h2>
+<h2>Demandes en cours</h2>
 <span class="shd-sub" id="devis-sub"></span>
 <button class="btn-new" onclick="openEventModal()">+ Nouvel événement</button>
 </div>
@@ -550,7 +550,7 @@
 </div>
 </div>
 
-<script src="app.js?v=2.29"></script>
+<script src="app.js?v=2.30"></script>
 
 <!-- ── BOTTOM NAVIGATION (mobile uniquement) ── -->
 <nav class="bottom-nav" id="bottom-nav">
@@ -560,7 +560,7 @@
   </button>
   <button class="bn-item" id="bn-devis" onclick="showPanel('devis',this)">
     <span class="bn-icon">📋</span>
-    <span class="bn-label">Toutes les demandes</span>
+    <span class="bn-label">En cours</span>
   </button>
   <button class="bn-add" onclick="openEventModal()" aria-label="Nouvel événement">
     <span>+</span>

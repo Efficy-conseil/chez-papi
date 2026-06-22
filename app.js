@@ -1295,7 +1295,7 @@ function applyHistoriqueDateRange() {
 
 function getFilteredHistorique() {
   let filtered = appData
-    .filter(e => isEventPast(e))
+    .slice()
     .sort(compareEventDatesDesc);
 
   if (historiqueFilter !== 'all') {
@@ -1351,15 +1351,15 @@ function renderHistorique() {
   const sub   = document.getElementById('historique-sub');
   if (!tbody) return;
 
-  const pastEvents = getFilteredHistorique();
-  if (sub) sub.textContent = `${pastEvents.length} événement${pastEvents.length > 1 ? 's' : ''}`;
+  const events = getFilteredHistorique();
+  if (sub) sub.textContent = `${events.length} demande${events.length > 1 ? 's' : ''}`;
 
-  if (!pastEvents.length) {
-    tbody.innerHTML = '<tr><td colspan="10" class="tbl-empty">Aucun événement passé</td></tr>';
+  if (!events.length) {
+    tbody.innerHTML = '<tr><td colspan="10" class="tbl-empty">Aucune demande</td></tr>';
     return;
   }
 
-  tbody.innerHTML = pastEvents.map(e => {
+  tbody.innerHTML = events.map(e => {
     const notes  = String(e.notes || '');
     const notesTrunc = notes.length > 40 ? notes.slice(0, 40) + '…' : notes;
     return `<tr style="cursor:pointer" onclick="openEventModal(${e._row})">
