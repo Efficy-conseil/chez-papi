@@ -164,12 +164,18 @@ function withDocumentLock(fn) {
 
 function listRows() {
   const sheet = getSheet();
-  const data = sheet.getDataRange().getValues();
+  const range = sheet.getDataRange();
+  const data = range.getValues();
+  const displayData = range.getDisplayValues();
   const headers = data[0].map(String);
   const rows = data.slice(1)
     .map((row, i) => {
       const obj = { _row: i + 2 };
-      headers.forEach((h, j) => { obj[canonicalKey(h)] = serialise(row[j]); });
+      const displayRow = displayData[i + 1] || [];
+      headers.forEach((h, j) => {
+        const key = canonicalKey(h);
+        obj[key] = serialiseCell(key, row[j], displayRow[j]);
+      });
       return obj;
     })
     .filter(r => Object.keys(r).some(k => k !== "_row" && r[k] !== undefined && String(r[k]).trim() !== ""));
@@ -195,6 +201,7 @@ function addRow(rowData) {
   
   sheet.appendRow(headers.map(h => clean[canonicalKey(h)] ?? ''));
   clean._row = sheet.getLastRow();
+  forceTextCell(sheet, headers, clean._row, "date_evenement", clean.date_evenement);
   
   // Synchroniser avec Google Calendar
   try {
@@ -226,7 +233,9 @@ function updateRowById(idDemande, fields) {
   headers.forEach((h, i) => {
     const key = canonicalKey(h);
     if (clean[key] !== undefined) {
-      sheet.getRange(found.rowIndex, i + 1).setValue(clean[key]);
+      const cell = sheet.getRange(found.rowIndex, i + 1);
+      if (key === "date_evenement") cell.setNumberFormat("@");
+      cell.setValue(clean[key]);
     }
   });
 
@@ -304,6 +313,10 @@ function sanitizeFields(rawFields, isUpdate) {
     }
   }
 
+  if (clean.date_evenement !== undefined) {
+    clean.date_evenement = normalizeEventDateText(clean.date_evenement);
+  }
+
   ["url_email_origine", "url_dossier_drive"].forEach(function(key) {
     if (clean[key] !== undefined && !isSafeBusinessUrl(clean[key])) {
       throw new Error("URL invalide : " + key);
@@ -329,6 +342,60 @@ function normalizeCanal(canal) {
   if (lower === 'réseaux sociaux' || lower === 'reseaux sociaux' || lower === 'réseau social' || lower === 'reseau social') return 'Réseaux sociaux';
   if (lower === 'saisie manuelle' || lower === 'manuel' || lower === 'manual') return 'Saisie manuelle';
   return raw;
+}
+
+function forceTextCell(sheet, headers, rowIndex, key, value) {
+  if (value === undefined || value === null || value === '') return;
+  const colIndex = headers.findIndex(function(h) { return canonicalKey(h) === key; }) + 1;
+  if (colIndex <= 0) return;
+  sheet.getRange(rowIndex, colIndex).setNumberFormat("@").setValue(String(value));
+}
+
+function serialiseCell(key, value, displayValue) {
+  if (key === "date_evenement") {
+    const display = String(displayValue || '').trim();
+    if (display) return normalizeEventDateText(display);
+    return normalizeEventDateText(value);
+  }
+  return serialise(value);
+}
+
+function formatDateFr(date) {
+  return [
+    String(date.getDate()).padStart(2, '0'),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    date.getFullYear()
+  ].join('/');
+}
+
+function normalizeSingleEventDateText(value) {
+  if (value === null || value === undefined) return '';
+  if (value instanceof Date) return formatDateFr(value);
+  const s = String(value || '').trim();
+  if (!s || s === '—') return '';
+
+  const ymd = s.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (ymd) return `${ymd[3]}/${ymd[2]}/${ymd[1]}`;
+
+  const dmy = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{4}|\d{2})/);
+  if (dmy) {
+    const year = dmy[3].length === 2 ? `20${dmy[3]}` : dmy[3];
+    return `${String(Number(dmy[1])).padStart(2, '0')}/${String(Number(dmy[2])).padStart(2, '0')}/${year}`;
+  }
+
+  return s;
+}
+
+function normalizeEventDateText(value) {
+  const s = String(value === null || value === undefined ? '' : value).trim();
+  if (!s || s === '—') return '';
+  const range = s.match(/^(?:du\s+)?(.+?)\s+au\s+(.+)$/i);
+  if (range) {
+    const start = normalizeSingleEventDateText(range[1]);
+    const end = normalizeSingleEventDateText(range[2]);
+    return [start, end].filter(Boolean).join(' au ');
+  }
+  return normalizeSingleEventDateText(value);
 }
 
 function escapeHtml(value) {
