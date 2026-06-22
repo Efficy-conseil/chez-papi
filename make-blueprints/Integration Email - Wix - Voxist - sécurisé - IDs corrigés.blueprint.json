@@ -6,7 +6,7 @@
       "module": "google-email:triggerWatchNewEmails",
       "version": 4,
       "parameters": {
-        "q": "in:inbox -from:demande.chezpapimaisongourmande@gmail.com -subject:\"[Chez Papi] Récapitulatif\" -subject:\"Votre demande chez Chez Papi Maison Gourmande\" -subject:\"Chez Papi Maison Gourmande - Accusé\"",
+        "q": "in:inbox -label:Historique_Email -label:Historique_Wix -label:Historique_Voxist -label:Hors_Scope_Make -from:demande.chezpapimaisongourmande@gmail.com -subject:\"[Chez Papi] Récapitulatif\" -subject:\"Votre demande chez Chez Papi Maison Gourmande\" -subject:\"Chez Papi Maison Gourmande - Accusé\"",
         "limit": 20,
         "format": "full",
         "markSeen": false,
