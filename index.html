@@ -205,8 +205,8 @@
 <!-- Dernières demandes (pleine largeur) -->
 <div class="card" style="margin-bottom:16px;">
 <div class="card-title">Dernières demandes <span class="card-title-action" onclick="showPanel('devis',document.querySelector('[data-panel=devis]'))">Plus</span></div>
-<div class="tbl-wrap">
-<table class="tbl tbl-sm" style="min-width:430px;">
+<div class="tbl-wrap home-table-wrap">
+<table class="tbl tbl-sm home-recent-table">
 <thead>
 <tr>
 <th>Date</th>
@@ -228,8 +228,8 @@
 <!-- Demandes en cours (Contacté / Devis envoyé) -->
 <div class="card">
 <div class="card-title">Demandes en cours <span class="card-title-action" onclick="showPanel('devis',document.querySelector('[data-panel=devis]'))">Plus</span></div>
-<div class="tbl-wrap">
-<table class="tbl tbl-sm" style="min-width:400px;">
+<div class="tbl-wrap home-table-wrap">
+<table class="tbl tbl-sm home-pipeline-table">
 <thead>
 <tr>
 <th>Date</th>
@@ -247,7 +247,7 @@
 <!-- Événements confirmés -->
 <div class="card">
 <div class="card-title">Événements confirmés <span class="card-title-action" onclick="showPanel('clients',document.querySelector('[data-panel=clients]'))">Plus</span></div>
-<div class="tbl-wrap" id="recent-activity">
+<div class="tbl-wrap home-table-wrap" id="recent-activity">
 <div class="act-time" style="padding:12px 0;color:var(--muted);">Chargement…</div>
 </div>
 </div>

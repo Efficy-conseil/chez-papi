@@ -96,6 +96,15 @@ function safeUrl(url, allowedPrefixes = ['https://mail.google.com/', 'https://dr
   return allowedPrefixes.some(prefix => s.startsWith(prefix)) ? s : '';
 }
 
+// Ajoute une infobulle native aux textes réellement tronqués par CSS.
+document.addEventListener('mouseover', event => {
+  const el = event.target.closest('.tbl td, .tbl th, .topbar-title');
+  if (!el || el.hasAttribute('title')) return;
+  if (el.scrollWidth <= el.clientWidth && el.scrollHeight <= el.clientHeight) return;
+  const fullText = String(el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
+  if (fullText) el.title = fullText;
+});
+
 function gmailLabelForEvent(e) {
   const canal = normalizeCanal(e?.canal);
   if (canal === 'Site Internet') return 'Historique_Wix';
@@ -413,7 +422,7 @@ function generateStatusSelectHtml(e, extraClass = '') {
   const id = escAttr(eventId(e));
   
   // Style pill : police 10px, border-radius 4px, background et color natifs via la classe pill-*
-  return `<select class="pill ${pillClass} ${extraClass}" data-id="${id}" style="border:none; outline:none; cursor:pointer; font-family:inherit; font-size:10px; font-weight:700; border-radius:4px; padding:2px 4px; appearance:auto; width:auto; min-width:125px; display:inline-block;" onchange="updateEventStatus(this)" onclick="event.stopPropagation()">
+  return `<select class="pill ${pillClass} ${extraClass}" data-id="${id}" title="${escAttr(STATUS_LABEL[e.statut] || e.statut)}" style="border:none; outline:none; cursor:pointer; font-family:inherit; font-size:10px; font-weight:700; border-radius:4px; padding:2px 4px; appearance:auto; width:auto; min-width:125px; display:inline-block;" onchange="updateEventStatus(this)" onclick="event.stopPropagation()">
     ${options}
   </select>`;
 }
@@ -946,12 +955,15 @@ function renderDashboard() {
         const ageText = formatReceivedAge(e.date_reception);
         const ageBadge = `<span style="color:${receivedAgeColor(e.date_reception)};font-weight:600;">${safeText(ageText)}</span>`;
         const warningBadge = missingInfoBadge(e, true);
+        const dateText = formatEventDateTime(e) || '—';
+        const clientText = e.nom_client || '—';
+        const summaryText = eventSummary(e);
         return `<tr style="cursor:pointer" onclick="openEventModal(${e._row})">
-          <td><strong>${safeText(formatEventDateTime(e) || '—')}</strong></td>
-          <td>${safeText(e.nom_client)}${warningBadge}</td>
-          <td>${safeText(eventSummary(e))}</td>
-          <td>${ageBadge}</td>
-          <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e)}</td>
+          <td title="${escAttr(dateText)}"><strong>${safeText(dateText)}</strong></td>
+          <td title="${escAttr(clientText)}">${safeText(clientText)}${warningBadge}</td>
+          <td title="${escAttr(summaryText)}">${safeText(summaryText)}</td>
+          <td title="${escAttr(ageText)}">${ageBadge}</td>
+          <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e, 'home-status-sel')}</td>
         </tr>`;
       }).join('');
     }
@@ -990,10 +1002,12 @@ function renderDashboard() {
         }
 
         const warningBadge = missingInfoBadge(e, true);
+        const dateText = formatEventDateTime(e) || '—';
+        const clientText = e.nom_client || '—';
         return `<tr class="${urgClass}" style="cursor:pointer" onclick="openEventModal(${e._row})">
-          <td><strong>${safeText(formatEventDateTime(e) || '—')}</strong></td>
-          <td>${safeText(e.nom_client)}${warningBadge}</td>
-          <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e)}</td>
+          <td title="${escAttr(dateText)}"><strong>${safeText(dateText)}</strong></td>
+          <td title="${escAttr(clientText)}">${safeText(clientText)}${warningBadge}</td>
+          <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e, 'home-status-sel')}</td>
         </tr>`;
       }).join('');
     }
@@ -1010,15 +1024,17 @@ function renderDashboard() {
     if (!prestationsHome.length) {
       actEl.innerHTML = '<div class="act-time" style="padding:12px 0;color:var(--muted);">Aucun événement confirmé</div>';
     } else {
-      const thead = '<div class="tbl-wrap"><table class="tbl tbl-sm" style="min-width:360px;"><thead><tr><th>Date</th><th>Client</th><th style="min-width:130px;">Statut</th></tr></thead><tbody>';
+      const thead = '<table class="tbl tbl-sm home-pipeline-table"><thead><tr><th>Date</th><th>Client</th><th>Statut</th></tr></thead><tbody>';
       actEl.innerHTML = thead + prestationsHome.map(e => {
         const warningBadge = missingInfoBadge(e, true);
+        const dateText = formatEventDateTime(e) || '—';
+        const clientText = e.nom_client || '—';
         return `<tr style="cursor:pointer" onclick="openEventModal(${e._row})">
-          <td><strong>${safeText(formatEventDateTime(e))}</strong></td>
-          <td>${safeText(e.nom_client)}${warningBadge}</td>
-          <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e)}</td>
+          <td title="${escAttr(dateText)}"><strong>${safeText(dateText)}</strong></td>
+          <td title="${escAttr(clientText)}">${safeText(clientText)}${warningBadge}</td>
+          <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e, 'home-status-sel')}</td>
         </tr>`;
-      }).join('') + '</tbody></table></div>';
+      }).join('') + '</tbody></table>';
     }
   }
 }
@@ -1363,16 +1379,24 @@ function renderHistorique() {
   tbody.innerHTML = events.map(e => {
     const notes  = String(e.notes || '');
     const notesTrunc = notes.length > 40 ? notes.slice(0, 40) + '…' : notes;
+    const dateText = formatEventDateTime(e) || '—';
+    const clientText = e.nom_client || '—';
+    const typeText = e.type_evenement || '—';
+    const lieuText = e.lieu_prestation || '—';
+    const convivesText = e.nb_convives || '—';
+    const budgetText = formatBudget(e.budget_estime);
+    const emailText = e.email_client || '—';
+    const phoneText = e.telephone || '—';
     return `<tr style="cursor:pointer" onclick="openEventModal(${e._row})">
-      <td><strong>${safeText(formatEventDateTime(e))}</strong></td>
-      <td>${safeText(e.nom_client)}</td>
-      <td>${safeText(e.type_evenement)}</td>
-      <td>${safeText(e.lieu_prestation)}</td>
-      <td>${safeText(e.nb_convives)}</td>
-      <td>${safeText(formatBudget(e.budget_estime))}</td>
+      <td title="${escAttr(dateText)}"><strong>${safeText(dateText)}</strong></td>
+      <td title="${escAttr(clientText)}">${safeText(clientText)}</td>
+      <td title="${escAttr(typeText)}">${safeText(typeText)}</td>
+      <td title="${escAttr(lieuText)}">${safeText(lieuText)}</td>
+      <td title="${escAttr(convivesText)}">${safeText(convivesText)}</td>
+      <td title="${escAttr(budgetText)}">${safeText(budgetText)}</td>
       <td>${generateStatusSelectHtml(e)}</td>
-      <td>${e.email_client ? formatContact(e.email_client) : '—'}</td>
-      <td>${e.telephone ? formatContact(e.telephone) : '—'}</td>
+      <td title="${escAttr(emailText)}">${e.email_client ? formatContact(e.email_client) : '—'}</td>
+      <td title="${escAttr(phoneText)}">${e.telephone ? formatContact(e.telephone) : '—'}</td>
       <td title="${escAttr(notes)}">${safeText(notesTrunc)}</td>
     </tr>`;
   }).join('');
