@@ -1,140 +1,595 @@
 <!DOCTYPE html>
+
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#D85A30">
-  <meta name="description" content="Chez Papi - V2 demandes entrantes">
-  <title>Chez Papi - Demandes V2</title>
-  <link rel="icon" type="image/png" sizes="192x192" href="../icon-192x192.png">
-  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#5C3D1E">
+<meta name="description" content="Chez Papi - Gestion des événements et commandes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Chez Papi">
+
+<title>Chez Papi — Tableau de bord</title>
+
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192x192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512x512.png">
+
+<!-- iOS / Firefox sur iPhone : icône écran d'accueil -->
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="167x167" href="apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="152x152" href="apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="120x120" href="apple-touch-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="styles.css?v=2.29">
 </head>
+
 <body>
-  <div class="login-overlay" id="login-overlay">
-    <form class="login-box" id="login-form">
-      <img src="../icon-192x192.png" alt="Chez Papi">
-      <h1>Chez Papi</h1>
-      <p>Demandes entrantes - V2</p>
-      <label>
-        Email
-        <input type="email" id="login-email" autocomplete="username" required>
-      </label>
-      <label>
-        Mot de passe
-        <input type="password" id="login-password" autocomplete="current-password" required>
-      </label>
-      <div class="login-error" id="login-error-msg"></div>
-      <button type="submit">Se connecter</button>
+
+<!-- LOGIN OVERLAY -->
+<div id="login-overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#fcfaf7; z-index:99999; display:flex; justify-content:center; align-items:center; padding:20px;">
+  <div style="background:#fff; border:1px solid #eadecc; border-radius:12px; padding:32px 24px; max-width:380px; width:100%; box-shadow:0 8px 30px rgba(92, 61, 30, 0.08); text-align:center;">
+    <img src="icon-192x192.png" alt="Chez Papi" style="width:72px; height:72px; border-radius:16px; margin-bottom:16px; object-fit:cover;">
+    <h2 style="font-family:'Playfair Display', serif; color:#5C3D1E; margin:0 0 4px 0; font-size:24px;">Connexion</h2>
+    <p style="color:#8A7260; font-size:13px; margin:0 0 24px 0;">Chez Papi — Espace sécurisé</p>
+    <form id="login-form" style="display:flex; flex-direction:column; gap:16px; text-align:left;">
+      <div class="form-row" style="margin-bottom:0; display:flex; flex-direction:column; gap:6px;">
+        <label style="font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:0.05em; color:#8A7260;">Identifiant (Email)</label>
+        <input type="email" id="login-email" required placeholder="nom@email.com" style="width:100%; padding:10px 12px; border:1px solid #eadecc; border-radius:6px; font-family:inherit; font-size:14px; outline:none; background:#fff; color:#5C3D1E;" autocomplete="username">
+      </div>
+      <div class="form-row" style="margin-bottom:0; display:flex; flex-direction:column; gap:6px;">
+        <label style="font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:0.05em; color:#8A7260;">Mot de passe</label>
+        <input type="password" id="login-password" required placeholder="••••••••" style="width:100%; padding:10px 12px; border:1px solid #eadecc; border-radius:6px; font-family:inherit; font-size:14px; outline:none; background:#fff; color:#5C3D1E;" autocomplete="current-password">
+      </div>
+      <div id="login-error-msg" style="color:#C0453A; font-size:13px; font-weight:600; display:none; margin-top:4px;">
+        ⚠️ Identifiants incorrects.
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%; padding:12px; font-weight:700; border-radius:6px; cursor:pointer; text-align:center; border:none; margin-top:8px;">Se connecter</button>
     </form>
   </div>
+</div>
 
-  <div class="app-shell">
-    <aside class="sidebar">
-      <div class="brand">
-        <img src="../icon-192x192.png" alt="">
-        <div>
-          <strong>Chez Papi</strong>
-          <span>Demandes</span>
-        </div>
-      </div>
-      <nav class="nav-list" id="nav-list">
-        <button class="active" data-view="today">À traiter <span id="nav-today">0</span></button>
-        <button data-view="new">Nouvelles <span id="nav-new">0</span></button>
-        <button data-view="followups">Messages clients <span id="nav-followups">0</span></button>
-        <button data-view="call">À rappeler <span id="nav-call">0</span></button>
-        <button data-view="reply">Réponse à envoyer <span id="nav-reply">0</span></button>
-        <button data-view="all">Toutes</button>
-        <button data-view="archive">Archives</button>
-      </nav>
-      <button class="logout-btn" id="logout-btn">Déconnexion</button>
-    </aside>
+<!-- ── PWA UPDATE BANNER ── -->
 
-    <main class="main">
-      <header class="topbar">
-        <div>
-          <h1 id="view-title">À traiter</h1>
-          <p id="view-subtitle">Demandes nouvelles, urgentes ou en attente d’action.</p>
-        </div>
-        <div class="top-actions">
-          <span class="sync-pill" id="sync-indicator">Non synchronisé</span>
-          <button class="icon-btn" id="refresh-btn" title="Actualiser">↻</button>
-        </div>
-      </header>
+<div id="pwa-update-banner" class="pwa-update-banner" style="display:none;">
+<span class="pwa-update-text">✦ Nouvelle version disponible</span>
+<button id="pwa-update-btn" class="pwa-update-btn">Actualiser</button>
+<button id="pwa-update-dismiss-btn" class="pwa-update-dismiss">✕</button>
+</div>
 
-      <section class="kpi-grid" id="kpi-grid">
-        <button class="kpi-card" data-view="new">
-          <span>Nouvelles</span>
-          <strong id="kpi-new">0</strong>
-        </button>
-        <button class="kpi-card danger" data-view="urgent">
-          <span>Urgentes</span>
-          <strong id="kpi-urgent">0</strong>
-        </button>
-        <button class="kpi-card blue" data-view="followups">
-          <span>Messages clients</span>
-          <strong id="kpi-followups">0</strong>
-        </button>
-        <button class="kpi-card coral" data-view="call">
-          <span>À rappeler</span>
-          <strong id="kpi-call">0</strong>
-        </button>
-        <button class="kpi-card violet" data-view="reply">
-          <span>Réponse à envoyer</span>
-          <strong id="kpi-reply">0</strong>
-        </button>
-        <button class="kpi-card amber" data-view="soon">
-          <span>Événements &lt;30j</span>
-          <strong id="kpi-soon">0</strong>
-        </button>
-      </section>
+<!-- ── PWA INSTALL BANNER (Android/Chrome) ── -->
 
-      <section class="toolbar">
-        <div class="search-box">
-          <span>⌕</span>
-          <input id="search-input" type="search" placeholder="Rechercher client, téléphone, lieu, événement...">
-        </div>
-        <select id="channel-filter" aria-label="Filtrer par canal">
-          <option value="">Tous les canaux</option>
-        </select>
-        <select id="status-filter" aria-label="Filtrer par statut">
-          <option value="">Tous les statuts</option>
-        </select>
-        <button class="primary-btn" id="new-request-btn">Nouvelle demande</button>
-      </section>
+<div id="pwa-install-banner" class="pwa-banner" style="display:none;">
+<div class="pwa-banner-content">
+<img src="icon-192x192.png" alt="Chez Papi" class="pwa-banner-icon">
+<div class="pwa-banner-text">
+<div class="pwa-banner-title">Installer Chez Papi</div>
+<div class="pwa-banner-desc">Accès rapide sur votre écran d'accueil</div>
+</div>
+<button id="pwa-install-btn" class="pwa-banner-btn">Installer</button>
+<button id="pwa-dismiss-btn" class="pwa-banner-close">✕</button>
+</div>
+</div>
 
-      <section class="list-shell">
-        <div class="table-head">
-          <span>Contact / événement</span>
-          <span>Statut</span>
-          <span>Canal</span>
-          <span>Reçue</span>
-          <span>Événement</span>
-          <span>Action</span>
-        </div>
-        <div class="demand-list" id="demand-list">
-          <div class="empty-state">Chargement...</div>
-        </div>
-      </section>
-    </main>
+<!-- ══════════════════════ MODALS ══════════════════════ -->
 
-    <aside class="detail-panel" id="detail-panel" aria-hidden="true">
-      <div class="detail-empty">
-        <strong>Sélectionnez une demande</strong>
-        <span>Le détail s’ouvrira ici.</span>
-      </div>
-      <div class="detail-content" id="detail-content"></div>
-    </aside>
+
+
+<!-- KPI DETAIL MODAL -->
+<div class="modal-overlay" id="kpi-modal" style="display:none;" onclick="if(event.target===this) document.getElementById('kpi-modal').style.display='none'">
+<div class="modal-box" style="max-width:550px;">
+<div class="modal-hd">
+  <h3 id="kpi-title">Détail</h3>
+  <span class="modal-close" onclick="document.getElementById('kpi-modal').style.display='none'">&times;</span>
+</div>
+<div class="modal-bd" style="padding: 24px;">
+  <table class="tbl">
+    <thead id="kpi-thead"></thead>
+    <tbody id="kpi-tbody"></tbody>
+    <tfoot id="kpi-tfoot"></tfoot>
+  </table>
+</div>
+</div>
+</div>
+
+<!-- ── PWA IOS INSTALL MODAL ── -->
+
+<div id="pwa-ios-modal" class="pwa-ios-modal" style="display:none;">
+<div class="pwa-ios-box">
+  <button id="pwa-ios-dismiss-btn" class="pwa-ios-close">✕</button>
+  <img src="icon-192x192.png" alt="Chez Papi" class="pwa-ios-icon">
+  <div class="pwa-ios-title">Installer Chez Papi</div>
+  <div class="pwa-ios-desc">Ajoutez l'application sur votre écran d'accueil pour un accès rapide, même sans connexion.</div>
+  <div class="pwa-ios-steps">
+    <div class="pwa-ios-step">
+      <span class="pwa-ios-num">1</span>
+      <span>Appuyez sur le bouton <strong>Partager</strong>
+        <svg class="pwa-ios-share-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+      </span>
+    </div>
+    <div class="pwa-ios-step">
+      <span class="pwa-ios-num">2</span>
+      <span>Choisissez <strong>« Sur l'écran d'accueil »</strong></span>
+    </div>
+    <div class="pwa-ios-step">
+      <span class="pwa-ios-num">3</span>
+      <span>Appuyez sur <strong>Ajouter</strong></span>
+    </div>
+  </div>
+  <div class="pwa-ios-arrow">▼</div>
+</div>
+</div>
+
+<!-- ── SIDEBAR ── -->
+
+<nav class="sidebar" id="sidebar">
+<div class="sidebar-logo">
+<div class="logo-name">Chez Papi</div>
+<div class="logo-sub">Maison Gourmande · Traiteur</div>
+</div>
+
+<div class="sidebar-section">
+<button class="nav-item active" onclick="showPanel('accueil',this)" data-panel="accueil">
+<span class="nav-icon">🏠</span> Accueil
+</button>
+<button class="nav-item" onclick="showPanel('devis',this)" data-panel="devis">
+<span class="nav-icon">📋</span> Demandes en cours
+</button>
+<button class="nav-item" onclick="showPanel('clients',this)" data-panel="clients">
+<span class="nav-icon">✅</span> Événements confirmés
+</button>
+<button class="nav-item" onclick="showPanel('agenda',this)" data-panel="agenda">
+<span class="nav-icon">📅</span> Agenda
+</button>
+<button class="nav-item" onclick="showPanel('historique',this)" data-panel="historique">
+<span class="nav-icon">🕰️</span> Historique
+</button>
+</div>
+
+
+
+<!-- Bouton fermeture sidebar mobile -->
+
+<button class="sidebar-close" id="sidebar-close">✕</button>
+
+</nav>
+
+<!-- ── OVERLAY (Mobile sidebar) ── -->
+
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<!-- ── MAIN ── -->
+
+<div class="main">
+<div class="content">
+
+<!-- ══════════════════════ ACCUEIL ══════════════════════ -->
+<div class="panel active" id="panel-accueil">
+<div class="section-hd">
+<h2>Accueil</h2>
+<span class="shd-sub" id="accueil-sub"></span>
+<div class="sync-control">
+  <button class="btn-refresh" onclick="loadData()" title="Actualiser">↻</button>
+  <span id="sync-indicator" class="sync-indicator"></span>
+</div>
+<button class="btn-new" onclick="openEventModal()">+ Nouvel événement</button>
+</div>
+
+<div class="kpi-strip">
+<div class="kpi-card terra" onclick="showKpiModal('leads')" style="cursor:pointer">
+<div class="kpi-label">Nouvelles demandes</div>
+<div class="kpi-val" id="kpi-leads-val">—</div>
+</div>
+<div class="kpi-card" onclick="showKpiModal('rappel')" style="cursor:pointer">
+<div class="kpi-label">À rappeler</div>
+<div class="kpi-val" id="kpi-rappel-val">—</div>
+</div>
+<div class="kpi-card" onclick="showKpiModal('devis')" style="cursor:pointer">
+<div class="kpi-label">Devis à préparer</div>
+<div class="kpi-val" id="kpi-devis-val">—</div>
+</div>
+<div class="kpi-card blue" onclick="showKpiModal('relances')" style="cursor:pointer">
+<div class="kpi-label">Messages clients</div>
+<div class="kpi-val" id="kpi-relances-val">—</div>
+</div>
+<div class="kpi-card green" onclick="showKpiModal('confirmes')" style="cursor:pointer">
+<div class="kpi-label">Événements confirmés</div>
+<div class="kpi-val" id="kpi-confirmes-val">—</div>
+</div>
+</div>
+
+<div class="ornement">· · ·</div>
+
+<!-- Dernières demandes (pleine largeur) -->
+<div class="card" style="margin-bottom:16px;">
+<div class="card-title">Dernières demandes <span class="card-title-action" onclick="showPanel('devis',document.querySelector('[data-panel=devis]'))">Plus</span></div>
+<div class="tbl-wrap">
+<table class="tbl tbl-sm" style="min-width:430px;">
+<thead>
+<tr>
+<th>Date</th>
+<th>Client</th>
+<th>Événement</th>
+<th>Reçu</th>
+<th style="min-width:130px;">Statut</th>
+</tr>
+</thead>
+<tbody id="new-demandes-tbody">
+<tr><td colspan="5" class="tbl-empty">Chargement…</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div class="grid2">
+
+<!-- Demandes en cours (Contacté / Devis envoyé) -->
+<div class="card">
+<div class="card-title">Demandes en cours <span class="card-title-action" onclick="showPanel('devis',document.querySelector('[data-panel=devis]'))">Plus</span></div>
+<div class="tbl-wrap">
+<table class="tbl tbl-sm" style="min-width:400px;">
+<thead>
+<tr>
+<th>Date</th>
+<th>Client</th>
+<th style="min-width:130px;">Statut</th>
+</tr>
+</thead>
+<tbody id="upcoming-tbody">
+<tr><td colspan="3" class="tbl-empty">Chargement…</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<!-- Événements confirmés -->
+<div class="card">
+<div class="card-title">Événements confirmés <span class="card-title-action" onclick="showPanel('clients',document.querySelector('[data-panel=clients]'))">Plus</span></div>
+<div class="tbl-wrap" id="recent-activity">
+<div class="act-time" style="padding:12px 0;color:var(--muted);">Chargement…</div>
+</div>
+</div>
+</div>
+
+</div><!-- /accueil -->
+
+<!-- ══════════════════════ DEVIS ══════════════════════ -->
+<div class="panel" id="panel-devis">
+<div class="section-hd">
+<h2>Demandes en cours</h2>
+<span class="shd-sub" id="devis-sub"></span>
+<button class="btn-new" onclick="openEventModal()">+ Nouvel événement</button>
+</div>
+<div class="pipeline" id="pipeline"></div>
+</div>
+
+
+<!-- ══════════════════════ CLIENTS ══════════════════════ -->
+<div class="panel" id="panel-clients">
+<div class="section-hd">
+<h2>Événements confirmés</h2>
+<span class="shd-sub" id="clients-sub">Chargement…</span>
+</div>
+<div id="clients-cards">
+<div class="tbl-empty" style="padding:20px;">Chargement…</div>
+</div>
+</div>
+
+<!-- ══════════════════════ AGENDA ══════════════════════ -->
+<div class="panel" id="panel-agenda">
+<div class="section-hd">
+<h2>Agenda</h2>
+<span class="shd-sub" id="agenda-sub"></span>
+<div style="display:flex; gap:4px; align-items:center; position:relative;">
+  <button class="btn-secondary" onclick="agendaPrevMonth()" style="padding:4px 12px; font-size:1rem;">‹</button>
+  <span id="agenda-month-label" onclick="toggleAgendaPicker(event)" style="min-width:130px; text-align:center; font-size:0.92rem; font-weight:700; color:var(--brown-dk); letter-spacing:.02em; cursor:pointer; padding:4px 8px; border-radius:4px; border:1px solid var(--border); background:#fff;"></span>
+  <button class="btn-secondary" onclick="agendaNextMonth()" style="padding:4px 12px; font-size:1rem;">›</button>
+  <!-- Picker dropdown -->
+  <div id="agenda-picker" style="display:none; position:absolute; top:calc(100% + 6px); left:50%; transform:translateX(-50%); background:#fff; border:1px solid var(--border); border-radius:8px; box-shadow:0 6px 20px rgba(0,0,0,.15); z-index:300; padding:14px; min-width:230px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+      <button class="btn-secondary" onclick="agendaPickerPrevYear(event)" style="padding:2px 10px; font-size:1rem;">‹</button>
+      <span id="agenda-picker-year" style="font-weight:700; font-size:0.95rem; color:var(--brown-dk);"></span>
+      <button class="btn-secondary" onclick="agendaPickerNextYear(event)" style="padding:2px 10px; font-size:1rem;">›</button>
+    </div>
+    <div id="agenda-picker-months" style="display:grid; grid-template-columns:repeat(3,1fr); gap:6px;"></div>
+  </div>
+</div>
+</div>
+<div class="card" style="padding:0;" id="agenda-list">
+<div class="tbl-empty" style="padding:24px;">Chargement…</div>
+</div>
+</div>
+
+<!-- ══════════════════════ HISTORIQUE ══════════════════════ -->
+<div class="panel" id="panel-historique">
+<div class="section-hd">
+<h2>Historique</h2>
+<span class="shd-sub" id="historique-sub"></span>
+</div>
+
+<!-- Onglets Historique / Statistiques -->
+<div class="hist-tabs">
+  <button class="hist-tab-btn active" id="hist-tab-liste" onclick="switchHistTab('liste',this)">📋 Liste</button>
+  <button class="hist-tab-btn" id="hist-tab-stats" onclick="switchHistTab('stats',this)">📊 Statistiques</button>
+</div>
+
+<!-- ── Vue Liste ── -->
+<div id="hist-view-liste">
+  <div class="hist-filters">
+    <button class="hist-filter-btn active" onclick="setHistoriqueFilter('all',this)">Tout</button>
+    <button class="hist-filter-btn" onclick="setHistoriqueFilter('2026',this)">Exercice 2026</button>
+    <button class="hist-filter-btn" onclick="setHistoriqueFilter('T1',this)">T1 2026</button>
+    <button class="hist-filter-btn" onclick="setHistoriqueFilter('T2',this)">T2 2026</button>
+    <button class="hist-filter-btn" onclick="setHistoriqueFilter('T3',this)">T3 2026</button>
+    <button class="hist-filter-btn" onclick="setHistoriqueFilter('T4',this)">T4 2026</button>
+    <span class="hist-range">
+      Du <input type="date" id="hist-date-from"> Au <input type="date" id="hist-date-to">
+      <button class="btn-secondary" onclick="applyHistoriqueDateRange()">OK</button>
+    </span>
+    <button class="btn-secondary" onclick="exportHistoriqueCSV()">⬇ CSV</button>
   </div>
 
-  <div class="mobile-tabs" id="mobile-tabs">
-    <button class="active" data-view="today">À traiter</button>
-    <button data-view="new">Nouvelles</button>
-    <button data-view="call">Rappels</button>
-    <button data-view="all">Toutes</button>
+  <div class="card">
+  <div class="tbl-wrap">
+  <table class="tbl">
+  <thead>
+  <tr>
+    <th>Date</th><th>Client</th><th>Type</th><th>Lieu</th>
+    <th>Couverts</th><th>Budget</th><th>Statut</th>
+    <th>Email</th><th>Contact</th><th>Notes</th>
+  </tr>
+  <tr class="hist-search-row">
+    <th><input type="text" id="hist-search-date" placeholder="Recherche..." onkeyup="renderHistorique()" class="tbl-search"></th>
+    <th><input type="text" id="hist-search-client" placeholder="Recherche..." onkeyup="renderHistorique()" class="tbl-search"></th>
+    <th><input type="text" id="hist-search-type" placeholder="Recherche..." onkeyup="renderHistorique()" class="tbl-search"></th>
+    <th><input type="text" id="hist-search-lieu" placeholder="Recherche..." onkeyup="renderHistorique()" class="tbl-search"></th>
+    <th><input type="text" id="hist-search-couverts" placeholder="Recherche..." onkeyup="renderHistorique()" class="tbl-search"></th>
+    <th><input type="text" id="hist-search-budget" placeholder="Recherche..." onkeyup="renderHistorique()" class="tbl-search"></th>
+    <th><input type="text" id="hist-search-statut" placeholder="Recherche..." onkeyup="renderHistorique()" class="tbl-search"></th>
+    <th><input type="text" id="hist-search-email" placeholder="Recherche..." onkeyup="renderHistorique()" class="tbl-search"></th>
+    <th><input type="text" id="hist-search-contact" placeholder="Recherche..." onkeyup="renderHistorique()" class="tbl-search"></th>
+    <th><input type="text" id="hist-search-notes" placeholder="Recherche..." onkeyup="renderHistorique()" class="tbl-search"></th>
+  </tr>
+  </thead>
+  <tbody id="historique-tbody"><tr><td colspan="10" class="tbl-empty">Chargement…</td></tr></tbody>
+  </table>
   </div>
+  </div>
+</div>
 
-  <div class="toast" id="toast"></div>
-  <script src="app.js?v=2"></script>
+<!-- ── Vue Statistiques ── -->
+<div id="hist-view-stats" style="display:none;">
+  <div class="stats-grid">
+
+    <!-- Camembert : répartition par canal -->
+    <div class="card stats-card">
+      <h3 class="stats-title">Origine des demandes par canal</h3>
+      <div class="stats-scope-note" id="stats-scope-note">Toutes les demandes</div>
+      <div class="pie-wrap">
+        <svg id="stats-pie-svg" viewBox="0 0 200 200" width="200" height="200"></svg>
+        <div class="pie-legend" id="stats-pie-legend"></div>
+      </div>
+    </div>
+
+    <!-- Tableau : taux de conversion par canal -->
+    <div class="card stats-card">
+      <h3 class="stats-title">Taux de conversion par canal</h3>
+      <div class="stats-scope-note">Toutes les demandes · Événements confirmés ou terminés</div>
+      <div class="tbl-wrap">
+      <table class="tbl stats-tbl" id="stats-conversion-tbl">
+        <thead><tr>
+          <th>Canal</th>
+          <th>Demandes</th>
+          <th>Confirmées</th>
+          <th>Taux</th>
+        </tr></thead>
+        <tbody id="stats-conversion-tbody"></tbody>
+      </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</div>
+
+
+</div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ══════════════════════ MODAL ÉVÉNEMENT ══════════════════════ -->
+<div id="event-modal" class="modal-overlay" style="display:none;">
+<div class="modal-box">
+<div class="modal-hd">
+<h3 id="modal-title">Nouvel événement</h3>
+<button class="modal-close" onclick="closeEventModal()">✕</button>
+</div>
+<form id="event-form" class="modal-form">
+
+<!-- ID Demande (masqué à l'utilisateur, mais nécessaire pour le suivi) -->
+<input type="hidden" name="id_demande">
+
+<!-- Jauge Infos manquantes -->
+<div id="view-warning-missing-info" style="display:none; background:rgba(245,166,35,0.14); border: 1px solid rgba(245,166,35,0.36); color:#9A5D00; padding:10px 14px; border-radius:6px; font-size:13px; font-weight:700; margin-bottom:16px; line-height:1.4;">
+  ⚠️ Infos manquantes : des informations clés (téléphone/e-mail, lieu ou nombre de convives) ne sont pas renseignées.
+</div>
+
+<div class="form-section form-section-priority">
+<div class="form-section-title">Suivi</div>
+<div class="form-row status-row">
+<label>Statut de la demande</label>
+<select name="statut">
+<option value="Nouvelle demande">🆕 Nouvelle demande</option>
+<option value="À rappeler">📞 À rappeler</option>
+<option value="Devis à préparer">📝 Devis à préparer</option>
+<option value="Devis envoyé">✉️ Devis envoyé</option>
+<option value="Événement confirmé">📅 Événement confirmé</option>
+<option value="Événement terminé">✅ Événement terminé</option>
+<option value="Perdu / Sans suite">❌ Perdu / Sans suite</option>
+</select>
+</div>
+</div>
+
+<!-- ── Champs toujours visibles (mode rapide) ── -->
+<div class="form-section">
+<div class="form-section-title">Informations principales</div>
+<div class="form-row">
+<label>Nom client *</label>
+<input type="text" name="nom_client" required placeholder="Ex: Céline GIORDANO">
+</div>
+<div class="form-row">
+<label>Date de l'événement *</label>
+<input type="text" name="date_evenement" required placeholder="Ex: 10/06/2026 ou 30/06/2026 au 03/07/2026">
+<div id="date-conflict-banner" style="display:none;"></div>
+</div>
+<div class="form-row">
+<label>Heure de l'événement</label>
+<input type="time" name="heure_evenement">
+</div>
+<div class="form-row">
+<label>Téléphone client</label>
+<div class="field-with-action">
+  <input type="tel" name="telephone" placeholder="Ex: 06 12 34 56 78">
+  <a href="#" id="view-phone-call-btn" class="btn-primary contact-action-btn" style="display:none;">📞 Appeler</a>
+</div>
+</div>
+<div class="form-row">
+<label>Email client</label>
+<div class="field-with-action">
+  <input type="email" name="email_client" placeholder="Ex: client@email.com">
+  <div id="view-email-reply-container" style="display: none;">
+    <a href="#" id="view-email-reply-btn" target="_blank" class="btn-primary contact-action-btn">
+      ✉️ Répondre
+    </a>
+  </div>
+</div>
+</div>
+<div class="form-row">
+<label>Type d'événement</label>
+<select name="type_evenement">
+<option value="Mariage">Mariage</option>
+<option value="Baptême">Baptême</option>
+<option value="Anniversaire">Anniversaire</option>
+<option value="Entreprise">Entreprise</option>
+<option value="Autres">Autres</option>
+</select>
+</div>
+<div class="form-row">
+<label>Nombre de convives</label>
+<input type="text" name="nb_convives" placeholder="Ex: 80 ou 45 le 30/06 ; 22 le 01/07...">
+</div>
+<div class="form-row">
+<label>Lieu de la prestation</label>
+<input type="text" name="lieu_prestation" placeholder="Ex: Salle des fêtes de Miramas…">
+</div>
+</div>
+
+<!-- ── Champs mode complet (cachés en mode rapide) ── -->
+<div id="form-full-section" style="display:none;">
+<div class="form-section">
+<div class="form-section-title">Informations complémentaires</div>
+<div class="form-row">
+<label>Budget estimé</label>
+<input type="text" name="budget_estime" placeholder="Ex: 1800 ou 850/900€ ou Entre 2000 et 2500€">
+</div>
+<div class="form-row">
+<label>Canal d'origine</label>
+<select name="canal">
+<option value="Téléphone">Téléphone</option>
+<option value="Email">Email</option>
+<option value="Site Internet">Site Internet</option>
+<option value="Réseaux sociaux">Réseaux sociaux</option>
+<option value="Saisie manuelle">Saisie manuelle</option>
+</select>
+</div>
+<div class="form-row">
+<label>Demande reçue le</label>
+<input type="datetime-local" name="date_reception">
+</div>
+<div class="form-row readonly-row source-email-row">
+<label>Fil de discussion email</label>
+<div class="readonly-link-row">
+  <input type="url" name="url_email_origine" placeholder="Ex: https://mail.google.com/..." readonly>
+  <a href="#" id="view-email-thread-btn" target="_blank" rel="noopener noreferrer" class="btn-secondary field-action" style="display:none;">Ouvrir</a>
+</div>
+</div>
+<div class="form-row">
+<label>Lien dossier Drive</label>
+<input type="url" name="url_dossier_drive" placeholder="Ex: https://drive.google.com/...">
+</div>
+<div class="form-row textarea-row source-message-row">
+<label>Message original</label>
+<textarea name="message_original" rows="3" placeholder="Message original reçu du client..." readonly></textarea>
+</div>
+<div class="form-row textarea-row followup-row" id="followup-detail-row" style="display:none;">
+<label>Dernier message client</label>
+<div>
+  <div id="followup-detail-meta" class="followup-meta">—</div>
+  <textarea name="dernier_message_client" rows="3" readonly></textarea>
+  <button type="button" class="btn-secondary" id="mark-followup-handled-btn" onclick="markFollowupHandled()" style="margin-top:8px; display:none;">Marquer comme traité</button>
+</div>
+</div>
+<div class="form-row textarea-row">
+<label>Notes</label>
+<textarea name="notes" rows="3" placeholder="Notes de suivi interne..."></textarea>
+</div>
+</div>
+</div>
+
+<p id="event-derniere-modif-container" style="margin: 10px 0; font-size: 13px; color: var(--muted); display: none;">
+  <strong>Dernière modification:</strong> <span id="view-derniere-modif">—</span>
+</p>
+
+<!-- ── Lien bascule mode ── -->
+<div style="text-align:right; margin: 6px 0 10px;">
+<a href="#" id="form-toggle-link" onclick="toggleFormMode(event)" style="font-size:12px;color:var(--gold);text-decoration:none;border-bottom:1px solid var(--gold-lt);">Compléter la fiche →</a>
+</div>
+
+<div class="modal-ft" style="justify-content:space-between; display:flex; gap:10px;">
+<button type="button" class="btn-danger" id="btn-delete-event" style="display:none;" onclick="deleteCurrentEvent()">Supprimer</button>
+<div style="display:flex;gap:10px;margin-left:auto;">
+<button type="button" class="btn-secondary" onclick="closeEventModal()">Annuler</button>
+<button type="submit" class="btn-primary">Enregistrer</button>
+</div>
+</div>
+</form>
+</div>
+</div>
+
+<script src="app.js?v=2.30"></script>
+
+<!-- ── BOTTOM NAVIGATION (mobile uniquement) ── -->
+<nav class="bottom-nav" id="bottom-nav">
+  <button class="bn-item active" id="bn-accueil" onclick="showPanel('accueil',this)">
+    <span class="bn-icon">🏠</span>
+    <span class="bn-label">Accueil</span>
+  </button>
+  <button class="bn-item" id="bn-devis" onclick="showPanel('devis',this)">
+    <span class="bn-icon">📋</span>
+    <span class="bn-label">En cours</span>
+  </button>
+  <button class="bn-add" onclick="openEventModal()" aria-label="Nouvel événement">
+    <span>+</span>
+  </button>
+  <button class="bn-item" id="bn-clients" onclick="showPanel('clients',this)">
+    <span class="bn-icon">✅</span>
+    <span class="bn-label">Confirmés</span>
+  </button>
+  <button class="bn-item" id="bn-agenda" onclick="showPanel('agenda',this)">
+    <span class="bn-icon">📅</span>
+    <span class="bn-label">Agenda</span>
+  </button>
+  <button class="bn-item" id="bn-historique" onclick="showPanel('historique',this)">
+    <span class="bn-icon">🕰️</span>
+    <span class="bn-label">Historique</span>
+  </button>
+</nav>
+
 </body>
 </html>
