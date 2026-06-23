@@ -1,0 +1,8 @@
+# Project-scoped Codex defaults. Loaded only when this repo is trusted.
+
+model_reasoning_effort = "high"
+web_search = "cached"
+
+[features]
+hooks = true
+multi_agent = true
