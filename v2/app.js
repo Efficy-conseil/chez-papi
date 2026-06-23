@@ -163,15 +163,6 @@ function isUrgent(row) {
   return !isArchive(row) && days !== null && days >= 0 && days <= 30;
 }
 
-function isTruthy(value) {
-  const normalized = String(value ?? '').trim().toLowerCase();
-  return value === true || ['true', 'vrai', 'oui', '1', 'yes'].includes(normalized);
-}
-
-function hasClientFollowup(row) {
-  return !isArchive(row) && isTruthy(row.relance_a_traiter);
-}
-
 function needsReply(row) {
   return row.statut === 'Devis à préparer';
 }
@@ -230,9 +221,8 @@ function filteredRows() {
   const query = state.query.trim().toLowerCase();
   return state.rows
     .filter(row => {
-      if (state.view === 'today') return !isArchive(row) && (row.statut === 'Nouvelle demande' || row.statut === 'À rappeler' || needsReply(row) || isUrgent(row) || hasClientFollowup(row));
+      if (state.view === 'today') return !isArchive(row) && (row.statut === 'Nouvelle demande' || row.statut === 'À rappeler' || needsReply(row) || isUrgent(row));
       if (state.view === 'new') return row.statut === 'Nouvelle demande';
-      if (state.view === 'followups') return hasClientFollowup(row);
       if (state.view === 'call') return row.statut === 'À rappeler';
       if (state.view === 'reply') return needsReply(row);
       if (state.view === 'urgent') return isUrgent(row);
@@ -259,7 +249,6 @@ function filteredRows() {
       return haystack.includes(query);
     })
     .sort((a, b) => {
-      if (hasClientFollowup(a) !== hasClientFollowup(b)) return hasClientFollowup(a) ? -1 : 1;
       if (isUrgent(a) !== isUrgent(b)) return isUrgent(a) ? -1 : 1;
       const ad = daysUntilEvent(a);
       const bd = daysUntilEvent(b);
@@ -273,9 +262,8 @@ function filteredRows() {
 function counts() {
   const active = state.rows.filter(row => !isArchive(row));
   return {
-    today: active.filter(row => row.statut === 'Nouvelle demande' || row.statut === 'À rappeler' || needsReply(row) || isUrgent(row) || hasClientFollowup(row)).length,
+    today: active.filter(row => row.statut === 'Nouvelle demande' || row.statut === 'À rappeler' || needsReply(row) || isUrgent(row)).length,
     new: active.filter(row => row.statut === 'Nouvelle demande').length,
-    followups: active.filter(hasClientFollowup).length,
     call: active.filter(row => row.statut === 'À rappeler').length,
     reply: active.filter(needsReply).length,
     urgent: active.filter(isUrgent).length,
@@ -288,7 +276,6 @@ function counts() {
 
 function renderBadges(row) {
   return [
-    hasClientFollowup(row) ? '<span class="badge followup">Nouveau message</span>' : '',
     isUrgent(row) ? '<span class="badge urgent">Urgent</span>' : '',
     `<span class="badge ${statusClass(row)}">${esc(STATUS_LABELS[row.statut] || row.statut)}</span>`,
   ].filter(Boolean).join('');
@@ -305,7 +292,7 @@ function renderList() {
     const id = rowId(row);
     const action = phoneHref(row.telephone) ? 'Appeler' : row.email_client ? 'Email' : 'Voir';
     return `
-      <button class="demand-row ${isUrgent(row) ? 'urgent' : ''} ${hasClientFollowup(row) ? 'followup' : ''} ${state.selectedId === id ? 'active' : ''}" data-id="${esc(id)}">
+      <button class="demand-row ${isUrgent(row) ? 'urgent' : ''} ${state.selectedId === id ? 'active' : ''}" data-id="${esc(id)}">
         <span>
           <span class="contact-name">${esc(row.nom_client || 'Sans nom')} ${isUrgent(row) ? '<span class="badge urgent">Urgent</span>' : ''}</span>
           <span class="event-line">${esc(eventSummary(row))}</span>
@@ -335,13 +322,11 @@ function renderCounts() {
   const c = counts();
   $('#kpi-new').textContent = c.new;
   $('#kpi-urgent').textContent = c.urgent;
-  $('#kpi-followups').textContent = c.followups;
   $('#kpi-call').textContent = c.call;
   $('#kpi-reply').textContent = c.reply;
   $('#kpi-soon').textContent = c.soon;
   $('#nav-today').textContent = c.today;
   $('#nav-new').textContent = c.new;
-  $('#nav-followups').textContent = c.followups;
   $('#nav-call').textContent = c.call;
   $('#nav-reply').textContent = c.reply;
 }
@@ -350,7 +335,6 @@ function renderTitle() {
   const titles = {
     today: ['À traiter', 'Demandes nouvelles, urgentes ou en attente d’action.'],
     new: ['Nouvelles demandes', 'Demandes entrantes pas encore traitées.'],
-    followups: ['Messages clients', 'Relances et réponses arrivées sur des demandes existantes.'],
     call: ['À rappeler', 'Contacts à rappeler rapidement.'],
     reply: ['Réponse à envoyer', 'Demandes qui attendent un devis ou une réponse.'],
     urgent: ['Urgentes', 'Événements proches ou marqués urgents.'],
@@ -378,8 +362,6 @@ function renderDetail() {
   const email = String(row.email_client || '').trim();
   const emailUrl = row.url_email_origine && String(row.url_email_origine).startsWith('https://mail.google.com/') ? row.url_email_origine : '';
   const driveUrl = row.url_dossier_drive && String(row.url_dossier_drive).startsWith('https://drive.google.com/') ? row.url_dossier_drive : '';
-  const lastClientMessage = String(row.dernier_message_client || '').trim();
-  const lastClientEmailAt = row.dernier_email_recu_le ? `${formatDate(row.dernier_email_recu_le)} · ${receivedAge(row.dernier_email_recu_le)}` : '—';
   content.innerHTML = `
     <div class="detail-head">
       <button class="quick-actions drawer-close" id="close-detail-btn">Fermer</button>
@@ -411,13 +393,6 @@ function renderDetail() {
     <section class="detail-section">
       <h3>Message original</h3>
       <p>${esc(row.message_original || 'Aucun message original renseigné.')}</p>
-    </section>
-    <section class="detail-section followup-section">
-      <h3>Dernier message client</h3>
-      <div class="field-line"><span>Reçu</span><strong>${esc(lastClientEmailAt)}</strong></div>
-      <div class="field-line"><span>Relances</span><strong>${esc(row.nb_relances_client || '0')}</strong></div>
-      <p>${esc(lastClientMessage || 'Aucun nouveau message client à traiter.')}</p>
-      ${hasClientFollowup(row) ? '<button class="primary-btn" id="mark-followup-handled-btn">Marquer comme traité</button>' : ''}
     </section>
     <section class="detail-section">
       <h3>Notes internes</h3>
@@ -555,10 +530,6 @@ function bindEvents() {
 
     if (event.target.id === 'save-notes-btn') {
       updateSelected({ notes: $('#detail-notes').value }, 'Notes enregistrées');
-    }
-
-    if (event.target.id === 'mark-followup-handled-btn') {
-      updateSelected({ relance_a_traiter: false }, 'Message marqué comme traité');
     }
   });
 
