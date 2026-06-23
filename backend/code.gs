@@ -170,7 +170,10 @@ function doPost(e) {
   try {
     const body = JSON.parse(e.postData.contents);
     const auth = body.auth || { user: body.user, pass: body.pass };
-    const isMakeFollowup = body.action === 'updateThreadFollowup' && body.make_token === MAKE_FOLLOWUP_TOKEN;
+    const isMakeFollowup = (
+      (body.action === 'updateThreadFollowup' || body.action === 'updateExistingDemandFollowup') &&
+      body.make_token === MAKE_FOLLOWUP_TOKEN
+    );
     if (!isMakeFollowup && !checkAuth(auth.user, auth.pass)) {
       return ko("Non autorisé");
     }
@@ -179,6 +182,7 @@ function doPost(e) {
     if (body.action === 'add')    return withDocumentLock(function() { return addRow(body.row || {}); });
     if (body.action === 'update') return withDocumentLock(function() { return updateRowById(body.id_demande, body.fields || {}); });
     if (body.action === 'updateThreadFollowup') return withDocumentLock(function() { return updateThreadFollowup(body.gmail_thread_id, body.fields || {}); });
+    if (body.action === 'updateExistingDemandFollowup') return withDocumentLock(function() { return updateExistingDemandFollowup(body.match || {}, body.fields || {}); });
     if (body.action === 'delete') return withDocumentLock(function() { return deleteRowById(body.id_demande); });
     return ko('Action inconnue : ' + body.action);
   } catch (err) {
@@ -301,6 +305,41 @@ function updateThreadFollowup(gmailThreadId, fields) {
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
   const found = findRowByCanonicalValue(sheet, headers, "gmail_thread_id", gmailThreadId);
   if (!found) return ok({ updated: false, reason: "thread_not_found", gmail_thread_id: gmailThreadId });
+
+  const clean = sanitizeFields(fields || {}, true);
+  clean.relance_a_traiter = clean.relance_a_traiter !== undefined ? clean.relance_a_traiter : true;
+  clean.dernier_email_recu_le = clean.dernier_email_recu_le || new Date();
+  clean.derniere_modification = new Date();
+
+  if (clean.nb_relances_client === undefined) {
+    const countCol = headers.findIndex(function(h) { return canonicalKey(h) === "nb_relances_client"; }) + 1;
+    const current = countCol > 0 ? Number(sheet.getRange(found.rowIndex, countCol).getValue() || 0) : 0;
+    clean.nb_relances_client = current + 1;
+  }
+
+  headers.forEach(function(h, i) {
+    const key = canonicalKey(h);
+    if (clean[key] !== undefined) {
+      sheet.getRange(found.rowIndex, i + 1).setValue(clean[key]);
+    }
+  });
+
+  return ok({ updated: true, id_demande: found.id_demande || "", row: found.rowIndex });
+}
+
+function updateExistingDemandFollowup(match, fields) {
+  const email = String(match.email_client || '').trim().toLowerCase();
+  const dateEvenement = normalizeEventDateText(match.date_evenement);
+  if (!email) throw new Error("email_client manquant");
+  if (!dateEvenement) throw new Error("date_evenement manquante");
+
+  const sheet = getSheet();
+  ensureSchemaHeaders(sheet);
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
+  const found = findLatestRowByEmailAndEventDate(sheet, headers, email, dateEvenement);
+  if (!found) {
+    return ok({ updated: false, reason: "existing_demand_not_found", email_client: email, date_evenement: dateEvenement });
+  }
 
   const clean = sanitizeFields(fields || {}, true);
   clean.relance_a_traiter = clean.relance_a_traiter !== undefined ? clean.relance_a_traiter : true;
@@ -537,6 +576,36 @@ function findRowByCanonicalValue(sheet, headers, key, value) {
   const ids = idCol > 0 ? sheet.getRange(2, idCol, lastRow - 1, 1).getValues() : [];
   for (var i = values.length - 1; i >= 0; i--) {
     if (String(values[i][0] || '').trim() === target) {
+      return {
+        rowIndex: i + 2,
+        id_demande: idCol > 0 ? String(ids[i][0] || '').trim() : ""
+      };
+    }
+  }
+  return null;
+}
+
+function findLatestRowByEmailAndEventDate(sheet, headers, emailClient, dateEvenement) {
+  const emailCol = headers.findIndex(function(h) { return canonicalKey(h) === "email_client"; }) + 1;
+  const dateCol = headers.findIndex(function(h) { return canonicalKey(h) === "date_evenement"; }) + 1;
+  const idCol = headers.findIndex(function(h) { return canonicalKey(h) === "id_demande"; }) + 1;
+  if (emailCol <= 0) throw new Error("Colonne email_client introuvable");
+  if (dateCol <= 0) throw new Error("Colonne date_evenement introuvable");
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return null;
+
+  const targetEmail = String(emailClient || '').trim().toLowerCase();
+  const targetDate = normalizeEventDateText(dateEvenement);
+  const emails = sheet.getRange(2, emailCol, lastRow - 1, 1).getValues();
+  const dates = sheet.getRange(2, dateCol, lastRow - 1, 1).getValues();
+  const dateDisplays = sheet.getRange(2, dateCol, lastRow - 1, 1).getDisplayValues();
+  const ids = idCol > 0 ? sheet.getRange(2, idCol, lastRow - 1, 1).getValues() : [];
+
+  for (var i = emails.length - 1; i >= 0; i--) {
+    const rowEmail = String(emails[i][0] || '').trim().toLowerCase();
+    const rowDate = normalizeEventDateText(dateDisplays[i][0] || dates[i][0]);
+    if (rowEmail === targetEmail && rowDate === targetDate) {
       return {
         rowIndex: i + 2,
         id_demande: idCol > 0 ? String(ids[i][0] || '').trim() : ""

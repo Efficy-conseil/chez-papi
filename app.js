@@ -1356,6 +1356,7 @@ function renderHistorique() {
 
   if (!events.length) {
     tbody.innerHTML = '<tr><td colspan="10" class="tbl-empty">Aucune demande</td></tr>';
+    syncHistoriqueScrollbars();
     return;
   }
 
@@ -1375,6 +1376,33 @@ function renderHistorique() {
       <td title="${escAttr(notes)}">${safeText(notesTrunc)}</td>
     </tr>`;
   }).join('');
+
+  syncHistoriqueScrollbars();
+}
+
+function syncHistoriqueScrollbars() {
+  const top = document.getElementById('historique-scroll-top');
+  const spacer = document.getElementById('historique-scroll-spacer');
+  const wrap = document.getElementById('historique-table-wrap');
+  const table = document.getElementById('historique-table');
+  if (!top || !spacer || !wrap || !table) return;
+
+  spacer.style.width = `${table.scrollWidth}px`;
+  top.scrollLeft = wrap.scrollLeft;
+
+  if (top.dataset.synced === 'true') return;
+  top.dataset.synced = 'true';
+
+  let syncing = false;
+  const sync = (source, target) => {
+    if (syncing) return;
+    syncing = true;
+    target.scrollLeft = source.scrollLeft;
+    syncing = false;
+  };
+
+  top.addEventListener('scroll', () => sync(top, wrap), { passive: true });
+  wrap.addEventListener('scroll', () => sync(wrap, top), { passive: true });
 }
 
 function exportHistoriqueCSV() {
@@ -2082,7 +2110,7 @@ function renderAgenda() {
 
   listEl.innerHTML =
     '<div class="tbl-wrap">' +
-    '<table class="tbl agenda-tbl" style="padding:0;min-width:680px;">' +
+    '<table class="tbl agenda-tbl" style="padding:0;">' +
     '<thead><tr>' +
     '<th>Date</th>' +
     '<th>Client</th>' +
@@ -2235,12 +2263,14 @@ function showPanel(panelName, element) {
   const bnItem = document.getElementById('bn-' + panelName);
   if (bnItem && bnItem !== element) bnItem.classList.add('active');
   document.querySelector('.content').scrollTop = 0;
+  if (panelName === 'historique') setTimeout(syncHistoriqueScrollbars, 0);
 }
 
 // ── RESPONSIVE HANDLING ──
 
 let isDesktop = window.innerWidth >= 900;
 window.addEventListener('resize', () => {
+  syncHistoriqueScrollbars();
   const newIsDesktop = window.innerWidth >= 900;
   if (newIsDesktop !== isDesktop) {
     isDesktop = newIsDesktop;

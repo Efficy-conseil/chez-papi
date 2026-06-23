@@ -770,17 +770,6 @@ body {
   width: 100%;
 }
 
-/* Masquer la barre de défilement sur desktop tout en conservant le scroll */
-@media (min-width: 768px) {
-  .tbl-wrap {
-    scrollbar-width: none;        /* Firefox */
-    -ms-overflow-style: none;     /* IE / Edge */
-  }
-  .tbl-wrap::-webkit-scrollbar {
-    display: none;                /* Chrome, Safari, Opera */
-  }
-}
-
 @media (min-width: 768px) {
   .card {
     padding: 18px 18px 14px;
@@ -1794,6 +1783,24 @@ body.is-saving-event::after {
 .pc-todo-btn:hover { background: var(--brown-dk); }
 
 /* ── AGENDA TABLE ── */
+.agenda-tbl {
+  min-width: 960px;
+  table-layout: fixed;
+}
+.agenda-tbl th:nth-child(1),
+.agenda-tbl td:nth-child(1) { width: 128px; }
+.agenda-tbl th:nth-child(2),
+.agenda-tbl td:nth-child(2) { width: 150px; }
+.agenda-tbl th:nth-child(3),
+.agenda-tbl td:nth-child(3) { width: 96px; }
+.agenda-tbl th:nth-child(4),
+.agenda-tbl td:nth-child(4) { width: 190px; }
+.agenda-tbl th:nth-child(5),
+.agenda-tbl td:nth-child(5) { width: 150px; }
+.agenda-tbl th:nth-child(6),
+.agenda-tbl td:nth-child(6) { width: 96px; }
+.agenda-tbl th:nth-child(7),
+.agenda-tbl td:nth-child(7) { width: 170px; }
 .agenda-tbl th {
   font-size: 0.72rem;
   letter-spacing: .09em;
@@ -1806,15 +1813,17 @@ body.is-saving-event::after {
 .agenda-tbl td {
   font-size: 0.82rem;
   padding: 9px 6px 9px 0;
-  /* Troncature universelle — aucun élément HTML imbriqué dans les td */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 0; /* requis avec table-layout:fixed */
 }
 .agenda-tbl td:first-child { padding-left: 16px; }
 /* Date en gras */
-.agenda-tbl td.ag-date { font-weight: 700; }
+.agenda-tbl td.ag-date {
+  font-weight: 700;
+  overflow: visible;
+  text-overflow: clip;
+}
 /* Type Entreprise en gras */
 .agenda-tbl td.ag-entreprise { font-weight: 700; }
 /* La colonne statut ne doit pas tronquer le menu déroulant */
@@ -1829,6 +1838,50 @@ body.is-saving-event::after {
 }
 
 /* ── HISTORIQUE TABLE ── */
+.hist-scroll-top {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  height: 16px;
+  margin-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+}
+.hist-scroll-top > div {
+  height: 1px;
+}
+.historique-table-wrap {
+  padding-bottom: 4px;
+}
+.historique-tbl {
+  min-width: 1320px;
+  table-layout: fixed;
+}
+.historique-tbl th:nth-child(1),
+.historique-tbl td:nth-child(1) { width: 120px; }
+.historique-tbl th:nth-child(2),
+.historique-tbl td:nth-child(2) { width: 130px; }
+.historique-tbl th:nth-child(3),
+.historique-tbl td:nth-child(3) { width: 110px; }
+.historique-tbl th:nth-child(4),
+.historique-tbl td:nth-child(4) { width: 160px; }
+.historique-tbl th:nth-child(5),
+.historique-tbl td:nth-child(5) { width: 120px; }
+.historique-tbl th:nth-child(6),
+.historique-tbl td:nth-child(6) { width: 100px; }
+.historique-tbl th:nth-child(7),
+.historique-tbl td:nth-child(7) { width: 190px; }
+.historique-tbl th:nth-child(8),
+.historique-tbl td:nth-child(8) { width: 220px; }
+.historique-tbl th:nth-child(9),
+.historique-tbl td:nth-child(9) { width: 130px; }
+.historique-tbl th:nth-child(10),
+.historique-tbl td:nth-child(10) { width: 160px; }
+.historique-tbl th,
+.historique-tbl td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 #historique .tbl th {
   font-size: 0.72rem;
   letter-spacing: .1em;
