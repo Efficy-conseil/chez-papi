@@ -1977,7 +1977,14 @@
                   "message_original": "{{42.message_original}}",
                   "url_email_origine": "https://mail.google.com/mail/u/0/#label/Historique_Wix/{{1.id}}",
                   "notes": "{{42.notes}}",
-                  "derniere_modification": "{{now}}"
+                  "derniere_modification": "{{now}}",
+                  "gmail_thread_id": "{{1.threadId}}",
+                  "gmail_message_id": "{{1.id}}",
+                  "wix_form_fingerprint": "{{42.nom_client}}|{{42.email_client}}|{{42.date_evenement}}|{{42.telephone}}",
+                  "dernier_email_recu_le": "",
+                  "dernier_message_client": "",
+                  "nb_relances_client": "0",
+                  "relance_a_traiter": "FALSE"
                 }
               },
               "metadata": {
@@ -4466,7 +4473,14 @@
                           "url_email_origine": "https://mail.google.com/mail/u/0/#label/Historique_Voxist/{{1.id}}",
                           "notes": "{{61.notes}}",
                           "url_dossier_drive": "{{61.url_dossier_drive}}",
-                          "derniere_modification": "{{now}}"
+                          "derniere_modification": "{{now}}",
+                          "gmail_thread_id": "{{1.threadId}}",
+                          "gmail_message_id": "{{1.id}}",
+                          "wix_form_fingerprint": "",
+                          "dernier_email_recu_le": "",
+                          "dernier_message_client": "",
+                          "nb_relances_client": "0",
+                          "relance_a_traiter": "FALSE"
                         }
                       },
                       "metadata": {
@@ -8824,7 +8838,14 @@
                                   "url_email_origine": "https://mail.google.com/mail/u/0/#label/Historique_Voxist/{{1.id}}",
                                   "notes": "{{14.notes}}",
                                   "url_dossier_drive": "{{14.url_dossier_drive}}",
-                                  "derniere_modification": "{{now}}"
+                                  "derniere_modification": "{{now}}",
+                                  "gmail_thread_id": "{{1.threadId}}",
+                                  "gmail_message_id": "{{1.id}}",
+                                  "wix_form_fingerprint": "",
+                                  "dernier_email_recu_le": "",
+                                  "dernier_message_client": "",
+                                  "nb_relances_client": "0",
+                                  "relance_a_traiter": "FALSE"
                                 }
                               },
                               "metadata": {
@@ -12230,7 +12251,14 @@
                           "url_email_origine": "https://mail.google.com/mail/u/0/#label/Historique_Email/{{1.id}}",
                           "notes": "{{38.notes}}",
                           "url_dossier_drive": "{{38.url_dossier_drive}}",
-                          "derniere_modification": "{{now}}"
+                          "derniere_modification": "{{now}}",
+                          "gmail_thread_id": "{{1.threadId}}",
+                          "gmail_message_id": "{{1.id}}",
+                          "wix_form_fingerprint": "",
+                          "dernier_email_recu_le": "",
+                          "dernier_message_client": "",
+                          "nb_relances_client": "0",
+                          "relance_a_traiter": "FALSE"
                         }
                       },
                       "metadata": {

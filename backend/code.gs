@@ -54,7 +54,24 @@ const ALLOWED_FIELDS = [
   "url_email_origine",
   "notes",
   "url_dossier_drive",
+  "gmail_thread_id",
+  "gmail_message_id",
+  "wix_form_fingerprint",
+  "dernier_email_recu_le",
+  "dernier_message_client",
+  "nb_relances_client",
+  "relance_a_traiter",
   "derniere_modification"
+];
+
+const SCHEMA_HEADERS = [
+  "gmail_thread_id",
+  "gmail_message_id",
+  "wix_form_fingerprint",
+  "dernier_email_recu_le",
+  "dernier_message_client",
+  "nb_relances_client",
+  "relance_a_traiter"
 ];
 
 const KEY_MAP = {
@@ -105,6 +122,20 @@ const KEY_MAP = {
   "URL Email Origine": "url_email_origine",
   "url_dossier_drive": "url_dossier_drive",
   "URL Dossier Drive": "url_dossier_drive",
+  "gmail_thread_id": "gmail_thread_id",
+  "Gmail Thread ID": "gmail_thread_id",
+  "gmail_message_id": "gmail_message_id",
+  "Gmail Message ID": "gmail_message_id",
+  "wix_form_fingerprint": "wix_form_fingerprint",
+  "Wix Form Fingerprint": "wix_form_fingerprint",
+  "dernier_email_recu_le": "dernier_email_recu_le",
+  "Dernier Email Reçu Le": "dernier_email_recu_le",
+  "dernier_message_client": "dernier_message_client",
+  "Dernier Message Client": "dernier_message_client",
+  "nb_relances_client": "nb_relances_client",
+  "Nb Relances Client": "nb_relances_client",
+  "relance_a_traiter": "relance_a_traiter",
+  "Relance À Traiter": "relance_a_traiter",
   "derniere_modification": "derniere_modification",
   "Dernière Modification": "derniere_modification"
 };
@@ -145,6 +176,7 @@ function doPost(e) {
     if (body.action === 'list' || body.action === 'getAll') return listRows();
     if (body.action === 'add')    return withDocumentLock(function() { return addRow(body.row || {}); });
     if (body.action === 'update') return withDocumentLock(function() { return updateRowById(body.id_demande, body.fields || {}); });
+    if (body.action === 'updateThreadFollowup') return withDocumentLock(function() { return updateThreadFollowup(body.gmail_thread_id, body.fields || {}); });
     if (body.action === 'delete') return withDocumentLock(function() { return deleteRowById(body.id_demande); });
     return ko('Action inconnue : ' + body.action);
   } catch (err) {
@@ -164,6 +196,7 @@ function withDocumentLock(fn) {
 
 function listRows() {
   const sheet = getSheet();
+  ensureSchemaHeaders(sheet);
   const range = sheet.getDataRange();
   const data = range.getValues();
   const displayData = range.getDisplayValues();
@@ -185,6 +218,7 @@ function listRows() {
 
 function addRow(rowData) {
   const sheet = getSheet();
+  ensureSchemaHeaders(sheet);
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
   const clean = sanitizeFields(rowData || {}, false);
   
@@ -223,6 +257,7 @@ function addRow(rowData) {
 function updateRowById(idDemande, fields) {
   if (!idDemande) throw new Error("id_demande manquant");
   const sheet = getSheet();
+  ensureSchemaHeaders(sheet);
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
   const found = findRowByDemandId(sheet, headers, idDemande);
   if (!found) throw new Error("Demande introuvable : " + idDemande);
@@ -257,9 +292,39 @@ function updateRowById(idDemande, fields) {
   return ok({ id_demande: idDemande });
 }
 
+function updateThreadFollowup(gmailThreadId, fields) {
+  if (!gmailThreadId) throw new Error("gmail_thread_id manquant");
+  const sheet = getSheet();
+  ensureSchemaHeaders(sheet);
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
+  const found = findRowByCanonicalValue(sheet, headers, "gmail_thread_id", gmailThreadId);
+  if (!found) throw new Error("Aucune demande trouvée pour ce fil Gmail : " + gmailThreadId);
+
+  const clean = sanitizeFields(fields || {}, true);
+  clean.relance_a_traiter = clean.relance_a_traiter !== undefined ? clean.relance_a_traiter : true;
+  clean.dernier_email_recu_le = clean.dernier_email_recu_le || new Date();
+  clean.derniere_modification = new Date();
+
+  if (clean.nb_relances_client === undefined) {
+    const countCol = headers.findIndex(function(h) { return canonicalKey(h) === "nb_relances_client"; }) + 1;
+    const current = countCol > 0 ? Number(sheet.getRange(found.rowIndex, countCol).getValue() || 0) : 0;
+    clean.nb_relances_client = current + 1;
+  }
+
+  headers.forEach(function(h, i) {
+    const key = canonicalKey(h);
+    if (clean[key] !== undefined) {
+      sheet.getRange(found.rowIndex, i + 1).setValue(clean[key]);
+    }
+  });
+
+  return ok({ id_demande: found.id_demande || "", row: found.rowIndex });
+}
+
 function deleteRowById(idDemande) {
   if (!idDemande) throw new Error("id_demande manquant");
   const sheet = getSheet();
+  ensureSchemaHeaders(sheet);
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
   const found = findRowByDemandId(sheet, headers, idDemande);
   if (!found) throw new Error("Demande introuvable : " + idDemande);
@@ -293,6 +358,22 @@ function canonicalKey(header) {
   return KEY_MAP[String(header || '').trim()] || String(header || '').trim();
 }
 
+function ensureSchemaHeaders(sheet) {
+  const lastColumn = Math.max(sheet.getLastColumn(), 1);
+  const headers = sheet.getRange(1, 1, 1, lastColumn).getValues()[0].map(String);
+  const existing = {};
+  headers.forEach(function(h) {
+    existing[canonicalKey(h)] = true;
+  });
+
+  const missing = SCHEMA_HEADERS.filter(function(key) {
+    return !existing[key];
+  });
+  if (!missing.length) return;
+
+  sheet.getRange(1, headers.length + 1, 1, missing.length).setValues([missing]);
+}
+
 function sanitizeFields(rawFields, isUpdate) {
   const raw = normalizeRowKeys(rawFields || {});
   const clean = {};
@@ -317,6 +398,19 @@ function sanitizeFields(rawFields, isUpdate) {
     clean.date_evenement = normalizeEventDateText(clean.date_evenement);
   }
 
+  if (clean.relance_a_traiter !== undefined) {
+    clean.relance_a_traiter = normalizeBoolean(clean.relance_a_traiter);
+  }
+
+  if (clean.nb_relances_client !== undefined) {
+    const n = Number(clean.nb_relances_client || 0);
+    clean.nb_relances_client = Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0;
+  }
+
+  if (clean.dernier_message_client !== undefined) {
+    clean.dernier_message_client = String(clean.dernier_message_client || '').slice(0, 900);
+  }
+
   ["url_email_origine", "url_dossier_drive"].forEach(function(key) {
     if (clean[key] !== undefined && !isSafeBusinessUrl(clean[key])) {
       throw new Error("URL invalide : " + key);
@@ -324,6 +418,12 @@ function sanitizeFields(rawFields, isUpdate) {
   });
 
   return clean;
+}
+
+function normalizeBoolean(value) {
+  if (value === true || value === false) return value;
+  const s = String(value || '').trim().toLowerCase();
+  return s === 'true' || s === 'vrai' || s === 'oui' || s === '1' || s === 'yes';
 }
 
 function isSafeBusinessUrl(value) {
@@ -418,6 +518,27 @@ function findRowByDemandId(sheet, headers, idDemande) {
   for (var i = 0; i < values.length; i++) {
     if (String(values[i][0] || '').trim() === target) {
       return { rowIndex: i + 2 };
+    }
+  }
+  return null;
+}
+
+function findRowByCanonicalValue(sheet, headers, key, value) {
+  const col = headers.findIndex(function(h) { return canonicalKey(h) === key; }) + 1;
+  if (col <= 0) throw new Error("Colonne " + key + " introuvable");
+  const idCol = headers.findIndex(function(h) { return canonicalKey(h) === "id_demande"; }) + 1;
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return null;
+
+  const target = String(value || '').trim();
+  const values = sheet.getRange(2, col, lastRow - 1, 1).getValues();
+  const ids = idCol > 0 ? sheet.getRange(2, idCol, lastRow - 1, 1).getValues() : [];
+  for (var i = values.length - 1; i >= 0; i--) {
+    if (String(values[i][0] || '').trim() === target) {
+      return {
+        rowIndex: i + 2,
+        id_demande: idCol > 0 ? String(ids[i][0] || '').trim() : ""
+      };
     }
   }
   return null;

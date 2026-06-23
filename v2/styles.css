@@ -251,7 +251,7 @@ button {
 
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(120px, 1fr));
+  grid-template-columns: repeat(6, minmax(112px, 1fr));
   gap: 10px;
   margin-bottom: 16px;
 }
@@ -280,6 +280,7 @@ button {
 }
 
 .kpi-card.danger { border-left-color: var(--danger); }
+.kpi-card.blue { border-left-color: var(--blue); }
 .kpi-card.coral { border-left-color: #D85A30; }
 .kpi-card.violet { border-left-color: var(--violet); }
 .kpi-card.amber { border-left-color: var(--amber); }
@@ -351,6 +352,15 @@ button {
   padding-left: 9px;
 }
 
+.demand-row.followup {
+  background: #F6FBFF;
+}
+
+.demand-row.followup:not(.urgent) {
+  border-left: 5px solid var(--blue);
+  padding-left: 9px;
+}
+
 .contact-name {
   display: flex;
   gap: 8px;
@@ -388,6 +398,7 @@ button {
 .badge.channel-form { background: #F0EBFF; color: var(--violet); }
 .badge.channel-social { background: #FFF0E9; color: #B24621; }
 .badge.urgent { background: #FFE9E7; color: var(--danger); }
+.badge.followup { background: #E8F3FF; color: var(--blue); }
 
 .row-action {
   min-height: 32px;
@@ -467,6 +478,13 @@ button {
   font-size: 12px;
   color: var(--muted);
   text-transform: uppercase;
+}
+
+.followup-section {
+  background: #F6FBFF;
+  margin: 0 -12px;
+  padding: 16px 12px;
+  border-radius: 8px;
 }
 
 .field-line {
