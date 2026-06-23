@@ -18,6 +18,7 @@ const FRONTEND_URL = "https://efficy-conseil.github.io/chez-papi/";
 
 const AUTH_USER_PROP = "AUTH_USER";
 const AUTH_PASS_PROP = "AUTH_PASS";
+const MAKE_FOLLOWUP_TOKEN = "cp_make_followup_2026_06";
 
 const ALLOWED_STATUSES = [
   "Nouvelle demande",
@@ -169,7 +170,8 @@ function doPost(e) {
   try {
     const body = JSON.parse(e.postData.contents);
     const auth = body.auth || { user: body.user, pass: body.pass };
-    if (!checkAuth(auth.user, auth.pass)) {
+    const isMakeFollowup = body.action === 'updateThreadFollowup' && body.make_token === MAKE_FOLLOWUP_TOKEN;
+    if (!isMakeFollowup && !checkAuth(auth.user, auth.pass)) {
       return ko("Non autorisé");
     }
 
@@ -298,7 +300,7 @@ function updateThreadFollowup(gmailThreadId, fields) {
   ensureSchemaHeaders(sheet);
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
   const found = findRowByCanonicalValue(sheet, headers, "gmail_thread_id", gmailThreadId);
-  if (!found) throw new Error("Aucune demande trouvée pour ce fil Gmail : " + gmailThreadId);
+  if (!found) return ok({ updated: false, reason: "thread_not_found", gmail_thread_id: gmailThreadId });
 
   const clean = sanitizeFields(fields || {}, true);
   clean.relance_a_traiter = clean.relance_a_traiter !== undefined ? clean.relance_a_traiter : true;
@@ -318,7 +320,7 @@ function updateThreadFollowup(gmailThreadId, fields) {
     }
   });
 
-  return ok({ id_demande: found.id_demande || "", row: found.rowIndex });
+  return ok({ updated: true, id_demande: found.id_demande || "", row: found.rowIndex });
 }
 
 function deleteRowById(idDemande) {

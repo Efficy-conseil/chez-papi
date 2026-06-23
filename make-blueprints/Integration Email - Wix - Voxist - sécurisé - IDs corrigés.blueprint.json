@@ -6,7 +6,7 @@
       "module": "google-email:triggerWatchNewEmails",
       "version": 4,
       "parameters": {
-        "q": "in:inbox -label:Historique_Email -label:Historique_Wix -label:Historique_Voxist -label:Hors_Scope_Make -from:demande.chezpapimaisongourmande@gmail.com -subject:\"[Chez Papi] Récapitulatif\" -subject:\"Votre demande chez Chez Papi Maison Gourmande\" -subject:\"Chez Papi Maison Gourmande - Accusé\"",
+        "q": "in:inbox -label:Hors_Scope_Make -from:demande.chezpapimaisongourmande@gmail.com -subject:\"[Chez Papi] Récapitulatif\" -subject:\"Votre demande chez Chez Papi Maison Gourmande\" -subject:\"Chez Papi Maison Gourmande - Accusé\"",
         "limit": 20,
         "format": "full",
         "markSeen": false,
@@ -480,6 +480,122 @@
         }
       },
       "routes": [
+        {
+          "flow": [
+            {
+              "id": 80,
+              "module": "http:ActionSendData",
+              "version": 3,
+              "parameters": {},
+              "filter": {
+                "name": "Relance email - pas un nouveau formulaire Wix",
+                "conditions": [
+                  [
+                    {
+                      "a": "{{1.threadId}}",
+                      "o": "exist"
+                    },
+                    {
+                      "a": "{{1.fullTextBody}}",
+                      "b": "Nom / Prénom",
+                      "o": "text:notcontain"
+                    },
+                    {
+                      "a": "{{1.fullTextBody}}",
+                      "b": "Nom / Prenom",
+                      "o": "text:notcontain"
+                    }
+                  ]
+                ]
+              },
+              "mapper": {
+                "url": "https://script.google.com/macros/s/AKfycbzouc3kD6Qc68XzK3Ne_Rlnh5_e5o_IVMkAkHKAXJl-BFrxIIVEj7IS684CugVmh2Qlow/exec",
+                "method": "post",
+                "headers": [],
+                "qs": [],
+                "bodyType": "raw",
+                "parseResponse": true,
+                "authUser": "",
+                "authPass": "",
+                "timeout": "",
+                "shareCookies": false,
+                "ca": "",
+                "rejectUnauthorized": true,
+                "followRedirect": true,
+                "useQuerystring": false,
+                "gzip": true,
+                "useMtls": false,
+                "contentType": "application/json",
+                "data": "{\"action\":\"updateThreadFollowup\",\"make_token\":\"cp_make_followup_2026_06\",\"gmail_thread_id\":\"{{1.threadId}}\",\"fields\":{\"gmail_message_id\":\"{{1.id}}\",\"dernier_email_recu_le\":\"{{1.internalDate}}\",\"dernier_message_client\":\"{{substring(1.fullTextBody; 0; 900)}}\",\"relance_a_traiter\":true}}"
+              },
+              "metadata": {
+                "designer": {
+                  "x": 600,
+                  "y": 450,
+                  "name": "Relance client - MAJ demande existante"
+                },
+                "restore": {
+                  "expect": {
+                    "method": {
+                      "label": "POST"
+                    },
+                    "bodyType": {
+                      "label": "Raw"
+                    },
+                    "contentType": {
+                      "label": "JSON (application/json)"
+                    }
+                  }
+                },
+                "parameters": [],
+                "expect": [
+                  {
+                    "name": "url",
+                    "type": "url",
+                    "label": "URL",
+                    "required": true
+                  },
+                  {
+                    "name": "method",
+                    "type": "select",
+                    "label": "Method",
+                    "required": true
+                  },
+                  {
+                    "name": "headers",
+                    "type": "array",
+                    "label": "Headers"
+                  },
+                  {
+                    "name": "qs",
+                    "type": "array",
+                    "label": "Query String"
+                  },
+                  {
+                    "name": "bodyType",
+                    "type": "select",
+                    "label": "Body type"
+                  },
+                  {
+                    "name": "contentType",
+                    "type": "select",
+                    "label": "Content type"
+                  },
+                  {
+                    "name": "data",
+                    "type": "buffer",
+                    "label": "Request content"
+                  },
+                  {
+                    "name": "parseResponse",
+                    "type": "boolean",
+                    "label": "Parse response"
+                  }
+                ]
+              }
+            }
+          ]
+        },
         {
           "flow": [
             {
