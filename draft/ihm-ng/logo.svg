@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <!-- Arrière-plan foncé (marron traiteur) -->
+  <rect width="512" height="512" rx="100" fill="#2E2018"/>
+  <rect x="25" y="25" width="462" height="462" rx="80" fill="none" stroke="#5C3D1E" stroke-width="12"/>
+  
+  <!-- Texte Chez Papi -->
+  <text x="256" y="280" font-family="Playfair Display, Georgia, serif" font-size="220" fill="#EAD9C4" text-anchor="middle" font-weight="bold">CP</text>
+  
+  <!-- Sous-titre -->
+  <text x="256" y="380" font-family="Lato, Arial, sans-serif" font-size="45" fill="#EAD9C4" text-anchor="middle" font-weight="300" letter-spacing="4">TRAITEUR</text>
+  
+  <!-- Élément décoratif -->
+  <path d="M 156 430 L 356 430" stroke="#5C3D1E" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="256" cy="430" r="10" fill="#EAD9C4"/>
+</svg>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#D85A30">
+  <meta name="description" content="Chez Papi - V2 demandes entrantes">
+  <title>Chez Papi - Demandes V2</title>
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192x192.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css?v=1">
+</head>
+<body>
+  <div class="login-overlay" id="login-overlay">
+    <form class="login-box" id="login-form">
+      <img src="icon-192x192.png" alt="Chez Papi">
+      <h1>Chez Papi</h1>
+      <p>Demandes entrantes - V2</p>
+      <label>
+        Email
+        <input type="email" id="login-email" autocomplete="username" required>
+      </label>
+      <label>
+        Mot de passe
+        <input type="password" id="login-password" autocomplete="current-password" required>
+      </label>
+      <div class="login-error" id="login-error-msg"></div>
+      <button type="submit">Se connecter</button>
+    </form>
+  </div>
+
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <img src="icon-192x192.png" alt="">
+        <div>
+          <strong>Chez Papi</strong>
+          <span>Demandes</span>
+        </div>
+      </div>
+      <nav class="nav-list" id="nav-list">
+        <button class="active" data-view="today">À traiter <span id="nav-today">0</span></button>
+        <button data-view="new">Nouvelles <span id="nav-new">0</span></button>
+        <button data-view="call">À rappeler <span id="nav-call">0</span></button>
+        <button data-view="reply">Réponse à envoyer <span id="nav-reply">0</span></button>
+        <button data-view="all">Toutes</button>
+        <button data-view="archive">Archives</button>
+      </nav>
+      <button class="logout-btn" id="logout-btn">Déconnexion</button>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h1 id="view-title">À traiter</h1>
+          <p id="view-subtitle">Demandes nouvelles, urgentes ou en attente d’action.</p>
+        </div>
+        <div class="top-actions">
+          <span class="sync-pill" id="sync-indicator">Non synchronisé</span>
+          <button class="icon-btn" id="refresh-btn" title="Actualiser">↻</button>
+        </div>
+      </header>
+
+      <section class="kpi-grid" id="kpi-grid">
+        <button class="kpi-card" data-view="new">
+          <span>Nouvelles</span>
+          <strong id="kpi-new">0</strong>
+        </button>
+        <button class="kpi-card danger" data-view="urgent">
+          <span>Urgentes</span>
+          <strong id="kpi-urgent">0</strong>
+        </button>
+        <button class="kpi-card coral" data-view="call">
+          <span>À rappeler</span>
+          <strong id="kpi-call">0</strong>
+        </button>
+        <button class="kpi-card violet" data-view="reply">
+          <span>Réponse à envoyer</span>
+          <strong id="kpi-reply">0</strong>
+        </button>
+        <button class="kpi-card amber" data-view="soon">
+          <span>Événements &lt;30j</span>
+          <strong id="kpi-soon">0</strong>
+        </button>
+      </section>
+
+      <section class="toolbar">
+        <div class="search-box">
+          <span>⌕</span>
+          <input id="search-input" type="search" placeholder="Rechercher client, téléphone, lieu, événement...">
+        </div>
+        <select id="channel-filter" aria-label="Filtrer par canal">
+          <option value="">Tous les canaux</option>
+        </select>
+        <select id="status-filter" aria-label="Filtrer par statut">
+          <option value="">Tous les statuts</option>
+        </select>
+        <button class="primary-btn" id="new-request-btn">Nouvelle demande</button>
+      </section>
+
+      <section class="list-shell">
+        <div class="table-head">
+          <span>Contact / événement</span>
+          <span>Statut</span>
+          <span>Canal</span>
+          <span>Reçue</span>
+          <span>Événement</span>
+          <span>Action</span>
+        </div>
+        <div class="demand-list" id="demand-list">
+          <div class="empty-state">Chargement...</div>
+        </div>
+      </section>
+    </main>
+
+    <aside class="detail-panel" id="detail-panel" aria-hidden="true">
+      <div class="detail-empty">
+        <strong>Sélectionnez une demande</strong>
+        <span>Le détail s’ouvrira ici.</span>
+      </div>
+      <div class="detail-content" id="detail-content"></div>
+    </aside>
+  </div>
+
+  <div class="mobile-tabs" id="mobile-tabs">
+    <button class="active" data-view="today">À traiter</button>
+    <button data-view="new">Nouvelles</button>
+    <button data-view="call">Rappels</button>
+    <button data-view="all">Toutes</button>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="app.js?v=1"></script>
+</body>
+</html>
