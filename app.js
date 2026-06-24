@@ -659,6 +659,7 @@ async function silentPoll() {
     const result = await SheetsAPI.load();
     if (result?.rows) {
       const processed = processRows(result.rows);
+      await completePastConfirmedEvents(processed);
       checkNewEvents(processed);
       // Toujours mettre à jour appData et re-render pour refléter toute modification externe
       appData = processed;
@@ -765,6 +766,44 @@ function isEventPast(e) {
   return d.getTime() < today.getTime();
 }
 
+let _completingPastEvents = null;
+
+async function completePastConfirmedEvents(rows) {
+  if (_completingPastEvents) {
+    await _completingPastEvents;
+    return;
+  }
+
+  const eventsToComplete = rows.filter(event =>
+    event.statut === 'Événement confirmé' &&
+    eventId(event) &&
+    isEventPast(event)
+  );
+  if (!eventsToComplete.length) return;
+
+  _completingPastEvents = Promise.all(eventsToComplete.map(async event => {
+    try {
+      const result = await SheetsAPI.update(eventId(event), {
+        statut: 'Événement terminé'
+      });
+      if (result.success) {
+        event.statut = 'Événement terminé';
+        return true;
+      }
+    } catch (err) {
+      console.error('Mise à jour automatique du statut impossible :', eventId(event), err);
+    }
+    return false;
+  }));
+
+  try {
+    const updates = await _completingPastEvents;
+    if (updates.some(Boolean)) broadcastSync();
+  } finally {
+    _completingPastEvents = null;
+  }
+}
+
 function getMissingFields(e) {
   if (!e) return [];
   const missing = [];
@@ -820,7 +859,9 @@ async function loadData() {
     const result = await SheetsAPI.load();
     if (result && result.rows) {
       // Normalisation des statuts + déduplication via processRows()
-      appData = processRows(result.rows);
+      const processed = processRows(result.rows);
+      await completePastConfirmedEvents(processed);
+      appData = processed;
       lastSyncTime = Date.now(); lastSyncOk = true; updateSyncIndicator();
       setConnectionStatus('ok', appData.length);
       checkNewEvents(appData);
