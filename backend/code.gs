@@ -27,7 +27,8 @@ const ALLOWED_STATUSES = [
   "Devis envoyé",
   "Événement confirmé",
   "Événement terminé",
-  "Perdu / Sans suite"
+  "Perdu / Sans suite",
+  "Refusé / Complet"
 ];
 
 const ALLOWED_CHANNELS = [
@@ -804,7 +805,7 @@ function sendDailySummary() {
   const statOrder = {
     'Nouvelle demande': 1, 'À rappeler': 2, 'Devis à préparer': 3,
     'Devis envoyé': 4, 'Événement confirmé': 5, 'Événement terminé': 6,
-    'Perdu / Sans suite': 7
+    'Perdu / Sans suite': 7, 'Refusé / Complet': 7
   };
   const seenIds = new Map();
   yesterdayRows.forEach(r => {

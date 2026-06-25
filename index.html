@@ -377,13 +377,14 @@
     <!-- Tableau : taux de conversion par canal -->
     <div class="card stats-card">
       <h3 class="stats-title">Taux de conversion par canal</h3>
-      <div class="stats-scope-note">Toutes les demandes · Événements confirmés ou terminés</div>
+      <div class="stats-scope-note">Toutes les demandes · « Refusé / Complet » est compté comme non converti</div>
       <div class="tbl-wrap">
       <table class="tbl stats-tbl" id="stats-conversion-tbl">
         <thead><tr>
           <th>Canal</th>
           <th>Demandes</th>
           <th>Confirmées</th>
+          <th>Refusé / Complet</th>
           <th>Taux</th>
         </tr></thead>
         <tbody id="stats-conversion-tbody"></tbody>
@@ -429,6 +430,7 @@
 <option value="Événement confirmé">📅 Événement confirmé</option>
 <option value="Événement terminé">✅ Événement terminé</option>
 <option value="Perdu / Sans suite">❌ Perdu / Sans suite</option>
+<option value="Refusé / Complet">⛔ Refusé / Complet</option>
 </select>
 </div>
 </div>
@@ -551,7 +553,7 @@
 </div>
 </div>
 
-<script src="app.js?v=2.31"></script>
+<script src="app.js?v=2.32"></script>
 
 <!-- ── BOTTOM NAVIGATION (mobile uniquement) ── -->
 <nav class="bottom-nav" id="bottom-nav">

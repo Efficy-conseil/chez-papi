@@ -392,7 +392,8 @@ const STATUS_PILL = {
   'Devis envoyé': 'pill-gold',
   'Événement confirmé': 'pill-green',
   'Événement terminé': 'pill-gray',
-  'Perdu / Sans suite': 'pill-red'
+  'Perdu / Sans suite': 'pill-red',
+  'Refusé / Complet': 'pill-red'
 };
 
 const STATUS_LABEL = {
@@ -402,7 +403,8 @@ const STATUS_LABEL = {
   'Devis envoyé': '✉️ Devis envoyé',
   'Événement confirmé': '📅 Événement confirmé',
   'Événement terminé': '✅ Événement terminé',
-  'Perdu / Sans suite': '❌ Perdu / Sans suite'
+  'Perdu / Sans suite': '❌ Perdu / Sans suite',
+  'Refusé / Complet': '⛔ Refusé / Complet'
 };
 
 const STATUS_DOT = {
@@ -412,10 +414,11 @@ const STATUS_DOT = {
   'Devis envoyé': 'gold',
   'Événement confirmé': 'green',
   'Événement terminé': 'gray',
-  'Perdu / Sans suite': 'red'
+  'Perdu / Sans suite': 'red',
+  'Refusé / Complet': 'red'
 };
 
-const ALL_STATUSES = ['Nouvelle demande', 'À rappeler', 'Devis à préparer', 'Devis envoyé', 'Événement confirmé', 'Événement terminé', 'Perdu / Sans suite'];
+const ALL_STATUSES = ['Nouvelle demande', 'À rappeler', 'Devis à préparer', 'Devis envoyé', 'Événement confirmé', 'Événement terminé', 'Perdu / Sans suite', 'Refusé / Complet'];
 
 function generateStatusSelectHtml(e, extraClass = '') {
   const options = ALL_STATUSES.map(s =>
@@ -588,7 +591,8 @@ function processRows(rawRows) {
     'Devis envoyé': 4,
     'Événement confirmé': 5,
     'Événement terminé': 6,
-    'Perdu / Sans suite': 7
+    'Perdu / Sans suite': 7,
+    'Refusé / Complet': 7
   };
 
   // 1. Normaliser les statuts
@@ -759,7 +763,7 @@ let appData = [];
 function isEventPast(e) {
   if (!e) return false;
   // Les prestations terminées ou clients perdus sont historisés (non actifs)
-  if (e.statut === 'Événement terminé' || e.statut === 'Perdu / Sans suite') return true;
+  if (['Événement terminé', 'Perdu / Sans suite', 'Refusé / Complet'].includes(e.statut)) return true;
   if (!e.date_evenement) return false;
   const d = parseEventEndDate(e.date_evenement);
   if (!d) return false;
@@ -824,6 +828,7 @@ function normalizeStatus(status) {
   if (lower === 'signé' || lower === 'devis signé' || lower === 'signe' || lower === 'prestation en cours' || lower === 'événement confirmé' || lower === 'evenement confirme' || lower === 'evenement confirmé' || lower === 'événement confirme') return 'Événement confirmé';
   if (lower === 'terminé' || lower === 'prestation terminée' || lower === 'termine' || lower === 'événement terminé' || lower === 'evenement termine' || lower === 'evenement terminé' || lower === 'événement termine') return 'Événement terminé';
   if (lower === 'perdu' || lower === 'client perdu' || lower === 'perdu / sans suite' || lower === 'perdu/sans suite' || lower === 'sans suite') return 'Perdu / Sans suite';
+  if (lower === 'refusé' || lower === 'refuse' || lower === 'complet' || lower === 'refusé / complet' || lower === 'refuse / complet' || lower === 'refusé/complet' || lower === 'refuse/complet') return 'Refusé / Complet';
 
   return s;
 }
@@ -1539,20 +1544,22 @@ function renderConversionTable(rows) {
   if (!tbody) return;
 
   const CONFIRMED = ['Événement confirmé', 'Événement terminé'];
+  const REJECTED = 'Refusé / Complet';
 
   // Comptage par canal
   const byCanal = {};
   rows.forEach(e => {
     const canal = normalizeCanal(e.canal) || 'Non renseigné';
-    if (!byCanal[canal]) byCanal[canal] = { total: 0, confirmed: 0 };
+    if (!byCanal[canal]) byCanal[canal] = { total: 0, confirmed: 0, rejected: 0 };
     byCanal[canal].total++;
     if (CONFIRMED.includes(e.statut)) byCanal[canal].confirmed++;
+    if (e.statut === REJECTED) byCanal[canal].rejected++;
   });
 
   const entries = Object.entries(byCanal).sort((a, b) => b[1].total - a[1].total);
 
   if (!entries.length) {
-    tbody.innerHTML = '<tr><td colspan="4" class="tbl-empty">Aucune donnée</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" class="tbl-empty">Aucune donnée</td></tr>';
     return;
   }
 
@@ -1567,6 +1574,7 @@ function renderConversionTable(rows) {
       <td><strong>${escHtml(canal)}</strong></td>
       <td style="text-align:center">${v.total}</td>
       <td style="text-align:center">${v.confirmed}</td>
+      <td style="text-align:center">${v.rejected}</td>
       <td>
         <div class="conv-bar-wrap">
           <div class="conv-bar-bg"><div class="conv-bar-fill" style="width:${barWidth}%"></div></div>
@@ -2137,8 +2145,8 @@ function renderAgenda() {
 
   const events = appData
     .filter(e => {
-      // Toujours exclure Perdu / Sans suite
-      if (e.statut === 'Perdu / Sans suite') return false;
+      // Toujours exclure les demandes closes sans événement
+      if (e.statut === 'Perdu / Sans suite' || e.statut === 'Refusé / Complet') return false;
 
       const raw = e.date_evenement;
       if (!raw) return false;

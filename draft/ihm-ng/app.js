@@ -10,6 +10,7 @@ const STATUSES = [
   'Événement confirmé',
   'Événement terminé',
   'Perdu / Sans suite',
+  'Refusé / Complet',
 ];
 
 const STATUS_LABELS = {
@@ -20,6 +21,7 @@ const STATUS_LABELS = {
   'Événement confirmé': 'Confirmé',
   'Événement terminé': 'Archivé',
   'Perdu / Sans suite': 'Archivé',
+  'Refusé / Complet': 'Refusé / Complet',
 };
 
 const state = {
@@ -93,6 +95,7 @@ function normalizeStatus(status) {
   if (['signé', 'signe', 'devis signé', 'devis signe', 'événement confirmé', 'evenement confirme'].includes(value)) return 'Événement confirmé';
   if (['terminé', 'termine', 'événement terminé', 'evenement termine'].includes(value)) return 'Événement terminé';
   if (value.includes('perdu') || value.includes('sans suite')) return 'Perdu / Sans suite';
+  if (value.includes('refus') || value === 'complet') return 'Refusé / Complet';
   return status || 'Nouvelle demande';
 }
 
@@ -153,7 +156,7 @@ function daysUntilEvent(row) {
 }
 
 function isArchive(row) {
-  return row.statut === 'Événement terminé' || row.statut === 'Perdu / Sans suite';
+  return row.statut === 'Événement terminé' || row.statut === 'Perdu / Sans suite' || row.statut === 'Refusé / Complet';
 }
 
 function isUrgent(row) {
