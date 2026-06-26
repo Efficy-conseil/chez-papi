@@ -1466,6 +1466,51 @@ body.is-saving-event::after {
   .modal-box { border-radius: 14px; max-height: 85vh; }
 }
 
+.kpi-modal-box {
+  max-width: min(920px, calc(100vw - 32px));
+}
+
+.kpi-modal-body {
+  padding: 20px;
+  overflow-x: hidden;
+}
+
+.kpi-detail-table {
+  table-layout: fixed;
+}
+
+.kpi-detail-table th,
+.kpi-detail-table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kpi-detail-table select {
+  max-width: 100%;
+}
+
+@media (max-width: 599px) {
+  .kpi-modal-box {
+    max-width: 100%;
+  }
+
+  .kpi-modal-body {
+    padding: 16px 12px;
+  }
+
+  .kpi-detail-table th,
+  .kpi-detail-table td {
+    font-size: 0.76rem;
+    padding-right: 5px;
+  }
+
+  .kpi-detail-table select {
+    min-width: 0 !important;
+    font-size: 8px !important;
+    padding: 2px !important;
+  }
+}
+
 .modal-hd {
   display: flex;
   align-items: center;

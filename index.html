@@ -27,7 +27,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
 
-<link rel="stylesheet" href="styles.css?v=2.29">
+<link rel="stylesheet" href="styles.css?v=2.33">
 </head>
 
 <body>
@@ -83,13 +83,13 @@
 
 <!-- KPI DETAIL MODAL -->
 <div class="modal-overlay" id="kpi-modal" style="display:none;" onclick="if(event.target===this) document.getElementById('kpi-modal').style.display='none'">
-<div class="modal-box" style="max-width:550px;">
+<div class="modal-box kpi-modal-box">
 <div class="modal-hd">
   <h3 id="kpi-title">Détail</h3>
   <span class="modal-close" onclick="document.getElementById('kpi-modal').style.display='none'">&times;</span>
 </div>
-<div class="modal-bd" style="padding: 24px;">
-  <table class="tbl">
+<div class="modal-bd kpi-modal-body">
+  <table class="tbl kpi-detail-table">
     <thead id="kpi-thead"></thead>
     <tbody id="kpi-tbody"></tbody>
     <tfoot id="kpi-tfoot"></tfoot>
@@ -553,7 +553,7 @@
 </div>
 </div>
 
-<script src="app.js?v=2.32"></script>
+<script src="app.js?v=2.33"></script>
 
 <!-- ── BOTTOM NAVIGATION (mobile uniquement) ── -->
 <nav class="bottom-nav" id="bottom-nav">

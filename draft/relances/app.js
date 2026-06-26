@@ -2230,12 +2230,12 @@ function showKpiModal(type) {
     const evts = actives.filter(e => e.statut === 'Nouvelle demande');
     evts.sort(compareEventDatesAsc);
     
-    thead.innerHTML = '<tr><th style="width:32%">Client</th><th style="width:22%">Date</th><th style="width:22%">Montant</th><th style="width:24%">Statut</th></tr>';
+    thead.innerHTML = '<tr><th style="width:24%">Date</th><th style="width:30%">Client</th><th style="width:20%">Type</th><th style="width:26%">Statut</th></tr>';
     tbody.innerHTML = evts.length ? evts.map(e => {
       return `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})">
-        <td><strong>${safeText(e.nom_client)}</strong></td>
         <td>${safeText(formatEventDateTime(e) || 'À dét.')}</td>
-        <td>${safeText(formatBudget(e.budget_estime))}</td>
+        <td><strong>${safeText(e.nom_client)}</strong></td>
+        <td>${safeText(e.type_evenement || '—')}</td>
         <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e)}</td>
       </tr>`;
     }).join('') : '<tr><td colspan="4" class="tbl-empty">Aucune nouvelle demande</td></tr>';
@@ -2245,7 +2245,7 @@ function showKpiModal(type) {
     const evts = actives.filter(e => e.statut === 'À rappeler');
     evts.sort(compareEventDatesAsc);
     
-    thead.innerHTML = '<tr><th style="width:18%">Date</th><th style="width:25%">Client</th><th style="width:20%">Type</th><th style="width:18%">Téléphone</th><th style="width:19%">Statut</th></tr>';
+    thead.innerHTML = '<tr><th style="width:20%">Date</th><th style="width:27%">Client</th><th style="width:20%">Type</th><th style="width:17%">Téléphone</th><th style="width:16%">Statut</th></tr>';
     tbody.innerHTML = evts.length ? evts.map(e => {
       const tel = normalizeFrenchPhone(e.telephone || '').replace(/\s/g, '');
       const telHtml = e.telephone && /^[\d+]+$/.test(tel) ? `<a href="tel:${encodeURIComponent(tel)}" style="color:var(--gold);text-decoration:none;" onclick="event.stopPropagation()">${formatContact(e.telephone)}</a>` : '—';
@@ -2263,7 +2263,7 @@ function showKpiModal(type) {
     const evts = actives.filter(e => e.statut === 'Devis à préparer');
     evts.sort(compareEventDatesAsc);
     
-    thead.innerHTML = '<tr><th style="width:20%">Date prévue</th><th style="width:30%">Client</th><th style="width:20%">Montant</th><th style="width:30%">Statut</th></tr>';
+    thead.innerHTML = '<tr><th style="width:20%">Date</th><th style="width:30%">Client</th><th style="width:20%">Montant</th><th style="width:30%">Statut</th></tr>';
     tbody.innerHTML = evts.length ? evts.map(e => {
       return `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})">
         <td>${safeText(formatEventDateTime(e) || 'À dét.')}</td>
