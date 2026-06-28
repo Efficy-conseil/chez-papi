@@ -107,6 +107,7 @@ function parseLocalDate(value) {
   if (!value) return null;
   let raw = String(value).trim();
   if (raw.includes(' au ')) raw = raw.split(' au ')[0].trim();
+  if (/^(?:en\s+)?\d{4}$/i.test(raw)) return null;
   const ymd = raw.match(/(\d{4})-(\d{2})-(\d{2})/);
   if (ymd) return new Date(Number(ymd[1]), Number(ymd[2]) - 1, Number(ymd[3]));
   const dmy = raw.match(/(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})/);

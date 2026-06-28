@@ -146,6 +146,7 @@ function parseSingleLocalDate(ds) {
   if (sheetDate) return sheetDate;
 
   let cleanDs = String(ds).trim();
+  if (/^(?:en\s+)?\d{4}$/i.test(cleanDs)) return null;
 
   const ymdMatch = cleanDs.match(/(\d{4})-(\d{2})-(\d{2})/);
   if (ymdMatch) {
@@ -280,6 +281,8 @@ function formatDateFR(ds) {
   try {
     // Si c'est une plage, on formate les composants individuellement.
     let cleanDs = String(ds).trim();
+    const yearOnly = cleanDs.match(/^(?:en\s+)?(\d{4})$/i);
+    if (yearOnly) return yearOnly[1];
     const range = splitDateRange(cleanDs);
     if (range) {
       return [formatDateFR(range.start), formatDateFR(range.end)].filter(Boolean).join(' au ');
@@ -1607,7 +1610,7 @@ function toggleFormMode(e) {
 
 const FORM_PLACEHOLDERS = {
   nom_client: "Ex: Céline GIORDANO",
-  date_evenement: "Ex: 10/06/2026 ou 30/06/2026 au 03/07/2026",
+  date_evenement: "Ex: 2028, 10/06/2026 ou 30/06/2026 au 03/07/2026",
   budget_estime: "Ex: 1800 ou 850/900€ ou Entre 2000 et 2500€",
   telephone: "Ex: 06 12 34 56 78",
   email_client: "Ex: client@email.com",
