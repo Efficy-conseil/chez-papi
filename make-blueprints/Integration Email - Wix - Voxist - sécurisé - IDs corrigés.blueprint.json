@@ -483,12 +483,12 @@
         {
           "flow": [
             {
-              "id": 80,
+              "id": 84,
               "module": "http:ActionSendData",
               "version": 3,
               "parameters": {},
               "filter": {
-                "name": "Relance email - pas un nouveau formulaire Wix",
+                "name": "Relance ou transfert d’une demande Wix existante",
                 "conditions": [
                   [
                     {
@@ -496,14 +496,14 @@
                       "o": "exist"
                     },
                     {
-                      "a": "{{1.fullTextBody}}",
-                      "b": "Nom / Prénom",
-                      "o": "text:notcontain"
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:contain"
                     },
                     {
-                      "a": "{{1.fullTextBody}}",
-                      "b": "Nom / Prenom",
-                      "o": "text:notcontain"
+                      "a": "{{1.fromEmail}}",
+                      "b": "notifications@wix-forms.com",
+                      "o": "text:notequal"
                     }
                   ]
                 ]
@@ -526,13 +526,13 @@
                 "gzip": true,
                 "useMtls": false,
                 "contentType": "application/json",
-                "data": "{\"action\":\"updateThreadFollowup\",\"make_token\":\"cp_make_followup_2026_06\",\"gmail_thread_id\":\"{{1.threadId}}\",\"fields\":{\"gmail_message_id\":\"{{1.id}}\",\"dernier_email_recu_le\":\"{{1.internalDate}}\",\"dernier_message_client\":\"{{substring(1.fullTextBody; 0; 900)}}\",\"relance_a_traiter\":true}}"
+                "data": "{\"action\":\"updateWixFollowup\",\"make_token\":\"cp_make_followup_2026_06\",\"gmail_thread_id\":\"{{1.threadId}}\",\"email_client\":\"{{1.fromEmail}}\",\"fields\":{\"gmail_message_id\":\"{{1.id}}\",\"dernier_email_recu_le\":\"{{1.internalDate}}\",\"dernier_message_client\":\"{{substring(1.fullTextBody; 0; 900)}}\",\"relance_a_traiter\":true}}"
               },
               "metadata": {
                 "designer": {
                   "x": 600,
-                  "y": 450,
-                  "name": "Relance client - MAJ demande existante"
+                  "y": 300,
+                  "name": "Rattacher relance ou transfert Wix"
                 },
                 "restore": {
                   "expect": {
@@ -626,7 +626,7 @@
               "metadata": {
                 "designer": {
                   "x": 900,
-                  "y": 450,
+                  "y": 300,
                   "name": "Archiver la relance dans Historique_Wix"
                 },
                 "restore": {
@@ -865,6 +865,127 @@
                     "type": "select",
                     "label": "Destination folder",
                     "required": true
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "flow": [
+            {
+              "id": 80,
+              "module": "http:ActionSendData",
+              "version": 3,
+              "parameters": {},
+              "filter": {
+                "name": "Relance email - pas un nouveau formulaire Wix",
+                "conditions": [
+                  [
+                    {
+                      "a": "{{1.threadId}}",
+                      "o": "exist"
+                    },
+                    {
+                      "a": "{{1.fullTextBody}}",
+                      "b": "Nom / Prénom",
+                      "o": "text:notcontain"
+                    },
+                    {
+                      "a": "{{1.fullTextBody}}",
+                      "b": "Nom / Prenom",
+                      "o": "text:notcontain"
+                    },
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:notcontain"
+                    }
+                  ]
+                ]
+              },
+              "mapper": {
+                "url": "https://script.google.com/macros/s/AKfycbzouc3kD6Qc68XzK3Ne_Rlnh5_e5o_IVMkAkHKAXJl-BFrxIIVEj7IS684CugVmh2Qlow/exec",
+                "method": "post",
+                "headers": [],
+                "qs": [],
+                "bodyType": "raw",
+                "parseResponse": true,
+                "authUser": "",
+                "authPass": "",
+                "timeout": "",
+                "shareCookies": false,
+                "ca": "",
+                "rejectUnauthorized": true,
+                "followRedirect": true,
+                "useQuerystring": false,
+                "gzip": true,
+                "useMtls": false,
+                "contentType": "application/json",
+                "data": "{\"action\":\"updateThreadFollowup\",\"make_token\":\"cp_make_followup_2026_06\",\"gmail_thread_id\":\"{{1.threadId}}\",\"fields\":{\"gmail_message_id\":\"{{1.id}}\",\"dernier_email_recu_le\":\"{{1.internalDate}}\",\"dernier_message_client\":\"{{substring(1.fullTextBody; 0; 900)}}\",\"relance_a_traiter\":true}}"
+              },
+              "metadata": {
+                "designer": {
+                  "x": 600,
+                  "y": 450,
+                  "name": "Relance client - MAJ demande existante"
+                },
+                "restore": {
+                  "expect": {
+                    "method": {
+                      "label": "POST"
+                    },
+                    "bodyType": {
+                      "label": "Raw"
+                    },
+                    "contentType": {
+                      "label": "JSON (application/json)"
+                    }
+                  }
+                },
+                "parameters": [],
+                "expect": [
+                  {
+                    "name": "url",
+                    "type": "url",
+                    "label": "URL",
+                    "required": true
+                  },
+                  {
+                    "name": "method",
+                    "type": "select",
+                    "label": "Method",
+                    "required": true
+                  },
+                  {
+                    "name": "headers",
+                    "type": "array",
+                    "label": "Headers"
+                  },
+                  {
+                    "name": "qs",
+                    "type": "array",
+                    "label": "Query String"
+                  },
+                  {
+                    "name": "bodyType",
+                    "type": "select",
+                    "label": "Body type"
+                  },
+                  {
+                    "name": "contentType",
+                    "type": "select",
+                    "label": "Content type"
+                  },
+                  {
+                    "name": "data",
+                    "type": "buffer",
+                    "label": "Request content"
+                  },
+                  {
+                    "name": "parseResponse",
+                    "type": "boolean",
+                    "label": "Parse response"
                   }
                 ]
               }
