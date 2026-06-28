@@ -2339,6 +2339,10 @@ function showPanel(panelName, element) {
   const bnItem = document.getElementById('bn-' + panelName);
   if (bnItem && bnItem !== element) bnItem.classList.add('active');
   document.querySelector('.content').scrollTop = 0;
+  if (panelName === 'agenda') {
+    closeAgendaPicker();
+    agendaGoToday();
+  }
   if (panelName === 'historique') setTimeout(syncHistoriqueScrollbars, 0);
 }
 
