@@ -347,7 +347,7 @@
       },
       "filter": null,
       "mapper": {
-        "tq": "select count(A) where A = '{{if(1.fromEmail = \"notifications@wix-forms.com\"; \"WIX-\"; if(1.fromEmail = \"message@voxist.com\"; \"VOXIST-\"; \"GMAIL-\"))}}{{if(1.fromEmail = \"notifications@wix-forms.com\"; 1.id; if(1.fromEmail = \"message@voxist.com\"; 1.id; 1.threadId))}}' or A = '{{1.threadId}}' label count(A) ''",
+        "tq": "select count(A) where A = '{{if(1.fromEmail = \"notifications@wix-forms.com\"; \"WIX-\"; if(1.fromEmail = \"message@voxist.com\"; \"VOXIST-\"; \"GMAIL-\"))}}{{if(1.fromEmail = \"notifications@wix-forms.com\"; 1.id; if(1.fromEmail = \"message@voxist.com\"; 1.id; 1.threadId))}}' or A = '{{1.threadId}}' or R = '{{1.threadId}}' label count(A) ''",
         "from": "drive",
         "limit": "1",
         "select": "list",
@@ -590,6 +590,281 @@
                     "name": "parseResponse",
                     "type": "boolean",
                     "label": "Parse response"
+                  }
+                ]
+              }
+            },
+            {
+              "id": 83,
+              "module": "google-email:moveAnEmail",
+              "version": 4,
+              "parameters": {
+                "__IMTCONN__": 7978131
+              },
+              "filter": {
+                "name": "Réponse client au formulaire Wix existant",
+                "conditions": [
+                  [
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:contain"
+                    },
+                    {
+                      "a": "{{1.fromEmail}}",
+                      "b": "notifications@wix-forms.com",
+                      "o": "text:notequal"
+                    }
+                  ]
+                ]
+              },
+              "mapper": {
+                "to": "Label_39174335232504636",
+                "from": "INBOX",
+                "messageId": "{{1.id}}"
+              },
+              "metadata": {
+                "designer": {
+                  "x": 900,
+                  "y": 450,
+                  "name": "Archiver la relance dans Historique_Wix"
+                },
+                "restore": {
+                  "expect": {
+                    "to": {
+                      "mode": "chose",
+                      "label": "Historique_Wix"
+                    },
+                    "from": {
+                      "mode": "chose",
+                      "label": "Inbox"
+                    },
+                    "messageId": {
+                      "nested": [
+                        {
+                          "help": "To ensure you see the most up-to-date labels, refresh **↻** the Message ID above.",
+                          "name": "from",
+                          "type": "select",
+                          "label": "Source folder",
+                          "default": "INBOX",
+                          "dynamic": true,
+                          "grouped": true,
+                          "options": [
+                            {
+                              "type": "system",
+                              "label": "System folders",
+                              "options": [
+                                {
+                                  "label": "Important",
+                                  "value": "IMPORTANT"
+                                },
+                                {
+                                  "label": "Inbox",
+                                  "value": "INBOX"
+                                },
+                                {
+                                  "label": "Spam",
+                                  "value": "SPAM"
+                                },
+                                {
+                                  "label": "Starred",
+                                  "value": "STARRED"
+                                },
+                                {
+                                  "label": "Trash",
+                                  "value": "TRASH"
+                                },
+                                {
+                                  "label": "Unread",
+                                  "value": "UNREAD"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "category",
+                              "label": "Categories",
+                              "options": [
+                                {
+                                  "label": "Forums",
+                                  "value": "CATEGORY_FORUMS"
+                                },
+                                {
+                                  "label": "Personal",
+                                  "value": "CATEGORY_PERSONAL"
+                                },
+                                {
+                                  "label": "Promotions",
+                                  "value": "CATEGORY_PROMOTIONS"
+                                },
+                                {
+                                  "label": "Social",
+                                  "value": "CATEGORY_SOCIAL"
+                                },
+                                {
+                                  "label": "Updates",
+                                  "value": "CATEGORY_UPDATES"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "user",
+                              "label": "User labels",
+                              "options": [
+                                {
+                                  "label": "Historique_Email",
+                                  "value": "Label_2648810022094724776"
+                                },
+                                {
+                                  "label": "Historique_Voxist",
+                                  "value": "Label_5869457419717567046"
+                                },
+                                {
+                                  "label": "Historique_Wix",
+                                  "value": "Label_39174335232504636"
+                                },
+                                {
+                                  "label": "Hors_Scope_Make",
+                                  "value": "Label_2633677580427542522"
+                                }
+                              ]
+                            }
+                          ],
+                          "mappable": {
+                            "help": "Enter a folder/label ID."
+                          },
+                          "required": true
+                        },
+                        {
+                          "help": "To ensure you see the most up-to-date labels, refresh **↻** the Message ID above.",
+                          "name": "to",
+                          "type": "select",
+                          "label": "Destination folder",
+                          "dynamic": true,
+                          "grouped": true,
+                          "options": [
+                            {
+                              "type": "system",
+                              "label": "System folders",
+                              "options": [
+                                {
+                                  "label": "Important",
+                                  "value": "IMPORTANT"
+                                },
+                                {
+                                  "label": "Inbox",
+                                  "value": "INBOX"
+                                },
+                                {
+                                  "label": "Spam",
+                                  "value": "SPAM"
+                                },
+                                {
+                                  "label": "Starred",
+                                  "value": "STARRED"
+                                },
+                                {
+                                  "label": "Trash",
+                                  "value": "TRASH"
+                                },
+                                {
+                                  "label": "Unread",
+                                  "value": "UNREAD"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "category",
+                              "label": "Categories",
+                              "options": [
+                                {
+                                  "label": "Forums",
+                                  "value": "CATEGORY_FORUMS"
+                                },
+                                {
+                                  "label": "Personal",
+                                  "value": "CATEGORY_PERSONAL"
+                                },
+                                {
+                                  "label": "Promotions",
+                                  "value": "CATEGORY_PROMOTIONS"
+                                },
+                                {
+                                  "label": "Social",
+                                  "value": "CATEGORY_SOCIAL"
+                                },
+                                {
+                                  "label": "Updates",
+                                  "value": "CATEGORY_UPDATES"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "user",
+                              "label": "User labels",
+                              "options": [
+                                {
+                                  "label": "Historique_Email",
+                                  "value": "Label_2648810022094724776"
+                                },
+                                {
+                                  "label": "Historique_Voxist",
+                                  "value": "Label_5869457419717567046"
+                                },
+                                {
+                                  "label": "Historique_Wix",
+                                  "value": "Label_39174335232504636"
+                                },
+                                {
+                                  "label": "Hors_Scope_Make",
+                                  "value": "Label_2633677580427542522"
+                                }
+                              ]
+                            }
+                          ],
+                          "mappable": {
+                            "help": "Enter a folder/label ID."
+                          },
+                          "required": true
+                        }
+                      ]
+                    }
+                  },
+                  "parameters": {
+                    "__IMTCONN__": {
+                      "data": {
+                        "scoped": "true",
+                        "connection": "google-email"
+                      },
+                      "label": "My Gmail connection (demande.chezpapimaisongourmande@gmail.com)"
+                    }
+                  }
+                },
+                "parameters": [
+                  {
+                    "name": "__IMTCONN__",
+                    "type": "account:google-email",
+                    "label": "Connection",
+                    "required": true
+                  }
+                ],
+                "expect": [
+                  {
+                    "name": "messageId",
+                    "type": "text",
+                    "label": "Message ID",
+                    "required": true
+                  },
+                  {
+                    "name": "from",
+                    "type": "select",
+                    "label": "Source folder",
+                    "required": true
+                  },
+                  {
+                    "name": "to",
+                    "type": "select",
+                    "label": "Destination folder",
+                    "required": true
                   }
                 ]
               }
@@ -10567,6 +10842,11 @@
                       "a": "{{1.fullTextBody}}",
                       "b": "demande",
                       "o": "text:contain"
+                    },
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:notcontain"
                     }
                   ],
                   [
@@ -10579,6 +10859,11 @@
                       "a": "{{1.fullTextBody}}",
                       "b": "devis",
                       "o": "text:contain"
+                    },
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:notcontain"
                     }
                   ],
                   [
@@ -10591,6 +10876,11 @@
                       "a": "{{1.fullTextBody}}",
                       "b": "prestation",
                       "o": "text:contain"
+                    },
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:notcontain"
                     }
                   ],
                   [
@@ -10603,6 +10893,11 @@
                       "a": "{{1.fullTextBody}}",
                       "b": "traiteur",
                       "o": "text:contain"
+                    },
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:notcontain"
                     }
                   ],
                   [
@@ -10615,6 +10910,11 @@
                       "a": "{{1.fullTextBody}}",
                       "b": "événement",
                       "o": "text:contain"
+                    },
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:notcontain"
                     }
                   ],
                   [
@@ -10627,6 +10927,11 @@
                       "a": "{{1.fullTextBody}}",
                       "b": "evenement",
                       "o": "text:contain"
+                    },
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:notcontain"
                     }
                   ],
                   [
@@ -10639,6 +10944,11 @@
                       "a": "{{1.fullTextBody}}",
                       "b": "mariage",
                       "o": "text:contain"
+                    },
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:notcontain"
                     }
                   ],
                   [
@@ -10651,6 +10961,11 @@
                       "a": "{{1.fullTextBody}}",
                       "b": "baptême",
                       "o": "text:contain"
+                    },
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:notcontain"
                     }
                   ],
                   [
@@ -10663,6 +10978,11 @@
                       "a": "{{1.fullTextBody}}",
                       "b": "bapteme",
                       "o": "text:contain"
+                    },
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:notcontain"
                     }
                   ],
                   [
@@ -10675,6 +10995,11 @@
                       "a": "{{1.fullTextBody}}",
                       "b": "anniversaire",
                       "o": "text:contain"
+                    },
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:notcontain"
                     }
                   ],
                   [
@@ -10687,6 +11012,11 @@
                       "a": "{{1.fullTextBody}}",
                       "b": "buffet",
                       "o": "text:contain"
+                    },
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:notcontain"
                     }
                   ],
                   [
@@ -10699,6 +11029,11 @@
                       "a": "{{1.fullTextBody}}",
                       "b": "cocktail",
                       "o": "text:contain"
+                    },
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:notcontain"
                     }
                   ],
                   [
@@ -10711,6 +11046,11 @@
                       "a": "{{1.fullTextBody}}",
                       "b": "brunch",
                       "o": "text:contain"
+                    },
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:notcontain"
                     }
                   ],
                   [
@@ -10723,6 +11063,11 @@
                       "a": "{{1.fullTextBody}}",
                       "b": "repas",
                       "o": "text:contain"
+                    },
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:notcontain"
                     }
                   ],
                   [
@@ -10735,6 +11080,11 @@
                       "a": "{{1.fullTextBody}}",
                       "b": "convives",
                       "o": "text:contain"
+                    },
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:notcontain"
                     }
                   ],
                   [
@@ -10747,6 +11097,11 @@
                       "a": "{{1.fullTextBody}}",
                       "b": "apéritif",
                       "o": "text:contain"
+                    },
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:notcontain"
                     }
                   ],
                   [
@@ -10759,6 +11114,11 @@
                       "a": "{{1.fullTextBody}}",
                       "b": "aperitif",
                       "o": "text:contain"
+                    },
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:notcontain"
                     }
                   ],
                   [
@@ -10771,6 +11131,11 @@
                       "a": "{{1.subject}}",
                       "b": "demande",
                       "o": "text:contain"
+                    },
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:notcontain"
                     }
                   ],
                   [
@@ -10783,6 +11148,11 @@
                       "a": "{{1.subject}}",
                       "b": "devis",
                       "o": "text:contain"
+                    },
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:notcontain"
                     }
                   ],
                   [
@@ -10795,6 +11165,11 @@
                       "a": "{{1.subject}}",
                       "b": "prestation",
                       "o": "text:contain"
+                    },
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:notcontain"
                     }
                   ],
                   [
@@ -10807,6 +11182,11 @@
                       "a": "{{1.subject}}",
                       "b": "traiteur",
                       "o": "text:contain"
+                    },
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:notcontain"
                     }
                   ],
                   [
@@ -10819,6 +11199,11 @@
                       "a": "{{1.subject}}",
                       "b": "événement",
                       "o": "text:contain"
+                    },
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:notcontain"
                     }
                   ],
                   [
@@ -10831,6 +11216,11 @@
                       "a": "{{1.subject}}",
                       "b": "evenement",
                       "o": "text:contain"
+                    },
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:notcontain"
                     }
                   ],
                   [
@@ -10843,6 +11233,11 @@
                       "a": "{{1.subject}}",
                       "b": "mariage",
                       "o": "text:contain"
+                    },
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:notcontain"
                     }
                   ],
                   [
@@ -10855,6 +11250,11 @@
                       "a": "{{1.subject}}",
                       "b": "baptême",
                       "o": "text:contain"
+                    },
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:notcontain"
                     }
                   ],
                   [
@@ -10867,6 +11267,11 @@
                       "a": "{{1.subject}}",
                       "b": "bapteme",
                       "o": "text:contain"
+                    },
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:notcontain"
                     }
                   ],
                   [
@@ -10879,6 +11284,11 @@
                       "a": "{{1.subject}}",
                       "b": "anniversaire",
                       "o": "text:contain"
+                    },
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:notcontain"
                     }
                   ],
                   [
@@ -10901,6 +11311,11 @@
                       "a": "{{1.fullTextBody}}",
                       "b": "personnes",
                       "o": "text:contain"
+                    },
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:notcontain"
                     }
                   ],
                   [
@@ -10923,6 +11338,11 @@
                       "a": "{{1.fullTextBody}}",
                       "b": "convives",
                       "o": "text:contain"
+                    },
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:notcontain"
                     }
                   ],
                   [
@@ -10945,6 +11365,11 @@
                       "a": "{{1.fullTextBody}}",
                       "b": "personnes",
                       "o": "text:contain"
+                    },
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:notcontain"
                     }
                   ],
                   [
@@ -10967,6 +11392,11 @@
                       "a": "{{1.fullTextBody}}",
                       "b": "convives",
                       "o": "text:contain"
+                    },
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                      "o": "text:notcontain"
                     }
                   ]
                 ]
@@ -12850,6 +13280,11 @@
                               "a": "{{1.fromEmail}}",
                               "b": "chezpapimaisongourmande@gmail.com",
                               "o": "text:notequal"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                              "o": "text:notcontain"
                             }
                           ]
                         ]
@@ -13442,6 +13877,11 @@
                               "a": "{{1.fromEmail}}",
                               "b": "chezpapimaisongourmande@gmail.com",
                               "o": "text:notequal"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                              "o": "text:notcontain"
                             }
                           ]
                         ]
