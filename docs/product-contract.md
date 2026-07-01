@@ -119,6 +119,7 @@ Déclencheur : Gmail nouveaux emails.
 - Le backend répond avec `count`.
 - `count = 0` signifie nouveau message non connu.
 - `count > 0` signifie message, thread ou ligne déjà connu.
+- Exception importante : pour Voxist, `checkDuplicate` ne doit vérifier que `VOXIST-<gmail_message_id>`, pas `gmail_thread_id`, car Gmail peut regrouper plusieurs messages vocaux dans un même fil.
 
 Contrainte critique :
 
@@ -177,7 +178,7 @@ Contrainte anti-régression :
 
 - Voxist ne doit jamais passer dans la route `Relance email`.
 - Voxist ne doit jamais être classé `Hors_Scope_Make` s'il contient des indices traiteur ou événementiels.
-- Si `checkDuplicate` renvoie `count > 0` pour un message Voxist, une route explicite doit traiter ce cas. Point d'audit actuel : ce chemin est fragile et doit être corrigé avant nouvelle importation si confirmé.
+- Si `checkDuplicate` renvoie `count > 0` pour un message Voxist, cela doit signifier que le même `VOXIST-<gmail_message_id>` existe déjà. Cela ne doit pas arriver seulement parce que le `gmail_thread_id` existe déjà.
 
 ## Make - Email direct
 
@@ -356,11 +357,131 @@ Dashboard :
 - `26/08/2026 au 27/08/2026` reste lisible et triable sur la date de début.
 - `Ouvrir le fil` utilise le bon label Gmail selon le canal.
 
+## Audit des erreurs possibles par canal
+
+Cette section sert à raisonner avant toute correction. Une erreur peut venir de Gmail, Make, backend, Google Sheets ou dashboard.
+
+### Téléphone / Voxist
+
+Erreurs possibles déjà rencontrées :
+
+- Filtre Gmail trop large qui applique `Hors_Scope_Gmail` et fait `Skip Inbox` avant Make.
+- Route email relance qui capture un message Voxist.
+- Anti-doublon qui bloque un nouveau message vocal parce que le `gmail_thread_id` existe déjà.
+- Préfiltre Voxist trop restrictif : message vocal qualifié qui ne déclenche pas l'IA.
+- IA Voxist qui classe hors scope une demande de renseignements, formules ou prestations.
+- Transcription absente ou non exploitable, avec bascule vers le chemin audio.
+- Numéro de téléphone extrait depuis la transcription incohérent avec le numéro appelant.
+- Date sans année, par exemple `12 septembre`, qui peut être ambiguë.
+
+Contraintes de prévention :
+
+- Gmail ne doit pas exclure `message@voxist.com` de l'Inbox.
+- Make doit traiter Voxist avant toute route email générique.
+- Voxist doit être exclu des routes Email direct et Relance email.
+- `checkDuplicate` Voxist doit ignorer `gmail_thread_id` et `legacy_id` basés sur le thread.
+- Les mots `renseignements`, `prestations`, `formules`, `à la carte`, `quarantaine`, `18 ans` doivent qualifier le message.
+- Le numéro appelant détecté par Voxist est prioritaire si la transcription contient un numéro déformé.
+
+### Site Internet / Wix
+
+Erreurs possibles déjà rencontrées :
+
+- Filtre Gmail newsletter qui capture le template Wix à cause de `ouvrir dans le navigateur`.
+- Même formulaire envoyé deux fois, le premier incomplet et le second complet.
+- Demande Wix traitée deux fois : route Wix puis route Email direct.
+- Accusé de réception envoyé à l'adresse technique Wix au lieu du client.
+- Réponse client au fil Wix traitée comme nouvelle demande email.
+- Transfert ou réponse Wix avec nouveau `gmail_thread_id` impossible à rattacher.
+
+Contraintes de prévention :
+
+- Gmail ne doit pas exclure `notifications@wix-forms.com` de l'Inbox.
+- Email direct doit exclure les emails venant de Wix.
+- `upsertWixDemand` doit fusionner les doublons rapprochés par empreinte `nom + email + date + téléphone`.
+- Les réponses ou transferts de sujets Wix doivent passer par `updateWixFollowup`.
+- Un accusé Wix ne doit partir que sur création réelle, jamais sur fusion.
+
+### Email direct
+
+Erreurs possibles déjà rencontrées :
+
+- Newsletter fournisseur ou METRO classée trop tard ou provoquant une erreur JSON.
+- Vraie demande mairie/collectivité classée hors scope.
+- Demande mariage ou tarifs classée hors scope faute de mot `devis`.
+- Réponse client à un devis existant créée comme nouvelle demande.
+- Nouvelle demande envoyée dans un ancien fil classée à tort comme relance.
+- Validation de devis générant un accusé automatique ou une nouvelle demande.
+- Sujet `Re: Devis` bloqué trop largement.
+- Mauvais rattachement si demande initiale manuelle n'a pas d'email.
+
+Contraintes de prévention :
+
+- Les règles IA doivent distinguer dernier message et historique cité.
+- `is_followup=true` doit empêcher création et accusé.
+- Une nouvelle prestation avec nouvelle date dans un ancien fil doit rester `is_followup=false`.
+- Les suivis peuvent être rattachés par email+date ou nom+date.
+- `DEVIS VALIDE` est un suivi sans accusé.
+- Les fournisseurs et newsletters doivent rester hors scope avec résumé court, pas corps brut.
+
+### Réseaux sociaux / Tally
+
+Erreurs possibles :
+
+- Soumission du mauvais formulaire Tally traitée par erreur.
+- Doublon de soumission si l'anti-doublon échoue.
+- Date Tally au mauvais format.
+- Canal incorrect si la valeur Make change.
+- Quota Google Sheets si Make relit directement la feuille.
+
+Contraintes de prévention :
+
+- Filtre production `formId = Gx52AQ`.
+- Anti-doublon via backend `checkDuplicate`.
+- Canal `Réseaux sociaux`.
+- Ne pas restaurer de lecture Sheets directe dans le module anti-doublon.
+
+### Saisie manuelle / Dashboard
+
+Erreurs possibles :
+
+- Date saisie manuellement au format `JJ/MM/AAAA` interprétée en format US.
+- Année seule affichée comme date complète.
+- Plage de dates non triable ou mal affichée.
+- Canal non autorisé rejeté par backend.
+- Demande initiale manuelle sans email difficile à rattacher à un suivi email.
+- Écriture dashboard qui remplace des champs techniques utiles.
+
+Contraintes de prévention :
+
+- Le backend force `date_evenement` en texte.
+- Le dashboard affiche `date_evenement` via `formatDateFR`.
+- Les suivis email peuvent fallback sur nom+date quand email absent.
+- Les canaux du formulaire doivent rester synchronisés avec `ALLOWED_CHANNELS`.
+
+### Backend / Google Sheets / Calendar
+
+Erreurs possibles transverses :
+
+- Colonnes techniques absentes.
+- En-têtes renommés non reconnus.
+- URL rejetée par sécurité.
+- Statut ou canal invalide rejeté.
+- Événement calendrier non synchronisé pour certains chemins Make.
+- Quota Google Apps Script ou Google Sheets.
+
+Contraintes de prévention :
+
+- `ensureSchemaHeaders` ajoute les colonnes techniques.
+- `KEY_MAP` doit être mis à jour si un en-tête change.
+- Les URLs autorisées sont `mail.google.com` et `drive.google.com`.
+- Toute nouvelle création Make devrait idéalement passer par backend pour homogénéiser calendrier, dates et validation.
+
 ## Points ouverts de l'audit
 
 Ces points doivent être validés avant la prochaine correction fonctionnelle :
 
-- Le chemin Voxist avec `checkDuplicate count > 0` peut ne pas avoir de route active après exclusion de la route relance email. Il faut décider : archiver comme déjà traité, mettre à jour une demande existante, ou remonter une alerte.
+- Les routes Make sont encore sensibles à l'ordre et aux filtres globaux. Il faut continuer à privilégier des routes strictement séparées par source.
 - Les routes Make sont nombreuses et certaines conditions sont redondantes. Une refonte future devrait réduire les routes globales et isoler strictement Wix, Voxist, Email direct et Tally.
 - Le backend ne synchronise pas encore le calendrier lors de `upsertWixDemand` création Wix, contrairement aux créations manuelles via `addRow`. À valider selon besoin.
 - Les modules Make qui écrivent encore directement dans Google Sheets : Voxist transcription, Voxist audio, Email direct, Tally. Cela reste acceptable pour l'instant car le quota rencontré concernait les lectures, mais une stratégie backend unique serait plus robuste.
