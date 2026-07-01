@@ -11849,7 +11849,7 @@
                   },
                   {
                     "role": "user",
-                    "content": "Source : Email direct\nCanal : Email\nDate de réception : {{1.internalDate}}\nNom expéditeur : {{1.fromName}}\nEmail expéditeur : {{1.fromEmail}}\nObjet : {{1.subject}}\n\nCorps limité :\n{{substring(1.fullTextBody; 0; 4000)}}\n\nRègles spécifiques email direct :\n- Analyse en priorité le message le plus récent. Si le corps contient un ancien fil cité, ne laisse pas l'historique d'une demande terminée annuler une nouvelle demande claire.\n- Une nouvelle demande envoyée en réponse à un ancien fil reste une nouvelle demande si le dernier message demande une disponibilité, un devis, un buffet, un repas, un cocktail ou une prestation pour une date et un nombre de personnes.\n- Si le dernier message demande de modifier un devis existant, remplacer des pièces, corriger une version, valider après nouvelle version, confirmer après nouveau devis, ou organiser un appel au sujet du devis déjà envoyé, alors is_demande = true mais is_followup = true : ce n’est pas une nouvelle ligne à créer.\n- Si le sujet commence par \"Re: Devis\" ou \"TR: Devis\" et que le dernier message répond à Manon au sujet d’un devis déjà envoyé, d’un nouveau devis, d’un devis actualisé, du budget, d’une validation, d’un changement de nombre de personnes ou d’une modification, alors is_demande = true et is_followup = true. Ne crée pas de nouvelle ligne et n’envoie pas d’accusé automatique.\n- Exemple Benjamin Latour à rattacher à la demande existante : \"Re: Devis Latour\", \"Oui c’est parfait pour le nouveau devis. Nous serons 75 personnes\" pour l’événement du 11/07/2026. Retourne is_followup=true, date_evenement=\"11/07/2026\", nom_client=\"Benjamin Latour\", nb_convives=\"75 personnes\", send_ack=false.\n- Un devis validé, accepté, signé ou retourné avec mention de bon de commande est toujours un suivi existant : is_demande = true, is_followup = true, send_ack = false. Ne crée jamais une nouvelle demande et ne classe jamais ce message en hors scope.\n- Pour un suivi/modification de devis existant : conserve email_client, date_evenement si elle est identifiable, message_original = résumé court du changement demandé, send_ack = false, ack_mode = \"\", archive_label = \"Historique_Email_Direct\".\n- is_demande = false si newsletter, publicité, facture, fournisseur, spam ou email non lié à une demande client.\n- Si is_demande=false : message_original doit être un résumé très court de la raison hors scope, jamais le mail brut. Exemple : \"Newsletter METRO sur tendances buffet et promotions fournisseur, hors demande client.\"\n- Si is_demande=false : canal = \"Email\", source = \"Email direct\", statut = \"\", send_ack = false, ack_mode = \"\", archive_label = \"Hors_Scope_Make\", resume_court = \"\".\n- Pour une newsletter fournisseur comme METRO, avec objet promotionnel ou contenu marketing, retourne is_demande=false et ne conserve aucun lien dans message_original.\n- is_demande = true si l'email demande un devis, une disponibilité ou une prestation pour un événement, repas, cocktail, buffet, réception, concert, entreprise, mairie, collectivité ou association.\n- is_demande = true si l'email concerne un mariage avec date, lieu ou domaine, nombre de convives, vin d'honneur, repas, buffet, formules, personnel de service, gâteau, budget ou ordre de grandeur tarifaire. Une demande de formules/tarifs pour vérifier le budget est une vraie demande traiteur, même sans demander explicitement un devis.\n- Exemple mariage Manon Dupire à classer is_demande=true et type_evenement=\"Mariage\" : \"mariage pour le jeudi 15/07/2027 à Monteux, domaine Oasis du Saule, environ 50 convives, vin d'honneur simple suivi d'un repas convivial sous forme de buffet, formules, personnel de service, gâteau, ordre de grandeur tarifaire\".\n- is_demande = true si l'email contient une date ou période, un lieu, un nombre de personnes/convives et une prestation alimentaire attendue, même si l'expéditeur est une mairie, une institution, une association ou un organisme public.\n- is_demande = true si l'email dit \"nous aurions besoin d'un devis\", \"besoin d'un devis\", \"demande de devis\", \"seriez-vous disponible\" ou équivalent, dès lors que la demande concerne une prestation alimentaire.\n- Ne classe jamais en hors scope une demande de cocktail/buffet/réception au motif qu'il n'y a pas de service, pas de boissons, seulement des pièces salées/sucrées, des tables nappées ou des mange-debout. Ce sont des détails de prestation, pas un refus de prestation traiteur.\n- Les termes buffet, cocktail, pièces salées, pièces sucrées, nappage, tables nappées, mange-debout, avant-concert, réception, personnes et convives sont des indices forts de vraie demande traiteur.\n- Exemple obligatoire à classer is_demande=true : \"Bonjour Manon, Seriez-vous disponible jeudi 2 juillet pour un buffet pour 70 personnes avec boisson ? Merci d'avance\".\n- Pour cet exemple obligatoire, type_evenement doit être \"Entreprise\" si l'expéditeur est France Travail, une mairie, une collectivité, une association, un organisme public ou une société.\n- Exemple obligatoire à classer is_demande=true : \"besoin d'un devis pour le vendredi 17 juillet 2026, cocktail pour 140 personnes sur la terrasse de la cour Jean Brunon au château de l'Empéri avant concert, 6 pièces salées, 2 pièces sucrées, pas de service, pas de boissons, tables nappées et 15 mange-debout houssés\".\n- Pour cet exemple obligatoire, type_evenement doit être \"Entreprise\".\n- type_evenement = \"Entreprise\" si la demande vient d'une mairie, collectivité, association, organisme public, société, service événementiel, ou concerne un cocktail/réception avant concert ou événement professionnel.\n- type_evenement = \"Entreprise\" pour une demande ou réponse de société/groupe concernant un café d’accueil, déjeuner, repas, buffet, cocktail, réunion ou événement interne, même si le client demande seulement une mise à jour de devis.\n- Exemple STEF à classer type_evenement=\"Entreprise\" : \"notre évènement du 24/06, 21 personnes pour le café d’accueil + déjeuner, pourriez-vous mettre votre devis à jour\" avec un lieu de type société ou logistique. Si le message concerne clairement un devis déjà existant, mets aussi is_followup=true.\n- Exemple à accepter : demande de devis pour un cocktail de 140 personnes avant concert avec pièces salées/sucrées, nappage ou mange-debout.\n- Exemple obligatoire à rattacher à une demande existante avec is_followup=true : \"Pourriez-vous svp me modifier le devis avec 2 pièces salées à la place des 2 sucrées. Nous vous confirmons la validation rapidement après la nouvelle version.\"\n- email_client = email expéditeur sauf autre email explicite dans le corps.\n- canal = Email; source = Email direct.\n- send_ack = true si is_demande=true et email_client présent ; ack_mode = reply.\n- archive_label = Historique_Email_Direct si demande réelle, Hors_Scope_Make sinon.\n\nRègle resume_court :\n- resume_court est obligatoire si is_demande=true.\n- Il doit reprendre les informations principales : type d'événement, date, lieu, nombre de convives, prestation souhaitée et téléphone si utile.\n",
+                    "content": "Source : Email direct\nCanal : Email\nDate de réception : {{1.internalDate}}\nNom expéditeur : {{1.fromName}}\nEmail expéditeur : {{1.fromEmail}}\nObjet : {{1.subject}}\n\nCorps limité :\n{{substring(1.fullTextBody; 0; 4000)}}\n\nRègles spécifiques email direct :\n- Analyse en priorité le message le plus récent. Si le corps contient un ancien fil cité, ne laisse pas l'historique d'une demande terminée annuler une nouvelle demande claire.\n- Une nouvelle demande envoyée en réponse à un ancien fil reste une nouvelle demande si le dernier message demande une disponibilité, un devis, un buffet, un repas, un cocktail ou une prestation pour une date et un nombre de personnes.\n- Même si le sujet contient \"Re: Devis\", \"TR: Devis\" ou \"Fwd: Devis\", une nouvelle prestation distincte reste une nouvelle demande si le dernier message parle d’un nouvel événement, d’une nouvelle date, d’un nouveau lieu ou d’un nouveau type de prestation sans demander la modification ou validation du devis existant. Dans ce cas : is_followup=false et send_ack=true.\n- Exemple à créer comme nouvelle demande malgré un ancien fil : \"Bonjour Manon, nous avions déjà travaillé ensemble l’an dernier. Pourriez-vous nous faire un devis pour un mariage le 12/09/2027 à Aix pour 90 personnes ?\" Retourne is_demande=true, is_followup=false.\n- Si le dernier message demande de modifier un devis existant, remplacer des pièces, corriger une version, valider après nouvelle version, confirmer après nouveau devis, ou organiser un appel au sujet du devis déjà envoyé, alors is_demande = true mais is_followup = true : ce n’est pas une nouvelle ligne à créer.\n- Si le sujet commence par \"Re: Devis\" ou \"TR: Devis\" et que le dernier message répond à Manon au sujet d’un devis déjà envoyé, d’un nouveau devis, d’un devis actualisé, du budget, d’une validation, d’un changement de nombre de personnes ou d’une modification, alors is_demande = true et is_followup = true. Ne crée pas de nouvelle ligne et n’envoie pas d’accusé automatique.\n- Exemple Benjamin Latour à rattacher à la demande existante : \"Re: Devis Latour\", \"Oui c’est parfait pour le nouveau devis. Nous serons 75 personnes\" pour l’événement du 11/07/2026. Retourne is_followup=true, date_evenement=\"11/07/2026\", nom_client=\"Benjamin Latour\", nb_convives=\"75 personnes\", send_ack=false.\n- Un devis validé, accepté, signé ou retourné avec mention de bon de commande est toujours un suivi existant : is_demande = true, is_followup = true, send_ack = false. Ne crée jamais une nouvelle demande et ne classe jamais ce message en hors scope.\n- Pour un suivi/modification de devis existant : conserve email_client, date_evenement si elle est identifiable, message_original = résumé court du changement demandé, send_ack = false, ack_mode = \"\", archive_label = \"Historique_Email_Direct\".\n- is_demande = false si newsletter, publicité, facture, fournisseur, spam ou email non lié à une demande client.\n- Si is_demande=false : message_original doit être un résumé très court de la raison hors scope, jamais le mail brut. Exemple : \"Newsletter METRO sur tendances buffet et promotions fournisseur, hors demande client.\"\n- Si is_demande=false : canal = \"Email\", source = \"Email direct\", statut = \"\", send_ack = false, ack_mode = \"\", archive_label = \"Hors_Scope_Make\", resume_court = \"\".\n- Pour une newsletter fournisseur comme METRO, avec objet promotionnel ou contenu marketing, retourne is_demande=false et ne conserve aucun lien dans message_original.\n- is_demande = true si l'email demande un devis, une disponibilité ou une prestation pour un événement, repas, cocktail, buffet, réception, concert, entreprise, mairie, collectivité ou association.\n- is_demande = true si l'email concerne un mariage avec date, lieu ou domaine, nombre de convives, vin d'honneur, repas, buffet, formules, personnel de service, gâteau, budget ou ordre de grandeur tarifaire. Une demande de formules/tarifs pour vérifier le budget est une vraie demande traiteur, même sans demander explicitement un devis.\n- Exemple mariage Manon Dupire à classer is_demande=true et type_evenement=\"Mariage\" : \"mariage pour le jeudi 15/07/2027 à Monteux, domaine Oasis du Saule, environ 50 convives, vin d'honneur simple suivi d'un repas convivial sous forme de buffet, formules, personnel de service, gâteau, ordre de grandeur tarifaire\".\n- is_demande = true si l'email contient une date ou période, un lieu, un nombre de personnes/convives et une prestation alimentaire attendue, même si l'expéditeur est une mairie, une institution, une association ou un organisme public.\n- is_demande = true si l'email dit \"nous aurions besoin d'un devis\", \"besoin d'un devis\", \"demande de devis\", \"seriez-vous disponible\" ou équivalent, dès lors que la demande concerne une prestation alimentaire.\n- Ne classe jamais en hors scope une demande de cocktail/buffet/réception au motif qu'il n'y a pas de service, pas de boissons, seulement des pièces salées/sucrées, des tables nappées ou des mange-debout. Ce sont des détails de prestation, pas un refus de prestation traiteur.\n- Les termes buffet, cocktail, pièces salées, pièces sucrées, nappage, tables nappées, mange-debout, avant-concert, réception, personnes et convives sont des indices forts de vraie demande traiteur.\n- Exemple obligatoire à classer is_demande=true : \"Bonjour Manon, Seriez-vous disponible jeudi 2 juillet pour un buffet pour 70 personnes avec boisson ? Merci d'avance\".\n- Pour cet exemple obligatoire, type_evenement doit être \"Entreprise\" si l'expéditeur est France Travail, une mairie, une collectivité, une association, un organisme public ou une société.\n- Exemple obligatoire à classer is_demande=true : \"besoin d'un devis pour le vendredi 17 juillet 2026, cocktail pour 140 personnes sur la terrasse de la cour Jean Brunon au château de l'Empéri avant concert, 6 pièces salées, 2 pièces sucrées, pas de service, pas de boissons, tables nappées et 15 mange-debout houssés\".\n- Pour cet exemple obligatoire, type_evenement doit être \"Entreprise\".\n- type_evenement = \"Entreprise\" si la demande vient d'une mairie, collectivité, association, organisme public, société, service événementiel, ou concerne un cocktail/réception avant concert ou événement professionnel.\n- type_evenement = \"Entreprise\" pour une demande ou réponse de société/groupe concernant un café d’accueil, déjeuner, repas, buffet, cocktail, réunion ou événement interne, même si le client demande seulement une mise à jour de devis.\n- Exemple STEF à classer type_evenement=\"Entreprise\" : \"notre évènement du 24/06, 21 personnes pour le café d’accueil + déjeuner, pourriez-vous mettre votre devis à jour\" avec un lieu de type société ou logistique. Si le message concerne clairement un devis déjà existant, mets aussi is_followup=true.\n- Exemple à accepter : demande de devis pour un cocktail de 140 personnes avant concert avec pièces salées/sucrées, nappage ou mange-debout.\n- Exemple obligatoire à rattacher à une demande existante avec is_followup=true : \"Pourriez-vous svp me modifier le devis avec 2 pièces salées à la place des 2 sucrées. Nous vous confirmons la validation rapidement après la nouvelle version.\"\n- email_client = email expéditeur sauf autre email explicite dans le corps.\n- canal = Email; source = Email direct.\n- send_ack = true si is_demande=true et email_client présent ; ack_mode = reply.\n- archive_label = Historique_Email_Direct si demande réelle, Hors_Scope_Make sinon.\n\nRègle resume_court :\n- resume_court est obligatoire si is_demande=true.\n- Il doit reprendre les informations principales : type d'événement, date, lieu, nombre de convives, prestation souhaitée et téléphone si utile.\n",
                     "imageDetail": "auto"
                   }
                 ],
@@ -13328,7 +13328,7 @@
                             {
                               "a": "{{1.fullTextBody}}",
                               "o": "text:contain",
-                              "b": "nouveau devis"
+                              "b": "pour le nouveau devis"
                             }
                           ],
                           [
@@ -13370,7 +13370,7 @@
                             {
                               "a": "{{1.fullTextBody}}",
                               "o": "text:contain",
-                              "b": "budget"
+                              "b": "budget par personne"
                             }
                           ],
                           [
@@ -13391,7 +13391,154 @@
                             {
                               "a": "{{1.fullTextBody}}",
                               "o": "text:contain",
-                              "b": "personnes"
+                              "b": "modifier le devis"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "Re: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "mettre votre devis à jour"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "Re: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "nouvelle version"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "Re: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "validation rapidement"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "Re: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "devis validé"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "Re: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "devis valide"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "Re: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "c’est parfait"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "Re: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "c'est parfait"
                             }
                           ],
                           [
@@ -13412,7 +13559,7 @@
                             {
                               "a": "{{1.fullTextBody}}",
                               "o": "text:contain",
-                              "b": "nouveau devis"
+                              "b": "pour le nouveau devis"
                             }
                           ],
                           [
@@ -13454,7 +13601,7 @@
                             {
                               "a": "{{1.fullTextBody}}",
                               "o": "text:contain",
-                              "b": "budget"
+                              "b": "budget par personne"
                             }
                           ],
                           [
@@ -13475,7 +13622,154 @@
                             {
                               "a": "{{1.fullTextBody}}",
                               "o": "text:contain",
-                              "b": "personnes"
+                              "b": "modifier le devis"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "TR: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "mettre votre devis à jour"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "TR: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "nouvelle version"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "TR: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "validation rapidement"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "TR: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "devis validé"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "TR: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "devis valide"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "TR: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "c’est parfait"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "TR: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "c'est parfait"
                             }
                           ],
                           [
@@ -13496,7 +13790,7 @@
                             {
                               "a": "{{1.fullTextBody}}",
                               "o": "text:contain",
-                              "b": "nouveau devis"
+                              "b": "pour le nouveau devis"
                             }
                           ],
                           [
@@ -13538,7 +13832,7 @@
                             {
                               "a": "{{1.fullTextBody}}",
                               "o": "text:contain",
-                              "b": "budget"
+                              "b": "budget par personne"
                             }
                           ],
                           [
@@ -13559,7 +13853,154 @@
                             {
                               "a": "{{1.fullTextBody}}",
                               "o": "text:contain",
-                              "b": "personnes"
+                              "b": "modifier le devis"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "Fwd: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "mettre votre devis à jour"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "Fwd: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "nouvelle version"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "Fwd: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "validation rapidement"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "Fwd: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "devis validé"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "Fwd: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "devis valide"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "Fwd: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "c’est parfait"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "Fwd: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "c'est parfait"
                             }
                           ]
                         ]
@@ -13694,7 +14135,7 @@
                             {
                               "a": "{{1.fullTextBody}}",
                               "o": "text:contain",
-                              "b": "nouveau devis"
+                              "b": "pour le nouveau devis"
                             }
                           ],
                           [
@@ -13736,7 +14177,7 @@
                             {
                               "a": "{{1.fullTextBody}}",
                               "o": "text:contain",
-                              "b": "budget"
+                              "b": "budget par personne"
                             }
                           ],
                           [
@@ -13757,7 +14198,154 @@
                             {
                               "a": "{{1.fullTextBody}}",
                               "o": "text:contain",
-                              "b": "personnes"
+                              "b": "modifier le devis"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "Re: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "mettre votre devis à jour"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "Re: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "nouvelle version"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "Re: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "validation rapidement"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "Re: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "devis validé"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "Re: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "devis valide"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "Re: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "c’est parfait"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "Re: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "c'est parfait"
                             }
                           ],
                           [
@@ -13778,7 +14366,7 @@
                             {
                               "a": "{{1.fullTextBody}}",
                               "o": "text:contain",
-                              "b": "nouveau devis"
+                              "b": "pour le nouveau devis"
                             }
                           ],
                           [
@@ -13820,7 +14408,7 @@
                             {
                               "a": "{{1.fullTextBody}}",
                               "o": "text:contain",
-                              "b": "budget"
+                              "b": "budget par personne"
                             }
                           ],
                           [
@@ -13841,7 +14429,154 @@
                             {
                               "a": "{{1.fullTextBody}}",
                               "o": "text:contain",
-                              "b": "personnes"
+                              "b": "modifier le devis"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "TR: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "mettre votre devis à jour"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "TR: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "nouvelle version"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "TR: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "validation rapidement"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "TR: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "devis validé"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "TR: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "devis valide"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "TR: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "c’est parfait"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "TR: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "c'est parfait"
                             }
                           ],
                           [
@@ -13862,7 +14597,7 @@
                             {
                               "a": "{{1.fullTextBody}}",
                               "o": "text:contain",
-                              "b": "nouveau devis"
+                              "b": "pour le nouveau devis"
                             }
                           ],
                           [
@@ -13904,7 +14639,7 @@
                             {
                               "a": "{{1.fullTextBody}}",
                               "o": "text:contain",
-                              "b": "budget"
+                              "b": "budget par personne"
                             }
                           ],
                           [
@@ -13925,7 +14660,154 @@
                             {
                               "a": "{{1.fullTextBody}}",
                               "o": "text:contain",
-                              "b": "personnes"
+                              "b": "modifier le devis"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "Fwd: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "mettre votre devis à jour"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "Fwd: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "nouvelle version"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "Fwd: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "validation rapidement"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "Fwd: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "devis validé"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "Fwd: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "devis valide"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "Fwd: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "c’est parfait"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "o": "boolean:equal",
+                              "b": "true"
+                            },
+                            {
+                              "a": "{{38.date_evenement}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "o": "text:contain",
+                              "b": "Fwd: Devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:contain",
+                              "b": "c'est parfait"
                             }
                           ]
                         ]
@@ -14250,6 +15132,103 @@
                               "a": "{{1.subject}}",
                               "o": "text:notcontain",
                               "b": "Fwd: Devis"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "b": "true",
+                              "o": "boolean:equal"
+                            },
+                            {
+                              "a": "{{38.is_followup}}",
+                              "b": "false",
+                              "o": "boolean:equal"
+                            },
+                            {
+                              "a": "{{1.fromEmail}}",
+                              "b": "notifications@wix-forms.com",
+                              "o": "text:notequal"
+                            },
+                            {
+                              "a": "{{1.fromEmail}}",
+                              "b": "message@voxist.com",
+                              "o": "text:notequal"
+                            },
+                            {
+                              "a": "{{1.fromEmail}}",
+                              "b": "demande.chezpapimaisongourmande@gmail.com",
+                              "o": "text:notequal"
+                            },
+                            {
+                              "a": "{{1.fromEmail}}",
+                              "b": "chezpapimaisongourmande@gmail.com",
+                              "o": "text:notequal"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                              "o": "text:notcontain"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "b": "DEVIS VALIDE",
+                              "o": "text:notcontain"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:notcontain",
+                              "b": "pour le nouveau devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:notcontain",
+                              "b": "devis actualisé"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:notcontain",
+                              "b": "budget par personne"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:notcontain",
+                              "b": "modifier le devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:notcontain",
+                              "b": "mettre votre devis à jour"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:notcontain",
+                              "b": "nouvelle version"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:notcontain",
+                              "b": "validation rapidement"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:notcontain",
+                              "b": "devis validé"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:notcontain",
+                              "b": "devis valide"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:notcontain",
+                              "b": "c’est parfait"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:notcontain",
+                              "b": "c'est parfait"
                             }
                           ]
                         ]
@@ -14867,6 +15846,107 @@
                               "a": "{{1.subject}}",
                               "o": "text:notcontain",
                               "b": "Fwd: Devis"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{38.is_demande}}",
+                              "b": "true",
+                              "o": "boolean:equal"
+                            },
+                            {
+                              "a": "{{38.email_client}}",
+                              "o": "exist"
+                            },
+                            {
+                              "a": "{{38.is_followup}}",
+                              "b": "false",
+                              "o": "boolean:equal"
+                            },
+                            {
+                              "a": "{{1.fromEmail}}",
+                              "b": "notifications@wix-forms.com",
+                              "o": "text:notequal"
+                            },
+                            {
+                              "a": "{{1.fromEmail}}",
+                              "b": "message@voxist.com",
+                              "o": "text:notequal"
+                            },
+                            {
+                              "a": "{{1.fromEmail}}",
+                              "b": "demande.chezpapimaisongourmande@gmail.com",
+                              "o": "text:notequal"
+                            },
+                            {
+                              "a": "{{1.fromEmail}}",
+                              "b": "chezpapimaisongourmande@gmail.com",
+                              "o": "text:notequal"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                              "o": "text:notcontain"
+                            },
+                            {
+                              "a": "{{1.subject}}",
+                              "b": "DEVIS VALIDE",
+                              "o": "text:notcontain"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:notcontain",
+                              "b": "pour le nouveau devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:notcontain",
+                              "b": "devis actualisé"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:notcontain",
+                              "b": "budget par personne"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:notcontain",
+                              "b": "modifier le devis"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:notcontain",
+                              "b": "mettre votre devis à jour"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:notcontain",
+                              "b": "nouvelle version"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:notcontain",
+                              "b": "validation rapidement"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:notcontain",
+                              "b": "devis validé"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:notcontain",
+                              "b": "devis valide"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:notcontain",
+                              "b": "c’est parfait"
+                            },
+                            {
+                              "a": "{{1.fullTextBody}}",
+                              "o": "text:notcontain",
+                              "b": "c'est parfait"
                             }
                           ]
                         ]
