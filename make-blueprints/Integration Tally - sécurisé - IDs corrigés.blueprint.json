@@ -288,11 +288,6 @@
     },
     {
       "id": 4,
-      "module": "google-sheets:filterRowsAdvanced",
-      "version": 2,
-      "parameters": {
-        "__IMTCONN__": 7978056
-      },
       "filter": {
         "name": "Filtre sécurité - formulaire Tally production uniquement",
         "conditions": [
@@ -305,121 +300,91 @@
           ]
         ]
       },
+      "module": "http:ActionSendData",
+      "version": 3,
+      "parameters": {},
       "mapper": {
-        "tq": "select count(A) where A = 'TALLY-{{1.submissionId}}' or A = '{{1.submissionId}}' label count(A) ''",
-        "from": "drive",
-        "limit": "1",
-        "select": "list",
-        "sheetId": "Demandes",
-        "spreadsheetId": "/1KCHd6vdtlElV7wR9kg1ZhTsvEfE56BMDd_L32Q6KzgQ"
+        "url": "https://script.google.com/macros/s/AKfycbzouc3kD6Qc68XzK3Ne_Rlnh5_e5o_IVMkAkHKAXJl-BFrxIIVEj7IS684CugVmh2Qlow/exec",
+        "method": "post",
+        "headers": [],
+        "qs": [],
+        "bodyType": "raw",
+        "parseResponse": true,
+        "authUser": "",
+        "authPass": "",
+        "timeout": "",
+        "shareCookies": false,
+        "ca": "",
+        "rejectUnauthorized": true,
+        "followRedirect": true,
+        "useQuerystring": false,
+        "gzip": true,
+        "useMtls": false,
+        "contentType": "application/json",
+        "data": "{\"action\":\"checkDuplicate\",\"make_token\":\"cp_make_followup_2026_06\",\"match\":{\"id_demande\":\"TALLY-{{1.submissionId}}\",\"legacy_id\":\"{{1.submissionId}}\"}}"
       },
       "metadata": {
         "designer": {
           "x": 300,
           "y": 150,
-          "name": "Anti-doublon - compte id_demande"
+          "name": "Anti-doublon - backend sans lecture Sheets Make"
         },
         "restore": {
           "expect": {
-            "from": {
-              "label": "My Drive"
+            "method": {
+              "label": "POST"
             },
-            "select": {
-              "label": "Search by path"
+            "bodyType": {
+              "label": "Raw"
             },
-            "sheetId": {
-              "label": "Demandes"
-            },
-            "spreadsheetId": {
-              "path": [
-                "demande-chez-papi-maison-gourmande"
-              ]
-            }
-          },
-          "parameters": {
-            "__IMTCONN__": {
-              "data": {
-                "scoped": "true",
-                "connection": "google"
-              },
-              "label": "My Google connection (demande.chezpapimaisongourmande@gmail.com)"
+            "contentType": {
+              "label": "JSON (application/json)"
             }
           }
         },
-        "parameters": [
-          {
-            "name": "__IMTCONN__",
-            "type": "account:google",
-            "label": "Connection",
-            "required": true
-          }
-        ],
+        "parameters": [],
         "expect": [
           {
-            "name": "select",
-            "type": "select",
-            "label": "Search Method",
-            "required": true,
-            "validate": {
-              "enum": [
-                "list",
-                "fromAll",
-                "map"
-              ]
-            }
-          },
-          {
-            "name": "tq",
-            "type": "text",
-            "label": "Query",
+            "name": "url",
+            "type": "url",
+            "label": "URL",
             "required": true
           },
           {
-            "name": "limit",
-            "type": "uinteger",
-            "label": "Limit"
-          },
-          {
-            "name": "from",
+            "name": "method",
             "type": "select",
-            "label": "Drive",
-            "required": true,
-            "validate": {
-              "enum": [
-                "drive",
-                "share",
-                "team"
-              ]
-            }
-          },
-          {
-            "name": "spreadsheetId",
-            "type": "file",
-            "label": "Spreadsheet ID",
+            "label": "Method",
             "required": true
           },
           {
-            "name": "sheetId",
+            "name": "headers",
+            "type": "array",
+            "label": "Headers"
+          },
+          {
+            "name": "qs",
+            "type": "array",
+            "label": "Query String"
+          },
+          {
+            "name": "bodyType",
             "type": "select",
-            "label": "Sheet ID",
-            "required": true
-          }
-        ],
-        "interface": [
-          {
-            "name": "__IMTLENGTH__",
-            "type": "uinteger",
-            "label": "Total number of bundles"
+            "label": "Body type"
           },
           {
-            "name": "__IMTINDEX__",
-            "type": "uinteger",
-            "label": "Bundle order position"
+            "name": "contentType",
+            "type": "select",
+            "label": "Content type"
           },
           {
-            "name": "0",
-            "type": "number",
-            "label": "count(A)"
+            "name": "data",
+            "type": "buffer",
+            "label": "Request content"
+          },
+          {
+            "name": "parseResponse",
+            "type": "boolean",
+            "label": "Parse response"
           }
         ]
       }
@@ -436,7 +401,7 @@
         "conditions": [
           [
             {
-              "a": "{{ifempty(4.`0`; 0)}}",
+              "a": "{{ifempty(4.data.count; 0)}}",
               "b": "0",
               "o": "number:equal"
             }

@@ -172,7 +172,7 @@ function doPost(e) {
     const body = JSON.parse(e.postData.contents);
     const auth = body.auth || { user: body.user, pass: body.pass };
     const isMakeFollowup = (
-      (body.action === 'updateThreadFollowup' || body.action === 'updateWixFollowup' || body.action === 'updateExistingDemandFollowup') &&
+      (body.action === 'updateThreadFollowup' || body.action === 'updateWixFollowup' || body.action === 'updateExistingDemandFollowup' || body.action === 'checkDuplicate') &&
       body.make_token === MAKE_FOLLOWUP_TOKEN
     );
     if (!isMakeFollowup && !checkAuth(auth.user, auth.pass)) {
@@ -185,6 +185,7 @@ function doPost(e) {
     if (body.action === 'updateThreadFollowup') return withDocumentLock(function() { return updateThreadFollowup(body.gmail_thread_id, body.fields || {}); });
     if (body.action === 'updateWixFollowup') return withDocumentLock(function() { return updateWixFollowup(body.gmail_thread_id, body.email_client, body.fields || {}); });
     if (body.action === 'updateExistingDemandFollowup') return withDocumentLock(function() { return updateExistingDemandFollowup(body.match || {}, body.fields || {}); });
+    if (body.action === 'checkDuplicate') return checkDuplicate(body.match || {});
     if (body.action === 'delete') return withDocumentLock(function() { return deleteRowById(body.id_demande); });
     return ko('Action inconnue : ' + body.action);
   } catch (err) {
@@ -403,6 +404,30 @@ function updateExistingDemandFollowup(match, fields) {
   });
 
   return ok({ updated: true, id_demande: found.id_demande || "", row: found.rowIndex });
+}
+
+function checkDuplicate(match) {
+  const sheet = getSheet();
+  ensureSchemaHeaders(sheet);
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
+  const ids = [];
+  const idDemande = String(match.id_demande || '').trim();
+  const legacyId = String(match.legacy_id || '').trim();
+  const gmailThreadId = String(match.gmail_thread_id || '').trim();
+  [idDemande, legacyId].forEach(function(value) {
+    if (value && ids.indexOf(value) === -1) ids.push(value);
+  });
+
+  const found = findDuplicateDemand(sheet, headers, ids, gmailThreadId);
+  return ContentService
+    .createTextOutput(JSON.stringify({
+      ok: true,
+      count: found ? 1 : 0,
+      duplicate: !!found,
+      id_demande: found ? found.id_demande || "" : "",
+      row: found ? found.rowIndex : ""
+    }))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 function deleteRowById(idDemande) {
@@ -680,6 +705,33 @@ function findLatestRowByEmailAndIdPrefix(sheet, headers, emailClient, idPrefix) 
     const idDemande = String(ids[i][0] || '').trim();
     if (rowEmail === targetEmail && idDemande.indexOf(prefix) === 0) {
       return { rowIndex: i + 2, id_demande: idDemande };
+    }
+  }
+  return null;
+}
+
+function findDuplicateDemand(sheet, headers, demandIds, gmailThreadId) {
+  const idCol = headers.findIndex(function(h) { return canonicalKey(h) === "id_demande"; }) + 1;
+  const threadCol = headers.findIndex(function(h) { return canonicalKey(h) === "gmail_thread_id"; }) + 1;
+  if (idCol <= 0) throw new Error("Colonne id_demande introuvable");
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return null;
+
+  const targetIds = {};
+  (demandIds || []).forEach(function(value) {
+    const s = String(value || '').trim();
+    if (s) targetIds[s] = true;
+  });
+  const targetThread = String(gmailThreadId || '').trim();
+
+  const idValues = sheet.getRange(2, idCol, lastRow - 1, 1).getValues();
+  const threadValues = threadCol > 0 ? sheet.getRange(2, threadCol, lastRow - 1, 1).getValues() : [];
+  for (var i = idValues.length - 1; i >= 0; i--) {
+    const rowId = String(idValues[i][0] || '').trim();
+    const rowThread = threadCol > 0 ? String(threadValues[i][0] || '').trim() : "";
+    if ((rowId && targetIds[rowId]) || (targetThread && rowId === targetThread) || (targetThread && rowThread === targetThread)) {
+      return { rowIndex: i + 2, id_demande: rowId };
     }
   }
   return null;
