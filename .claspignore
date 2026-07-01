@@ -1,4 +1,3 @@
-**
+**/*
 !appsscript.json
-!backend/
-!backend/**
+!**/*.gs

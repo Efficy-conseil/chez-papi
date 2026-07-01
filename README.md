@@ -1,32 +1,59 @@
-# Chez PAPI
+# Chez Papi
 
-Tableau de bord statique GitHub Pages + backend Google Apps Script pour le suivi des demandes traiteur.
+Tableau de bord GitHub Pages, backend Google Apps Script et automatisations Make pour le suivi des demandes traiteur.
 
-## Déploiement Apps Script
+## Organisation
 
-Le dépôt GitHub est la source de vérité. Le backend se trouve dans `backend/code.gs` et se déploie avec `clasp`.
+- `chez-papi/` : frontend publié par GitHub Pages.
+- `chez-papi/prototypes/` : prototypes accessibles en ligne pour les démonstrations.
+- `apps-script/` : backend Google Apps Script.
+- `make/` : blueprints Make à importer manuellement.
+- `docs/` : contrat produit, procédures et spécifications fonctionnelles.
 
-Fichiers à ne jamais committer :
+Les trois frontends de démonstration utilisent actuellement la même URL backend Apps Script que le frontend principal.
 
-- `.clasp.json`
-- `.clasprc.json`
+## Installation locale
 
-Avant le premier déploiement, configurer les secrets dans Apps Script :
-
-1. Ouvrir le projet Apps Script.
-2. Remplacer temporairement les valeurs dans `setupAuthSecrets()`.
-3. Exécuter `setupAuthSecrets()` une seule fois.
-4. Remettre les placeholders avant commit si le fichier a été modifié localement.
-
-Ordre recommandé de publication :
-
-1. Déployer d'abord le backend Apps Script.
-2. Vérifier que l'URL Apps Script dans `CONFIG.SHEETS_URL` est correcte.
-3. Publier le front GitHub Pages.
-
-## Vérifications rapides
+Prérequis : Node.js 20 ou plus récent.
 
 ```bash
-node --check app.js
-node --check sw.js
+npm install
 ```
+
+## Vérifications
+
+```bash
+npm run check
+```
+
+Cette commande vérifie le backend, le frontend principal et les deux blueprints Make.
+
+## Déploiement du backend Apps Script
+
+La configuration locale `.clasp.json` associe `apps-script/` au projet Apps Script de production. Elle n'est pas versionnée.
+
+Lors de la première utilisation uniquement :
+
+```bash
+npx clasp login
+```
+
+Pour vérifier, envoyer, versionner et redéployer le backend sans changer l'URL de la Web App :
+
+```bash
+npm run deploy:backend -- "Description du déploiement"
+```
+
+Le dépôt reste la source de vérité. Ne pas modifier directement le code dans l'éditeur Apps Script après la mise en place de ce flux.
+
+## Déploiement du frontend
+
+Le workflow `.github/workflows/deploy-pages.yml` publie uniquement `chez-papi/` après chaque push sur `main` qui touche ce répertoire.
+
+Dans les paramètres GitHub du dépôt, la source de GitHub Pages doit être réglée une seule fois sur **GitHub Actions**.
+
+## Blueprints Make
+
+Les fichiers contenus dans `make/` conservent leurs noms attendus par Make. Leur import reste manuel afin de permettre le contrôle visuel et le retour arrière avant activation.
+
+Voir [la procédure de déploiement](docs/deployment.md), [le contrat produit](docs/product-contract.md) et [la spécification fonctionnelle du frontend](docs/frontend-functional-spec.md).

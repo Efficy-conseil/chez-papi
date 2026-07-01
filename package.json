@@ -1,0 +1,11 @@
+{
+  "name": "chez-papi-project",
+  "private": true,
+  "scripts": {
+    "check": "node scripts/check-project.mjs",
+    "deploy:backend": "node scripts/deploy-apps-script.mjs"
+  },
+  "devDependencies": {
+    "@google/clasp": "3.3.0"
+  }
+}

@@ -82,7 +82,7 @@ Format canonique attendu pour `date_evenement` :
 - Date complète : `JJ/MM/AAAA`
 - Plage : `JJ/MM/AAAA au JJ/MM/AAAA`
 - Année seule : `AAAA`
-- Inconnu ou trop vague : champ vide
+- Inconnu ou trop vague : `Inconnu / à compléter`
 
 Contraintes :
 
@@ -91,6 +91,12 @@ Contraintes :
 - Le dashboard doit afficher les dates au format `JJ/MM/AAAA`.
 - Les dates longues comme `du 26/08/2026 au 27/08/2026` doivent être stockées `26/08/2026 au 27/08/2026`.
 - Les années seules doivent rester visibles dans le dashboard mais ne doivent pas créer d'événement calendrier.
+
+## Google Calendar
+
+- Une demande ne doit créer un événement Google Calendar que lorsque son statut devient `Événement confirmé`.
+- Cette règle s'applique à tous les canaux : Téléphone, Email, Site Internet, Réseaux sociaux et Saisie manuelle.
+- La création initiale d'une demande avec un autre statut ne doit pas créer d'événement calendrier.
 
 ## Types d'événement
 
@@ -109,7 +115,8 @@ Règles :
 
 ## Make - contrat de routage global
 
-Blueprint principal : `make-blueprints/Integration Email - Wix - Voxist - sécurisé - IDs corrigés.blueprint.json`.
+Blueprint principal : `make/Integration Email - Wix - Voxist.blueprint.json`.
+Le nom du blueprint ne doit pas être modifié, la gestion des versions est gérée par Make.
 
 Déclencheur : Gmail nouveaux emails.
 
@@ -137,6 +144,7 @@ Comportement attendu :
 
 - Nouveau formulaire qualifié -> création d'une demande `WIX-<gmail_message_id>`.
 - Canal -> `Site Internet`.
+- Statut -> `Nouvelle demande`.
 - Label Gmail -> `Historique_Wix`.
 - Accusé de réception envoyé au client uniquement lors d'une création réelle.
 - Deux formulaires Wix identiques à quelques minutes d'intervalle avec même `nom_client + email_client + date_evenement + telephone` doivent fusionner.
@@ -158,7 +166,7 @@ Comportement attendu :
 
 - Message vocal qualifié traiteur -> création d'une demande `VOXIST-<gmail_message_id>`.
 - Canal -> `Téléphone`.
-- Statut -> `À rappeler`.
+- Statut -> `Nouvelle demande`.
 - Label Gmail -> `Historique_Voxist`.
 - Aucun accusé email automatique.
 - Le téléphone doit prioriser le numéro appelant détecté par l'email Voxist si la transcription donne un numéro incohérent.
@@ -166,17 +174,17 @@ Comportement attendu :
 Critères de vraie demande Voxist :
 
 - demande de devis, renseignements, prestations, formules, formules à la carte ;
-- événement, mariage, baptême, anniversaire, 18 ans, buffet, cocktail, repas, réception ;
-- nombre de personnes, convives, quarantaine de personnes ;
-- date ou période, même si l'année est absente.
+- événement, mariage, baptême, anniversaire, buffet, cocktail, repas, réception ;
+- nombre de personnes, convives, invités ;
+- date ou période, même si l'année est absente. Prendre l'année en cours si non précisée ou mal interprétée.
 
 Cas de référence :
 
-- `prendre des renseignements sur vos prestations`, `formules à la carte`, `quarantaine de personnes`, `18 ans de mon fils`, `12 septembre` doit créer une demande `Téléphone`, type `Anniversaire`, statut `À rappeler`.
+- `prendre des renseignements sur vos prestations`, `formules à la carte`, `quarantaine de personnes`, `18 ans de mon fils`, `12 septembre` doit créer une demande `Téléphone`, type `Anniversaire`, statut `Nouvelle demande`.
 
 Contrainte anti-régression :
 
-- Voxist ne doit jamais passer dans la route `Relance email`.
+- Voxist ne doit jamais passer dans la route relance email, ni nouvel email, ni Wix.
 - Voxist ne doit jamais être classé `Hors_Scope_Make` s'il contient des indices traiteur ou événementiels.
 - Si `checkDuplicate` renvoie `count > 0` pour un message Voxist, cela doit signifier que le même `VOXIST-<gmail_message_id>` existe déjà. Cela ne doit pas arriver seulement parce que le `gmail_thread_id` existe déjà.
 
@@ -192,7 +200,7 @@ Comportement attendu :
 - Canal -> `Email`.
 - Label Gmail -> `Historique_Email`.
 - Accusé de réception envoyé en réponse au client pour une vraie nouvelle demande.
-- Newsletter, fournisseur, facture, spam -> `Hors_Scope_Make`.
+- Newsletter, fournisseur, facture, spam -> `Hors_Scope_Make`. Mais normalement ça doit être filtré avant par Gmail.
 
 Vraies demandes :
 
@@ -202,14 +210,16 @@ Vraies demandes :
 
 Relances et suivis :
 
-- Une modification de devis existant ne crée pas une nouvelle ligne.
+- Une modification de devis existant ne crée pas une nouvelle ligne et ne déclenche pas d'accusé automatique.
 - Une validation de devis ne crée pas une nouvelle ligne et ne déclenche pas d'accusé automatique.
 - Une réponse à un sujet `Re: Devis`, `TR: Devis`, `Fwd: Devis` n'est une relance que si le dernier message parle du devis existant : nouveau devis, devis actualisé, budget par personne, modification, validation, nouvelle version.
 - Une nouvelle demande dans un ancien fil reste une nouvelle demande si elle concerne une nouvelle date, un nouveau lieu, un nouveau type de prestation ou un nouvel événement.
+- Les réponses en lien avec une nouvelle demande doit alimenter la partie technique afin d'implémenter plus tard dans le frontend la gestion des fils de discussion et des indicateurs de messages en attente de réponse.
 
 ## Make - Tally
 
-Blueprint : `make-blueprints/Integration Tally - sécurisé - IDs corrigés.blueprint.json`.
+Blueprint : `make/Integration Tally.blueprint.json`.
+Le nom du blueprint ne doit pas être modifié, la gestion des versions est gérée par Make.
 
 Comportement attendu :
 
@@ -225,7 +235,7 @@ Contrainte :
 
 ## Backend Apps Script
 
-Fichier : `backend/code.gs`.
+Fichier : `apps-script/code.gs`.
 
 Actions dashboard avec authentification utilisateur :
 
@@ -257,7 +267,9 @@ Contraintes backend :
 
 ## Dashboard frontend
 
-Fichiers : `index.html`, `app.js`, `styles.css`, `sw.js`.
+Fichiers : `chez-papi/index.html`, `chez-papi/app.js`, `chez-papi/styles.css`, `chez-papi/sw.js`.
+
+La description fonctionnelle détaillée du frontend se trouve dans `docs/frontend-functional-spec.md`. Toute modification visible doit mettre à jour cette spécification et le présent contrat si une règle métier change.
 
 Comportement attendu :
 
@@ -299,26 +311,27 @@ Contraintes :
 Avant toute modification :
 
 - Lire ce document.
+- Considérer l'état fonctionnel actuel comme la référence comportementale à préserver.
 - Identifier les chemins Make impactés.
 - Vérifier les sources non concernées : Wix, Voxist, Email direct, Tally.
 - Vérifier si la modification touche `count = 0`, `count > 0`, ou les deux.
 - Vérifier qu'aucune source métier ne peut finir sans route.
+- Pour toute modification structurelle de Make, disposer d'un export fonctionnel de référence et d'une procédure de retour arrière avant import.
+- Ne supprimer ou fusionner aucune route avant d'avoir couvert son comportement par des tests de caractérisation.
 
 Après toute modification :
 
 - Valider le JSON des blueprints Make.
-- Vérifier la syntaxe de `backend/code.gs` si touché.
+- Vérifier la syntaxe de `apps-script/code.gs` si touché.
 - Vérifier les constantes frontend si le dashboard est touché.
+- Rejouer les cas de non-régression des quatre sources, y compris les chemins anti-doublon et relance concernés.
 - Mettre à jour ce document si le contrat change.
 - Commit + push systématiques après validation technique.
 
 Commandes de contrôle locales :
 
 ```bash
-python3 -m json.tool 'make-blueprints/Integration Email - Wix - Voxist - sécurisé - IDs corrigés.blueprint.json' >/dev/null
-python3 -m json.tool 'make-blueprints/Integration Tally - sécurisé - IDs corrigés.blueprint.json' >/dev/null
-node --check < backend/code.gs
-node --check app.js
+npm run check
 git diff --check
 ```
 
@@ -327,13 +340,13 @@ git diff --check
 Wix :
 
 - Nouveau formulaire complet -> une ligne + accusé + `Historique_Wix`.
-- Deux formulaires identiques à 1 minute, second plus complet -> une seule ligne enrichie + un seul accusé.
+- Deux formulaires identiques à 5 minutes, second plus complet -> une seule ligne enrichie + un seul accusé.
 - Réponse client au fil Wix -> relance sur la demande existante, pas de nouvelle ligne.
 
 Voxist :
 
-- Message vocal “prendre des renseignements / prestations / formules à la carte / quarantaine / 18 ans / 12 septembre” -> demande `Téléphone`, `À rappeler`, `Historique_Voxist`.
-- Message Voxist personnel sans indice traiteur -> `Hors_Scope_Make`.
+- Message vocal “prendre des renseignements / prestations / formules à la carte / quarantaine / 18 ans / 12 septembre” -> demande `Téléphone`, `Nouvelle demande`, `Historique_Voxist`.
+- Message Voxist personnel sans indice traiteur ou événement -> `Hors_Scope_Make`.
 - Message Voxist déjà connu par anti-doublon -> doit avoir une route explicite de traitement ou d'archivage.
 
 Email direct :
@@ -480,11 +493,11 @@ Contraintes de prévention :
 - Les URLs autorisées sont `mail.google.com` et `drive.google.com`.
 - Toute nouvelle création Make devrait idéalement passer par backend pour homogénéiser calendrier, dates et validation.
 
-## Points ouverts de l'audit
+## Décisions issues de l'audit
 
-Ces points doivent être validés avant la prochaine correction fonctionnelle :
+Ces décisions encadrent les prochaines corrections fonctionnelles :
 
-- Les routes Make sont encore sensibles à l'ordre et aux filtres globaux. Il faut continuer à privilégier des routes strictement séparées par source.
-- Les routes Make sont nombreuses et certaines conditions sont redondantes. Une refonte future devrait réduire les routes globales et isoler strictement Wix, Voxist, Email direct et Tally.
-- Le backend ne synchronise pas encore le calendrier lors de `upsertWixDemand` création Wix, contrairement aux créations manuelles via `addRow`. À valider selon besoin.
-- Les modules Make qui écrivent encore directement dans Google Sheets : Voxist transcription, Voxist audio, Email direct, Tally. Cela reste acceptable pour l'instant car le quota rencontré concernait les lectures, mais une stratégie backend unique serait plus robuste.
+- Décision validée : l'architecture Make évoluera progressivement vers des routes strictement séparées par source pour Wix, Voxist et Email direct ; Tally restera dans son blueprint dédié.
+- Décision validée : aucune refonte globale immédiate. Les conditions redondantes seront supprimées progressivement, uniquement après ajout de tests de caractérisation, validation des cas de non-régression et préparation d'un retour arrière.
+- Décision validée : un événement Google Calendar est créé uniquement lorsque la demande passe au statut `Événement confirmé`, quel que soit son canal. `upsertWixDemand` n'a donc pas à créer d'événement pour une nouvelle demande Wix au statut `Nouvelle demande`.
+- Décision validée : les écritures directes de Make vers Google Sheets pour Voxist transcription, Voxist audio, Email direct et Tally sont conservées pour l'instant, car elles ne sont pas critiques et le quota rencontré concernait les lectures. Une migration éventuelle vers le backend se fera source par source, uniquement après tests comparatifs et avec retour arrière possible.
