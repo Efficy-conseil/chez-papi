@@ -172,7 +172,7 @@ function doPost(e) {
     const body = JSON.parse(e.postData.contents);
     const auth = body.auth || { user: body.user, pass: body.pass };
     const isMakeFollowup = (
-      (body.action === 'updateThreadFollowup' || body.action === 'updateWixFollowup' || body.action === 'updateExistingDemandFollowup' || body.action === 'checkDuplicate') &&
+      (body.action === 'updateThreadFollowup' || body.action === 'updateWixFollowup' || body.action === 'updateExistingDemandFollowup' || body.action === 'checkDuplicate' || body.action === 'upsertWixDemand') &&
       body.make_token === MAKE_FOLLOWUP_TOKEN
     );
     if (!isMakeFollowup && !checkAuth(auth.user, auth.pass)) {
@@ -186,6 +186,7 @@ function doPost(e) {
     if (body.action === 'updateWixFollowup') return withDocumentLock(function() { return updateWixFollowup(body.gmail_thread_id, body.email_client, body.fields || {}); });
     if (body.action === 'updateExistingDemandFollowup') return withDocumentLock(function() { return updateExistingDemandFollowup(body.match || {}, body.fields || {}); });
     if (body.action === 'checkDuplicate') return checkDuplicate(body.match || {});
+    if (body.action === 'upsertWixDemand') return withDocumentLock(function() { return upsertWixDemand(body.row || {}, body.options || {}); });
     if (body.action === 'delete') return withDocumentLock(function() { return deleteRowById(body.id_demande); });
     return ko('Action inconnue : ' + body.action);
   } catch (err) {
@@ -261,6 +262,39 @@ function addRow(rowData) {
   }
   */
   return ok({ id_demande: clean.id_demande });
+}
+
+function upsertWixDemand(rowData, options) {
+  const sheet = getSheet();
+  ensureSchemaHeaders(sheet);
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
+  const clean = sanitizeFields(rowData || {}, false);
+  const raw = normalizeRowKeys(rowData || {});
+  clean.id_demande = String(raw.id_demande || '').trim();
+  clean.wix_form_fingerprint = String(clean.wix_form_fingerprint || '').trim();
+  if (!clean.id_demande) throw new Error("id_demande manquant");
+  if (!clean.wix_form_fingerprint) throw new Error("wix_form_fingerprint manquant");
+  if (!clean.date_reception) clean.date_reception = new Date();
+  clean.derniere_modification = new Date();
+
+  const windowMinutes = Math.max(1, Number(options.merge_window_minutes || 15));
+  const duplicate = findRecentWixDuplicate(sheet, headers, clean.wix_form_fingerprint, clean.date_reception, windowMinutes);
+  if (duplicate) {
+    mergeWixDemandRow(sheet, headers, duplicate.rowIndex, clean);
+    return ok({
+      id_demande: duplicate.id_demande || clean.id_demande,
+      row: duplicate.rowIndex,
+      created: false,
+      merged: true
+    });
+  }
+
+  sheet.appendRow(headers.map(function(h) {
+    return clean[canonicalKey(h)] !== undefined ? clean[canonicalKey(h)] : '';
+  }));
+  clean._row = sheet.getLastRow();
+  forceTextCell(sheet, headers, clean._row, "date_evenement", clean.date_evenement);
+  return ok({ id_demande: clean.id_demande, row: clean._row, created: true, merged: false });
 }
 
 function updateRowById(idDemande, fields) {
@@ -621,6 +655,15 @@ function normalizeEventDateText(value) {
   return normalizeSingleEventDateText(value);
 }
 
+function parseDateTimeValue(value) {
+  if (value instanceof Date && !isNaN(value.getTime())) return value;
+  const s = String(value || '').trim();
+  if (!s || s === '—') return null;
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) return d;
+  return null;
+}
+
 function escapeHtml(value) {
   return String(value === null || value === undefined ? '' : value)
     .replace(/&/g, '&amp;')
@@ -749,6 +792,77 @@ function findLatestRowByEmailAndIdPrefix(sheet, headers, emailClient, idPrefix) 
     }
   }
   return null;
+}
+
+function findRecentWixDuplicate(sheet, headers, fingerprint, dateReception, windowMinutes) {
+  const fingerprintCol = headers.findIndex(function(h) { return canonicalKey(h) === "wix_form_fingerprint"; }) + 1;
+  const dateCol = headers.findIndex(function(h) { return canonicalKey(h) === "date_reception"; }) + 1;
+  const idCol = headers.findIndex(function(h) { return canonicalKey(h) === "id_demande"; }) + 1;
+  if (fingerprintCol <= 0) throw new Error("Colonne wix_form_fingerprint introuvable");
+  if (dateCol <= 0) throw new Error("Colonne date_reception introuvable");
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return null;
+
+  const targetFingerprint = String(fingerprint || '').trim();
+  const targetDate = parseDateTimeValue(dateReception) || new Date();
+  const maxDiffMs = windowMinutes * 60 * 1000;
+  const fingerprints = sheet.getRange(2, fingerprintCol, lastRow - 1, 1).getValues();
+  const dates = sheet.getRange(2, dateCol, lastRow - 1, 1).getValues();
+  const ids = idCol > 0 ? sheet.getRange(2, idCol, lastRow - 1, 1).getValues() : [];
+
+  for (var i = fingerprints.length - 1; i >= 0; i--) {
+    const rowFingerprint = String(fingerprints[i][0] || '').trim();
+    if (rowFingerprint !== targetFingerprint) continue;
+
+    const rowDate = parseDateTimeValue(dates[i][0]);
+    if (!rowDate || Math.abs(targetDate.getTime() - rowDate.getTime()) > maxDiffMs) continue;
+    return {
+      rowIndex: i + 2,
+      id_demande: idCol > 0 ? String(ids[i][0] || '').trim() : ""
+    };
+  }
+  return null;
+}
+
+function mergeWixDemandRow(sheet, headers, rowIndex, incoming) {
+  const currentValues = sheet.getRange(rowIndex, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const current = {};
+  headers.forEach(function(h, i) {
+    current[canonicalKey(h)] = currentValues[i];
+  });
+
+  const preserveExisting = {
+    id_demande: true,
+    date_reception: true,
+    nb_relances_client: true,
+    relance_a_traiter: true
+  };
+
+  headers.forEach(function(h, i) {
+    const key = canonicalKey(h);
+    if (preserveExisting[key]) return;
+    if (incoming[key] === undefined) return;
+
+    const incomingValue = incoming[key];
+    const currentValue = current[key];
+    const incomingText = String(incomingValue || '').trim();
+    const currentText = String(currentValue || '').trim();
+    if (!incomingText) return;
+
+    const shouldReplace = !currentText ||
+      key === "derniere_modification" ||
+      key === "gmail_message_id" ||
+      key === "url_email_origine" ||
+      (key === "message_original" && incomingText.length > currentText.length) ||
+      (key === "notes" && incomingText.length > currentText.length);
+
+    if (shouldReplace) {
+      const cell = sheet.getRange(rowIndex, i + 1);
+      if (key === "date_evenement") cell.setNumberFormat("@");
+      cell.setValue(incomingValue);
+    }
+  });
 }
 
 function findDuplicateDemand(sheet, headers, demandIds, gmailThreadId) {
