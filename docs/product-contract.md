@@ -245,6 +245,7 @@ Actions Make avec `make_token` :
 Contraintes backend :
 
 - `checkDuplicate` est la source commune d'anti-doublon pour Make.
+- Tous les modules HTTP Make qui appellent Apps Script doivent avoir `Follow redirect` activé. Sinon Make reçoit seulement une réponse Google `302 Moved Temporarily` au lieu du JSON backend, et les champs comme `count` deviennent inexploitables.
 - `upsertWixDemand` doit créer ou fusionner les doublons Wix rapprochés.
 - `updateThreadFollowup` rattache par `gmail_thread_id`.
 - `updateWixFollowup` rattache par `gmail_thread_id`, puis fallback dernier `WIX-` par email.

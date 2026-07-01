@@ -385,6 +385,11 @@
             "name": "parseResponse",
             "type": "boolean",
             "label": "Parse response"
+          },
+          {
+            "name": "followRedirect",
+            "type": "boolean",
+            "label": "Follow redirect"
           }
         ]
       }
