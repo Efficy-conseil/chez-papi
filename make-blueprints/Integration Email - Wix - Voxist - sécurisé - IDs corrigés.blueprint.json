@@ -1061,6 +1061,41 @@
                       "a": "{{1.subject}}",
                       "b": "DEVIS VALIDE",
                       "o": "text:notcontain"
+                    },
+                    {
+                      "a": "{{ifempty(60.data.count; 0)}}",
+                      "b": "0",
+                      "o": "number:greater"
+                    },
+                    {
+                      "a": "{{1.fromEmail}}",
+                      "b": "message@voxist.com",
+                      "o": "text:notequal"
+                    },
+                    {
+                      "a": "{{1.fromEmail}}",
+                      "b": "notifications@wix-forms.com",
+                      "o": "text:notequal"
+                    },
+                    {
+                      "a": "{{1.fromEmail}}",
+                      "b": "demande.chezpapimaisongourmande@gmail.com",
+                      "o": "text:notequal"
+                    },
+                    {
+                      "a": "{{1.fromEmail}}",
+                      "b": "chezpapimaisongourmande@gmail.com",
+                      "o": "text:notequal"
+                    },
+                    {
+                      "a": "{{1.fullTextBody}}",
+                      "b": "VOXIST",
+                      "o": "text:notcontain"
+                    },
+                    {
+                      "a": "{{1.subject}}",
+                      "b": "vous a laissé un message",
+                      "o": "text:notcontain"
                     }
                   ]
                 ]
@@ -3650,6 +3685,76 @@
                               "b": "lendemain de mariage",
                               "o": "text:contain"
                             }
+                          ],
+                          [
+                            {
+                              "a": "{{28.`$1`}}",
+                              "b": "renseignements",
+                              "o": "text:contain"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{28.`$1`}}",
+                              "b": "renseignement",
+                              "o": "text:contain"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{28.`$1`}}",
+                              "b": "formules",
+                              "o": "text:contain"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{28.`$1`}}",
+                              "b": "formule",
+                              "o": "text:contain"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{28.`$1`}}",
+                              "b": "à la carte",
+                              "o": "text:contain"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{28.`$1`}}",
+                              "b": "a la carte",
+                              "o": "text:contain"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{28.`$1`}}",
+                              "b": "quarantaine",
+                              "o": "text:contain"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{28.`$1`}}",
+                              "b": "18 ans",
+                              "o": "text:contain"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{28.`$1`}}",
+                              "b": "dix-huit ans",
+                              "o": "text:contain"
+                            }
+                          ],
+                          [
+                            {
+                              "a": "{{28.`$1`}}",
+                              "b": "prestations",
+                              "o": "text:contain"
+                            }
                           ]
                         ]
                       },
@@ -3664,7 +3769,7 @@
                           },
                           {
                             "role": "user",
-                            "content": "Source : Voxist\nCanal : Téléphone\nDate de réception : {{1.internalDate}}\nTéléphone appelant : {{replace(11.telephone_e164; 33; \"0\")}}\nTranscription Voxist : {{28.`$1`}}\n\nRègles spécifiques Voxist :\n- canal = Téléphone ; source = Voxist ; email_client = \"\".\n- statut = À rappeler si le téléphone est présent, sinon À rappeler.\n- message_original = transcription complète.\n- send_ack = false ; ack_mode = \"\" ; archive_label = Historique_Voxist.\n\nRègle resume_court :\n- resume_court est obligatoire.\n- Il doit résumer le message vocal en 1 phrase courte.\n- Exemple : \"Message vocal pour une demande de devis mariage à Grans le 20 juillet 2026 pour environ 80 personnes. À rappeler.\"\n\n\nFiltrage métier Voxist :\n- is_demande = false si le message est personnel, familial, amical, fournisseur, erreur de numéro, spam ou non lié à une prestation traiteur.\n- is_demande = true uniquement si le message concerne une demande client ou prospect pour un événement, repas, devis, buffet, cocktail, mariage, baptême, anniversaire, entreprise, brunch, réception ou prestation alimentaire.\n- En cas de doute mais avec indice professionnel ou événementiel, is_demande = true et notes = \"Demande potentielle à vérifier\".\n- En cas de doute sans indice traiteur, is_demande = false.\n- Si is_demande = false : canal = \"Téléphone\", source = \"Voxist\", statut = \"\", send_ack = false, ack_mode = \"\", archive_label = \"Hors_Scope_Make\".\n",
+                            "content": "Source : Voxist\nCanal : Téléphone\nDate de réception : {{1.internalDate}}\nTéléphone appelant : {{replace(11.telephone_e164; 33; \"0\")}}\nTranscription Voxist : {{28.`$1`}}\n\nRègles spécifiques Voxist :\n- canal = Téléphone ; source = Voxist ; email_client = \"\".\n- statut = À rappeler si le téléphone est présent, sinon À rappeler.\n- message_original = transcription complète.\n- send_ack = false ; ack_mode = \"\" ; archive_label = Historique_Voxist.\n\nRègle resume_court :\n- resume_court est obligatoire.\n- Il doit résumer le message vocal en 1 phrase courte.\n- Exemple : \"Message vocal pour une demande de devis mariage à Grans le 20 juillet 2026 pour environ 80 personnes. À rappeler.\"\n\n\nFiltrage métier Voxist :\n- is_demande = false si le message est personnel, familial, amical, fournisseur, erreur de numéro, spam ou non lié à une prestation traiteur.\n- is_demande = true uniquement si le message concerne une demande client ou prospect pour un événement, repas, devis, buffet, cocktail, mariage, baptême, anniversaire, entreprise, brunch, réception ou prestation alimentaire.\n- Les formulations \"prendre des renseignements\", \"vos prestations\", \"formules à la carte\", \"une quarantaine de personnes\", \"18 ans de mon fils\" ou une date comme \"12 septembre\" sont des indices forts de vraie demande traiteur : is_demande=true.\n- Exemple obligatoire à classer is_demande=true : \"prendre des renseignements sur vos prestations, savoir si vous faites des formules à la carte, pour une quarantaine de personnes, pour les 18 ans de mon fils fixé au 12 septembre\". Type d’événement = Anniversaire, statut = À rappeler.\n- En cas de doute mais avec indice professionnel ou événementiel, is_demande = true et notes = \"Demande potentielle à vérifier\".\n- En cas de doute sans indice traiteur, is_demande = false.\n- Si is_demande = false : canal = \"Téléphone\", source = \"Voxist\", statut = \"\", send_ack = false, ack_mode = \"\", archive_label = \"Hors_Scope_Make\".\n",
                             "imageDetail": "auto"
                           }
                         ],
@@ -6142,7 +6247,7 @@
                           },
                           {
                             "role": "user",
-                            "content": "Source : Voxist\nCanal : Téléphone\nDate de réception : {{1.internalDate}}\nTéléphone brut détecté : {{11.telephone_raw}}\n\nTranscription audio :\n{{7.text.text}}\n\nEmail Voxist brut limité :\n{{substring(1.fullTextBody; 0; 1500)}}\n\nRègles de qualification :\n- is_demande = true si le message concerne une demande client ou prospect pour Chez Papi Maison Gourmande.\n- Exemples à accepter : devis, prestation traiteur, événement, mariage, baptême, anniversaire, buffet, cocktail, brunch, repas, petit déjeuner, déjeuner, dîner, réception, entreprise, séminaire, convives, plateau repas.\n- is_demande = false si message personnel, familial, amical, fournisseur, erreur de numéro, spam, publicité, rappel sans contexte ou message non lié à une prestation traiteur.\n- Si le message est incomplet mais contient un indice clair de demande professionnelle ou événementielle, mettre is_demande = true.\n- Si le message dit seulement \"rappelle-moi\" sans indice traiteur ou événementiel, mettre is_demande = false.\n- canal = \"Téléphone\" ; source = \"Voxist\" ; send_ack = false ; ack_mode = \"\".\n- Si is_demande = true : statut = \"À rappeler\", archive_label = \"Historique_Voxist\", resume_court = résumé très court du besoin potentiel.\n- Si is_demande = false : statut = \"\", archive_label = \"Hors_Scope_Make\", resume_court = \"\", message_original = résumé très court du message hors scope.\n- notes doit contenir la raison courte de qualification, maximum 180 caractères.",
+                            "content": "Source : Voxist\nCanal : Téléphone\nDate de réception : {{1.internalDate}}\nTéléphone brut détecté : {{11.telephone_raw}}\n\nTranscription audio :\n{{7.text.text}}\n\nEmail Voxist brut limité :\n{{substring(1.fullTextBody; 0; 1500)}}\n\nRègles de qualification :\n- is_demande = true si le message concerne une demande client ou prospect pour Chez Papi Maison Gourmande.\n- Exemples à accepter : devis, renseignements sur prestations, formules à la carte, prestation traiteur, événement, mariage, baptême, anniversaire, 18 ans, buffet, cocktail, brunch, repas, petit déjeuner, déjeuner, dîner, réception, entreprise, séminaire, convives, quarantaine de personnes, plateau repas.\n- is_demande = false si message personnel, familial, amical, fournisseur, erreur de numéro, spam, publicité, rappel sans contexte ou message non lié à une prestation traiteur.\n- Si le message est incomplet mais contient un indice clair de demande professionnelle ou événementielle, mettre is_demande = true.\n- Si le message dit seulement \"rappelle-moi\" sans indice traiteur ou événementiel, mettre is_demande = false.\n- canal = \"Téléphone\" ; source = \"Voxist\" ; send_ack = false ; ack_mode = \"\".\n- Si is_demande = true : statut = \"À rappeler\", archive_label = \"Historique_Voxist\", resume_court = résumé très court du besoin potentiel.\n- Si is_demande = false : statut = \"\", archive_label = \"Hors_Scope_Make\", resume_court = \"\", message_original = résumé très court du message hors scope.\n- notes doit contenir la raison courte de qualification, maximum 180 caractères.",
                             "imageDetail": "auto"
                           }
                         ],
@@ -7600,7 +7705,7 @@
                                   },
                                   {
                                     "role": "user",
-                                    "content": "Source : Voxist\nCanal : Téléphone\nDate de réception : {{1.internalDate}}\nTéléphone appelant : {{replace(11.telephone_e164; 33; \"0\")}}\nTranscription issue du fichier audio : {{7.text.text}}\n\nRègles spécifiques Voxist :\n- canal = Téléphone ; source = Voxist ; email_client = \"\".\n- statut = À rappeler si le téléphone est présent, sinon À rappeler.\n- message_original = transcription complète.\n- send_ack = false ; ack_mode = \"\" ; archive_label = Historique_Voxist.\n\nRègle resume_court :\n- resume_court est obligatoire.\n- Il doit résumer le message vocal en 1 phrase courte.\n- Exemple : \"Message vocal pour une demande de devis mariage à Grans le 20 juillet 2026 pour environ 80 personnes. À rappeler.\"\n\n\nFiltrage métier Voxist :\n- is_demande = false si le message est personnel, familial, amical, fournisseur, erreur de numéro, spam ou non lié à une prestation traiteur.\n- is_demande = true uniquement si le message concerne une demande client ou prospect pour un événement, repas, devis, buffet, cocktail, mariage, baptême, anniversaire, entreprise, brunch, réception ou prestation alimentaire.\n- En cas de doute mais avec indice professionnel ou événementiel, is_demande = true et notes = \"Demande potentielle à vérifier\".\n- En cas de doute sans indice traiteur, is_demande = false.\n- Si is_demande = false : canal = \"Téléphone\", source = \"Voxist\", statut = \"\", send_ack = false, ack_mode = \"\", archive_label = \"Hors_Scope_Make\".\n",
+                                    "content": "Source : Voxist\nCanal : Téléphone\nDate de réception : {{1.internalDate}}\nTéléphone appelant : {{replace(11.telephone_e164; 33; \"0\")}}\nTranscription issue du fichier audio : {{7.text.text}}\n\nRègles spécifiques Voxist :\n- canal = Téléphone ; source = Voxist ; email_client = \"\".\n- statut = À rappeler si le téléphone est présent, sinon À rappeler.\n- message_original = transcription complète.\n- send_ack = false ; ack_mode = \"\" ; archive_label = Historique_Voxist.\n\nRègle resume_court :\n- resume_court est obligatoire.\n- Il doit résumer le message vocal en 1 phrase courte.\n- Exemple : \"Message vocal pour une demande de devis mariage à Grans le 20 juillet 2026 pour environ 80 personnes. À rappeler.\"\n\n\nFiltrage métier Voxist :\n- is_demande = false si le message est personnel, familial, amical, fournisseur, erreur de numéro, spam ou non lié à une prestation traiteur.\n- is_demande = true uniquement si le message concerne une demande client ou prospect pour un événement, repas, devis, buffet, cocktail, mariage, baptême, anniversaire, entreprise, brunch, réception ou prestation alimentaire.\n- Les formulations \"prendre des renseignements\", \"vos prestations\", \"formules à la carte\", \"une quarantaine de personnes\", \"18 ans de mon fils\" ou une date comme \"12 septembre\" sont des indices forts de vraie demande traiteur : is_demande=true.\n- Exemple obligatoire à classer is_demande=true : \"prendre des renseignements sur vos prestations, savoir si vous faites des formules à la carte, pour une quarantaine de personnes, pour les 18 ans de mon fils fixé au 12 septembre\". Type d’événement = Anniversaire, statut = À rappeler.\n- En cas de doute mais avec indice professionnel ou événementiel, is_demande = true et notes = \"Demande potentielle à vérifier\".\n- En cas de doute sans indice traiteur, is_demande = false.\n- Si is_demande = false : canal = \"Téléphone\", source = \"Voxist\", statut = \"\", send_ack = false, ack_mode = \"\", archive_label = \"Hors_Scope_Make\".\n",
                                     "imageDetail": "auto"
                                   }
                                 ],
