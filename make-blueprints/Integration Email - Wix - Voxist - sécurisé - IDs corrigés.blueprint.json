@@ -3291,11 +3291,6 @@
                       "o": "text:equal"
                     },
                     {
-                      "a": "{{1.fullTextBody}}",
-                      "b": "VOXIST",
-                      "o": "text:contain"
-                    },
-                    {
                       "a": "{{ifempty(60.data.count; 0)}}",
                       "b": "0",
                       "o": "number:equal"

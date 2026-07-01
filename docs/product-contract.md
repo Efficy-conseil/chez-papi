@@ -378,6 +378,7 @@ Contraintes de prévention :
 
 - Gmail ne doit pas exclure `message@voxist.com` de l'Inbox.
 - Make doit traiter Voxist avant toute route email générique.
+- La route principale Voxist doit se baser sur `fromEmail = message@voxist.com`, pas sur la présence exacte du mot `VOXIST` dans `fullTextBody`.
 - Voxist doit être exclu des routes Email direct et Relance email.
 - `checkDuplicate` Voxist doit ignorer `gmail_thread_id` et `legacy_id` basés sur le thread.
 - Les mots `renseignements`, `prestations`, `formules`, `à la carte`, `quarantaine`, `18 ans` doivent qualifier le message.
