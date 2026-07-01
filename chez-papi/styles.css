@@ -798,6 +798,25 @@ body {
   border-bottom: 1px solid var(--gold-lt);
 }
 
+.home-see-more {
+  display: none;
+  width: 100%;
+  margin-top: 10px;
+  padding: 7px 10px;
+  border: 0;
+  border-top: 1px solid var(--warm);
+  background: transparent;
+  color: var(--gold);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.home-see-more:hover {
+  color: var(--brown-dk);
+}
+
 /* TABLE */
 .tbl {
   width: 100%;
@@ -1435,6 +1454,7 @@ body.is-saving-event::after {
 .row-prio td:first-child    { border-left: 3px solid var(--gold);     padding-left: 5px; }
 .row-urgent { background: rgba(192,69,58,.04); }
 .row-prio   { background: rgba(184,137,42,.04); }
+.row-enterprise { font-weight: 700; }
 .tbl-empty code { background: var(--warm); padding: 1px 5px; border-radius: 3px; font-size: 11px; }
 
 /* ── MODAL ── */

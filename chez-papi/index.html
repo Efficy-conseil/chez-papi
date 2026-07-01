@@ -27,7 +27,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
 
-<link rel="stylesheet" href="styles.css?v=2.35">
+<link rel="stylesheet" href="styles.css?v=2.36">
 </head>
 
 <body>
@@ -204,7 +204,7 @@
 
 <!-- Dernières demandes (pleine largeur) -->
 <div class="card" style="margin-bottom:16px;">
-<div class="card-title">Dernières demandes <span class="card-title-action" onclick="showPanel('devis',document.querySelector('[data-panel=devis]'))">Plus</span></div>
+<div class="card-title">Dernières demandes <span class="card-title-action" onclick="showPanel('devis',document.querySelector('[data-panel=devis]'))">Voir tout</span></div>
 <div class="tbl-wrap home-table-wrap">
 <table class="tbl tbl-sm home-recent-table">
 <thead>
@@ -221,13 +221,14 @@
 </tbody>
 </table>
 </div>
+<button class="home-see-more" id="new-demandes-more" type="button" onclick="showMoreHome('new')">Voir plus…</button>
 </div>
 
 <div class="grid2">
 
 <!-- Demandes en cours (Contacté / Devis envoyé) -->
 <div class="card">
-<div class="card-title">Demandes en cours <span class="card-title-action" onclick="showPanel('devis',document.querySelector('[data-panel=devis]'))">Plus</span></div>
+<div class="card-title">Demandes en cours <span class="card-title-action" onclick="showPanel('devis',document.querySelector('[data-panel=devis]'))">Voir tout</span></div>
 <div class="tbl-wrap home-table-wrap">
 <table class="tbl tbl-sm home-pipeline-table">
 <thead>
@@ -242,14 +243,16 @@
 </tbody>
 </table>
 </div>
+<button class="home-see-more" id="upcoming-more" type="button" onclick="showMoreHome('pipeline')">Voir plus…</button>
 </div>
 
 <!-- Événements confirmés -->
 <div class="card">
-<div class="card-title">Événements confirmés <span class="card-title-action" onclick="showPanel('clients',document.querySelector('[data-panel=clients]'))">Plus</span></div>
+<div class="card-title">Événements confirmés <span class="card-title-action" onclick="showPanel('clients',document.querySelector('[data-panel=clients]'))">Voir tout</span></div>
 <div class="tbl-wrap home-table-wrap" id="recent-activity">
 <div class="act-time" style="padding:12px 0;color:var(--muted);">Chargement…</div>
 </div>
+<button class="home-see-more" id="confirmed-more" type="button" onclick="showMoreHome('confirmed')">Voir plus…</button>
 </div>
 </div>
 
@@ -553,7 +556,7 @@
 </div>
 </div>
 
-<script src="app.js?v=2.35"></script>
+<script src="app.js?v=2.36"></script>
 
 <!-- ── BOTTOM NAVIGATION (mobile uniquement) ── -->
 <nav class="bottom-nav" id="bottom-nav">

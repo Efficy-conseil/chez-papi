@@ -20,7 +20,8 @@ Le frontend est un tableau de bord de suivi des demandes et prestations d'un tra
 - consulter un agenda mensuel ;
 - rechercher, filtrer et exporter l'historique ;
 - analyser l'origine et la conversion des demandes ;
-- ouvrir les ressources Gmail et Google Drive associées.
+- ouvrir les ressources Gmail et Google Drive associées ;
+- déclencher via le backend la création ou la mise à jour d'un événement Google Calendar lorsqu'une demande passe au statut `Événement confirmé`.
 
 Les créations automatiques Wix, Voxist, Email et Tally sont réalisées en amont par Make et Apps Script. Le frontend affiche et modifie le résultat de ces traitements.
 
@@ -145,26 +146,31 @@ Chaque indicateur ouvre une fenêtre détaillée. Les lignes de cette fenêtre o
 
 ### 5.3 Dernières demandes
 
-- Affiche au maximum six demandes actives aux statuts `Nouvelle demande` ou `À rappeler`.
+- Affiche initialement dix demandes actives aux statuts `Nouvelle demande` ou `À rappeler`.
 - Trie les demandes par date de réception décroissante.
 - Affiche date d'événement, client, résumé, ancienneté de réception et statut.
 - Colore l'ancienneté selon qu'elle est récente, à surveiller ou ancienne.
 - Signale les informations manquantes.
 - Permet d'ouvrir la fiche et de modifier le statut.
+- Un libellé `Voir plus…` en bas de section permet d'en afficher dix de plus à chaque clic.
+- Le lien `Voir tout` ouvre la section complète correspondante.
 
 ### 5.4 Demandes en cours
 
-- Affiche au maximum six dossiers `Devis à préparer` ou `Devis envoyé`.
+- Affiche initialement dix dossiers `Devis à préparer` ou `Devis envoyé`.
 - Trie les dossiers par date d'événement croissante.
 - Affiche date, client et statut.
-- Met en évidence la proximité de la date : moins de 7 jours puis de 7 à 30 jours pour les demandes ordinaires ; seuils de 15 et 45 jours pour les événements `Entreprise`.
+- Un libellé `Voir plus…` en bas de section permet d'en afficher dix de plus à chaque clic.
+- Le lien `Voir tout` ouvre la section complète correspondante.
+- Met en évidence la proximité de la date : moins de 7 jours puis de 7 à 30 jours pour les demandes ordinaires ; mise en gras pour les événements `Entreprise`.
 
 ### 5.5 Événements confirmés
 
-- Affiche au maximum cinq événements confirmés non passés.
+- Affiche initialement dix événements confirmés non passés.
 - Trie les événements par date croissante.
 - Affiche date, client et statut.
-- Le lien `Plus` ouvre la section complète correspondante.
+- Un libellé `Voir plus…` en bas de section permet d'en afficher dix de plus à chaque clic.
+- Le lien `Voir tout` ouvre la section complète correspondante.
 
 ## 6. Demandes en cours — pipeline
 
@@ -197,7 +203,7 @@ Un clic sur la carte ouvre la fiche. Les clics sur coordonnées, liens ou statut
 - Affiche client, résumé, date, statut, coordonnées et liens Gmail/Drive.
 - Permet l'ouverture de la fiche et le changement rapide de statut.
 
-Chaque prestation possède une liste de tâches :
+Chaque prestation possède une liste de tâches. Cette fonctionnalité devra être réévaluée ultérieurement selon l'usage réel du client :
 
 - ajout par le bouton `+` ou la touche Entrée ;
 - tâche cochable et décochable ;
@@ -410,7 +416,6 @@ La fiche en cours d'édition est exclue de cette comparaison.
 - Les identifiants sont conservés dans le navigateur pour permettre les appels et notifications en arrière-plan.
 - La disponibilité des notifications périodiques dépend du navigateur et du système.
 - Il n'existe pas encore de tests fonctionnels automatisés dans un navigateur.
-- La constante de seuil de chiffre d'affaires à 3 000 € existe dans le code mais n'influence actuellement aucun classement affiché.
 
 ## 15. Liste de contrôle de non-régression
 

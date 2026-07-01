@@ -958,6 +958,27 @@ function renderAll() {
 
 // ── RENDER: DASHBOARD ──
 
+const HOME_PAGE_SIZE = 10;
+const homeDisplayLimits = {
+  new: HOME_PAGE_SIZE,
+  pipeline: HOME_PAGE_SIZE,
+  confirmed: HOME_PAGE_SIZE
+};
+
+function showMoreHome(section) {
+  if (!(section in homeDisplayLimits)) return;
+  homeDisplayLimits[section] += HOME_PAGE_SIZE;
+  renderDashboard();
+}
+
+function updateHomeSeeMore(buttonId, total, visible) {
+  const button = document.getElementById(buttonId);
+  if (!button) return;
+  const remaining = Math.max(0, total - visible);
+  button.style.display = remaining > 0 ? 'block' : 'none';
+  button.textContent = 'Voir plus…';
+}
+
 function renderDashboard() {
   const currentYear = new Date().getFullYear();
   const CA_STATUTS = ['Événement confirmé', 'Événement terminé'];
@@ -988,10 +1009,11 @@ function renderDashboard() {
   set('kpi-leads-val',       nouveaux.length || '—');
 
   // Dernières demandes
-  const newDemandes = appData
+  const allNewDemandes = appData
     .filter(e => !isEventPast(e) && (e.statut === 'Nouvelle demande' || e.statut === 'À rappeler'))
-    .sort((a, b) => dateTimeSortValue(b.date_reception) - dateTimeSortValue(a.date_reception))
-    .slice(0, 6);
+    .sort((a, b) => dateTimeSortValue(b.date_reception) - dateTimeSortValue(a.date_reception));
+  const newDemandes = allNewDemandes.slice(0, homeDisplayLimits.new);
+  updateHomeSeeMore('new-demandes-more', allNewDemandes.length, newDemandes.length);
 
   const newTbody = document.getElementById('new-demandes-tbody');
   if (newTbody) {
@@ -1020,10 +1042,11 @@ function renderDashboard() {
 
   // Demandes en cours (Devis à préparer / Devis envoyé)
   const PIPELINE_SCOPE_HOME = ['Devis à préparer', 'Devis envoyé'];
-  const demandesHome = actives
+  const allDemandesHome = actives
     .filter(e => PIPELINE_SCOPE_HOME.includes(e.statut))
-    .sort(compareEventDatesAsc)
-    .slice(0, 6);
+    .sort(compareEventDatesAsc);
+  const demandesHome = allDemandesHome.slice(0, homeDisplayLimits.pipeline);
+  updateHomeSeeMore('upcoming-more', allDemandesHome.length, demandesHome.length);
 
   const tbody = document.getElementById('upcoming-tbody');
   if (tbody) {
@@ -1039,15 +1062,10 @@ function renderDashboard() {
         const diffDays = d ? Math.ceil((d.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24)) : 999;
         
         const isEnterprise = String(e.type_evenement).trim().toLowerCase() === 'entreprise';
-        let urgClass = '';
-        if (d) {
-          if (!isEnterprise) {
-            if (diffDays < 7) urgClass = 'row-urgent';
-            else if (diffDays >= 7 && diffDays <= 30) urgClass = 'row-prio';
-          } else {
-            if (diffDays <= URGENCE_JOURS_URGENT) urgClass = 'row-urgent';
-            else if (diffDays <= URGENCE_JOURS_PRIORITAIRE) urgClass = 'row-prio';
-          }
+        let urgClass = isEnterprise ? 'row-enterprise' : '';
+        if (d && !isEnterprise) {
+          if (diffDays < 7) urgClass = 'row-urgent';
+          else if (diffDays >= 7 && diffDays <= 30) urgClass = 'row-prio';
         }
 
         const warningBadge = missingInfoBadge(e, true);
@@ -1063,10 +1081,11 @@ function renderDashboard() {
   }
 
   // Prestations en cours (Événement confirmé)
-  const prestationsHome = actives
+  const allPrestationsHome = actives
     .filter(e => e.statut === 'Événement confirmé')
-    .sort(compareEventDatesAsc)
-    .slice(0, 5);
+    .sort(compareEventDatesAsc);
+  const prestationsHome = allPrestationsHome.slice(0, homeDisplayLimits.confirmed);
+  updateHomeSeeMore('confirmed-more', allPrestationsHome.length, prestationsHome.length);
 
   const actEl = document.getElementById('recent-activity');
   if (actEl) {
@@ -1089,10 +1108,6 @@ function renderDashboard() {
 }
 
 // ── RENDER: PIPELINE (STATUT DES DEMANDES) ──
-
-const URGENCE_JOURS_URGENT = 15;
-const URGENCE_JOURS_PRIORITAIRE = 45;
-const URGENCE_SEUIL_CA = 3000;
 
 const PIPELINE_COLS = [
   { label: 'Entreprise',       id: 'entreprise' },

@@ -366,7 +366,7 @@
                 "gzip": true,
                 "useMtls": false,
                 "contentType": "application/json",
-                "data": "{\"action\":\"checkDuplicate\",\"make_token\":\"cp_make_followup_2026_06\",\"match\":{\"id_demande\":\"{{if((1.fromEmail = \\) + \"notifications@wix-forms.com\\\"; \\ + \"WIX-\\\"; if((1.fromEmail = \\) + \"message@voxist.com\\\"; \\ + \"VOXIST-\\\"; \\ + \"GMAIL-\\\"))}}{{if((1.fromEmail = \\) + \"notifications@wix-forms.com\\\"; 1.id; if((1.fromEmail = \\) + \"message@voxist.com\\\"; 1.id; 1.threadId))}}\",\"legacy_id\":\"{{1.threadId}}\",\"gmail_thread_id\":\"{{1.threadId}}\"}}",
+                "data": "{\"action\":\"checkDuplicate\",\"make_token\":\"cp_make_followup_2026_06\",\"match\":{\"id_demande\":\"{{if(1.fromEmail = \\\"notifications@wix-forms.com\\\"; \\\"WIX-\\\"; if(1.fromEmail = \\\"message@voxist.com\\\"; \\\"VOXIST-\\\"; \\\"GMAIL-\\\"))}}{{if(1.fromEmail = \\\"notifications@wix-forms.com\\\"; 1.id; if(1.fromEmail = \\\"message@voxist.com\\\"; 1.id; 1.threadId))}}\",\"legacy_id\":\"{{1.threadId}}\",\"gmail_thread_id\":\"{{1.threadId}}\"}}",
                 "followAllRedirects": true
             },
             "metadata": {
@@ -1788,6 +1788,39 @@
                                     }
                                 ],
                                 "advanced": true
+                            }
+                        },
+                        {
+                            "id": 87,
+                            "module": "google-email:moveAnEmail",
+                            "version": 4,
+                            "parameters": {
+                                "__IMTCONN__": 7978131
+                            },
+                            "filter": null,
+                            "mapper": {
+                                "to": "Label_2648810022094724776",
+                                "from": "INBOX",
+                                "messageId": "{{1.id}}"
+                            },
+                            "metadata": {
+                                "designer": {
+                                    "x": 1200,
+                                    "y": 600,
+                                    "name": "Archiver la relance dans Historique_Email"
+                                },
+                                "restore": {
+                                    "expect": {
+                                        "to": {
+                                            "mode": "chose",
+                                            "label": "Historique_Email"
+                                        },
+                                        "from": {
+                                            "mode": "chose",
+                                            "label": "Inbox"
+                                        }
+                                    }
+                                }
                             }
                         }
                     ]
@@ -5537,7 +5570,7 @@
                                                     "telephone": "{{61.telephone}}",
                                                     "email_client": "{{61.email_client}}",
                                                     "type_evenement": "{{61.type_evenement}}",
-                                                    "date_evenement": "{{61.date_evenement}}",
+                                                    "date_evenement": "{{ifempty(61.date_evenement; \"Inconnu / à compléter\")}}",
                                                     "heure_evenement": "{{61.heure_evenement}}",
                                                     "nb_convives": "{{61.nb_convives}}",
                                                     "lieu_prestation": "{{61.lieu_prestation}}",
@@ -9902,7 +9935,7 @@
                                                                     "telephone": "{{14.telephone}}",
                                                                     "email_client": "{{14.email_client}}",
                                                                     "type_evenement": "{{14.type_evenement}}",
-                                                                    "date_evenement": "{{14.date_evenement}}",
+                                                                    "date_evenement": "{{ifempty(14.date_evenement; \"Inconnu / à compléter\")}}",
                                                                     "heure_evenement": "{{14.heure_evenement}}",
                                                                     "nb_convives": "{{14.nb_convives}}",
                                                                     "lieu_prestation": "{{14.lieu_prestation}}",
@@ -11506,6 +11539,112 @@
                 {
                     "flow": [
                         {
+                            "id": 88,
+                            "module": "google-email:moveAnEmail",
+                            "version": 4,
+                            "parameters": {
+                                "__IMTCONN__": 7978131
+                            },
+                            "filter": {
+                                "name": "Wix déjà traité - archiver explicitement",
+                                "conditions": [
+                                    [
+                                        {
+                                            "a": "{{1.fromEmail}}",
+                                            "b": "notifications@wix-forms.com",
+                                            "o": "text:equal"
+                                        },
+                                        {
+                                            "a": "{{ifempty(60.data.count; 0)}}",
+                                            "b": "0",
+                                            "o": "number:greater"
+                                        }
+                                    ]
+                                ]
+                            },
+                            "mapper": {
+                                "to": "Label_39174335232504636",
+                                "from": "INBOX",
+                                "messageId": "{{1.id}}"
+                            },
+                            "metadata": {
+                                "designer": {
+                                    "x": 900,
+                                    "y": 2400,
+                                    "name": "Archiver doublon Wix"
+                                },
+                                "restore": {
+                                    "expect": {
+                                        "to": {
+                                            "mode": "chose",
+                                            "label": "Historique_Wix"
+                                        },
+                                        "from": {
+                                            "mode": "chose",
+                                            "label": "Inbox"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "flow": [
+                        {
+                            "id": 89,
+                            "module": "google-email:moveAnEmail",
+                            "version": 4,
+                            "parameters": {
+                                "__IMTCONN__": 7978131
+                            },
+                            "filter": {
+                                "name": "Voxist déjà traité - archiver explicitement",
+                                "conditions": [
+                                    [
+                                        {
+                                            "a": "{{1.fromEmail}}",
+                                            "b": "message@voxist.com",
+                                            "o": "text:equal"
+                                        },
+                                        {
+                                            "a": "{{ifempty(60.data.count; 0)}}",
+                                            "b": "0",
+                                            "o": "number:greater"
+                                        }
+                                    ]
+                                ]
+                            },
+                            "mapper": {
+                                "to": "Label_5869457419717567046",
+                                "from": "INBOX",
+                                "messageId": "{{1.id}}"
+                            },
+                            "metadata": {
+                                "designer": {
+                                    "x": 900,
+                                    "y": 2550,
+                                    "name": "Archiver doublon Voxist"
+                                },
+                                "restore": {
+                                    "expect": {
+                                        "to": {
+                                            "mode": "chose",
+                                            "label": "Historique_Voxist"
+                                        },
+                                        "from": {
+                                            "mode": "chose",
+                                            "label": "Inbox"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "flow": [
+                        {
                             "id": 37,
                             "module": "openai-gpt-3:CreateCompletion",
                             "version": 1,
@@ -11513,8 +11652,25 @@
                                 "__IMTCONN__": 8294927
                             },
                             "filter": {
-                                "name": "Route Email direct - mots-clés métier uniquement",
+                                "name": "Route Email direct - analyse complète hors sources techniques",
                                 "conditions": [
+                                    [
+                                        {
+                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
+                                            "b": "0",
+                                            "o": "number:equal"
+                                        },
+                                        {
+                                            "a": "{{1.subject}}",
+                                            "b": "Chez Papi Maison gourmande vous a envoyé un nouveau message",
+                                            "o": "text:notcontain"
+                                        },
+                                        {
+                                            "a": "{{1.subject}}",
+                                            "b": "DEVIS VALIDE",
+                                            "o": "text:notcontain"
+                                        }
+                                    ],
                                     [
                                         {
                                             "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
@@ -15803,7 +15959,7 @@
                                                     "telephone": "{{38.telephone}}",
                                                     "email_client": "{{38.email_client}}",
                                                     "type_evenement": "{{38.type_evenement}}",
-                                                    "date_evenement": "{{38.date_evenement}}",
+                                                    "date_evenement": "{{ifempty(38.date_evenement; \"Inconnu / à compléter\")}}",
                                                     "heure_evenement": "{{38.heure_evenement}}",
                                                     "nb_convives": "{{38.nb_convives}}",
                                                     "lieu_prestation": "{{38.lieu_prestation}}",

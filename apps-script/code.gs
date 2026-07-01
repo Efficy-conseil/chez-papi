@@ -249,6 +249,9 @@ function addRow(rowData) {
   if (!clean.date_reception) {
     clean.date_reception = new Date();
   }
+  if (!clean.date_evenement) {
+    clean.date_evenement = "Inconnu / à compléter";
+  }
   
   clean.derniere_modification = new Date();
   
@@ -285,6 +288,7 @@ function upsertWixDemand(rowData, options) {
   if (!clean.id_demande) throw new Error("id_demande manquant");
   if (!clean.wix_form_fingerprint) throw new Error("wix_form_fingerprint manquant");
   if (!clean.date_reception) clean.date_reception = new Date();
+  if (!clean.date_evenement) clean.date_evenement = "Inconnu / à compléter";
   clean.derniere_modification = new Date();
 
   const windowMinutes = Math.max(1, Number(options.merge_window_minutes || 15));

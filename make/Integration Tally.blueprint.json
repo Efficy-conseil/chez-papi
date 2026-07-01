@@ -572,7 +572,7 @@
                     "nb_convives": "{{1.fieldsById.question_K0XgXD}}",
                     "email_client": "{{1.fieldsById.question_bOaDa7}}",
                     "budget_estime": "{{1.fieldsById.question_J0ygyX}}",
-                    "date_evenement": "{{1.fieldsById.question_BBvgv1}}",
+                    "date_evenement": "{{ifempty(formatDate(1.fieldsById.question_BBvgv1; \"DD/MM/YYYY\"); \"Inconnu / à compléter\")}}",
                     "date_reception": "{{1.createdAt}}",
                     "type_evenement": "{{1.fieldsById.question_kZLpLZ}}",
                     "heure_evenement": "",

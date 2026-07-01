@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "check": "node scripts/check-project.mjs",
+    "audit:blueprints": "node scripts/audit-blueprints.mjs",
     "deploy:backend": "node scripts/deploy-apps-script.mjs"
   },
   "devDependencies": {

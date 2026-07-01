@@ -318,6 +318,7 @@ Avant toute modification :
 - Vérifier qu'aucune source métier ne peut finir sans route.
 - Pour toute modification structurelle de Make, disposer d'un export fonctionnel de référence et d'une procédure de retour arrière avant import.
 - Ne supprimer ou fusionner aucune route avant d'avoir couvert son comportement par des tests de caractérisation.
+- Utiliser `docs/make-regression-matrix.md` comme liste de contrôle pour toute modification Make.
 
 Après toute modification :
 
