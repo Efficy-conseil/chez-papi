@@ -253,6 +253,7 @@ Contraintes backend :
 - Le backend normalise les canaux autorisés.
 - Le backend normalise `date_evenement`.
 - Le backend force `date_evenement` en texte pour éviter les conversions Google Sheets.
+- Le backend force les lignes Google Sheets à 20 px et coupe le retour à la ligne automatique pour éviter les lignes très hautes.
 
 ## Dashboard frontend
 

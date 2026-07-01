@@ -14,11 +14,20 @@ function getSheet() {
   return SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
 }
 
+function onOpen() {
+  applyDefaultRowHeights(getSheet());
+}
+
+function onEdit(e) {
+  if (e && e.range) applyDefaultRowHeight(e.range.getSheet(), e.range.getRow());
+}
+
 const FRONTEND_URL = "https://efficy-conseil.github.io/chez-papi/";
 
 const AUTH_USER_PROP = "AUTH_USER";
 const AUTH_PASS_PROP = "AUTH_PASS";
 const MAKE_FOLLOWUP_TOKEN = "cp_make_followup_2026_06";
+const DEFAULT_ROW_HEIGHT_PX = 20;
 
 const ALLOWED_STATUSES = [
   "Nouvelle demande",
@@ -246,6 +255,7 @@ function addRow(rowData) {
   sheet.appendRow(headers.map(h => clean[canonicalKey(h)] ?? ''));
   clean._row = sheet.getLastRow();
   forceTextCell(sheet, headers, clean._row, "date_evenement", clean.date_evenement);
+  applyDefaultRowHeight(sheet, clean._row);
   
   // Synchroniser avec Google Calendar
   try {
@@ -281,6 +291,7 @@ function upsertWixDemand(rowData, options) {
   const duplicate = findRecentWixDuplicate(sheet, headers, clean.wix_form_fingerprint, clean.date_reception, windowMinutes);
   if (duplicate) {
     mergeWixDemandRow(sheet, headers, duplicate.rowIndex, clean);
+    applyDefaultRowHeight(sheet, duplicate.rowIndex);
     return ok({
       id_demande: duplicate.id_demande || clean.id_demande,
       row: duplicate.rowIndex,
@@ -294,6 +305,7 @@ function upsertWixDemand(rowData, options) {
   }));
   clean._row = sheet.getLastRow();
   forceTextCell(sheet, headers, clean._row, "date_evenement", clean.date_evenement);
+  applyDefaultRowHeight(sheet, clean._row);
   return ok({ id_demande: clean.id_demande, row: clean._row, created: true, merged: false });
 }
 
@@ -316,6 +328,7 @@ function updateRowById(idDemande, fields) {
       cell.setValue(clean[key]);
     }
   });
+  applyDefaultRowHeight(sheet, found.rowIndex);
 
   // CORRECTION : forcer l'écriture avant de relire la ligne pour la synchro Calendar
   SpreadsheetApp.flush();
@@ -360,6 +373,7 @@ function updateThreadFollowup(gmailThreadId, fields) {
       sheet.getRange(found.rowIndex, i + 1).setValue(clean[key]);
     }
   });
+  applyDefaultRowHeight(sheet, found.rowIndex);
 
   return ok({ updated: true, id_demande: found.id_demande || "", row: found.rowIndex });
 }
@@ -396,6 +410,7 @@ function updateWixFollowup(gmailThreadId, emailClient, fields) {
       sheet.getRange(found.rowIndex, i + 1).setValue(clean[key]);
     }
   });
+  applyDefaultRowHeight(sheet, found.rowIndex);
 
   return ok({
     updated: true,
@@ -438,6 +453,7 @@ function updateExistingDemandFollowup(match, fields) {
       sheet.getRange(found.rowIndex, i + 1).setValue(clean[key]);
     }
   });
+  applyDefaultRowHeight(sheet, found.rowIndex);
 
   return ok({ updated: true, id_demande: found.id_demande || "", row: found.rowIndex });
 }
@@ -515,9 +531,33 @@ function ensureSchemaHeaders(sheet) {
   const missing = SCHEMA_HEADERS.filter(function(key) {
     return !existing[key];
   });
-  if (!missing.length) return;
+  if (missing.length) {
+    sheet.getRange(1, headers.length + 1, 1, missing.length).setValues([missing]);
+  }
+  applyDefaultRowHeights(sheet);
+}
 
-  sheet.getRange(1, headers.length + 1, 1, missing.length).setValues([missing]);
+function applyDefaultRowHeights(sheet) {
+  const lastRow = Math.max(sheet.getLastRow(), 1);
+  const lastColumn = Math.max(sheet.getLastColumn(), 1);
+  sheet.getRange(1, 1, lastRow, lastColumn).setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
+  applyRowHeights(sheet, 1, lastRow);
+}
+
+function applyDefaultRowHeight(sheet, rowIndex) {
+  if (!rowIndex || rowIndex < 1) return;
+  const lastColumn = Math.max(sheet.getLastColumn(), 1);
+  sheet.getRange(rowIndex, 1, 1, lastColumn).setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
+  applyRowHeights(sheet, rowIndex, 1);
+}
+
+function applyRowHeights(sheet, startRow, rowCount) {
+  if (!rowCount || rowCount < 1) return;
+  if (typeof sheet.setRowHeightsForced === "function") {
+    sheet.setRowHeightsForced(startRow, rowCount, DEFAULT_ROW_HEIGHT_PX);
+    return;
+  }
+  sheet.setRowHeights(startRow, rowCount, DEFAULT_ROW_HEIGHT_PX);
 }
 
 function sanitizeFields(rawFields, isUpdate) {
