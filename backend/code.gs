@@ -373,16 +373,18 @@ function updateWixFollowup(gmailThreadId, emailClient, fields) {
 
 function updateExistingDemandFollowup(match, fields) {
   const email = String(match.email_client || '').trim().toLowerCase();
+  const name = normalizePersonName(match.nom_client);
   const dateEvenement = normalizeEventDateText(match.date_evenement);
-  if (!email) throw new Error("email_client manquant");
+  if (!email && !name) throw new Error("email_client ou nom_client manquant");
   if (!dateEvenement) throw new Error("date_evenement manquante");
 
   const sheet = getSheet();
   ensureSchemaHeaders(sheet);
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
-  const found = findLatestRowByEmailAndEventDate(sheet, headers, email, dateEvenement);
+  const found = (email ? findLatestRowByEmailAndEventDate(sheet, headers, email, dateEvenement) : null) ||
+    (name ? findLatestRowByNameAndEventDate(sheet, headers, name, dateEvenement) : null);
   if (!found) {
-    return ok({ updated: false, reason: "existing_demand_not_found", email_client: email, date_evenement: dateEvenement });
+    return ok({ updated: false, reason: "existing_demand_not_found", email_client: email, nom_client: name, date_evenement: dateEvenement });
   }
 
   const clean = sanitizeFields(fields || {}, true);
@@ -535,6 +537,15 @@ function normalizeBoolean(value) {
   return s === 'true' || s === 'vrai' || s === 'oui' || s === '1' || s === 'yes';
 }
 
+function normalizePersonName(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
 function isSafeBusinessUrl(value) {
   const s = String(value || '').trim();
   if (!s || s === '—') return true;
@@ -677,6 +688,36 @@ function findLatestRowByEmailAndEventDate(sheet, headers, emailClient, dateEvene
     const rowEmail = String(emails[i][0] || '').trim().toLowerCase();
     const rowDate = normalizeEventDateText(dateDisplays[i][0] || dates[i][0]);
     if (rowEmail === targetEmail && rowDate === targetDate) {
+      return {
+        rowIndex: i + 2,
+        id_demande: idCol > 0 ? String(ids[i][0] || '').trim() : ""
+      };
+    }
+  }
+  return null;
+}
+
+function findLatestRowByNameAndEventDate(sheet, headers, nomClient, dateEvenement) {
+  const nameCol = headers.findIndex(function(h) { return canonicalKey(h) === "nom_client"; }) + 1;
+  const dateCol = headers.findIndex(function(h) { return canonicalKey(h) === "date_evenement"; }) + 1;
+  const idCol = headers.findIndex(function(h) { return canonicalKey(h) === "id_demande"; }) + 1;
+  if (nameCol <= 0) throw new Error("Colonne nom_client introuvable");
+  if (dateCol <= 0) throw new Error("Colonne date_evenement introuvable");
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return null;
+
+  const targetName = normalizePersonName(nomClient);
+  const targetDate = normalizeEventDateText(dateEvenement);
+  const names = sheet.getRange(2, nameCol, lastRow - 1, 1).getValues();
+  const dates = sheet.getRange(2, dateCol, lastRow - 1, 1).getValues();
+  const dateDisplays = sheet.getRange(2, dateCol, lastRow - 1, 1).getDisplayValues();
+  const ids = idCol > 0 ? sheet.getRange(2, idCol, lastRow - 1, 1).getValues() : [];
+
+  for (var i = names.length - 1; i >= 0; i--) {
+    const rowName = normalizePersonName(names[i][0]);
+    const rowDate = normalizeEventDateText(dateDisplays[i][0] || dates[i][0]);
+    if (rowName === targetName && rowDate === targetDate) {
       return {
         rowIndex: i + 2,
         id_demande: idCol > 0 ? String(ids[i][0] || '').trim() : ""
