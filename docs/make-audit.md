@@ -1,6 +1,6 @@
 # Audit des blueprints Make
 
-Date de l'audit : 01/07/2026.
+Date de l'audit : 02/07/2026.
 
 Références : `docs/product-contract.md` et `docs/make-regression-matrix.md`.
 
@@ -17,6 +17,9 @@ Références : `docs/product-contract.md` et `docs/make-regression-matrix.md`.
 - Normalisation des dates inconnues vers `Inconnu / à compléter` pour Voxist, Email direct et Tally.
 - Normalisation de la date Tally vers `JJ/MM/AAAA` avant écriture.
 - Alignement du backend pour les créations manuelles et Wix sans date exploitable.
+- Passage de l'anti-doublon en mode strict : une réponse sans `count` ne vaut plus implicitement zéro et ne peut plus créer une ligne.
+- Suppression du chevauchement entre la route de suivi `count > 0` et la route d'analyse d'une nouvelle demande Email.
+- Ajout du fil Gmail du 30/06–02/07/2026 comme cas de non-régression : une réponse citant la demande initiale ne doit jamais recréer la demande.
 
 ## État par source
 
@@ -45,7 +48,7 @@ Références : `docs/product-contract.md` et `docs/make-regression-matrix.md`.
 
 - Le filtre de production impose `formId = Gx52AQ`.
 - L'anti-doublon utilise le backend Apps Script.
-- La création Sheets est filtrée sur `count` vide ou égal à zéro.
+- La création Sheets exige explicitement `count = 0` ; une réponse absente ou invalide bloque la création.
 - Aucune lecture Google Sheets n'est utilisée pour l'anti-doublon.
 
 ## Limites nécessitant un essai Make

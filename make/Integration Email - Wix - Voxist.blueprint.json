@@ -1519,7 +1519,7 @@
                                             "o": "text:notcontain"
                                         },
                                         {
-                                            "a": "{{ifempty(60.data.count; 0)}}",
+                                            "a": "{{60.data.count}}",
                                             "b": "0",
                                             "o": "number:greater"
                                         },
@@ -1849,7 +1849,7 @@
                                             "o": "text:contain"
                                         },
                                         {
-                                            "a": "{{ifempty(60.data.count; 0)}}",
+                                            "a": "{{60.data.count}}",
                                             "b": "0",
                                             "o": "number:equal"
                                         }
@@ -4079,7 +4079,7 @@
                                             "o": "text:equal"
                                         },
                                         {
-                                            "a": "{{ifempty(60.data.count; 0)}}",
+                                            "a": "{{60.data.count}}",
                                             "b": "0",
                                             "o": "number:equal"
                                         }
@@ -11555,7 +11555,7 @@
                                             "o": "text:equal"
                                         },
                                         {
-                                            "a": "{{ifempty(60.data.count; 0)}}",
+                                            "a": "{{60.data.count}}",
                                             "b": "0",
                                             "o": "number:greater"
                                         }
@@ -11608,7 +11608,7 @@
                                             "o": "text:equal"
                                         },
                                         {
-                                            "a": "{{ifempty(60.data.count; 0)}}",
+                                            "a": "{{60.data.count}}",
                                             "b": "0",
                                             "o": "number:greater"
                                         }
@@ -11656,7 +11656,7 @@
                                 "conditions": [
                                     [
                                         {
-                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
+                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; 60.data.count))))}}",
                                             "b": "0",
                                             "o": "number:equal"
                                         },
@@ -11673,7 +11673,7 @@
                                     ],
                                     [
                                         {
-                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
+                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; 60.data.count))))}}",
                                             "b": "0",
                                             "o": "number:equal"
                                         },
@@ -11695,7 +11695,7 @@
                                     ],
                                     [
                                         {
-                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
+                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; 60.data.count))))}}",
                                             "b": "0",
                                             "o": "number:equal"
                                         },
@@ -11717,7 +11717,7 @@
                                     ],
                                     [
                                         {
-                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
+                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; 60.data.count))))}}",
                                             "b": "0",
                                             "o": "number:equal"
                                         },
@@ -11739,7 +11739,7 @@
                                     ],
                                     [
                                         {
-                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
+                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; 60.data.count))))}}",
                                             "b": "0",
                                             "o": "number:equal"
                                         },
@@ -11761,7 +11761,7 @@
                                     ],
                                     [
                                         {
-                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
+                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; 60.data.count))))}}",
                                             "b": "0",
                                             "o": "number:equal"
                                         },
@@ -11783,7 +11783,7 @@
                                     ],
                                     [
                                         {
-                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
+                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; 60.data.count))))}}",
                                             "b": "0",
                                             "o": "number:equal"
                                         },
@@ -11805,7 +11805,7 @@
                                     ],
                                     [
                                         {
-                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
+                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; 60.data.count))))}}",
                                             "b": "0",
                                             "o": "number:equal"
                                         },
@@ -11827,7 +11827,7 @@
                                     ],
                                     [
                                         {
-                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
+                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; 60.data.count))))}}",
                                             "b": "0",
                                             "o": "number:equal"
                                         },
@@ -11849,7 +11849,7 @@
                                     ],
                                     [
                                         {
-                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
+                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; 60.data.count))))}}",
                                             "b": "0",
                                             "o": "number:equal"
                                         },
@@ -11871,7 +11871,7 @@
                                     ],
                                     [
                                         {
-                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
+                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; 60.data.count))))}}",
                                             "b": "0",
                                             "o": "number:equal"
                                         },
@@ -11893,7 +11893,7 @@
                                     ],
                                     [
                                         {
-                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
+                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; 60.data.count))))}}",
                                             "b": "0",
                                             "o": "number:equal"
                                         },
@@ -11915,7 +11915,7 @@
                                     ],
                                     [
                                         {
-                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
+                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; 60.data.count))))}}",
                                             "b": "0",
                                             "o": "number:equal"
                                         },
@@ -11937,7 +11937,7 @@
                                     ],
                                     [
                                         {
-                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
+                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; 60.data.count))))}}",
                                             "b": "0",
                                             "o": "number:equal"
                                         },
@@ -11959,7 +11959,7 @@
                                     ],
                                     [
                                         {
-                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
+                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; 60.data.count))))}}",
                                             "b": "0",
                                             "o": "number:equal"
                                         },
@@ -11981,7 +11981,7 @@
                                     ],
                                     [
                                         {
-                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
+                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; 60.data.count))))}}",
                                             "b": "0",
                                             "o": "number:equal"
                                         },
@@ -12003,7 +12003,7 @@
                                     ],
                                     [
                                         {
-                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
+                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; 60.data.count))))}}",
                                             "b": "0",
                                             "o": "number:equal"
                                         },
@@ -12025,7 +12025,7 @@
                                     ],
                                     [
                                         {
-                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
+                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; 60.data.count))))}}",
                                             "b": "0",
                                             "o": "number:equal"
                                         },
@@ -12047,7 +12047,7 @@
                                     ],
                                     [
                                         {
-                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
+                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; 60.data.count))))}}",
                                             "b": "0",
                                             "o": "number:equal"
                                         },
@@ -12069,7 +12069,7 @@
                                     ],
                                     [
                                         {
-                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
+                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; 60.data.count))))}}",
                                             "b": "0",
                                             "o": "number:equal"
                                         },
@@ -12091,7 +12091,7 @@
                                     ],
                                     [
                                         {
-                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
+                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; 60.data.count))))}}",
                                             "b": "0",
                                             "o": "number:equal"
                                         },
@@ -12113,7 +12113,7 @@
                                     ],
                                     [
                                         {
-                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
+                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; 60.data.count))))}}",
                                             "b": "0",
                                             "o": "number:equal"
                                         },
@@ -12135,7 +12135,7 @@
                                     ],
                                     [
                                         {
-                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
+                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; 60.data.count))))}}",
                                             "b": "0",
                                             "o": "number:equal"
                                         },
@@ -12157,7 +12157,7 @@
                                     ],
                                     [
                                         {
-                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
+                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; 60.data.count))))}}",
                                             "b": "0",
                                             "o": "number:equal"
                                         },
@@ -12179,7 +12179,7 @@
                                     ],
                                     [
                                         {
-                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
+                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; 60.data.count))))}}",
                                             "b": "0",
                                             "o": "number:equal"
                                         },
@@ -12201,7 +12201,7 @@
                                     ],
                                     [
                                         {
-                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
+                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; 60.data.count))))}}",
                                             "b": "0",
                                             "o": "number:equal"
                                         },
@@ -12223,7 +12223,7 @@
                                     ],
                                     [
                                         {
-                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
+                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; 60.data.count))))}}",
                                             "b": "0",
                                             "o": "number:equal"
                                         },
@@ -12245,7 +12245,7 @@
                                     ],
                                     [
                                         {
-                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
+                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; 60.data.count))))}}",
                                             "b": "0",
                                             "o": "number:equal"
                                         },
@@ -12267,9 +12267,9 @@
                                     ],
                                     [
                                         {
-                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
+                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; 60.data.count))))}}",
                                             "b": "0",
-                                            "o": "number:greater"
+                                            "o": "number:equal"
                                         },
                                         {
                                             "a": "{{1.fullTextBody}}",
@@ -12299,9 +12299,9 @@
                                     ],
                                     [
                                         {
-                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
+                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; 60.data.count))))}}",
                                             "b": "0",
-                                            "o": "number:greater"
+                                            "o": "number:equal"
                                         },
                                         {
                                             "a": "{{1.fullTextBody}}",
@@ -12331,9 +12331,9 @@
                                     ],
                                     [
                                         {
-                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
+                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; 60.data.count))))}}",
                                             "b": "0",
-                                            "o": "number:greater"
+                                            "o": "number:equal"
                                         },
                                         {
                                             "a": "{{1.fullTextBody}}",
@@ -12363,9 +12363,9 @@
                                     ],
                                     [
                                         {
-                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; ifempty(60.data.count; 0)))))}}",
+                                            "a": "{{if(1.fromEmail = \"notifications@wix-forms.com\"; -1; if(1.fromEmail = \"message@voxist.com\"; -1; if(1.fromEmail = \"demande.chezpapimaisongourmande@gmail.com\"; -1; if(1.fromEmail = \"chezpapimaisongourmande@gmail.com\"; -1; 60.data.count))))}}",
                                             "b": "0",
-                                            "o": "number:greater"
+                                            "o": "number:equal"
                                         },
                                         {
                                             "a": "{{1.fullTextBody}}",
@@ -15952,7 +15952,7 @@
                                                 "includesHeaders": true,
                                                 "useColumnHeaders": true,
                                                 "values": {
-                                                    "id_demande": "GMAIL-{{if(ifempty(60.data.count; 0) = 0; 1.threadId; 1.id)}}",
+                                                    "id_demande": "GMAIL-{{if(60.data.count = 0; 1.threadId; 1.id)}}",
                                                     "date_reception": "{{1.internalDate}}",
                                                     "canal": "Email",
                                                     "nom_client": "{{38.nom_client}}",

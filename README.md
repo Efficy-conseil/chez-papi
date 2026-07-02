@@ -56,4 +56,4 @@ Dans les paramètres GitHub du dépôt, la source de GitHub Pages doit être ré
 
 Les fichiers contenus dans `make/` conservent leurs noms attendus par Make. Leur import reste manuel afin de permettre le contrôle visuel et le retour arrière avant activation.
 
-Voir [la procédure de déploiement](docs/deployment.md), [le contrat produit](docs/product-contract.md), [la spécification fonctionnelle du frontend](docs/frontend-functional-spec.md), [la matrice de tests Make](docs/make-regression-matrix.md) et [l'audit des blueprints](docs/make-audit.md).
+Voir [la procédure de déploiement](docs/deployment.md), [le contrat produit](docs/product-contract.md), [la spécification fonctionnelle du frontend](docs/frontend-functional-spec.md), [l'inventaire des filtres Gmail](docs/gmail-filters.md), [la matrice de tests Make](docs/make-regression-matrix.md) et [l'audit des blueprints](docs/make-audit.md).

@@ -552,7 +552,7 @@
                 "conditions": [
                     [
                         {
-                            "a": "{{ifempty(4.data.count; 0)}}",
+                            "a": "{{4.data.count}}",
                             "b": "0",
                             "o": "number:equal"
                         }

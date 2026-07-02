@@ -69,6 +69,13 @@ assert(moduleById(mainModules, 87).mapper?.to === 'Label_2648810022094724776', '
 
 const emailAi = moduleById(mainModules, 37);
 assert(emailAi.filter?.name?.includes('analyse complète'), 'route Email direct encore limitée aux mots-clés historiques');
+const emailAiConditions = (emailAi.filter?.conditions || []).flat(Infinity);
+assert(!emailAiConditions.some(condition => condition?.o === 'number:greater'), 'route Email direct encore ouverte aux fils déjà connus');
+
+const serializedMain = JSON.stringify(main);
+const serializedTally = JSON.stringify(tally);
+assert(!serializedMain.includes('ifempty(60.data.count; 0)'), 'anti-doublon Email/Wix/Voxist encore permissif si count est absent');
+assert(!serializedTally.includes('ifempty(4.data.count; 0)'), 'anti-doublon Tally encore permissif si count est absent');
 
 const tallyHttp = moduleById(tallyModules, 4);
 assert(tallyHttp.filter?.conditions?.flat().some(condition => condition.b === 'Gx52AQ'), 'formId Tally de production absent');

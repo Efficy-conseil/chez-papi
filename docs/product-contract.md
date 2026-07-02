@@ -288,6 +288,8 @@ Comportement attendu :
 
 ## Filtres Gmail
 
+L'inventaire versionné des filtres actuellement configurés dans Gmail est conservé dans `docs/gmail-filters.md`. Il doit être mis à jour à chaque modification manuelle dans Gmail.
+
 Contraintes :
 
 - Les filtres Gmail ne doivent pas faire `Skip Inbox` sur :

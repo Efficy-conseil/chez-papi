@@ -12,6 +12,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | C04 | Message traité | Retrait de `INBOX` et application du bon libellé Gmail | Essai Make |
 | C05 | Erreur backend volontaire | Erreur visible dans Make, message non perdu | Essai Make |
 | C06 | Date complète, plage, année seule, date inconnue | Respect du format défini dans le contrat produit | Essai Make |
+| C07 | Réponse anti-doublon sans champ `count` ou inexploitable | Aucune création ; exécution en erreur visible, message conservé pour reprise | Automatique + essai Make |
 
 ## Wix
 
@@ -49,6 +50,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | E07 | Ancien fil contenant une nouvelle prestation/date | Nouvelle ligne et accusé | Essai Make |
 | E08 | Message rattaché à une demande existante (`count > 0`) | Mise à jour technique puis archivage dans `Historique_Email` | Statique |
 | E09 | Email des boîtes internes | Aucune création client | Automatique |
+| E10 | Réponse dans un fil existant dont le texte cité contient date, devis ou personnes | Une seule ligne conservée, aucune route nouvelle demande, `Historique_Email` uniquement côté Make | Automatique + essai Make |
 
 ## Tally
 
