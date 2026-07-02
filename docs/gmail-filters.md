@@ -1,35 +1,101 @@
-# Inventaire des filtres Gmail
+# Filtres Gmail
 
-Dernière transcription : 02/07/2026.
+Dernière mise à jour : 02/07/2026.
 
-Ce fichier décrit l'état déclaré des filtres configurés manuellement dans Gmail. Il ne configure pas Gmail automatiquement. Toute modification dans Gmail doit être reportée ici et vérifiée avec les scénarios Make.
+Ce fichier contient la configuration cible à appliquer manuellement dans Gmail. Gmail permet de tester le critère avant de créer le filtre ; cette vérification est obligatoire pour les filtres 4 et 5.
 
-| N° | Critère Gmail | Actions |
-|---:|---|---|
-| 1 | `from:(demande.chezpapimaisongourmande@gmail.com) subject:([Chez Papi] Récapitulatif)` | Ignorer la boîte de réception ; appliquer `0 - Récap_Quotidien` |
-| 2 | `from:(make.com) (error OR warning OR disabled OR failed OR scenario)` | Appliquer `Alerte_Make` ; transférer à `support@efficy-conseil.fr` |
-| 3 | `from:(make.com) (credits OR usage OR limit OR quota OR subscription OR billing OR "credit usage")` | Appliquer `Alerte_Make` ; transférer à `support@efficy-conseil.fr` |
-| 4 | `(google.com OR googlemail.com OR accounts.google.com OR no-reply@accounts.google.com OR noreply@google.com OR workspace-noreply@google.com)` | Ignorer la boîte de réception ; appliquer `Hors_Scope_Gmail` |
-| 5 | `(make.com OR mailer.make.com OR noreply@make.com OR openai.com OR noreply@openai.com)` | Ignorer la boîte de réception ; appliquer `Alerte_Make` |
-| 6 | `(unsubscribe OR désabonnement OR se désabonner OR newsletter OR promotion OR offre spéciale OR publicité OR "view in browser" OR "voir dans le navigateur")` | Ignorer la boîte de réception ; appliquer `Hors_Scope_Gmail` |
-| 7 | `(facture OR reçu OR paiement OR prélèvement OR échéance OR "votre facture" OR "payment receipt" OR invoice)` | Ignorer la boîte de réception ; appliquer `Hors_Scope_Gmail` |
-| 8 | `from:(email.metro.fr)` | Ignorer la boîte de réception ; marquer comme lu ; appliquer `Hors_Scope_Gmail` |
-| 9 | `from:(-message@voxist.com -notifications@wix-forms.com) (unsubscribe OR désabonnement OR se désabonner OR newsletter OR promotion OR offre spéciale OR publicité OR "view in browser" OR "voir dans le navigateur")` | Ignorer la boîte de réception ; appliquer `Hors_Scope_Gmail` |
+## Configuration cible
 
-## Points de vigilance constatés
+### 1. Récapitulatif quotidien
 
-- Le filtre 6 est plus large que le filtre 9 et s'applique avant toute exception explicite : Wix ou Voxist peuvent donc recevoir `Hors_Scope_Gmail` si leur contenu contient une formule de désabonnement ou d'ouverture dans le navigateur.
-- La syntaxe d'exclusion fiable est `-from:message@voxist.com -from:notifications@wix-forms.com (...)`. La forme du filtre 9 doit être corrigée dans Gmail avant de servir de protection.
-- Les filtres 6 et 7 reposent sur des mots présents dans le contenu. Une réponse client peut reprendre ces mots dans le texte cité d'un fil et cumuler `Hors_Scope_Gmail` avec un label historique.
-- Le filtre 7 peut masquer une demande métier légitime concernant une facture ou un paiement.
-- Gmail affiche au niveau du fil les labels accumulés par ses différents messages. La présence de plusieurs labels dans la conversation ne signifie donc pas nécessairement qu'un seul message a suivi plusieurs routes Make.
-
-## Correction Gmail recommandée
-
-Remplacer le filtre 6 par le critère suivant, puis supprimer le filtre 9 devenu redondant :
+Critère :
 
 ```text
--from:message@voxist.com -from:notifications@wix-forms.com (unsubscribe OR désabonnement OR "se désabonner" OR newsletter OR promotion OR "offre spéciale" OR publicité OR "view in browser" OR "voir dans le navigateur")
+from:demande.chezpapimaisongourmande@gmail.com subject:"[Chez Papi] Récapitulatif"
 ```
 
-Conserver temporairement le filtre 7 sous surveillance, puis préférer à terme des expéditeurs connus ou des catégories Gmail à une liste de mots générale.
+Actions : ignorer la boîte de réception ; appliquer `0 - Récap_Quotidien`.
+
+### 2. Alertes Make critiques
+
+Critère :
+
+```text
+from:make.com {error warning disabled failed scenario credits usage limit quota subscription billing "credit usage"}
+```
+
+Actions : appliquer `Alerte_Make` ; transférer à `support@efficy-conseil.fr`.
+
+Ce filtre regroupe les deux anciens filtres d'alerte qui avaient les mêmes actions.
+
+### 3. Notifications techniques Make et OpenAI
+
+Critère :
+
+```text
+{from:make.com from:mailer.make.com from:noreply@make.com from:openai.com from:noreply@openai.com}
+```
+
+Actions : ignorer la boîte de réception ; appliquer `Alerte_Make`.
+
+Le chevauchement avec le filtre 2 est volontaire : une alerte critique est à la fois transférée et rangée dans `Alerte_Make`.
+
+### 4. Notifications système Google
+
+Critère :
+
+```text
+{from:google.com from:googlemail.com from:accounts.google.com from:no-reply@accounts.google.com from:noreply@google.com from:workspace-noreply@google.com}
+```
+
+Actions : ignorer la boîte de réception ; appliquer `Hors_Scope_Gmail`.
+
+### 5. Newsletters hors sources métier
+
+Critère :
+
+```text
+-from:message@voxist.com -from:notifications@wix-forms.com -from:demande.chezpapimaisongourmande@gmail.com -from:chezpapimaisongourmande@gmail.com {unsubscribe désabonnement "se désabonner" newsletter "view in browser" "voir dans le navigateur"}
+```
+
+Actions : ignorer la boîte de réception ; appliquer `Hors_Scope_Gmail`.
+
+Les termes trop génériques `promotion`, `offre spéciale` et `publicité` sont supprimés : ils peuvent apparaître dans une demande client légitime. Les quatre sources métier sont exclues explicitement.
+
+### 6. Newsletter METRO
+
+Critère :
+
+```text
+from:email.metro.fr
+```
+
+Actions : ignorer la boîte de réception ; marquer comme lu ; appliquer `Hors_Scope_Gmail`.
+
+## Filtres à supprimer ou remplacer
+
+- Remplacer les deux anciens filtres Make « erreurs » et « crédits » par le filtre 2.
+- Remplacer l'ancien filtre Google sans opérateur `from:` par le filtre 4. L'ancien critère pouvait correspondre à du texte présent dans le corps d'un email.
+- Remplacer les deux anciens filtres newsletter par le filtre 5. L'ancien filtre général annulait de fait la tentative d'exclusion Wix/Voxist.
+- Supprimer le filtre général basé sur `facture`, `reçu`, `paiement`, `prélèvement`, `échéance` ou `invoice`. Ces mots appartiennent aussi à de vraies conversations commerciales. Créer ensuite des filtres par expéditeur connu pour les factures réellement hors périmètre.
+- Conserver le filtre METRO sous la forme du filtre 6.
+
+## Ordre d'application
+
+1. Créer les six nouveaux filtres sans appliquer les actions aux conversations existantes.
+2. Tester les critères 4 et 5 dans la barre de recherche Gmail et vérifier qu'aucune demande Wix, Voxist ou client n'apparaît.
+3. Supprimer les anciens filtres remplacés.
+4. Envoyer un email de test pour chaque source métier et vérifier qu'il reste visible pour Make.
+5. Vérifier qu'une alerte Make critique reçoit `Alerte_Make` et est transférée une seule fois.
+
+## Principes de maintenance
+
+- Utiliser systématiquement `from:` pour filtrer un expéditeur ou un domaine.
+- Utiliser `{...}` pour exprimer un `OR` entre plusieurs expéditeurs ou termes.
+- Ne jamais classer automatiquement les emails clients à partir de mots administratifs génériques.
+- Toute source surveillée par Make doit être exclue explicitement des filtres de contenu.
+- Les libellés visibles sur un fil Gmail peuvent provenir de messages différents du même fil.
+
+## État précédent archivé
+
+La configuration relevée avant cette rationalisation comportait neuf filtres : deux alertes Make séparées, un filtre Google sans `from:`, deux filtres newsletter qui se chevauchaient et un filtre administratif général. Elle est conservée dans l'historique Git antérieur au présent fichier.
