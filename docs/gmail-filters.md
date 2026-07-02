@@ -4,6 +4,18 @@ Dernière mise à jour : 02/07/2026.
 
 Ce fichier contient la configuration cible à appliquer manuellement dans Gmail. Gmail permet de tester le critère avant de créer le filtre ; cette vérification est obligatoire pour les filtres 4 et 5.
 
+Le fichier prêt à importer est `config/gmail/chez-papi-filters.xml`.
+
+## Import direct dans Gmail
+
+1. Ouvrir Gmail sur ordinateur, puis `Paramètres` > `Voir tous les paramètres` > `Filtres et adresses bloquées`.
+2. En bas de la page, cliquer sur `Importer des filtres`.
+3. Sélectionner `config/gmail/chez-papi-filters.xml`, puis créer les six filtres proposés.
+4. Vérifier que `support@efficy-conseil.fr` est toujours une adresse de transfert validée dans Gmail.
+5. Supprimer ensuite les anciens filtres indiqués dans la section « Filtres à supprimer ou remplacer » : l'import ne les remplace pas automatiquement.
+
+L'import n'applique pas ces filtres aux anciens messages. Les libellés `0 - Récap_Quotidien`, `Alerte_Make` et `Hors_Scope_Gmail` doivent exister dans le compte.
+
 ## Configuration cible
 
 ### 1. Récapitulatif quotidien

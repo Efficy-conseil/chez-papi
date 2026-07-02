@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:apps="http://schemas.google.com/apps/2006">
+  <title>Mail Filters</title>
+  <id>tag:mail.google.com,2008:filters:chez-papi</id>
+  <updated>2026-07-02T12:00:00Z</updated>
+  <author>
+    <name>Chez Papi</name>
+    <email>chezpapimaisongourmande@gmail.com</email>
+  </author>
+
+  <entry>
+    <category term="filter"/>
+    <title>Mail Filter</title>
+    <id>tag:mail.google.com,2008:filter:chez-papi-recap-quotidien</id>
+    <updated>2026-07-02T12:00:00Z</updated>
+    <content/>
+    <apps:property name="from" value="demande.chezpapimaisongourmande@gmail.com"/>
+    <apps:property name="subject" value="[Chez Papi] Récapitulatif"/>
+    <apps:property name="shouldArchive" value="true"/>
+    <apps:property name="label" value="0 - Récap_Quotidien"/>
+  </entry>
+
+  <entry>
+    <category term="filter"/>
+    <title>Mail Filter</title>
+    <id>tag:mail.google.com,2008:filter:chez-papi-alertes-make-critiques</id>
+    <updated>2026-07-02T12:00:00Z</updated>
+    <content/>
+    <apps:property name="from" value="make.com"/>
+    <apps:property name="hasTheWord" value="{error warning disabled failed scenario credits usage limit quota subscription billing &quot;credit usage&quot;}"/>
+    <apps:property name="label" value="Alerte_Make"/>
+    <apps:property name="forwardTo" value="support@efficy-conseil.fr"/>
+  </entry>
+
+  <entry>
+    <category term="filter"/>
+    <title>Mail Filter</title>
+    <id>tag:mail.google.com,2008:filter:chez-papi-notifications-techniques</id>
+    <updated>2026-07-02T12:00:00Z</updated>
+    <content/>
+    <apps:property name="hasTheWord" value="{from:make.com from:mailer.make.com from:noreply@make.com from:openai.com from:noreply@openai.com}"/>
+    <apps:property name="shouldArchive" value="true"/>
+    <apps:property name="label" value="Alerte_Make"/>
+  </entry>
+
+  <entry>
+    <category term="filter"/>
+    <title>Mail Filter</title>
+    <id>tag:mail.google.com,2008:filter:chez-papi-notifications-google</id>
+    <updated>2026-07-02T12:00:00Z</updated>
+    <content/>
+    <apps:property name="hasTheWord" value="{from:google.com from:googlemail.com from:accounts.google.com from:no-reply@accounts.google.com from:noreply@google.com from:workspace-noreply@google.com}"/>
+    <apps:property name="shouldArchive" value="true"/>
+    <apps:property name="label" value="Hors_Scope_Gmail"/>
+  </entry>
+
+  <entry>
+    <category term="filter"/>
+    <title>Mail Filter</title>
+    <id>tag:mail.google.com,2008:filter:chez-papi-newsletters</id>
+    <updated>2026-07-02T12:00:00Z</updated>
+    <content/>
+    <apps:property name="hasTheWord" value="-from:message@voxist.com -from:notifications@wix-forms.com -from:demande.chezpapimaisongourmande@gmail.com -from:chezpapimaisongourmande@gmail.com {unsubscribe désabonnement &quot;se désabonner&quot; newsletter &quot;view in browser&quot; &quot;voir dans le navigateur&quot;}"/>
+    <apps:property name="shouldArchive" value="true"/>
+    <apps:property name="label" value="Hors_Scope_Gmail"/>
+  </entry>
+
+  <entry>
+    <category term="filter"/>
+    <title>Mail Filter</title>
+    <id>tag:mail.google.com,2008:filter:chez-papi-newsletter-metro</id>
+    <updated>2026-07-02T12:00:00Z</updated>
+    <content/>
+    <apps:property name="from" value="email.metro.fr"/>
+    <apps:property name="shouldArchive" value="true"/>
+    <apps:property name="shouldMarkAsRead" value="true"/>
+    <apps:property name="label" value="Hors_Scope_Gmail"/>
+  </entry>
+</feed>
