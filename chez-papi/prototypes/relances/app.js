@@ -147,9 +147,10 @@ function parseSingleLocalDate(ds) {
 
   let cleanDs = String(ds).trim();
   if (/^(?:en\s+)?\d{4}$/i.test(cleanDs)) return null;
-  // Une date sans année reste volontairement partielle : JavaScript interprète
-  // sinon "12/09" comme le 9 décembre 2001.
-  if (/^\d{1,2}\/\d{1,2}$/.test(cleanDs)) return null;
+  const partialDate = cleanDs.match(/^(\d{1,2})\/(\d{1,2})$/);
+  if (partialDate) {
+    return dateFromParts(new Date().getFullYear(), Number(partialDate[2]), Number(partialDate[1]));
+  }
 
   const ymdMatch = cleanDs.match(/(\d{4})-(\d{2})-(\d{2})/);
   if (ymdMatch) {
@@ -195,7 +196,6 @@ function parseDateTime(ds) {
   }
   const raw = String(ds).trim();
   if (!raw) return null;
-  if (/^\d{1,2}\/\d{1,2}$/.test(raw)) return null;
   const hasTime = /T\d{2}:\d{2}|\d{1,2}:\d{2}/.test(raw);
   const googleUtcNoZone = raw.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?)Z$/);
   if (googleUtcNoZone) {
@@ -291,9 +291,8 @@ function formatDateFR(ds) {
     if (partialDate) {
       const day = Number(partialDate[1]);
       const month = Number(partialDate[2]);
-      if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
-        return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}`;
-      }
+      const date = dateFromParts(new Date().getFullYear(), month, day);
+      if (date) return formatDateFR(date);
       return cleanDs;
     }
     const range = splitDateRange(cleanDs);

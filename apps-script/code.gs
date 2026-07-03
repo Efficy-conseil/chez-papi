@@ -681,7 +681,7 @@ function normalizeSingleEventDateText(value) {
     const day = Number(partialDate[1]);
     const month = Number(partialDate[2]);
     if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
-      return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}`;
+      return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${new Date().getFullYear()}`;
     }
     return s;
   }
@@ -1304,7 +1304,10 @@ function parseEventDate(dateStr) {
   var s = String(dateStr).trim();
   if (s === '' || s === '—') return null;
   if (/^(?:en\s+)?\d{4}$/i.test(s)) return null;
-  if (/^\d{1,2}\/\d{1,2}$/.test(s)) return null;
+  var partialDate = s.match(/^(\d{1,2})\/(\d{1,2})$/);
+  if (partialDate) {
+    return new Date(new Date().getFullYear(), Number(partialDate[2]) - 1, Number(partialDate[1]));
+  }
 
   // Option 1: YYYY-MM-DD
   var ymdMatch = s.match(/(\d{4})-(\d{2})-(\d{2})/);
