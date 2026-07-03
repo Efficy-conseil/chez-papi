@@ -723,12 +723,25 @@ const SheetsAPI = {
     };
   },
   async request(payload) {
-    const res = await fetch(CONFIG.SHEETS_URL, {
-      method: 'POST',
-      redirect: 'follow',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ ...payload, auth: this.auth() }),
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+    let res;
+    try {
+      res = await fetch(CONFIG.SHEETS_URL, {
+        method: 'POST',
+        redirect: 'follow',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ ...payload, auth: this.auth() }),
+        signal: controller.signal,
+      });
+    } catch (error) {
+      if (error?.name === 'AbortError') {
+        throw new Error('La synchronisation a dépassé 30 secondes. Réessayez.');
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeout);
+    }
     const text = await res.text();
     if (text && text.indexOf('Authorization is required') !== -1) {
       throw new Error('Authorization required');

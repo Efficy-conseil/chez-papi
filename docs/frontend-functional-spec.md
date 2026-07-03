@@ -406,6 +406,7 @@ La fiche en cours d'édition est exclue de cette comparaison.
 - Overlay pendant l'enregistrement ou la suppression.
 - Conservation de l'affichage existant en cas d'échec du polling silencieux.
 - Rejet des réponses backend non JSON ou explicitement non autorisées.
+- Interruption d'une synchronisation après 30 secondes avec retrait de l'overlay et affichage d'une erreur.
 
 ## 14. Limites et points à décider
 

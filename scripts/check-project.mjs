@@ -12,6 +12,16 @@ function requireText(file, expected) {
   }
 }
 
+function requireFunctionNotContains(file, functionName, forbidden) {
+  const content = readFileSync(file, 'utf8');
+  const start = content.indexOf(`function ${functionName}(`);
+  const nextFunction = content.indexOf('\nfunction ', start + 1);
+  const body = start >= 0 ? content.slice(start, nextFunction >= 0 ? nextFunction : undefined) : '';
+  if (!body || body.includes(forbidden)) {
+    throw new Error(`${file}: ${functionName} ne doit pas contenir ${forbidden}`);
+  }
+}
+
 run(process.execPath, ['--check'], {
   input: readFileSync('apps-script/code.gs'),
   stdio: ['pipe', 'inherit', 'inherit'],
@@ -32,5 +42,7 @@ requireText('chez-papi/index.html', 'id="new-demandes-more"');
 requireText('chez-papi/index.html', 'id="upcoming-more"');
 requireText('chez-papi/index.html', 'id="confirmed-more"');
 requireText('docs/frontend-functional-spec.md', 'événement Google Calendar');
+requireText('chez-papi/app.js', "controller.abort(), 30000");
+requireFunctionNotContains('apps-script/code.gs', 'ensureSchemaHeaders', 'applyDefaultRowHeights(sheet)');
 
 console.log('Vérifications locales réussies.');

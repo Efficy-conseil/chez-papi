@@ -269,6 +269,7 @@ Contraintes backend :
 - Le backend normalise `date_evenement`.
 - Le backend force `date_evenement` en texte pour éviter les conversions Google Sheets.
 - Le backend force les lignes Google Sheets à 20 px et coupe le retour à la ligne automatique pour éviter les lignes très hautes.
+- La lecture des demandes ne doit jamais reformater toute la feuille ni effectuer d'écriture hors ajout éventuel des colonnes techniques manquantes.
 
 ## Dashboard frontend
 
@@ -281,6 +282,7 @@ Comportement attendu :
 - Afficher les demandes actives dans le dashboard et le pipeline.
 - Afficher toutes les demandes dans `Historique`, avec filtres par date/année/trimestre.
 - Afficher les dates au format français.
+- Une synchronisation frontend doit s'arrêter après 30 secondes et afficher une erreur exploitable au lieu de bloquer indéfiniment l'interface.
 - Afficher les années seules telles quelles.
 - Ne pas afficher une demande à la mauvaise date à cause d'un parsing US.
 - Ouvrir le fil Gmail avec le bon label selon le canal :

@@ -537,8 +537,8 @@ function ensureSchemaHeaders(sheet) {
   });
   if (missing.length) {
     sheet.getRange(1, headers.length + 1, 1, missing.length).setValues([missing]);
+    applyDefaultRowHeight(sheet, 1);
   }
-  applyDefaultRowHeights(sheet);
 }
 
 function applyDefaultRowHeights(sheet) {
