@@ -80,6 +80,7 @@ Champs techniques :
 Format canonique attendu pour `date_evenement` :
 
 - Date complète : `JJ/MM/AAAA`
+- Date partielle sans année : `JJ/MM`
 - Plage : `JJ/MM/AAAA au JJ/MM/AAAA`
 - Année seule : `AAAA`
 - Inconnu ou trop vague : `Inconnu / à compléter`
@@ -88,9 +89,12 @@ Contraintes :
 
 - Ne jamais stocker `MM/DD/YYYY`.
 - Ne jamais transformer une année seule en `01/01/AAAA`.
+- Ne jamais inventer une année pour une date partielle `JJ/MM`, ni laisser JavaScript la convertir en une date de 2001.
 - Le dashboard doit afficher les dates au format `JJ/MM/AAAA`.
+- Le dashboard doit afficher une date partielle `JJ/MM` telle quelle jusqu'à ce que l'année soit renseignée.
 - Les dates longues comme `du 26/08/2026 au 27/08/2026` doivent être stockées `26/08/2026 au 27/08/2026`.
 - Les années seules doivent rester visibles dans le dashboard mais ne doivent pas créer d'événement calendrier.
+- Les dates partielles sans année doivent rester visibles mais ne doivent pas créer d'événement calendrier ni participer aux tris chronologiques stricts.
 
 ## Google Calendar
 
@@ -372,6 +376,7 @@ Dashboard :
 - `25/08/2026` affiché correctement, pas interprété comme format US.
 - `11/07/2026` reste 11 juillet, pas 7 novembre.
 - `2028` reste visible comme année.
+- `12/09` reste affiché `12/09`, jamais `09/12/2001`.
 - `26/08/2026 au 27/08/2026` reste lisible et triable sur la date de début.
 - `Ouvrir le fil` utilise le bon label Gmail selon le canal.
 
