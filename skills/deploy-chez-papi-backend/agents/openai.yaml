@@ -1,0 +1,4 @@
+interface:
+  display_name: "Déployer le backend Chez Papi"
+  short_description: "Publier le backend Apps Script de production"
+  default_prompt: "Utilise $deploy-chez-papi-backend pour vérifier et publier le backend Apps Script Chez Papi."

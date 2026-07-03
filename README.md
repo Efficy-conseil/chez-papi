@@ -46,6 +46,8 @@ npm run deploy:backend -- "Description du déploiement"
 
 Le dépôt reste la source de vérité. Ne pas modifier directement le code dans l'éditeur Apps Script après la mise en place de ce flux.
 
+La compétence projet `skills/deploy-chez-papi-backend/SKILL.md` rend ce redéploiement systématique après toute modification du backend, sauf demande explicite contraire.
+
 ## Déploiement du frontend
 
 Le workflow `.github/workflows/deploy-pages.yml` publie uniquement `chez-papi/` après chaque push sur `main` qui touche ce répertoire.

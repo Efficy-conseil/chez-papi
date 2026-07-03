@@ -24,6 +24,8 @@ npm run deploy:backend -- "Résumé de la modification"
 
 La commande vérifie les fichiers, pousse le code, crée une version Apps Script puis met à jour le déploiement existant. L'URL utilisée par les frontends et Make reste identique.
 
+Règle projet : toute modification validée de `apps-script/` déclenche ce redéploiement dans la même intervention, sauf demande explicite de ne pas déployer. La procédure détaillée pour les agents se trouve dans `skills/deploy-chez-papi-backend/SKILL.md`.
+
 ## Frontend GitHub Pages
 
 Après validation et push sur `main`, GitHub Actions publie automatiquement le contenu de `chez-papi/`.

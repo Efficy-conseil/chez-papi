@@ -15,6 +15,7 @@
 - `gmail_filters/` contient les filtres Gmail importables.
 - `docs/` contient la documentation fonctionnelle et opérationnelle.
 - `scripts/` contient les contrôles et outils de déploiement.
+- `skills/` contient les compétences opérationnelles propres au projet.
 - Ne pas déplacer un fichier sans mettre à jour toutes ses références.
 
 ## Règles de modification
@@ -36,7 +37,8 @@
 ## Déploiements
 
 - Frontend : un push sur `main` publie automatiquement `chez-papi/` avec GitHub Actions.
-- Backend : utiliser `npm run deploy:backend -- "Description"` afin de conserver l'URL Apps Script.
+- Backend : après toute modification validée de `apps-script/`, utiliser automatiquement la compétence `skills/deploy-chez-papi-backend/SKILL.md` et exécuter `npm run deploy:backend -- "Description"` dans la même intervention, sauf demande explicite de ne pas déployer.
+- Le redéploiement backend doit conserver l'identifiant et l'URL de la Web App existante. Ne jamais annoncer le backend comme actif sans confirmation de la version déployée.
 - Make : l'import, le test et l'activation des blueprints restent manuels.
 - Gmail : l'import ajoute des filtres mais ne supprime pas les anciens.
 - Ne jamais annoncer qu'un changement Make ou Gmail est actif tant que l'import manuel n'a pas été confirmé.
