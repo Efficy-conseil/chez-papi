@@ -366,7 +366,7 @@
                 "gzip": true,
                 "useMtls": false,
                 "contentType": "application/json",
-                "data": "{\"action\":\"checkDuplicate\",\"make_token\":\"cp_make_followup_2026_06\",\"match\":{\"id_demande\":\"{{if(1.fromEmail = \\\"notifications@wix-forms.com\\\"; \\\"WIX-\\\"; if(1.fromEmail = \\\"message@voxist.com\\\"; \\\"VOXIST-\\\"; \\\"GMAIL-\\\"))}}{{if(1.fromEmail = \\\"notifications@wix-forms.com\\\"; 1.id; if(1.fromEmail = \\\"message@voxist.com\\\"; 1.id; 1.threadId))}}\",\"legacy_id\":\"{{1.threadId}}\",\"gmail_thread_id\":\"{{1.threadId}}\"}}",
+                "data": "{\"action\":\"checkDuplicate\",\"make_token\":\"cp_make_followup_2026_06\",\"match\":{\"id_demande\":{{toJSON(concat(if(1.fromEmail = \\\"notifications@wix-forms.com\\\"; \\\"WIX-\\\"; if(1.fromEmail = \\\"message@voxist.com\\\"; \\\"VOXIST-\\\"; \\\"GMAIL-\\\")); if(1.fromEmail = \\\"notifications@wix-forms.com\\\"; 1.id; if(1.fromEmail = \\\"message@voxist.com\\\"; 1.id; 1.threadId))))}},\"legacy_id\":{{toJSON(1.threadId)}},\"gmail_thread_id\":{{toJSON(1.threadId)}}}}",
                 "followAllRedirects": true
             },
             "metadata": {

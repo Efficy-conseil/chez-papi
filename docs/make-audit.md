@@ -18,6 +18,7 @@ Références : `docs/product-contract.md` et `docs/make-regression-matrix.md`.
 - Normalisation de la date Tally vers `JJ/MM/AAAA` avant écriture.
 - Alignement du backend pour les créations manuelles et Wix sans date exploitable.
 - Passage de l'anti-doublon en mode strict : une réponse sans `count` ne vaut plus implicitement zéro et ne peut plus créer une ligne.
+- Sérialisation JSON explicite des identifiants Gmail envoyés à l'anti-doublon, afin qu'un caractère échappé ne rende plus la requête invalide.
 - Suppression du chevauchement entre la route de suivi `count > 0` et la route d'analyse d'une nouvelle demande Email.
 - Ajout du fil Gmail du 30/06–02/07/2026 comme cas de non-régression : une réponse citant la demande initiale ne doit jamais recréer la demande.
 
