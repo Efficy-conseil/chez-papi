@@ -127,7 +127,7 @@ Déclencheur : Gmail nouveaux emails.
 
 Étape commune :
 
-- Module `60` appelle le backend `checkDuplicate`.
+- Module `60` appelle le backend `checkDuplicate` avec `source_email`, `gmail_message_id` et `gmail_thread_id` ; le backend construit l'identifiant métier préfixé.
 - Le backend répond avec `count`.
 - `count = 0` signifie nouveau message non connu.
 - `count > 0` signifie message, thread ou ligne déjà connu.

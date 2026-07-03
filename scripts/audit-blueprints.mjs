@@ -36,10 +36,7 @@ httpModules.forEach(module => {
   assert(module.mapper?.followAllRedirects === true, `Follow all redirects désactivé sur le module ${module.id}`);
   if (module.mapper?.contentType === 'application/json' && module.mapper?.data) {
     try {
-      const staticJson = module.id === 60
-        ? module.mapper.data.replace(/\{\{[\s\S]*?\}\}/g, '"__MAKE_VALUE__"')
-        : module.mapper.data;
-      JSON.parse(staticJson);
+      JSON.parse(module.mapper.data);
     } catch (error) {
       throw new Error(`Audit blueprint : corps JSON invalide sur le module HTTP ${module.id} (${error.message})`);
     }
@@ -49,12 +46,10 @@ httpModules.forEach(module => {
 const duplicateModule = moduleById(mainModules, 60);
 const duplicateBody = duplicateModule.mapper?.data || '';
 assert(duplicateBody.includes('"action":"checkDuplicate"'), 'action checkDuplicate absente du module 60');
-assert(duplicateBody.includes('WIX-'), 'préfixe WIX absent du module 60');
-assert(duplicateBody.includes('VOXIST-'), 'préfixe VOXIST absent du module 60');
-assert(duplicateBody.includes('GMAIL-'), 'préfixe GMAIL absent du module 60');
-assert(duplicateBody.includes('"id_demande":{{toJSON('), 'id_demande non sérialisé en JSON dans le module 60');
-assert(duplicateBody.includes('"legacy_id":{{toJSON(1.threadId)}}'), 'legacy_id non sérialisé en JSON dans le module 60');
-assert(duplicateBody.includes('"gmail_thread_id":{{toJSON(1.threadId)}}'), 'gmail_thread_id non sérialisé en JSON dans le module 60');
+assert(duplicateBody.includes('"source_email":"{{1.fromEmail}}"'), 'source_email absent du module 60');
+assert(duplicateBody.includes('"gmail_message_id":"{{1.id}}"'), 'gmail_message_id absent du module 60');
+assert(duplicateBody.includes('"gmail_thread_id":"{{1.threadId}}"'), 'gmail_thread_id absent du module 60');
+assert(!duplicateBody.includes('toJSON('), 'fonction Make toJSON non prise en charge dans le module 60');
 assert(!duplicateBody.includes('\\) +'), 'expression Make corrompue dans le module 60');
 
 const mainRouter = moduleById(mainModules, 2);

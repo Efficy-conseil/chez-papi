@@ -467,10 +467,22 @@ function checkDuplicate(match) {
   ensureSchemaHeaders(sheet);
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
   const ids = [];
-  const idDemande = String(match.id_demande || '').trim();
+  const sourceEmail = String(match.source_email || '').trim().toLowerCase();
+  const gmailMessageId = String(match.gmail_message_id || '').trim();
+  const requestedThreadId = String(match.gmail_thread_id || '').trim();
+  let idDemande = String(match.id_demande || '').trim();
+  if (!idDemande) {
+    if (sourceEmail === 'notifications@wix-forms.com' && gmailMessageId) {
+      idDemande = 'WIX-' + gmailMessageId;
+    } else if (sourceEmail === 'message@voxist.com' && gmailMessageId) {
+      idDemande = 'VOXIST-' + gmailMessageId;
+    } else if (requestedThreadId) {
+      idDemande = 'GMAIL-' + requestedThreadId;
+    }
+  }
   const isVoxist = idDemande.indexOf("VOXIST-") === 0;
   const legacyId = isVoxist ? "" : String(match.legacy_id || '').trim();
-  const gmailThreadId = isVoxist ? "" : String(match.gmail_thread_id || '').trim();
+  const gmailThreadId = isVoxist ? "" : requestedThreadId;
   [idDemande, legacyId].forEach(function(value) {
     if (value && ids.indexOf(value) === -1) ids.push(value);
   });
