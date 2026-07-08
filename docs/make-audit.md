@@ -30,6 +30,7 @@ Références : `docs/product-contract.md` et `docs/make-regression-matrix.md`.
 - L'accusé dépend de `created = true`.
 - Les réponses Wix sont rattachées via `updateWixFollowup`.
 - Les messages déjà connus sont archivés sans recréation.
+- Les champs Wix issus de l'IA sont protégés avec `escapeJSON` avant leur insertion dans le corps JSON brut du module 43, notamment les textes multilignes, guillemets et antislashs.
 
 ### Voxist
 

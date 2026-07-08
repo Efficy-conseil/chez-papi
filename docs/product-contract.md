@@ -137,6 +137,7 @@ Contrainte critique :
 
 - Une source métier ne doit jamais être uniquement exclue d'une route sans disposer d'une route de secours.
 - Si une route source est bloquée par `count > 0`, il doit exister un comportement explicite : archiver comme déjà traité, mettre à jour une demande existante, ou signaler une anomalie.
+- Tout texte libre interpolé dans un corps JSON brut Make doit être protégé avec `escapeJSON` afin de préserver les retours à la ligne, guillemets et antislashs sans produire un JSON invalide.
 
 ## Make - Wix
 

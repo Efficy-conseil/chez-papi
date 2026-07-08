@@ -24,6 +24,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | W04 | Réponse client dans un fil Wix | Mise à jour de la demande existante, relance à traiter, aucun accusé | Statique + essai Make |
 | W05 | Formulaire Wix non qualifié ou incomplet | Aucune création erronée ; message classé ou anomalie visible | Essai Make |
 | W06 | Email Wix | Ne passe jamais dans Voxist ou Email direct | Automatique |
+| W07 | Formulaire Wix avec texte multiligne, guillemets ou antislashs | JSON valide envoyé au backend, une ligne créée et aucun `Bad control character` | Automatique + essai Make |
 
 ## Voxist
 

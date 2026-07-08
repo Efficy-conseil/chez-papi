@@ -52,6 +52,31 @@ assert(duplicateBody.includes('"gmail_thread_id":"{{1.threadId}}"'), 'gmail_thre
 assert(!duplicateBody.includes('toJSON('), 'fonction Make toJSON non prise en charge dans le module 60');
 assert(!duplicateBody.includes('\\) +'), 'expression Make corrompue dans le module 60');
 
+const wixUpsertModule = moduleById(mainModules, 43);
+const wixUpsertBody = wixUpsertModule.mapper?.data || '';
+[
+  'nom_client',
+  'telephone',
+  'email_client',
+  'type_evenement',
+  'date_evenement',
+  'heure_evenement',
+  'nb_convives',
+  'lieu_prestation',
+  'budget_estime',
+  'message_original',
+  'notes'
+].forEach(field => {
+  assert(
+    wixUpsertBody.includes(`"${field}":"{{escapeJSON(42.${field})}}"`),
+    `champ Wix ${field} non protégé par escapeJSON dans le module 43`
+  );
+});
+assert(
+  wixUpsertBody.includes('"wix_form_fingerprint":"{{escapeJSON(42.nom_client)}}|{{escapeJSON(42.email_client)}}|{{escapeJSON(42.date_evenement)}}|{{escapeJSON(42.telephone)}}"'),
+  'empreinte Wix non protégée par escapeJSON dans le module 43'
+);
+
 const mainRouter = moduleById(mainModules, 2);
 const topRoutes = mainRouter.routes || [];
 const routeIds = topRoutes.map(route => route.flow.map(module => module.id));
