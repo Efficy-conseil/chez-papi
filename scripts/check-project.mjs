@@ -44,5 +44,10 @@ requireText('chez-papi/index.html', 'id="confirmed-more"');
 requireText('docs/frontend-functional-spec.md', 'événement Google Calendar');
 requireText('chez-papi/app.js', "controller.abort(), 30000");
 requireFunctionNotContains('apps-script/code.gs', 'ensureSchemaHeaders', 'applyDefaultRowHeights(sheet)');
+requireText(
+  'apps-script/code.gs',
+  'const isMessageScopedSource = idDemande.indexOf("WIX-") === 0 || idDemande.indexOf("VOXIST-") === 0;'
+);
+requireText('apps-script/code.gs', 'const gmailThreadId = isMessageScopedSource ? "" : requestedThreadId;');
 
 console.log('Vérifications locales réussies.');

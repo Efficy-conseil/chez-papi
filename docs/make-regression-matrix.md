@@ -25,6 +25,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | W05 | Formulaire Wix non qualifié ou incomplet | Aucune création erronée ; message classé ou anomalie visible | Essai Make |
 | W06 | Email Wix | Ne passe jamais dans Voxist ou Email direct | Automatique |
 | W07 | Formulaire Wix avec texte multiligne, guillemets ou antislashs | JSON valide envoyé au backend, une ligne créée et aucun `Bad control character` | Automatique + essai Make |
+| W08 | Deux formulaires Wix distincts regroupés dans le même fil Gmail | Le second `gmail_message_id` reste nouveau ; création ou fusion décidée ensuite par `upsertWixDemand` | Backend + essai Make |
 
 ## Voxist
 

@@ -480,9 +480,9 @@ function checkDuplicate(match) {
       idDemande = 'GMAIL-' + requestedThreadId;
     }
   }
-  const isVoxist = idDemande.indexOf("VOXIST-") === 0;
-  const legacyId = isVoxist ? "" : String(match.legacy_id || '').trim();
-  const gmailThreadId = isVoxist ? "" : requestedThreadId;
+  const isMessageScopedSource = idDemande.indexOf("WIX-") === 0 || idDemande.indexOf("VOXIST-") === 0;
+  const legacyId = isMessageScopedSource ? "" : String(match.legacy_id || '').trim();
+  const gmailThreadId = isMessageScopedSource ? "" : requestedThreadId;
   [idDemande, legacyId].forEach(function(value) {
     if (value && ids.indexOf(value) === -1) ids.push(value);
   });

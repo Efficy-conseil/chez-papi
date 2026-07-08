@@ -131,7 +131,7 @@ Déclencheur : Gmail nouveaux emails.
 - Le backend répond avec `count`.
 - `count = 0` signifie nouveau message non connu.
 - `count > 0` signifie message, thread ou ligne déjà connu.
-- Exception importante : pour Voxist, `checkDuplicate` ne doit vérifier que `VOXIST-<gmail_message_id>`, pas `gmail_thread_id`, car Gmail peut regrouper plusieurs messages vocaux dans un même fil.
+- Exception importante : pour Wix et Voxist, `checkDuplicate` ne doit vérifier que l'identifiant préfixé construit avec `gmail_message_id`, jamais `gmail_thread_id`. Gmail peut regrouper plusieurs formulaires Wix distincts ou plusieurs messages vocaux dans un même fil.
 
 Contrainte critique :
 

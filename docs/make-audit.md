@@ -31,6 +31,7 @@ Références : `docs/product-contract.md` et `docs/make-regression-matrix.md`.
 - Les réponses Wix sont rattachées via `updateWixFollowup`.
 - Les messages déjà connus sont archivés sans recréation.
 - Les champs Wix issus de l'IA sont protégés avec `escapeJSON` avant leur insertion dans le corps JSON brut du module 43, notamment les textes multilignes, guillemets et antislashs.
+- L'anti-doublon Wix utilise uniquement `WIX-<gmail_message_id>` : un fil Gmail partagé par plusieurs formulaires distincts ne bloque plus les messages suivants.
 
 ### Voxist
 
