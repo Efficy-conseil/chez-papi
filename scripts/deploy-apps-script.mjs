@@ -14,7 +14,7 @@ if (!existsSync('.clasp.json')) {
 }
 
 execFileSync(process.execPath, ['scripts/check-project.mjs'], { stdio: 'inherit' });
-execFileSync(clasp, ['push'], { stdio: 'inherit' });
+execFileSync(clasp, ['push', '--force'], { stdio: 'inherit' });
 
 const versionOutput = execFileSync(clasp, ['version', description], { encoding: 'utf8' });
 process.stdout.write(versionOutput);
