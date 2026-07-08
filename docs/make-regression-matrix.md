@@ -38,6 +38,8 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | V05 | Vocal personnel hors traiteur/événement | Aucune ligne, `Hors_Scope_Make` | Statique + essai Make |
 | V06 | Numéro appelant différent de la transcription | Numéro appelant conservé en priorité | Essai Make |
 | V07 | Email Voxist | Ne passe jamais dans Wix, Email direct ou relance email | Automatique |
+| V08 | Transcription préqualifiée puis rejetée par l’IA | Aucune ligne, archivage dans `Hors_Scope_Make` | Automatique + essai Make |
+| V09 | Audio retranscrit puis rejeté par l’IA | Aucune ligne, archivage dans `Hors_Scope_Make` | Automatique + essai Make |
 
 ## Email direct
 
@@ -53,6 +55,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | E08 | Message rattaché à une demande existante (`count > 0`) | Mise à jour technique puis archivage dans `Historique_Email` | Statique |
 | E09 | Email des boîtes internes | Aucune création client | Automatique |
 | E10 | Réponse dans un fil existant dont le texte cité contient date, devis ou personnes | Une seule ligne conservée, aucune route nouvelle demande, `Historique_Email` uniquement côté Make | Automatique + essai Make |
+| E11 | Nouvelle demande réelle sans adresse exploitable pour l’accusé | Ligne créée puis message archivé dans `Historique_Email`, sans accusé | Automatique + essai Make |
 
 ## Tally
 

@@ -32,12 +32,14 @@ Références : `docs/product-contract.md` et `docs/make-regression-matrix.md`.
 - Les messages déjà connus sont archivés sans recréation.
 - Les champs Wix issus de l'IA sont protégés avec `escapeJSON` avant leur insertion dans le corps JSON brut du module 43, notamment les textes multilignes, guillemets et antislashs.
 - L'anti-doublon Wix utilise uniquement `WIX-<gmail_message_id>` : un fil Gmail partagé par plusieurs formulaires distincts ne bloque plus les messages suivants.
+- Les sorties Wix réelles et hors scope sont séparées par un routeur ; l'archivage d'une demande réelle précède l'accusé optionnel.
 
 ### Voxist
 
 - Le routage principal dépend de l'expéditeur Voxist, pas du seul mot `VOXIST`.
 - Les mots métier élargis du contrat sont présents dans le préfiltre.
 - Les chemins transcription et audio possèdent chacun une sortie demande et hors scope.
+- Les rejets IA après extraction de transcription ou retranscription audio sont placés sur des branches distinctes et atteignent toujours `Hors_Scope_Make`.
 - Les messages déjà connus sont archivés sans retraitement.
 
 ### Email direct
@@ -46,6 +48,7 @@ Références : `docs/product-contract.md` et `docs/make-regression-matrix.md`.
 - Tous les autres nouveaux emails peuvent être analysés, même sans ancien mot-clé de préfiltrage.
 - L'IA distingue nouvelle demande, suivi et hors scope.
 - Les suivis rattachés sont archivés après mise à jour.
+- Pour une nouvelle demande, l'archivage précède l'accusé optionnel afin qu'une adresse absente ne bloque pas le classement Gmail.
 
 ### Tally
 

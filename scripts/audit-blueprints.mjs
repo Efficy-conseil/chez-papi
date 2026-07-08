@@ -88,6 +88,20 @@ assert(moduleById(mainModules, 88).mapper?.to === 'Label_39174335232504636', 'do
 assert(moduleById(mainModules, 89).mapper?.to === 'Label_5869457419717567046', 'doublon Voxist vers le mauvais libellé');
 assert(moduleById(mainModules, 87).mapper?.to === 'Label_2648810022094724776', 'relance Email vers le mauvais libellé');
 
+const router90 = moduleById(mainModules, 90);
+const router91 = moduleById(mainModules, 91);
+const router92 = moduleById(mainModules, 92);
+assert(router90.routes?.some(route => route.flow.some(module => module.id === 70)), 'archivage hors scope Voxist transcription non séparé');
+assert(router91.routes?.some(route => route.flow.some(module => module.id === 71)), 'archivage hors scope Voxist audio non séparé');
+assert(router92.routes?.some(route => route.flow.some(module => module.id === 93)), 'archivage hors scope Wix absent');
+assert(moduleById(mainModules, 93).mapper?.to === 'Label_2633677580427542522', 'Wix hors scope vers le mauvais libellé');
+
+const wixSuccessFlow = router92.routes?.find(route => route.flow.some(module => module.id === 43))?.flow || [];
+assert(wixSuccessFlow.findIndex(module => module.id === 45) < wixSuccessFlow.findIndex(module => module.id === 44), 'archivage Wix encore placé après l’accusé optionnel');
+
+const emailNewDemandFlow = (moduleById(mainModules, 50).routes || []).find(route => route.flow.some(module => module.id === 39))?.flow || [];
+assert(emailNewDemandFlow.findIndex(module => module.id === 5) < emailNewDemandFlow.findIndex(module => module.id === 40), 'archivage Email encore placé après l’accusé optionnel');
+
 [62, 15, 39].forEach(id => {
   const value = moduleById(mainModules, id).mapper?.values?.date_evenement || '';
   assert(value.includes('Inconnu / à compléter'), `date inconnue non normalisée sur le module ${id}`);

@@ -10,6 +10,7 @@ Objectif : ce document est la source de référence avant toute modification du 
 - Un suivi client sur une demande existante ne doit pas créer de nouvelle ligne.
 - Un email interne, un accusé automatique, une newsletter, une facture fournisseur ou un spam ne doit pas créer de demande.
 - Make doit toujours archiver un message traité dans le bon libellé Gmail, sauf si une erreur volontairement remontée empêche le traitement.
+- Un accusé optionnel ne doit jamais être placé avant l'archivage dans une même branche, car son filtre pourrait interrompre le flux.
 - Les filtres Gmail ne doivent pas masquer les sources métier surveillées par Make.
 - Les corrections doivent être testées contre les chemins Wix, Voxist, Email direct et Tally avant import.
 
