@@ -91,6 +91,7 @@ Contraintes :
 - Ne jamais stocker `MM/DD/YYYY`.
 - Ne jamais transformer une année seule en `01/01/AAAA`.
 - Une date `JJ/MM` doit utiliser l'année en cours et être normalisée en `JJ/MM/AAAA`.
+- Pour une demande de prestation, une date complète avec une année manifestement ancienne dont seul le chiffre des dizaines est erroné peut être corrigée vers l'année de réception ou l'année suivante : par exemple `2016` → `2026` et `2007` → `2027` pour une demande reçue en 2026. La date corrigée doit rester strictement future par rapport à la réception. Cette correction ne s'applique pas à une année seule, à une date au-delà de l'année suivante ou à un contexte historique explicite ; dans ces cas, la date est à compléter.
 - Ne jamais laisser JavaScript convertir une date `JJ/MM` en une date de 2001.
 - Le dashboard doit afficher les dates au format `JJ/MM/AAAA`.
 - Le dashboard doit afficher une date `JJ/MM` avec l'année en cours.

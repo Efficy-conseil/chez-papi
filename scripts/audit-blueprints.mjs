@@ -88,6 +88,14 @@ assert(moduleById(mainModules, 88).mapper?.to === 'Label_39174335232504636', 'do
 assert(moduleById(mainModules, 89).mapper?.to === 'Label_5869457419717567046', 'doublon Voxist vers le mauvais libellé');
 assert(moduleById(mainModules, 87).mapper?.to === 'Label_2648810022094724776', 'relance Email vers le mauvais libellé');
 
+[84, 85, 80, 81].forEach(id => {
+  const body = moduleById(mainModules, id).mapper?.data || '';
+  assert(
+    body.includes('"dernier_message_client":"{{escapeJSON(substring(1.fullTextBody; 0; 900))}}"'),
+    `message client de relance non protégé par escapeJSON dans le module ${id}`
+  );
+});
+
 const router90 = moduleById(mainModules, 90);
 const router91 = moduleById(mainModules, 91);
 const router92 = moduleById(mainModules, 92);
@@ -111,6 +119,14 @@ const emailAi = moduleById(mainModules, 37);
 assert(emailAi.filter?.name?.includes('analyse complète'), 'route Email direct encore limitée aux mots-clés historiques');
 const emailAiConditions = (emailAi.filter?.conditions || []).flat(Infinity);
 assert(!emailAiConditions.some(condition => condition?.o === 'number:greater'), 'route Email direct encore ouverte aux fils déjà connus');
+
+[41, 21, 65, 13, 37].forEach(id => {
+  const datePrompt = moduleById(mainModules, id).mapper?.messages?.find(message => message.role === 'system')?.content || '';
+  assert(
+    datePrompt.includes('2007') && datePrompt.includes('année suivante') && datePrompt.includes('strictement future') && datePrompt.includes('une année seule'),
+    `correction bornée vers l’année courante ou suivante absente du prompt de date du module ${id}`
+  );
+});
 
 const serializedMain = JSON.stringify(main);
 const serializedTally = JSON.stringify(tally);
