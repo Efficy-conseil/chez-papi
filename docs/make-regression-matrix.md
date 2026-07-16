@@ -42,6 +42,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | V07 | Email Voxist | Ne passe jamais dans Wix, Email direct ou relance email | Automatique |
 | V08 | Transcription préqualifiée puis rejetée par l’IA | Aucune ligne, archivage dans `Hors_Scope_Make` | Automatique + essai Make |
 | V09 | Audio retranscrit puis rejeté par l’IA | Aucune ligne, archivage dans `Hors_Scope_Make` | Automatique + essai Make |
+| V10 | Vocal de demande d’anniversaire sans nom énoncé | `nom_client` = `Inconnu / à compléter`, type = `Anniversaire`, sans jamais utiliser le type comme nom | Automatique + essai Make |
 
 ## Email direct
 

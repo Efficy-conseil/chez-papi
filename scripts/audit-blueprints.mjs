@@ -135,6 +135,15 @@ assert(!emailAiConditions.some(condition => condition?.o === 'number:greater'), 
   );
 });
 
+[21, 65, 13].forEach(id => {
+  const messages = moduleById(mainModules, id).mapper?.messages || [];
+  const prompt = messages.map(message => message.content || '').join('\n');
+  assert(
+    prompt.includes('nom_client = "Inconnu / à compléter"') && /ne jamais utiliser le type_evenement/i.test(prompt) && prompt.includes('comme nom_client'),
+    `règle de repli du nom client Voxist absente du module ${id}`
+  );
+});
+
 const serializedMain = JSON.stringify(main);
 const serializedTally = JSON.stringify(tally);
 assert(!serializedMain.includes('ifempty(60.data.count; 0)'), 'anti-doublon Email/Wix/Voxist encore permissif si count est absent');

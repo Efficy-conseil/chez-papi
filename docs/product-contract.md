@@ -178,6 +178,7 @@ Comportement attendu :
 - Label Gmail -> `Historique_Voxist`.
 - Aucun accusé email automatique.
 - Le téléphone doit prioriser le numéro appelant détecté par l'email Voxist si la transcription donne un numéro incohérent.
+- Si l'appelant n'énonce aucun nom ou prénom, `nom_client` doit être `Inconnu / à compléter`. Le type d'événement ou le motif de l'appel ne doit jamais être utilisé comme nom client.
 
 Critères de vraie demande Voxist :
 
