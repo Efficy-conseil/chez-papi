@@ -108,6 +108,7 @@ Contraintes :
 - Une demande ne doit créer un événement Google Calendar que lorsque son statut devient `Événement confirmé`.
 - Cette règle s'applique à tous les canaux : Téléphone, Email, Site Internet, Réseaux sociaux et Saisie manuelle.
 - La création initiale d'une demande avec un autre statut ne doit pas créer d'événement calendrier.
+- Un changement de statut entre deux états non confirmés ne doit pas consulter Google Calendar.
 
 ## Types d'événement
 

@@ -1284,15 +1284,15 @@ async function updateEventStatus(selectEl) {
       const row = appData.find(e => eventId(e) === idDemande);
       if (row) {
         const entersWaitingResponse = newStatus === WAITING_RESPONSE_STATUS && row.statut !== WAITING_RESPONSE_STATUS;
-        row.statut = newStatus;
-        if (entersWaitingResponse) row.en_attente_reponse_depuis = new Date().toISOString();
+        Object.assign(row, result.fields || {}, { statut: newStatus });
+        if (entersWaitingResponse && !row.en_attente_reponse_depuis) {
+          row.en_attente_reponse_depuis = new Date().toISOString();
+        }
       }
       renderAll();
       showNotification('Statut mis à jour', 'success');
       // Notifier les autres onglets immédiatement
       broadcastSync();
-      // Resynchronisation complète depuis le Sheet après un court délai
-      setTimeout(() => loadData().catch(() => {}), 2000);
     } else {
       selectEl.disabled = false;
       showNotification('Erreur : ' + (result.error || 'inconnue'), 'error');

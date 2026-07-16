@@ -47,6 +47,8 @@ requireText('apps-script/code.gs', 'en_attente_reponse_depuis');
 requireText('chez-papi/app.js', "const WAITING_RESPONSE_REMINDER_DAYS = 7;");
 requireText('chez-papi/index.html', 'id="kpi-attente-val"');
 requireText('chez-papi/app.js', "function formatWaitingResponseSince(event)");
+requireText('chez-papi/app.js', 'Object.assign(row, result.fields || {}, { statut: newStatus });');
+requireText('apps-script/code.gs', 'const requiresCalendarSync = !isStatusOnlyUpdate || isConfirmedStatus(currentStatus) || isConfirmedStatus(clean.statut);');
 requireText('chez-papi/app.js', "controller.abort(), 30000");
 requireFunctionNotContains('apps-script/code.gs', 'ensureSchemaHeaders', 'applyDefaultRowHeights(sheet)');
 requireText(

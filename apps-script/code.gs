@@ -329,6 +329,7 @@ function updateRowById(idDemande, fields) {
   const found = findRowByDemandId(sheet, headers, idDemande);
   if (!found) throw new Error("Demande introuvable : " + idDemande);
   const clean = sanitizeFields(fields || {}, true);
+  const isStatusOnlyUpdate = Object.keys(clean).length === 1 && clean.statut !== undefined;
   const statusColumn = headers.findIndex(function(h) { return canonicalKey(h) === "statut"; }) + 1;
   const currentStatus = statusColumn > 0 ? String(sheet.getRange(found.rowIndex, statusColumn).getValue() || '').trim() : '';
   if (clean.statut === "En attente de réponse" && currentStatus !== "En attente de réponse") {
@@ -345,24 +346,27 @@ function updateRowById(idDemande, fields) {
       cell.setValue(clean[key]);
     }
   });
-  applyDefaultRowHeight(sheet, found.rowIndex);
+  if (!isStatusOnlyUpdate) {
+    applyDefaultRowHeight(sheet, found.rowIndex);
+  }
 
-  // CORRECTION : forcer l'écriture avant de relire la ligne pour la synchro Calendar
-  SpreadsheetApp.flush();
-
-  // Synchroniser avec Google Calendar (récupération de la ligne complète mise à jour)
-  try {
-    const rowValues = sheet.getRange(found.rowIndex, 1, 1, sheet.getLastColumn()).getValues()[0];
-    const rowData = {};
-    headers.forEach((h, i) => {
-      rowData[canonicalKey(h)] = rowValues[i];
-    });
-    syncCalendarEvent(rowData);
-  } catch (err) {
-    Logger.log("Erreur de synchronisation Google Calendar dans updateRow: " + err.message);
+  // Un changement de statut entre deux états non confirmés ne concerne pas le calendrier.
+  const requiresCalendarSync = !isStatusOnlyUpdate || isConfirmedStatus(currentStatus) || isConfirmedStatus(clean.statut);
+  if (requiresCalendarSync) {
+    SpreadsheetApp.flush();
+    try {
+      const rowValues = sheet.getRange(found.rowIndex, 1, 1, sheet.getLastColumn()).getValues()[0];
+      const rowData = {};
+      headers.forEach((h, i) => {
+        rowData[canonicalKey(h)] = rowValues[i];
+      });
+      syncCalendarEvent(rowData);
+    } catch (err) {
+      Logger.log("Erreur de synchronisation Google Calendar dans updateRow: " + err.message);
+    }
   }
   
-  return ok({ id_demande: idDemande });
+  return ok({ id_demande: idDemande, fields: clean });
 }
 
 function updateThreadFollowup(gmailThreadId, fields) {
@@ -1445,10 +1449,7 @@ function syncCalendarEvent(rowData) {
   
   var existingEvent = findCalendarEvent(calendar, data.id_demande);
   var statutStr = String(data.statut || '').trim();
-  // Comparison insensible aux accents via normalisation
-  var isConfirmed = statutStr === 'Événement confirmé' ||
-                    statutStr === 'evenement confirme' ||
-                    statutStr.toLowerCase().replace(/[éèêë]/g,'e').replace(/[àâä]/g,'a') === 'evenement confirme';
+  var isConfirmed = isConfirmedStatus(statutStr);
   
   Logger.log("[syncCalendarEvent] isConfirmed=" + isConfirmed + ", statut brut='" + statutStr + "'");
   
@@ -1512,6 +1513,13 @@ function syncCalendarEvent(rowData) {
       Logger.log("[syncCalendarEvent] Aucune action (statut non confirmé, pas d'event existant)");
     }
   }
+}
+
+function isConfirmedStatus(status) {
+  const value = String(status || '').trim();
+  return value === 'Événement confirmé' ||
+    value === 'evenement confirme' ||
+    value.toLowerCase().replace(/[éèêë]/g, 'e').replace(/[àâä]/g, 'a') === 'evenement confirme';
 }
 
 function testCalendar() {

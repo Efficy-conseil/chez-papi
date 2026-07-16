@@ -126,6 +126,12 @@ Un badge est affiché dans les listes concernées. La fiche détaille les champs
 
 Une demande `Événement confirmé` dont la date de fin est passée est automatiquement mise à jour en `Événement terminé`. La modification est envoyée au backend et propagée aux autres onglets ouverts.
 
+### 4.8 Mise à jour de statut
+
+- Un changement de statut depuis le dashboard met à jour immédiatement les listes, compteurs et cartes de l'onglet courant après confirmation du backend.
+- Il ne déclenche pas de rechargement complet des demandes ; les autres onglets ouverts reçoivent une synchronisation silencieuse.
+- Le backend retourne les champs techniques éventuellement complétés, notamment `en_attente_reponse_depuis`.
+
 ## 5. Accueil
 
 ### 5.1 Commandes
