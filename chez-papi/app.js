@@ -1063,7 +1063,7 @@ function renderDashboard() {
   set('kpi-rappel-val',      aRappeler.length || '—');
   set('kpi-attente-val',     enAttenteReponse.length || '—');
   const attenteHint = document.getElementById('kpi-attente-hint');
-  if (attenteHint) attenteHint.textContent = relancesAttente.length ? `${relancesAttente.length} depuis au moins 7 jours` : 'Aucune relance à prévoir';
+  if (attenteHint) attenteHint.textContent = relancesAttente.length ? `${relancesAttente.length} depuis au moins 7 jours` : '';
   set('kpi-leads-val',       nouveaux.length || '—');
 
   // Dernières demandes
