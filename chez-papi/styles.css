@@ -9,6 +9,7 @@
   --gold:      #B8892A;
   --gold-lt:   #D4A847;
   --green:     #4A6741;
+  --blue:      #52738A;
   --red-soft:  #C0453A;
   --text:      #2E2018;
   --muted:     #8A7260;
@@ -663,6 +664,12 @@ body {
   }
 }
 
+@media (min-width: 1180px) {
+  .kpi-strip {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
 .kpi-card {
   background: #fff;
   border: 1px solid var(--border);
@@ -685,6 +692,7 @@ body {
 .kpi-card.green::before { background: var(--green); }
 .kpi-card.terra::before { background: var(--terracotta); }
 .kpi-card.red::before { background: var(--red-soft); }
+.kpi-card.blue::before { background: var(--blue); }
 
 .kpi-label {
   font-size: 0.8rem;
@@ -869,6 +877,7 @@ body {
 .pill-orange { background: rgba(212,120,30,.12); color: #D4781E; }
 .pill-gray { background: rgba(138,114,96,.1); color: var(--muted); }
 .pill-red { background: rgba(192,69,58,.1); color: var(--red-soft); }
+.pill-blue { background: rgba(82,115,138,.12); color: var(--blue); }
 
 /* BAR CHART */
 .bar-chart {

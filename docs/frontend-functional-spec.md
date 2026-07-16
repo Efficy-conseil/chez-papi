@@ -75,6 +75,7 @@ Les valeurs affichées sont :
 
 - `Nouvelle demande` ;
 - `À rappeler` ;
+- `En attente de réponse` ;
 - `Devis à préparer` ;
 - `Devis envoyé` ;
 - `Événement confirmé` ;
@@ -135,14 +136,17 @@ Une demande `Événement confirmé` dont la date de fin est passée est automati
 
 ### 5.2 Indicateurs cliquables
 
-Quatre indicateurs affichent le nombre de dossiers actifs :
+Cinq indicateurs affichent le nombre de dossiers actifs :
 
 - nouvelles demandes ;
 - demandes à rappeler ;
+- demandes en attente de réponse ;
 - devis à préparer ;
 - événements confirmés.
 
-Chaque indicateur ouvre une fenêtre détaillée. Les lignes de cette fenêtre ouvrent la fiche, et le statut peut y être modifié directement. Le détail `À rappeler` affiche également le téléphone ; le détail `Devis à préparer` affiche le budget.
+Chaque indicateur ouvre une fenêtre détaillée. Les lignes de cette fenêtre ouvrent la fiche, et le statut peut y être modifié directement. Le détail `À rappeler` affiche également le téléphone ; le détail `En attente de réponse` affiche la colonne `Depuis` avec le nombre de jours écoulés depuis la proposition d'appel ; le nombre est mis en évidence à partir de sept jours. Le détail `Devis à préparer` affiche le budget.
+
+Lorsqu'un dossier passe au statut `En attente de réponse`, le backend renseigne `en_attente_reponse_depuis`. L'indicateur affiche le nombre de dossiers dont l'attente atteint au moins sept jours, afin de signaler les relances à prévoir.
 
 ### 5.3 Dernières demandes
 
@@ -174,7 +178,7 @@ Chaque indicateur ouvre une fenêtre détaillée. Les lignes de cette fenêtre o
 
 ## 6. Demandes en cours — pipeline
 
-Le pipeline contient les statuts commerciaux actifs : `Nouvelle demande`, `À rappeler`, `Devis à préparer` et `Devis envoyé`.
+Le pipeline contient les statuts commerciaux actifs : `Nouvelle demande`, `À rappeler`, `En attente de réponse`, `Devis à préparer` et `Devis envoyé`.
 
 Les dossiers sont répartis dans quatre colonnes :
 

@@ -32,6 +32,7 @@ const DEFAULT_ROW_HEIGHT_PX = 20;
 const ALLOWED_STATUSES = [
   "Nouvelle demande",
   "À rappeler",
+  "En attente de réponse",
   "Devis à préparer",
   "Devis envoyé",
   "Événement confirmé",
@@ -72,6 +73,7 @@ const ALLOWED_FIELDS = [
   "dernier_message_client",
   "nb_relances_client",
   "relance_a_traiter",
+  "en_attente_reponse_depuis",
   "derniere_modification"
 ];
 
@@ -82,7 +84,8 @@ const SCHEMA_HEADERS = [
   "dernier_email_recu_le",
   "dernier_message_client",
   "nb_relances_client",
-  "relance_a_traiter"
+  "relance_a_traiter",
+  "en_attente_reponse_depuis"
 ];
 
 const KEY_MAP = {
@@ -147,6 +150,8 @@ const KEY_MAP = {
   "Nb Relances Client": "nb_relances_client",
   "relance_a_traiter": "relance_a_traiter",
   "Relance À Traiter": "relance_a_traiter",
+  "en_attente_reponse_depuis": "en_attente_reponse_depuis",
+  "En Attente Réponse Depuis": "en_attente_reponse_depuis",
   "derniere_modification": "derniere_modification",
   "Dernière Modification": "derniere_modification"
 };
@@ -252,6 +257,9 @@ function addRow(rowData) {
   if (!clean.date_evenement) {
     clean.date_evenement = "Inconnu / à compléter";
   }
+  if (clean.statut === "En attente de réponse" && !clean.en_attente_reponse_depuis) {
+    clean.en_attente_reponse_depuis = new Date();
+  }
   
   clean.derniere_modification = new Date();
   
@@ -321,6 +329,11 @@ function updateRowById(idDemande, fields) {
   const found = findRowByDemandId(sheet, headers, idDemande);
   if (!found) throw new Error("Demande introuvable : " + idDemande);
   const clean = sanitizeFields(fields || {}, true);
+  const statusColumn = headers.findIndex(function(h) { return canonicalKey(h) === "statut"; }) + 1;
+  const currentStatus = statusColumn > 0 ? String(sheet.getRange(found.rowIndex, statusColumn).getValue() || '').trim() : '';
+  if (clean.statut === "En attente de réponse" && currentStatus !== "En attente de réponse") {
+    clean.en_attente_reponse_depuis = new Date();
+  }
   
   clean.derniere_modification = new Date();
   

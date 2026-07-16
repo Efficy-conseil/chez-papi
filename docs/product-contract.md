@@ -64,17 +64,21 @@ Champs techniques :
 - `dernier_message_client`
 - `nb_relances_client`
 - `relance_a_traiter`
+- `en_attente_reponse_depuis`
 
 ## Statuts autorisés
 
 - `Nouvelle demande`
 - `À rappeler`
+- `En attente de réponse`
 - `Devis à préparer`
 - `Devis envoyé`
 - `Événement confirmé`
 - `Événement terminé`
 - `Perdu / Sans suite`
 - `Refusé / Complet`
+
+Lorsqu'une demande passe à `En attente de réponse`, le backend renseigne `en_attente_reponse_depuis`. Cette date est conservée tant que le statut ne quitte pas puis ne réintègre pas cet état ; elle sert au dashboard pour compter les jours sans réponse et signaler une relance à partir de sept jours.
 
 ## Dates
 

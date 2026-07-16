@@ -400,6 +400,7 @@ function compareEventDatesDesc(a, b) {
 const STATUS_PILL = {
   'Nouvelle demande': 'pill-terra',
   'À rappeler': 'pill-orange',
+  'En attente de réponse': 'pill-blue',
   'Devis à préparer': 'pill-gold',
   'Devis envoyé': 'pill-gold',
   'Événement confirmé': 'pill-green',
@@ -411,6 +412,7 @@ const STATUS_PILL = {
 const STATUS_LABEL = {
   'Nouvelle demande': '🆕 Nouvelle demande',
   'À rappeler': '📞 À rappeler',
+  'En attente de réponse': '⏳ En attente de réponse',
   'Devis à préparer': '📝 Devis à préparer',
   'Devis envoyé': '✉️ Devis envoyé',
   'Événement confirmé': '📅 Événement confirmé',
@@ -422,6 +424,7 @@ const STATUS_LABEL = {
 const STATUS_DOT = {
   'Nouvelle demande': 'terra',
   'À rappeler': 'orange',
+  'En attente de réponse': 'blue',
   'Devis à préparer': 'gold',
   'Devis envoyé': 'gold',
   'Événement confirmé': 'green',
@@ -430,7 +433,9 @@ const STATUS_DOT = {
   'Refusé / Complet': 'red'
 };
 
-const ALL_STATUSES = ['Nouvelle demande', 'À rappeler', 'Devis à préparer', 'Devis envoyé', 'Événement confirmé', 'Événement terminé', 'Perdu / Sans suite', 'Refusé / Complet'];
+const ALL_STATUSES = ['Nouvelle demande', 'À rappeler', 'En attente de réponse', 'Devis à préparer', 'Devis envoyé', 'Événement confirmé', 'Événement terminé', 'Perdu / Sans suite', 'Refusé / Complet'];
+const WAITING_RESPONSE_STATUS = 'En attente de réponse';
+const WAITING_RESPONSE_REMINDER_DAYS = 7;
 
 function generateStatusSelectHtml(e, extraClass = '') {
   const options = ALL_STATUSES.map(s =>
@@ -599,12 +604,13 @@ function processRows(rawRows) {
   const statOrder = {
     'Nouvelle demande': 1,
     'À rappeler': 2,
-    'Devis à préparer': 3,
-    'Devis envoyé': 4,
-    'Événement confirmé': 5,
-    'Événement terminé': 6,
-    'Perdu / Sans suite': 7,
-    'Refusé / Complet': 7
+    'En attente de réponse': 3,
+    'Devis à préparer': 4,
+    'Devis envoyé': 5,
+    'Événement confirmé': 6,
+    'Événement terminé': 7,
+    'Perdu / Sans suite': 8,
+    'Refusé / Complet': 8
   };
 
   // 1. Normaliser les statuts
@@ -874,6 +880,7 @@ function normalizeStatus(status) {
 
   if (lower === 'nouveau' || lower === 'nouvelle demande') return 'Nouvelle demande';
   if (lower === 'à rappeler' || lower === 'a rappeler' || lower === 'rappeler') return 'À rappeler';
+  if (lower === 'en attente de réponse' || lower === 'en attente de reponse' || lower === 'attente de réponse' || lower === 'attente de reponse') return WAITING_RESPONSE_STATUS;
   if (lower === 'contacté' || lower === 'client contacté' || lower === 'contacte' || lower === 'devis à préparer' || lower === 'devis a preparer') return 'Devis à préparer';
   if (lower === 'devis envoyé' || lower === 'devis envoye') return 'Devis envoyé';
   if (lower === 'signé' || lower === 'devis signé' || lower === 'signe' || lower === 'prestation en cours' || lower === 'événement confirmé' || lower === 'evenement confirme' || lower === 'evenement confirmé' || lower === 'événement confirme') return 'Événement confirmé';
@@ -882,6 +889,27 @@ function normalizeStatus(status) {
   if (lower === 'refusé' || lower === 'refuse' || lower === 'complet' || lower === 'refusé / complet' || lower === 'refuse / complet' || lower === 'refusé/complet' || lower === 'refuse/complet') return 'Refusé / Complet';
 
   return s;
+}
+
+function waitingResponseDays(value) {
+  if (!value) return null;
+  const since = new Date(value);
+  if (Number.isNaN(since.getTime())) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  since.setHours(0, 0, 0, 0);
+  return Math.max(0, Math.floor((today.getTime() - since.getTime()) / 86400000));
+}
+
+function formatWaitingResponseSince(event) {
+  const days = waitingResponseDays(event?.en_attente_reponse_depuis);
+  if (days === null) return '—';
+  return `${days} jour${days > 1 ? 's' : ''}`;
+}
+
+function waitingResponseSinceColor(event) {
+  const days = waitingResponseDays(event?.en_attente_reponse_depuis);
+  return days !== null && days >= WAITING_RESPONSE_REMINDER_DAYS ? 'var(--terracotta)' : 'var(--blue)';
 }
 
 async function loadData() {
@@ -1025,12 +1053,17 @@ function renderDashboard() {
   const confirmes = actives.filter(e => e.statut === 'Événement confirmé');
   const devisAPreparer = actives.filter(e => e.statut === 'Devis à préparer');
   const aRappeler = actives.filter(e => e.statut === 'À rappeler');
+  const enAttenteReponse = actives.filter(e => e.statut === WAITING_RESPONSE_STATUS);
+  const relancesAttente = enAttenteReponse.filter(e => (waitingResponseDays(e.en_attente_reponse_depuis) || 0) >= WAITING_RESPONSE_REMINDER_DAYS);
   const nouveaux = actives.filter(e => e.statut === 'Nouvelle demande');
 
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
   set('kpi-confirmes-val',   confirmes.length || '—');
   set('kpi-devis-val',       devisAPreparer.length || '—');
   set('kpi-rappel-val',      aRappeler.length || '—');
+  set('kpi-attente-val',     enAttenteReponse.length || '—');
+  const attenteHint = document.getElementById('kpi-attente-hint');
+  if (attenteHint) attenteHint.textContent = relancesAttente.length ? `${relancesAttente.length} depuis au moins 7 jours` : 'Aucune relance à prévoir';
   set('kpi-leads-val',       nouveaux.length || '—');
 
   // Dernières demandes
@@ -1153,7 +1186,7 @@ function renderPipeline() {
   const today = new Date();
   today.setHours(0,0,0,0);
 
-  const PIPELINE_SCOPE = ['Nouvelle demande', 'À rappeler', 'Devis à préparer', 'Devis envoyé'];
+  const PIPELINE_SCOPE = ['Nouvelle demande', 'À rappeler', WAITING_RESPONSE_STATUS, 'Devis à préparer', 'Devis envoyé'];
   const colsData = { 'entreprise': [], 'urgent': [], 'important': [], 'normal': [] };
 
   appData.forEach(e => {
@@ -1252,7 +1285,11 @@ async function updateEventStatus(selectEl) {
     const result = await SheetsAPI.update(idDemande, { 'statut': newStatus });
     if (result.success) {
       const row = appData.find(e => eventId(e) === idDemande);
-      if (row) row.statut = newStatus;
+      if (row) {
+        const entersWaitingResponse = newStatus === WAITING_RESPONSE_STATUS && row.statut !== WAITING_RESPONSE_STATUS;
+        row.statut = newStatus;
+        if (entersWaitingResponse) row.en_attente_reponse_depuis = new Date().toISOString();
+      }
       renderAll();
       showNotification('Statut mis à jour', 'success');
       // Notifier les autres onglets immédiatement
@@ -2005,8 +2042,10 @@ document.getElementById('event-form').addEventListener('submit', async e => {
       result = await SheetsAPI.update(eventId(row), data);
       if (result.success) {
         if (row) {
+          const entersWaitingResponse = data.statut === WAITING_RESPONSE_STATUS && row.statut !== WAITING_RESPONSE_STATUS;
           Object.assign(row, data);
           row.derniere_modification = new Date().toISOString();
+          if (entersWaitingResponse) row.en_attente_reponse_depuis = new Date().toISOString();
 
           // Si la date de l'événement a changé, caler l'agenda sur le nouveau mois
           const d = parseLocalDate(data.date_evenement);
@@ -2306,6 +2345,26 @@ function showKpiModal(type) {
         <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e)}</td>
       </tr>`;
     }).join('') : '<tr><td colspan="5" class="tbl-empty">Aucune demande à rappeler</td></tr>';
+  }
+  else if (type === 'attente') {
+    title.textContent = 'En attente de réponse';
+    const evts = actives.filter(e => e.statut === WAITING_RESPONSE_STATUS);
+    evts.sort((a, b) => {
+      const aDays = waitingResponseDays(a.en_attente_reponse_depuis) ?? -1;
+      const bDays = waitingResponseDays(b.en_attente_reponse_depuis) ?? -1;
+      return bDays - aDays;
+    });
+    thead.innerHTML = '<tr><th style="width:20%">Date</th><th style="width:27%">Client</th><th style="width:20%">Type</th><th style="width:17%">Depuis</th><th style="width:16%">Statut</th></tr>';
+    tbody.innerHTML = evts.length ? evts.map(e => {
+      const sinceText = formatWaitingResponseSince(e);
+      return `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})">
+        <td>${safeText(formatEventDateTime(e) || 'À dét.')}</td>
+        <td><strong>${safeText(e.nom_client)}</strong></td>
+        <td>${safeText(e.type_evenement || '—')}</td>
+        <td style="color:${waitingResponseSinceColor(e)};font-weight:700">${safeText(sinceText)}</td>
+        <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e)}</td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="5" class="tbl-empty">Aucune demande en attente de réponse</td></tr>';
   }
   else if (type === 'devis') {
     title.textContent = 'Devis à préparer';

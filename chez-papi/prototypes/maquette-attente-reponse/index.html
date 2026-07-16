@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chez Papi — maquette attente de réponse</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root { --cream:#faf6f0; --border:#d4c4a0; --brown:#5c3d1e; --gold:#b8892a; --terra:#c4714a; --green:#4a6741; --muted:#8a7260; --text:#2e2018; --blue:#52738a; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--cream); color:var(--text); font:14px/1.45 Lato, sans-serif; }
+    main { max-width:1180px; margin:0 auto; padding:36px 28px 56px; }
+    .head { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
+    h1 { margin:0; font:400 30px 'Playfair Display', serif; color:var(--brown); }
+    .sync { color:var(--muted); font-size:12px; }
+    .kpis { display:grid; grid-template-columns:repeat(5, 1fr); gap:10px; }
+    .kpi { appearance:none; text-align:left; position:relative; overflow:hidden; border:1px solid var(--border); border-radius:5px; padding:14px 13px 12px; background:#fff; cursor:pointer; color:inherit; font:inherit; }
+    .kpi::before { content:''; position:absolute; inset:0 auto 0 0; width:3px; background:var(--gold); }
+    .kpi.terra::before { background:var(--terra); } .kpi.green::before { background:var(--green); } .kpi.waiting::before { background:var(--blue); }
+    .kpi:hover, .kpi:focus-visible { outline:2px solid var(--brown); outline-offset:2px; }
+    .kpi-label { color:var(--muted); font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; min-height:32px; }
+    .kpi-value { margin-top:4px; color:var(--brown); font:400 36px/1 'Playfair Display', serif; }
+    .kpi-note { color:var(--blue); font-size:11px; margin-top:7px; }
+    .rule { color:var(--gold); letter-spacing:8px; text-align:center; margin:20px 0; }
+    .card { background:#fff; border:1px solid var(--border); border-radius:5px; overflow:hidden; box-shadow:0 2px 9px rgba(92,61,30,.06); }
+    .card-head { display:flex; gap:12px; align-items:baseline; justify-content:space-between; padding:17px 19px; border-bottom:1px solid #eadfc9; }
+    h2 { margin:0; color:var(--brown); font:400 21px 'Playfair Display', serif; }
+    .hint { color:var(--muted); font-size:12px; }
+    table { width:100%; border-collapse:collapse; }
+    th { padding:11px 19px; background:#f8f2e9; color:var(--muted); font-size:10px; letter-spacing:.1em; text-align:left; text-transform:uppercase; }
+    td { padding:14px 19px; border-top:1px solid #eee4d2; vertical-align:middle; }
+    tr:first-child td { border-top:0; }
+    .client { font-weight:700; } .sub { display:block; color:var(--muted); font-size:12px; margin-top:2px; }
+    .since { white-space:nowrap; font-weight:700; color:var(--blue); }
+    .since.overdue { color:#ad5d30; }
+    .tag { display:inline-block; padding:4px 8px; border-radius:99px; background:#e7f0f4; color:#36566c; font-size:11px; font-weight:700; }
+    .action { border:1px solid var(--border); border-radius:4px; padding:6px 9px; background:#fff; color:var(--brown); cursor:pointer; font:12px Lato,sans-serif; }
+    .action:hover { background:#f8f2e9; }
+    .footnote { color:var(--muted); font-size:12px; margin:12px 2px 0; }
+    @media (max-width:850px) { .kpis { grid-template-columns:repeat(3, 1fr); } }
+    @media (max-width:580px) { main { padding:24px 14px; } .head { align-items:flex-start; flex-direction:column; gap:5px; } .kpis { grid-template-columns:repeat(2, 1fr); } .kpi:last-child { grid-column:span 2; } .table-wrap { overflow-x:auto; } table { min-width:680px; } th,td { padding-left:12px; padding-right:12px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="head"><h1>Accueil</h1><span class="sync">Synchronisé il y a 2 min</span></div>
+    <section class="kpis" aria-label="Indicateurs des demandes">
+      <button class="kpi terra"><span class="kpi-label">Nouvelles demandes</span><span class="kpi-value">4</span></button>
+      <button class="kpi"><span class="kpi-label">À rappeler</span><span class="kpi-value">3</span></button>
+      <button class="kpi waiting" onclick="document.getElementById('attente').scrollIntoView({behavior:'smooth'})"><span class="kpi-label">En attente de réponse</span><span class="kpi-value">6</span><span class="kpi-note">2 depuis plus de 7 jours</span></button>
+      <button class="kpi"><span class="kpi-label">Devis à préparer</span><span class="kpi-value">2</span></button>
+      <button class="kpi green"><span class="kpi-label">Événements confirmés</span><span class="kpi-value">12</span></button>
+    </section>
+
+    <div class="rule">· · ·</div>
+
+    <section class="card" id="attente">
+      <div class="card-head">
+        <h2>En attente de réponse</h2>
+        <span class="hint">Après une proposition d'appel</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Événement</th><th>Client</th><th>Depuis</th><th>Statut</th><th></th></tr></thead>
+          <tbody>
+            <tr><td>21/09/2026<br><span class="sub">Mariage · 85 convives</span></td><td><span class="client">Claire Martin</span><span class="sub">Proposition d'appel envoyée</span></td><td><span class="since">2 jours</span></td><td><span class="tag">En attente de réponse</span></td><td><button class="action">Voir la fiche</button></td></tr>
+            <tr><td>04/10/2026<br><span class="sub">Anniversaire · 40 convives</span></td><td><span class="client">Julien Bernard</span><span class="sub">Proposition d'appel envoyée</span></td><td><span class="since">5 jours</span></td><td><span class="tag">En attente de réponse</span></td><td><button class="action">Voir la fiche</button></td></tr>
+            <tr><td>18/10/2026<br><span class="sub">Entreprise · 120 convives</span></td><td><span class="client">Sophie Leroy</span><span class="sub">Proposition d'appel envoyée</span></td><td><span class="since overdue">9 jours</span></td><td><span class="tag">En attente de réponse</span></td><td><button class="action">Relancer</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <p class="footnote">La couleur plus soutenue à partir de 7 jours permet de repérer les réponses à relancer, sans les confondre avec les appels à effectuer.</p>
+  </main>
+</body>
+</html>

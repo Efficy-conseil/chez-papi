@@ -190,6 +190,11 @@
 <div class="kpi-label">À rappeler</div>
 <div class="kpi-val" id="kpi-rappel-val">—</div>
 </div>
+<div class="kpi-card blue" onclick="showKpiModal('attente')" style="cursor:pointer">
+<div class="kpi-label">En attente de réponse</div>
+<div class="kpi-val" id="kpi-attente-val">—</div>
+<div class="kpi-delta" id="kpi-attente-hint">—</div>
+</div>
 <div class="kpi-card" onclick="showKpiModal('devis')" style="cursor:pointer">
 <div class="kpi-label">Devis à préparer</div>
 <div class="kpi-val" id="kpi-devis-val">—</div>
@@ -428,6 +433,7 @@
 <select name="statut">
 <option value="Nouvelle demande">🆕 Nouvelle demande</option>
 <option value="À rappeler">📞 À rappeler</option>
+<option value="En attente de réponse">⏳ En attente de réponse</option>
 <option value="Devis à préparer">📝 Devis à préparer</option>
 <option value="Devis envoyé">✉️ Devis envoyé</option>
 <option value="Événement confirmé">📅 Événement confirmé</option>
