@@ -58,6 +58,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | E09 | Email des boîtes internes | Aucune création client | Automatique |
 | E10 | Réponse dans un fil existant dont le texte cité contient date, devis ou personnes | Une seule ligne conservée, aucune route nouvelle demande, `Historique_Email` uniquement côté Make | Automatique + essai Make |
 | E11 | Nouvelle demande réelle sans adresse exploitable pour l’accusé | Ligne créée puis message archivé dans `Historique_Email`, sans accusé | Automatique + essai Make |
+| E12 | Réponse à un devis demandant un supplément de service, l’ajout ou le retrait d’éléments | Mise à jour d’un suivi, aucune ligne, aucun accusé, `Historique_Email` | Statique + essai Make |
 
 ## Tally
 

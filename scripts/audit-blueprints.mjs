@@ -110,6 +110,13 @@ assert(wixSuccessFlow.findIndex(module => module.id === 45) < wixSuccessFlow.fin
 const emailNewDemandFlow = (moduleById(mainModules, 50).routes || []).find(route => route.flow.some(module => module.id === 39))?.flow || [];
 assert(emailNewDemandFlow.findIndex(module => module.id === 5) < emailNewDemandFlow.findIndex(module => module.id === 40), 'archivage Email encore placé après l’accusé optionnel');
 
+const emailAck = moduleById(mainModules, 40);
+const emailAckConditions = (emailAck.filter?.conditions || []).flat();
+assert(
+  emailAckConditions.some(condition => condition?.a === '{{60.data.count}}' && condition?.b === '0' && condition?.o === 'number:equal'),
+  'accusé Email direct non protégé contre un fil déjà rattaché à une demande'
+);
+
 [62, 15, 39].forEach(id => {
   const value = moduleById(mainModules, id).mapper?.values?.date_evenement || '';
   assert(value.includes('Inconnu / à compléter'), `date inconnue non normalisée sur le module ${id}`);

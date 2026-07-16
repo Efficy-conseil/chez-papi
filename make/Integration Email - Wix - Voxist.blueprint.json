@@ -17125,6 +17125,11 @@
                                                             "o": "boolean:equal"
                                                         },
                                                         {
+                                                            "a": "{{60.data.count}}",
+                                                            "b": "0",
+                                                            "o": "number:equal"
+                                                        },
+                                                        {
                                                             "a": "{{1.fromEmail}}",
                                                             "b": "notifications@wix-forms.com",
                                                             "o": "text:notequal"
@@ -17184,6 +17189,11 @@
                                                             "a": "{{38.is_followup}}",
                                                             "b": "false",
                                                             "o": "boolean:equal"
+                                                        },
+                                                        {
+                                                            "a": "{{60.data.count}}",
+                                                            "b": "0",
+                                                            "o": "number:equal"
                                                         },
                                                         {
                                                             "a": "{{1.fromEmail}}",
