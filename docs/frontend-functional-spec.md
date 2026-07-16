@@ -150,7 +150,7 @@ Lorsqu'un dossier passe au statut `En attente de réponse`, le backend renseigne
 
 ### 5.3 Dernières demandes
 
-- Affiche initialement dix demandes actives aux statuts `Nouvelle demande` ou `À rappeler`.
+- Affiche initialement dix demandes actives aux statuts `Nouvelle demande`, `À rappeler` ou `En attente de réponse`.
 - Trie les demandes par date de réception décroissante.
 - Affiche date d'événement, client, résumé, ancienneté de réception et statut.
 - Colore l'ancienneté selon qu'elle est récente, à surveiller ou ancienne.

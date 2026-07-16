@@ -1068,7 +1068,7 @@ function renderDashboard() {
 
   // Dernières demandes
   const allNewDemandes = appData
-    .filter(e => !isEventPast(e) && (e.statut === 'Nouvelle demande' || e.statut === 'À rappeler'))
+    .filter(e => !isEventPast(e) && ['Nouvelle demande', 'À rappeler', WAITING_RESPONSE_STATUS].includes(e.statut))
     .sort((a, b) => dateTimeSortValue(b.date_reception) - dateTimeSortValue(a.date_reception));
   const newDemandes = allNewDemandes.slice(0, homeDisplayLimits.new);
   updateHomeSeeMore('new-demandes-more', allNewDemandes.length, newDemandes.length);
