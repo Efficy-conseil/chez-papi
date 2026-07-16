@@ -1054,7 +1054,6 @@ function renderDashboard() {
   const devisAPreparer = actives.filter(e => e.statut === 'Devis à préparer');
   const aRappeler = actives.filter(e => e.statut === 'À rappeler');
   const enAttenteReponse = actives.filter(e => e.statut === WAITING_RESPONSE_STATUS);
-  const relancesAttente = enAttenteReponse.filter(e => (waitingResponseDays(e.en_attente_reponse_depuis) || 0) >= WAITING_RESPONSE_REMINDER_DAYS);
   const nouveaux = actives.filter(e => e.statut === 'Nouvelle demande');
 
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
@@ -1062,8 +1061,6 @@ function renderDashboard() {
   set('kpi-devis-val',       devisAPreparer.length || '—');
   set('kpi-rappel-val',      aRappeler.length || '—');
   set('kpi-attente-val',     enAttenteReponse.length || '—');
-  const attenteHint = document.getElementById('kpi-attente-hint');
-  if (attenteHint) attenteHint.textContent = relancesAttente.length ? `${relancesAttente.length} depuis au moins 7 jours` : '';
   set('kpi-leads-val',       nouveaux.length || '—');
 
   // Dernières demandes

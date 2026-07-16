@@ -46,6 +46,7 @@ requireText('apps-script/code.gs', '"En attente de réponse"');
 requireText('apps-script/code.gs', 'en_attente_reponse_depuis');
 requireText('chez-papi/app.js', "const WAITING_RESPONSE_REMINDER_DAYS = 7;");
 requireText('chez-papi/index.html', 'id="kpi-attente-val"');
+requireText('chez-papi/app.js', "function formatWaitingResponseSince(event)");
 requireText('chez-papi/app.js', "controller.abort(), 30000");
 requireFunctionNotContains('apps-script/code.gs', 'ensureSchemaHeaders', 'applyDefaultRowHeights(sheet)');
 requireText(

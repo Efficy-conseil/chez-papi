@@ -146,7 +146,7 @@ Cinq indicateurs affichent le nombre de dossiers actifs :
 
 Chaque indicateur ouvre une fenêtre détaillée. Les lignes de cette fenêtre ouvrent la fiche, et le statut peut y être modifié directement. Le détail `À rappeler` affiche également le téléphone ; le détail `En attente de réponse` affiche la colonne `Depuis` avec le nombre de jours écoulés depuis la proposition d'appel ; le nombre est mis en évidence à partir de sept jours. Le détail `Devis à préparer` affiche le budget.
 
-Lorsqu'un dossier passe au statut `En attente de réponse`, le backend renseigne `en_attente_reponse_depuis`. L'indicateur affiche le nombre de dossiers dont l'attente atteint au moins sept jours, afin de signaler les relances à prévoir.
+Lorsqu'un dossier passe au statut `En attente de réponse`, le backend renseigne `en_attente_reponse_depuis`. La carte d'accueil affiche uniquement le nombre total de dossiers dans cet état ; la colonne `Depuis` de la fenêtre détaillée signale les attentes de sept jours ou plus.
 
 ### 5.3 Dernières demandes
 
