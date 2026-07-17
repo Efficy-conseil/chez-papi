@@ -56,5 +56,8 @@ requireText(
   'const isMessageScopedSource = idDemande.indexOf("WIX-") === 0 || idDemande.indexOf("VOXIST-") === 0;'
 );
 requireText('apps-script/code.gs', 'const gmailThreadId = isMessageScopedSource ? "" : requestedThreadId;');
+requireText('apps-script/code.gs', 'function findRowsByEmailAndEventDate');
+requireText('apps-script/code.gs', 'function findRowsByNameAndEventDate');
+requireText('apps-script/code.gs', 'reason: matches.length === 0 ? "existing_demand_not_found" : "existing_demand_ambiguous"');
 
 console.log('Vérifications locales réussies.');

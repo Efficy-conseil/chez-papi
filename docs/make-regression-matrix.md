@@ -60,6 +60,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | E10 | Réponse dans un fil existant dont le texte cité contient date, devis ou personnes | Une seule ligne conservée, aucune route nouvelle demande, `Historique_Email` uniquement côté Make | Automatique + essai Make |
 | E11 | Nouvelle demande réelle sans adresse exploitable pour l’accusé | Ligne créée puis message archivé dans `Historique_Email`, sans accusé | Automatique + essai Make |
 | E12 | Réponse à un devis demandant un supplément de service, l’ajout ou le retrait d’éléments | Mise à jour d’un suivi, aucune ligne, aucun accusé, `Historique_Email` | Statique + essai Make |
+| E13 | Bon de commande ou commande validée dans un nouveau fil, envoyé par un portail ou une adresse technique | Si un unique dossier partage le contact identifié et la date de prestation : mise à jour et `Historique_Email`, sans accusé ni nouvelle ligne ; sinon le message reste en boîte de réception pour vérification | Backend + statique + essai Make |
 
 ## Tally
 

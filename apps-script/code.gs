@@ -451,11 +451,22 @@ function updateExistingDemandFollowup(match, fields) {
   const sheet = getSheet();
   ensureSchemaHeaders(sheet);
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
-  const found = (email ? findLatestRowByEmailAndEventDate(sheet, headers, email, dateEvenement) : null) ||
-    (name ? findLatestRowByNameAndEventDate(sheet, headers, name, dateEvenement) : null);
-  if (!found) {
-    return ok({ updated: false, reason: "existing_demand_not_found", email_client: email, nom_client: name, date_evenement: dateEvenement });
+  const emailMatches = email ? findRowsByEmailAndEventDate(sheet, headers, email, dateEvenement) : [];
+  const nameMatches = emailMatches.length === 0 && name
+    ? findRowsByNameAndEventDate(sheet, headers, name, dateEvenement)
+    : [];
+  const matches = emailMatches.length > 0 ? emailMatches : nameMatches;
+  if (matches.length !== 1) {
+    return ok({
+      updated: false,
+      reason: matches.length === 0 ? "existing_demand_not_found" : "existing_demand_ambiguous",
+      email_client: email,
+      nom_client: name,
+      date_evenement: dateEvenement,
+      candidate_count: matches.length
+    });
   }
+  const found = matches[0];
 
   const clean = sanitizeFields(fields || {}, true);
   clean.relance_a_traiter = clean.relance_a_traiter !== undefined ? clean.relance_a_traiter : true;
@@ -824,6 +835,34 @@ function findLatestRowByEmailAndEventDate(sheet, headers, emailClient, dateEvene
   return null;
 }
 
+function findRowsByEmailAndEventDate(sheet, headers, emailClient, dateEvenement) {
+  const emailCol = headers.findIndex(function(h) { return canonicalKey(h) === "email_client"; }) + 1;
+  const dateCol = headers.findIndex(function(h) { return canonicalKey(h) === "date_evenement"; }) + 1;
+  const idCol = headers.findIndex(function(h) { return canonicalKey(h) === "id_demande"; }) + 1;
+  if (emailCol <= 0) throw new Error("Colonne email_client introuvable");
+  if (dateCol <= 0) throw new Error("Colonne date_evenement introuvable");
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+
+  const targetEmail = String(emailClient || '').trim().toLowerCase();
+  const targetDate = normalizeEventDateText(dateEvenement);
+  const emails = sheet.getRange(2, emailCol, lastRow - 1, 1).getValues();
+  const dates = sheet.getRange(2, dateCol, lastRow - 1, 1).getValues();
+  const dateDisplays = sheet.getRange(2, dateCol, lastRow - 1, 1).getDisplayValues();
+  const ids = idCol > 0 ? sheet.getRange(2, idCol, lastRow - 1, 1).getValues() : [];
+  const matches = [];
+
+  for (var i = 0; i < emails.length; i++) {
+    const rowEmail = String(emails[i][0] || '').trim().toLowerCase();
+    const rowDate = normalizeEventDateText(dateDisplays[i][0] || dates[i][0]);
+    if (rowEmail === targetEmail && rowDate === targetDate) {
+      matches.push({ rowIndex: i + 2, id_demande: idCol > 0 ? String(ids[i][0] || '').trim() : "" });
+    }
+  }
+  return matches;
+}
+
 function findLatestRowByNameAndEventDate(sheet, headers, nomClient, dateEvenement) {
   const nameCol = headers.findIndex(function(h) { return canonicalKey(h) === "nom_client"; }) + 1;
   const dateCol = headers.findIndex(function(h) { return canonicalKey(h) === "date_evenement"; }) + 1;
@@ -852,6 +891,34 @@ function findLatestRowByNameAndEventDate(sheet, headers, nomClient, dateEvenemen
     }
   }
   return null;
+}
+
+function findRowsByNameAndEventDate(sheet, headers, nomClient, dateEvenement) {
+  const nameCol = headers.findIndex(function(h) { return canonicalKey(h) === "nom_client"; }) + 1;
+  const dateCol = headers.findIndex(function(h) { return canonicalKey(h) === "date_evenement"; }) + 1;
+  const idCol = headers.findIndex(function(h) { return canonicalKey(h) === "id_demande"; }) + 1;
+  if (nameCol <= 0) throw new Error("Colonne nom_client introuvable");
+  if (dateCol <= 0) throw new Error("Colonne date_evenement introuvable");
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+
+  const targetName = normalizePersonName(nomClient);
+  const targetDate = normalizeEventDateText(dateEvenement);
+  const names = sheet.getRange(2, nameCol, lastRow - 1, 1).getValues();
+  const dates = sheet.getRange(2, dateCol, lastRow - 1, 1).getValues();
+  const dateDisplays = sheet.getRange(2, dateCol, lastRow - 1, 1).getDisplayValues();
+  const ids = idCol > 0 ? sheet.getRange(2, idCol, lastRow - 1, 1).getValues() : [];
+  const matches = [];
+
+  for (var i = 0; i < names.length; i++) {
+    const rowName = normalizePersonName(names[i][0]);
+    const rowDate = normalizeEventDateText(dateDisplays[i][0] || dates[i][0]);
+    if (rowName === targetName && rowDate === targetDate) {
+      matches.push({ rowIndex: i + 2, id_demande: idCol > 0 ? String(ids[i][0] || '').trim() : "" });
+    }
+  }
+  return matches;
 }
 
 function findLatestRowByEmailAndIdPrefix(sheet, headers, emailClient, idPrefix) {

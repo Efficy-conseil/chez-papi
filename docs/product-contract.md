@@ -226,6 +226,7 @@ Relances et suivis :
 
 - Une modification de devis existant ne crée pas une nouvelle ligne et ne déclenche pas d'accusé automatique.
 - Une validation de devis ne crée pas une nouvelle ligne et ne déclenche pas d'accusé automatique.
+- Un bon de commande, une commande validée ou un document confirmant un devis est un suivi, même lorsqu'il vient d'un portail ou d'un expéditeur technique dans un nouveau fil Gmail. Il doit être rattaché uniquement s'il existe une seule demande correspondant exactement au contact identifié et à la date de prestation ; sinon, aucune ligne ne doit être créée et le message reste à vérifier dans la boîte de réception.
 - Une réponse à un sujet `Re: Devis`, `TR: Devis`, `Fwd: Devis` n'est une relance que si le dernier message parle du devis existant : nouveau devis, devis actualisé, budget par personne, modification, validation, nouvelle version.
 - Une nouvelle demande dans un ancien fil reste une nouvelle demande si elle concerne une nouvelle date, un nouveau lieu, un nouveau type de prestation ou un nouvel événement.
 - Les réponses en lien avec une nouvelle demande doit alimenter la partie technique afin d'implémenter plus tard dans le frontend la gestion des fils de discussion et des indicateurs de messages en attente de réponse.

@@ -117,6 +117,33 @@ assert(
   'accusé Email direct non protégé contre un fil déjà rattaché à une demande'
 );
 
+const confirmationFollowup = moduleById(mainModules, 81);
+const confirmationConditions = (confirmationFollowup.filter?.conditions || []).flat();
+assert(
+  confirmationConditions.some(condition => condition?.b === 'Bon de commande' && condition?.o === 'text:contain'),
+  'bon de commande non rattaché comme suivi dans le module 81'
+);
+assert(
+  (moduleById(mainModules, 82).filter?.conditions || []).every(conditionSet =>
+    conditionSet.some(condition => condition?.a === '{{81.data.updated}}' && condition?.b === 'true' && condition?.o === 'boolean:equal')
+  ),
+  'archivage d’une confirmation non conditionné à un rattachement réussi'
+);
+[39, 40].forEach(id => {
+  const conditionSets = moduleById(mainModules, id).filter?.conditions || [];
+  assert(
+    conditionSets.every(conditionSet => conditionSet.some(
+      condition => condition?.a === '{{1.subject}}' && condition?.b === 'Bon de commande' && condition?.o === 'text:notcontain'
+    )),
+    `bon de commande encore autorisé vers la création ou l’accusé sur le module ${id}`
+  );
+});
+const directEmailPrompt = moduleById(mainModules, 37).mapper?.messages?.find(message => message.role === 'system')?.content || '';
+assert(
+  directEmailPrompt.includes('Filet de sécurité confirmations') && directEmailPrompt.includes('bon de commande'),
+  'règle de confirmation de commande absente du prompt Email direct'
+);
+
 [62, 15, 39].forEach(id => {
   const value = moduleById(mainModules, id).mapper?.values?.date_evenement || '';
   assert(value.includes('Inconnu / à compléter'), `date inconnue non normalisée sur le module ${id}`);
