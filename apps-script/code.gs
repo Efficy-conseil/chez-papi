@@ -445,17 +445,24 @@ function updateExistingDemandFollowup(match, fields) {
   const email = String(match.email_client || '').trim().toLowerCase();
   const name = normalizePersonName(match.nom_client);
   const dateEvenement = normalizeEventDateText(match.date_evenement);
+  const hasSpecificEventDate = !!dateEvenement && dateEvenement !== "Inconnu / à compléter";
   if (!email && !name) throw new Error("email_client ou nom_client manquant");
-  if (!dateEvenement) throw new Error("date_evenement manquante");
 
   const sheet = getSheet();
   ensureSchemaHeaders(sheet);
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
-  const emailMatches = email ? findRowsByEmailAndEventDate(sheet, headers, email, dateEvenement) : [];
-  const nameMatches = emailMatches.length === 0 && name
+  const emailMatches = hasSpecificEventDate && email
+    ? findRowsByEmailAndEventDate(sheet, headers, email, dateEvenement)
+    : [];
+  const nameMatches = hasSpecificEventDate && emailMatches.length === 0 && name
     ? findRowsByNameAndEventDate(sheet, headers, name, dateEvenement)
     : [];
-  const matches = emailMatches.length > 0 ? emailMatches : nameMatches;
+  const activeEmailMatches = !hasSpecificEventDate && email
+    ? findActiveRowsByEmail(sheet, headers, email)
+    : [];
+  const matches = emailMatches.length > 0
+    ? emailMatches
+    : (nameMatches.length > 0 ? nameMatches : activeEmailMatches);
   if (matches.length !== 1) {
     return ok({
       updated: false,
@@ -858,6 +865,40 @@ function findRowsByEmailAndEventDate(sheet, headers, emailClient, dateEvenement)
     const rowDate = normalizeEventDateText(dateDisplays[i][0] || dates[i][0]);
     if (rowEmail === targetEmail && rowDate === targetDate) {
       matches.push({ rowIndex: i + 2, id_demande: idCol > 0 ? String(ids[i][0] || '').trim() : "" });
+    }
+  }
+  return matches;
+}
+
+function findActiveRowsByEmail(sheet, headers, emailClient) {
+  const emailCol = headers.findIndex(function(h) { return canonicalKey(h) === "email_client"; }) + 1;
+  const statusCol = headers.findIndex(function(h) { return canonicalKey(h) === "statut"; }) + 1;
+  const idCol = headers.findIndex(function(h) { return canonicalKey(h) === "id_demande"; }) + 1;
+  if (emailCol <= 0) throw new Error("Colonne email_client introuvable");
+  if (statusCol <= 0) throw new Error("Colonne statut introuvable");
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+
+  const terminalStatuses = {
+    "Événement terminé": true,
+    "Perdu / Sans suite": true,
+    "Refusé / Complet": true
+  };
+  const targetEmail = String(emailClient || '').trim().toLowerCase();
+  const emails = sheet.getRange(2, emailCol, lastRow - 1, 1).getValues();
+  const statuses = sheet.getRange(2, statusCol, lastRow - 1, 1).getValues();
+  const ids = idCol > 0 ? sheet.getRange(2, idCol, lastRow - 1, 1).getValues() : [];
+  const matches = [];
+
+  for (var i = 0; i < emails.length; i++) {
+    const rowEmail = String(emails[i][0] || '').trim().toLowerCase();
+    const rowStatus = String(statuses[i][0] || '').trim();
+    if (rowEmail === targetEmail && !terminalStatuses[rowStatus]) {
+      matches.push({
+        rowIndex: i + 2,
+        id_demande: idCol > 0 ? String(ids[i][0] || '').trim() : ""
+      });
     }
   }
   return matches;

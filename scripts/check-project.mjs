@@ -58,6 +58,8 @@ requireText(
 requireText('apps-script/code.gs', 'const gmailThreadId = isMessageScopedSource ? "" : requestedThreadId;');
 requireText('apps-script/code.gs', 'function findRowsByEmailAndEventDate');
 requireText('apps-script/code.gs', 'function findRowsByNameAndEventDate');
+requireText('apps-script/code.gs', 'function findActiveRowsByEmail');
+requireText('apps-script/code.gs', 'const hasSpecificEventDate = !!dateEvenement && dateEvenement !== "Inconnu / à compléter";');
 requireText('apps-script/code.gs', 'reason: matches.length === 0 ? "existing_demand_not_found" : "existing_demand_ambiguous"');
 
 console.log('Vérifications locales réussies.');

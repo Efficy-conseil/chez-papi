@@ -143,6 +143,34 @@ assert(
   directEmailPrompt.includes('Filet de sécurité confirmations') && directEmailPrompt.includes('bon de commande'),
   'règle de confirmation de commande absente du prompt Email direct'
 );
+const directEmailSystemPrompt = moduleById(mainModules, 37).mapper?.messages
+  ?.filter(message => message.role === 'system')
+  .map(message => message.content || '')
+  .join('\n') || '';
+assert(
+  directEmailSystemPrompt.includes('Ok pour lundi, plutôt en fin de matinée') &&
+    directEmailSystemPrompt.includes('date_evenement=null') &&
+    directEmailSystemPrompt.includes('unique demande active'),
+  'règle de rattachement des réponses courtes de rappel absente du prompt Email direct'
+);
+const followupConditionSets = confirmationFollowup.filter?.conditions || [];
+assert(
+  followupConditionSets.some(conditionSet =>
+    conditionSet.some(condition => condition?.a === '{{38.is_followup}}' && condition?.b === 'true') &&
+    conditionSet.some(condition => condition?.a === '{{38.email_client}}' && condition?.o === 'exist') &&
+    !conditionSet.some(condition => condition?.a === '{{38.date_evenement}}')
+  ),
+  'suivi Email sans date de prestation encore bloqué avant le backend'
+);
+const followupArchiveConditionSets = moduleById(mainModules, 82).filter?.conditions || [];
+assert(
+  followupArchiveConditionSets.some(conditionSet =>
+    conditionSet.some(condition => condition?.a === '{{38.is_followup}}' && condition?.b === 'true') &&
+    conditionSet.some(condition => condition?.a === '{{81.data.updated}}' && condition?.b === 'true') &&
+    !conditionSet.some(condition => condition?.a === '{{38.date_evenement}}')
+  ),
+  'archivage du suivi Email sans date encore bloqué après rattachement'
+);
 
 [62, 15, 39].forEach(id => {
   const value = moduleById(mainModules, id).mapper?.values?.date_evenement || '';

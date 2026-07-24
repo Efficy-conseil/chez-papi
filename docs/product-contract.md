@@ -230,6 +230,7 @@ Relances et suivis :
 - Un bon de commande, une commande validée ou un document confirmant un devis est un suivi, même lorsqu'il vient d'un portail ou d'un expéditeur technique dans un nouveau fil Gmail. Il doit être rattaché uniquement s'il existe une seule demande correspondant exactement au contact identifié et à la date de prestation ; sinon, aucune ligne ne doit être créée et le message reste à vérifier dans la boîte de réception.
 - Une réponse à un sujet `Re: Devis`, `TR: Devis`, `Fwd: Devis` n'est une relance que si le dernier message parle du devis existant : nouveau devis, devis actualisé, budget par personne, modification, validation, nouvelle version.
 - Une nouvelle demande dans un ancien fil reste une nouvelle demande si elle concerne une nouvelle date, un nouveau lieu, un nouveau type de prestation ou un nouvel événement.
+- Une réponse courte qui accepte ou précise un créneau de rappel, sans redonner la date de prestation, est un suivi. Elle est rattachée uniquement lorsqu’une seule demande active possède exactement la même adresse email ; si aucune ou plusieurs demandes actives correspondent, aucune ligne n’est créée et le message reste à vérifier.
 - Les réponses en lien avec une nouvelle demande doit alimenter la partie technique afin d'implémenter plus tard dans le frontend la gestion des fils de discussion et des indicateurs de messages en attente de réponse.
 
 ## Make - Tally
@@ -275,7 +276,7 @@ Contraintes backend :
 - `upsertWixDemand` doit créer ou fusionner les doublons Wix rapprochés.
 - `updateThreadFollowup` rattache par `gmail_thread_id`.
 - `updateWixFollowup` rattache par `gmail_thread_id`, puis fallback dernier `WIX-` par email.
-- `updateExistingDemandFollowup` rattache par email+date, puis nom+date si l'email manque.
+- `updateExistingDemandFollowup` rattache par email+date, puis nom+date si l'email manque. Sans date de prestation, il accepte uniquement une correspondance exacte et unique sur l’email parmi les demandes actives.
 - Le backend normalise les canaux autorisés.
 - Le backend normalise `date_evenement`.
 - Le backend force `date_evenement` en texte pour éviter les conversions Google Sheets.
