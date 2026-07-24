@@ -43,6 +43,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | V08 | Transcription préqualifiée puis rejetée par l’IA | Aucune ligne, archivage dans `Hors_Scope_Make` | Automatique + essai Make |
 | V09 | Audio retranscrit puis rejeté par l’IA | Aucune ligne, archivage dans `Hors_Scope_Make` | Automatique + essai Make |
 | V10 | Vocal de demande d’anniversaire sans nom énoncé | `nom_client` = `Inconnu / à compléter`, type = `Anniversaire`, sans jamais utiliser le type comme nom | Automatique + essai Make |
+| V11 | Vocal demandant une disponibilité le 15 août pour les 20 ans de sa fille, un apéro dînatoire et 30 personnes | La transcription atteint l’IA, puis une ligne `VOXIST-<messageId>`, `Téléphone`, `Anniversaire`, `Nouvelle demande`, `Historique_Voxist` | Automatique + essai Make |
 
 ## Email direct
 

@@ -4676,6 +4676,55 @@
                                                     [
                                                         {
                                                             "a": "{{28.`$1`}}",
+                                                            "b": "apéro",
+                                                            "o": "text:contain"
+                                                        }
+                                                    ],
+                                                    [
+                                                        {
+                                                            "a": "{{28.`$1`}}",
+                                                            "b": "apero",
+                                                            "o": "text:contain"
+                                                        }
+                                                    ],
+                                                    [
+                                                        {
+                                                            "a": "{{28.`$1`}}",
+                                                            "b": "dînatoire",
+                                                            "o": "text:contain"
+                                                        }
+                                                    ],
+                                                    [
+                                                        {
+                                                            "a": "{{28.`$1`}}",
+                                                            "b": "dinatoire",
+                                                            "o": "text:contain"
+                                                        }
+                                                    ],
+                                                    [
+                                                        {
+                                                            "a": "{{28.`$1`}}",
+                                                            "b": "personnes",
+                                                            "o": "text:contain"
+                                                        }
+                                                    ],
+                                                    [
+                                                        {
+                                                            "a": "{{28.`$1`}}",
+                                                            "b": "disponible",
+                                                            "o": "text:contain"
+                                                        }
+                                                    ],
+                                                    [
+                                                        {
+                                                            "a": "{{28.`$1`}}",
+                                                            "b": " ans",
+                                                            "o": "text:contain"
+                                                        }
+                                                    ],
+                                                    [
+                                                        {
+                                                            "a": "{{28.`$1`}}",
                                                             "b": "entreprise",
                                                             "o": "text:contain"
                                                         }

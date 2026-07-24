@@ -171,6 +171,21 @@ assert(!emailAiConditions.some(condition => condition?.o === 'number:greater'), 
   );
 });
 
+const voxistTranscriptionAi = moduleById(mainModules, 21);
+const voxistPrefilterTerms = (voxistTranscriptionAi.filter?.conditions || [])
+  .flat(Infinity)
+  .filter(condition => condition?.a === '{{28.`$1`}}' && condition?.o === 'text:contain')
+  .map(condition => String(condition.b || '').toLocaleLowerCase('fr'));
+const voxistBirthdayAperoTranscript =
+  'oui bonjour je voulais savoir le 15 août je fais les 20 ans de ma fille je voulais savoir si vous étiez disponible pour un apéro dînatoire pour 30 personnes';
+assert(
+  voxistPrefilterTerms.some(term => voxistBirthdayAperoTranscript.includes(term)),
+  'le vocal anniversaire avec apéro dînatoire et 30 personnes reste exclu du préfiltre Voxist'
+);
+['apéro', 'apero', 'dînatoire', 'dinatoire', 'personnes', 'disponible', ' ans'].forEach(term => {
+  assert(voxistPrefilterTerms.includes(term), `terme Voxist ${term} absent du préfiltre`);
+});
+
 const serializedMain = JSON.stringify(main);
 const serializedTally = JSON.stringify(tally);
 assert(!serializedMain.includes('ifempty(60.data.count; 0)'), 'anti-doublon Email/Wix/Voxist encore permissif si count est absent');

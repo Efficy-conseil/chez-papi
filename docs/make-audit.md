@@ -1,6 +1,6 @@
 # Audit des blueprints Make
 
-Date de l'audit : 02/07/2026.
+Date de l'audit : 24/07/2026.
 
 Références : `docs/product-contract.md` et `docs/make-regression-matrix.md`.
 
@@ -38,6 +38,7 @@ Références : `docs/product-contract.md` et `docs/make-regression-matrix.md`.
 
 - Le routage principal dépend de l'expéditeur Voxist, pas du seul mot `VOXIST`.
 - Les mots métier élargis du contrat sont présents dans le préfiltre.
+- Le préfiltre reconnaît aussi les demandes formulées avec `apéro`, `dînatoire`, un âge en `ans`, un nombre de `personnes` ou une question de disponibilité ; le cas des 20 ans, apéro dînatoire et 30 personnes atteint donc l'analyse IA.
 - Les chemins transcription et audio possèdent chacun une sortie demande et hors scope.
 - Les rejets IA après extraction de transcription ou retranscription audio sont placés sur des branches distinctes et atteignent toujours `Hors_Scope_Make`.
 - Les messages déjà connus sont archivés sans retraitement.

@@ -195,6 +195,7 @@ Critères de vraie demande Voxist :
 Cas de référence :
 
 - `prendre des renseignements sur vos prestations`, `formules à la carte`, `quarantaine de personnes`, `18 ans de mon fils`, `12 septembre` doit créer une demande `Téléphone`, type `Anniversaire`, statut `Nouvelle demande`.
+- Une demande de disponibilité pour les `20 ans de ma fille`, avec `apéro dînatoire`, `30 personnes` et une date comme le `15 août`, doit créer une demande `Téléphone`, type `Anniversaire`, statut `Nouvelle demande`, même si les mots `anniversaire`, `traiteur` et `devis` ne sont pas prononcés.
 
 Contrainte anti-régression :
 
