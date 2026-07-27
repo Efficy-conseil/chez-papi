@@ -14259,6 +14259,38 @@
                                                             "o": "exist"
                                                         },
                                                         {
+                                                            "a": "{{1.fullTextBody}}",
+                                                            "o": "text:contain",
+                                                            "b": "Merci pour vos propositions"
+                                                        }
+                                                    ],
+                                                    [
+                                                        {
+                                                            "a": "{{38.is_demande}}",
+                                                            "o": "boolean:equal",
+                                                            "b": "true"
+                                                        },
+                                                        {
+                                                            "a": "{{38.email_client}}",
+                                                            "o": "exist"
+                                                        },
+                                                        {
+                                                            "a": "{{1.fullTextBody}}",
+                                                            "o": "text:contain",
+                                                            "b": "modifier certaines pièces"
+                                                        }
+                                                    ],
+                                                    [
+                                                        {
+                                                            "a": "{{38.is_demande}}",
+                                                            "o": "boolean:equal",
+                                                            "b": "true"
+                                                        },
+                                                        {
+                                                            "a": "{{38.email_client}}",
+                                                            "o": "exist"
+                                                        },
+                                                        {
                                                             "a": "{{38.date_evenement}}",
                                                             "o": "exist"
                                                         },
@@ -15058,7 +15090,7 @@
                                                 "gzip": true,
                                                 "useMtls": false,
                                                 "contentType": "application/json",
-                                                "data": "{\"action\":\"updateExistingDemandFollowup\",\"make_token\":\"cp_make_followup_2026_06\",\"match\":{\"email_client\":\"{{38.email_client}}\",\"date_evenement\":\"{{38.date_evenement}}\",\"nom_client\":\"{{38.nom_client}}\"},\"fields\":{\"gmail_thread_id\":\"{{1.threadId}}\",\"gmail_message_id\":\"{{1.id}}\",\"dernier_email_recu_le\":\"{{1.internalDate}}\",\"dernier_message_client\":\"{{escapeJSON(substring(1.fullTextBody; 0; 900))}}\",\"relance_a_traiter\":true,\"email_client\":\"{{38.email_client}}\",\"telephone\":\"{{38.telephone}}\",\"nb_convives\":\"{{38.nb_convives}}\"}}",
+                                                "data": "{\"action\":\"updateExistingDemandFollowup\",\"make_token\":\"cp_make_followup_2026_06\",\"match\":{\"email_client\":\"{{38.email_client}}\",\"date_evenement\":\"{{38.date_evenement}}\",\"nom_client\":\"{{38.nom_client}}\",\"telephone\":\"{{38.telephone}}\",\"nb_convives\":\"{{38.nb_convives}}\",\"lieu_prestation\":\"{{38.lieu_prestation}}\",\"type_evenement\":\"{{38.type_evenement}}\"},\"fields\":{\"gmail_thread_id\":\"{{1.threadId}}\",\"gmail_message_id\":\"{{1.id}}\",\"dernier_email_recu_le\":\"{{1.internalDate}}\",\"dernier_message_client\":\"{{escapeJSON(substring(1.fullTextBody; 0; 900))}}\",\"relance_a_traiter\":true,\"email_client\":\"{{38.email_client}}\",\"telephone\":\"{{38.telephone}}\",\"nb_convives\":\"{{38.nb_convives}}\"}}",
                                                 "followAllRedirects": true
                                             },
                                             "metadata": {
@@ -16500,6 +16532,16 @@
                                                             "a": "{{1.fullTextBody}}",
                                                             "o": "text:notcontain",
                                                             "b": "bon de commande"
+                                                        },
+                                                        {
+                                                            "a": "{{1.fullTextBody}}",
+                                                            "o": "text:notcontain",
+                                                            "b": "Merci pour vos propositions"
+                                                        },
+                                                        {
+                                                            "a": "{{1.fullTextBody}}",
+                                                            "o": "text:notcontain",
+                                                            "b": "modifier certaines pièces"
                                                         }
                                                     ],
                                                     [
@@ -16617,6 +16659,16 @@
                                                             "a": "{{1.fullTextBody}}",
                                                             "o": "text:notcontain",
                                                             "b": "bon de commande"
+                                                        },
+                                                        {
+                                                            "a": "{{1.fullTextBody}}",
+                                                            "o": "text:notcontain",
+                                                            "b": "Merci pour vos propositions"
+                                                        },
+                                                        {
+                                                            "a": "{{1.fullTextBody}}",
+                                                            "o": "text:notcontain",
+                                                            "b": "modifier certaines pièces"
                                                         }
                                                     ]
                                                 ]

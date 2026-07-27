@@ -774,9 +774,9 @@ const SheetsAPI = {
     if (!CONFIG.SHEETS_URL) return null;
     return this.request({ action: 'list' });
   },
-  async add(row) {
+  async add(row, options = {}) {
     if (!CONFIG.SHEETS_URL) return { error: 'Non configuré' };
-    return this.request({ action: 'add', row });
+    return this.request({ action: 'add', row, options });
   },
   async update(id_demande, fields) {
     if (!CONFIG.SHEETS_URL) return { error: 'Non configuré' };
@@ -1996,9 +1996,160 @@ document.getElementById('event-form').addEventListener('input', e => {
     if (banner) banner.style.display = 'none';
   }
 });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeEventModal(); });
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  const duplicateModal = document.getElementById('duplicate-modal');
+  if (duplicateModal?.style.display !== 'none') {
+    closeDuplicateModal();
+    return;
+  }
+  closeEventModal();
+});
 
 let eventSaveInFlight = false;
+let pendingDuplicateSubmission = null;
+let duplicateCandidates = [];
+
+function selectedDuplicateCandidate() {
+  const select = document.getElementById('duplicate-candidate-select');
+  return duplicateCandidates.find(candidate => candidate.id_demande === select?.value) || null;
+}
+
+function duplicateFieldLabel(key) {
+  return {
+    nom_client: 'Client',
+    date_evenement: 'Date',
+    telephone: 'Téléphone',
+    email_client: 'Email',
+    type_evenement: 'Événement',
+    nb_convives: 'Convives',
+    lieu_prestation: 'Lieu',
+    statut: 'Statut'
+  }[key] || key;
+}
+
+function renderDuplicateCandidate() {
+  const candidate = selectedDuplicateCandidate();
+  const summary = document.getElementById('duplicate-candidate-summary');
+  const comparison = document.getElementById('duplicate-comparison');
+  if (!candidate || !summary || !comparison) return;
+
+  summary.innerHTML = `
+    <strong>${safeText(candidate.nom_client, 'Sans nom')}</strong>
+    <span>${safeText(candidate.type_evenement)} · ${safeText(candidate.date_evenement)} · ${safeText(candidate.nb_convives, 'Convives non renseignés')}</span>
+    <span>${safeText(candidate.statut)} · ${safeText(candidate.canal)}</span>
+    <small>Correspondance : ${safeText((candidate.reasons || []).join(', '), 'informations similaires')}</small>`;
+
+  const comparedFields = [
+    'nom_client',
+    'date_evenement',
+    'telephone',
+    'email_client',
+    'type_evenement',
+    'nb_convives',
+    'lieu_prestation',
+    'statut'
+  ];
+  comparison.innerHTML = comparedFields.map(key => {
+    const current = String(candidate[key] || '').trim();
+    const incoming = String(pendingDuplicateSubmission?.[key] || '').trim();
+    const differs = current && incoming && current !== incoming;
+    return `<tr class="${differs ? 'duplicate-difference' : ''}">
+      <th>${safeText(duplicateFieldLabel(key))}</th>
+      <td>${safeText(current)}</td>
+      <td>${safeText(incoming)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function showDuplicateResolution(data, candidates) {
+  pendingDuplicateSubmission = { ...data };
+  duplicateCandidates = Array.isArray(candidates) ? candidates : [];
+  const select = document.getElementById('duplicate-candidate-select');
+  select.replaceChildren();
+  duplicateCandidates.forEach(candidate => {
+    const option = document.createElement('option');
+    option.value = candidate.id_demande;
+    option.textContent = [
+      candidate.nom_client || 'Sans nom',
+      candidate.date_evenement || 'Date inconnue',
+      candidate.nb_convives || 'Convives inconnus',
+      candidate.statut || 'Statut inconnu'
+    ].join(' — ');
+    select.appendChild(option);
+  });
+  document.getElementById('duplicate-details').style.display = 'none';
+  document.getElementById('duplicate-view-btn').textContent = 'Voir la fiche';
+  renderDuplicateCandidate();
+  document.getElementById('duplicate-modal').style.display = 'flex';
+}
+
+function closeDuplicateModal(clearPending = false) {
+  document.getElementById('duplicate-modal').style.display = 'none';
+  document.getElementById('duplicate-details').style.display = 'none';
+  if (clearPending) {
+    pendingDuplicateSubmission = null;
+    duplicateCandidates = [];
+  }
+}
+
+function toggleDuplicateDetails() {
+  const details = document.getElementById('duplicate-details');
+  const button = document.getElementById('duplicate-view-btn');
+  const opening = details.style.display === 'none';
+  details.style.display = opening ? 'block' : 'none';
+  button.textContent = opening ? 'Masquer la fiche' : 'Voir la fiche';
+}
+
+async function resolveDuplicateSubmission(action) {
+  const candidate = selectedDuplicateCandidate();
+  if (!pendingDuplicateSubmission) return;
+  if (action === 'merge' && !candidate) {
+    showNotification('Sélectionnez une fiche à enrichir', 'error');
+    return;
+  }
+  if (action === 'force' && !confirm("Créer une nouvelle demande malgré les correspondances proposées ?")) {
+    return;
+  }
+
+  const mergeButton = document.getElementById('duplicate-merge-btn');
+  const forceButton = document.getElementById('duplicate-force-btn');
+  mergeButton.disabled = true;
+  forceButton.disabled = true;
+  showBusyOverlay(action === 'merge' ? 'Enrichissement de la fiche…' : 'Création de la demande…');
+
+  try {
+    const options = action === 'merge'
+      ? { merge_into_id: candidate.id_demande }
+      : { force_create: true };
+    const result = await SheetsAPI.add(pendingDuplicateSubmission, options);
+    if (!result.success) {
+      showNotification('Erreur : ' + (result.error || 'inconnue'), 'error');
+      return;
+    }
+    broadcastSync();
+    await loadData();
+    closeDuplicateModal(true);
+    closeEventModal(true);
+    showNotification(action === 'merge' ? 'Fiche existante enrichie' : 'Nouvel événement ajouté', 'success');
+  } catch (err) {
+    showNotification('Erreur réseau', 'error');
+  } finally {
+    hideBusyOverlay();
+    mergeButton.disabled = false;
+    forceButton.disabled = false;
+  }
+}
+
+document.getElementById('duplicate-candidate-select').addEventListener('change', () => {
+  document.getElementById('duplicate-details').style.display = 'none';
+  document.getElementById('duplicate-view-btn').textContent = 'Voir la fiche';
+  renderDuplicateCandidate();
+});
+
+document.getElementById('duplicate-modal').addEventListener('click', event => {
+  if (event.target === document.getElementById('duplicate-modal')) closeDuplicateModal();
+});
 
 document.getElementById('event-form').addEventListener('submit', async e => {
   e.preventDefault();
@@ -2060,8 +2211,12 @@ document.getElementById('event-form').addEventListener('submit', async e => {
         setTimeout(() => loadData().catch(() => {}), 2000);
       }
     } else {
-      result = await SheetsAPI.add(data);
+      result = await SheetsAPI.add(data, { check_duplicates: true });
       if (result.success) {
+        if (result.requires_resolution) {
+          showDuplicateResolution(data, result.candidates);
+          return;
+        }
         broadcastSync(); // Notifier les autres onglets
         await loadData();
         closeEventModal(true);

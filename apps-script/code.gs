@@ -194,7 +194,7 @@ function doPost(e) {
     }
 
     if (body.action === 'list' || body.action === 'getAll') return listRows();
-    if (body.action === 'add')    return withDocumentLock(function() { return addRow(body.row || {}); });
+    if (body.action === 'add')    return withDocumentLock(function() { return addRow(body.row || {}, body.options || {}); });
     if (body.action === 'update') return withDocumentLock(function() { return updateRowById(body.id_demande, body.fields || {}); });
     if (body.action === 'updateThreadFollowup') return withDocumentLock(function() { return updateThreadFollowup(body.gmail_thread_id, body.fields || {}); });
     if (body.action === 'updateWixFollowup') return withDocumentLock(function() { return updateWixFollowup(body.gmail_thread_id, body.email_client, body.fields || {}); });
@@ -240,11 +240,38 @@ function listRows() {
   return ok({ headers, rows });
 }
 
-function addRow(rowData) {
+function addRow(rowData, options) {
   const sheet = getSheet();
   ensureSchemaHeaders(sheet);
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
   const clean = sanitizeFields(rowData || {}, false);
+  const resolution = options || {};
+
+  if (resolution.merge_into_id) {
+    const target = findRowByDemandId(sheet, headers, resolution.merge_into_id);
+    if (!target) throw new Error("Demande à enrichir introuvable : " + resolution.merge_into_id);
+    mergeManualDemandRow(sheet, headers, target.rowIndex, clean);
+    applyDefaultRowHeight(sheet, target.rowIndex);
+    syncCalendarForRow(sheet, headers, target.rowIndex, "addRow merge");
+    return ok({
+      id_demande: resolution.merge_into_id,
+      row: target.rowIndex,
+      created: false,
+      merged: true
+    });
+  }
+
+  if (resolution.check_duplicates && !resolution.force_create) {
+    const candidates = findDemandMatchCandidates(sheet, headers, clean, { mode: "manual" });
+    if (candidates.length) {
+      return ok({
+        created: false,
+        merged: false,
+        requires_resolution: true,
+        candidates: candidates
+      });
+    }
+  }
   
   // Génération d'un identifiant unique côté serveur
   // Pour une création manuelle, on ne fait pas confiance à l'ID envoyé par le dashboard.
@@ -282,7 +309,7 @@ function addRow(rowData) {
     Logger.log("Erreur envoi email immédiat: " + err.message);
   }
   */
-  return ok({ id_demande: clean.id_demande });
+  return ok({ id_demande: clean.id_demande, row: clean._row, created: true, merged: false });
 }
 
 function upsertWixDemand(rowData, options) {
@@ -460,9 +487,20 @@ function updateExistingDemandFollowup(match, fields) {
   const activeEmailMatches = !hasSpecificEventDate && email
     ? findActiveRowsByEmail(sheet, headers, email)
     : [];
-  const matches = emailMatches.length > 0
+  let matches = emailMatches.length > 0
     ? emailMatches
     : (nameMatches.length > 0 ? nameMatches : activeEmailMatches);
+  if (matches.length === 0) {
+    matches = findDemandMatchCandidates(sheet, headers, {
+      email_client: email,
+      nom_client: match.nom_client,
+      date_evenement: dateEvenement,
+      telephone: match.telephone || fields.telephone,
+      nb_convives: match.nb_convives || fields.nb_convives,
+      lieu_prestation: match.lieu_prestation || fields.lieu_prestation,
+      type_evenement: match.type_evenement || fields.type_evenement
+    }, { mode: "followup" });
+  }
   if (matches.length !== 1) {
     return ok({
       updated: false,
@@ -495,6 +533,20 @@ function updateExistingDemandFollowup(match, fields) {
   applyDefaultRowHeight(sheet, found.rowIndex);
 
   return ok({ updated: true, id_demande: found.id_demande || "", row: found.rowIndex });
+}
+
+function syncCalendarForRow(sheet, headers, rowIndex, context) {
+  SpreadsheetApp.flush();
+  try {
+    const values = sheet.getRange(rowIndex, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const row = {};
+    headers.forEach(function(h, i) {
+      row[canonicalKey(h)] = values[i];
+    });
+    syncCalendarEvent(row);
+  } catch (err) {
+    Logger.log("Erreur de synchronisation Google Calendar dans " + context + " : " + err.message);
+  }
 }
 
 function checkDuplicate(match) {
@@ -672,6 +724,54 @@ function normalizePersonName(value) {
     .toLowerCase();
 }
 
+function normalizePhoneKey(value) {
+  let digits = String(value || '').replace(/\D/g, '');
+  if (digits.indexOf('0033') === 0) digits = digits.substring(4);
+  if (digits.indexOf('33') === 0 && digits.length >= 11) digits = digits.substring(2);
+  if (digits.length === 9 && /^[1-9]/.test(digits)) digits = '0' + digits;
+  return digits.length === 10 ? digits : '';
+}
+
+function normalizeComparableText(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+function comparableTokens(value) {
+  const ignored = {
+    a: true, au: true, aux: true, de: true, des: true, du: true, en: true,
+    et: true, inconnu: true, la: true, le: true, les: true, pour: true,
+    remplir: true, une: true
+  };
+  return normalizeComparableText(value).split(' ').filter(function(token) {
+    return token.length > 1 && !ignored[token];
+  });
+}
+
+function hasSharedToken(left, right) {
+  const leftTokens = comparableTokens(left);
+  const rightTokens = comparableTokens(right);
+  return leftTokens.some(function(token) { return rightTokens.indexOf(token) !== -1; });
+}
+
+function normalizeGuestCountKey(value) {
+  const numbers = String(value || '').match(/\d+/g);
+  if (!numbers || numbers.length !== 1) return '';
+  return String(Number(numbers[0]));
+}
+
+function isActiveDemandStatus(status) {
+  return [
+    "Événement terminé",
+    "Perdu / Sans suite",
+    "Refusé / Complet"
+  ].indexOf(String(status || '').trim()) === -1;
+}
+
 function isSafeBusinessUrl(value) {
   const s = String(value || '').trim();
   if (!s || s === '—') return true;
@@ -785,10 +885,173 @@ function findRowByDemandId(sheet, headers, idDemande) {
   const values = sheet.getRange(2, idCol, lastRow - 1, 1).getValues();
   for (var i = 0; i < values.length; i++) {
     if (String(values[i][0] || '').trim() === target) {
-      return { rowIndex: i + 2 };
+      return { rowIndex: i + 2, id_demande: target };
     }
   }
   return null;
+}
+
+function findDemandMatchCandidates(sheet, headers, incoming, options) {
+  const mode = String((options || {}).mode || "manual");
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+
+  const values = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+  const displays = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getDisplayValues();
+  const target = {
+    email: String(incoming.email_client || '').trim().toLowerCase(),
+    phone: normalizePhoneKey(incoming.telephone),
+    name: normalizePersonName(incoming.nom_client),
+    date: normalizeEventDateText(incoming.date_evenement),
+    guests: normalizeGuestCountKey(incoming.nb_convives),
+    type: normalizeComparableText(incoming.type_evenement),
+    place: normalizeComparableText(incoming.lieu_prestation)
+  };
+  const targetHasDate = !!target.date && target.date !== "Inconnu / à compléter";
+  const candidates = [];
+
+  values.forEach(function(rowValues, rowOffset) {
+    const row = {};
+    headers.forEach(function(h, i) {
+      const key = canonicalKey(h);
+      row[key] = key === "date_evenement"
+        ? normalizeEventDateText(displays[rowOffset][i] || rowValues[i])
+        : rowValues[i];
+    });
+    if (!row.id_demande || !isActiveDemandStatus(row.statut)) return;
+
+    const rowEmail = String(row.email_client || '').trim().toLowerCase();
+    const rowPhone = normalizePhoneKey(row.telephone);
+    const rowName = normalizePersonName(row.nom_client);
+    const rowDate = normalizeEventDateText(row.date_evenement);
+    const rowGuests = normalizeGuestCountKey(row.nb_convives);
+    const rowType = normalizeComparableText(row.type_evenement);
+    const rowPlace = normalizeComparableText(row.lieu_prestation);
+    let score = 0;
+    let secondaryScore = 0;
+    const reasons = [];
+
+    if (target.email && rowEmail && target.email === rowEmail) {
+      score += 100;
+      reasons.push("même email");
+    }
+    if (target.phone && rowPhone && target.phone === rowPhone) {
+      score += 100;
+      reasons.push("même téléphone");
+    }
+    const sameDate = targetHasDate && rowDate === target.date;
+    if (sameDate) {
+      score += 60;
+      reasons.push("même date");
+    }
+    if (target.name && rowName && target.name === rowName) {
+      score += 50;
+      reasons.push("même nom");
+    } else if (target.name && rowName && hasSharedToken(target.name, rowName)) {
+      score += 30;
+      reasons.push("nom proche");
+    }
+    if (target.guests && rowGuests && target.guests === rowGuests) {
+      score += 15;
+      secondaryScore += 15;
+      reasons.push("même nombre de convives");
+    }
+    if (target.type && target.type !== "autres" && rowType === target.type) {
+      score += 10;
+      secondaryScore += 10;
+      reasons.push("même événement");
+    }
+    if (target.place && rowPlace && (
+      target.place === rowPlace ||
+      target.place.indexOf(rowPlace) !== -1 ||
+      rowPlace.indexOf(target.place) !== -1 ||
+      hasSharedToken(target.place, rowPlace)
+    )) {
+      score += 10;
+      secondaryScore += 10;
+      reasons.push("lieu proche");
+    }
+    if (mode === "followup" && row.statut === "Devis envoyé") score += 10;
+
+    const hasStrongIdentity =
+      (target.email && rowEmail && target.email === rowEmail) ||
+      (target.phone && rowPhone && target.phone === rowPhone) ||
+      (sameDate && target.name && rowName && (
+        target.name === rowName || hasSharedToken(target.name, rowName)
+      )) ||
+      (target.name && rowName && target.name === rowName && secondaryScore > 0) ||
+      (mode === "followup" && target.name && rowName && target.name === rowName);
+    const minimumScore = mode === "followup" ? 60 : 70;
+    if (!hasStrongIdentity || score < minimumScore) return;
+
+    candidates.push({
+      rowIndex: rowOffset + 2,
+      id_demande: String(row.id_demande || '').trim(),
+      score: score,
+      reasons: reasons,
+      nom_client: String(row.nom_client || '').trim(),
+      telephone: String(row.telephone || '').trim(),
+      email_client: String(row.email_client || '').trim(),
+      type_evenement: String(row.type_evenement || '').trim(),
+      date_evenement: rowDate,
+      heure_evenement: String(row.heure_evenement || '').trim(),
+      nb_convives: String(row.nb_convives || '').trim(),
+      lieu_prestation: String(row.lieu_prestation || '').trim(),
+      statut: String(row.statut || '').trim(),
+      canal: String(row.canal || '').trim(),
+      notes: String(row.notes || '').trim()
+    });
+  });
+
+  return candidates.sort(function(a, b) {
+    return b.score - a.score || b.rowIndex - a.rowIndex;
+  }).slice(0, 5);
+}
+
+function mergeManualDemandRow(sheet, headers, rowIndex, incoming) {
+  const currentValues = sheet.getRange(rowIndex, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const current = {};
+  headers.forEach(function(h, i) {
+    current[canonicalKey(h)] = currentValues[i];
+  });
+
+  const preserved = {
+    id_demande: true,
+    date_reception: true,
+    canal: true,
+    gmail_thread_id: true,
+    gmail_message_id: true,
+    wix_form_fingerprint: true,
+    dernier_email_recu_le: true,
+    dernier_message_client: true,
+    nb_relances_client: true,
+    relance_a_traiter: true,
+    en_attente_reponse_depuis: true
+  };
+
+  headers.forEach(function(h, i) {
+    const key = canonicalKey(h);
+    if (preserved[key] || incoming[key] === undefined) return;
+    const incomingText = String(incoming[key] || '').trim();
+    if (!incomingText) return;
+
+    let value = incoming[key];
+    const currentText = String(current[key] || '').trim();
+    if (key === "statut" && incomingText === "Nouvelle demande" && currentText) return;
+    if (key === "message_original" && currentText) return;
+    if (key === "notes" && currentText && incomingText !== currentText) {
+      value = currentText + "\n" + incomingText;
+    }
+
+    const cell = sheet.getRange(rowIndex, i + 1);
+    if (key === "date_evenement") cell.setNumberFormat("@");
+    cell.setValue(value);
+  });
+
+  const modificationCol = headers.findIndex(function(h) {
+    return canonicalKey(h) === "derniere_modification";
+  }) + 1;
+  if (modificationCol > 0) sheet.getRange(rowIndex, modificationCol).setValue(new Date());
 }
 
 function findRowByCanonicalValue(sheet, headers, key, value) {

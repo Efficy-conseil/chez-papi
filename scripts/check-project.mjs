@@ -33,6 +33,7 @@ run(process.execPath, ['--check', 'chez-papi/prototypes/ihm-ng/app.js']);
 run(process.execPath, ['--check', 'chez-papi/prototypes/relances/app.js']);
 run(process.execPath, ['--check', 'chez-papi/prototypes/relances/sw.js']);
 run(process.execPath, ['scripts/audit-blueprints.mjs']);
+run(process.execPath, ['scripts/test-demand-matching.mjs']);
 run('python3', ['-m', 'json.tool', 'make/Integration Email - Wix - Voxist.blueprint.json'], { stdio: 'ignore' });
 run('python3', ['-m', 'json.tool', 'make/Integration Tally.blueprint.json'], { stdio: 'ignore' });
 
@@ -61,5 +62,14 @@ requireText('apps-script/code.gs', 'function findRowsByNameAndEventDate');
 requireText('apps-script/code.gs', 'function findActiveRowsByEmail');
 requireText('apps-script/code.gs', 'const hasSpecificEventDate = !!dateEvenement && dateEvenement !== "Inconnu / à compléter";');
 requireText('apps-script/code.gs', 'reason: matches.length === 0 ? "existing_demand_not_found" : "existing_demand_ambiguous"');
+requireText('apps-script/code.gs', 'function findDemandMatchCandidates');
+requireText('apps-script/code.gs', 'function normalizePhoneKey');
+requireText('apps-script/code.gs', 'requires_resolution: true');
+requireText('apps-script/code.gs', 'merge_into_id');
+requireText('chez-papi/app.js', '{ check_duplicates: true }');
+requireText('chez-papi/index.html', 'id="duplicate-modal"');
+requireText('chez-papi/app.js', 'function showDuplicateResolution');
+requireText('chez-papi/index.html', "resolveDuplicateSubmission('merge')");
+requireText('docs/frontend-functional-spec.md', '`Créer quand même` demande une confirmation explicite');
 
 console.log('Vérifications locales réussies.');

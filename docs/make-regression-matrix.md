@@ -63,6 +63,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | E12 | Réponse à un devis demandant un supplément de service, l’ajout ou le retrait d’éléments | Mise à jour d’un suivi, aucune ligne, aucun accusé, `Historique_Email` | Statique + essai Make |
 | E13 | Bon de commande ou commande validée dans un nouveau fil, envoyé par un portail ou une adresse technique | Si un unique dossier partage le contact identifié et la date de prestation : mise à jour et `Historique_Email`, sans accusé ni nouvelle ligne ; sinon le message reste en boîte de réception pour vérification | Backend + statique + essai Make |
 | E14 | Réponse courte à une proposition de rappel, par exemple `Ok pour lundi, plutôt en fin de matinée`, sans date de prestation | Si une unique demande active partage exactement l’email : mise à jour du suivi et `Historique_Email`, sans nouvelle ligne ni accusé ; sinon le message reste en boîte de réception | Backend + statique + essai Make |
+| E15 | Email commençant par `Merci pour vos propositions` et demandant de `modifier certaines pièces`, sans rappeler la date | Route de suivi obligatoire même si l’IA retourne `is_followup=false` ; rattachement uniquement si une candidate fiable et unique existe, sinon aucune création et email conservé pour vérification | Backend + automatique + essai Make |
 
 ## Tally
 
@@ -82,6 +83,11 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | F03 | Lien Gmail | Ouverture avec le libellé correspondant au canal |
 | F04 | Passage à `Événement confirmé` | Création ou mise à jour de l'événement Google Calendar |
 | F05 | Retour à un statut non confirmé | Suppression de l'événement Calendar existant |
+| F06 | Saisie manuelle avec téléphone déjà présent sur une demande active | Aucune création immédiate ; fenêtre listant les fiches candidates |
+| F07 | Consultation d'une candidate depuis la fenêtre de rapprochement | Comparaison visible et formulaire manuel intégralement conservé |
+| F08 | Enrichissement d'une candidate sélectionnée | Une seule ligne conservée, informations métier complétées, identifiant et champs techniques préservés |
+| F09 | Choix `Créer quand même` | Confirmation explicite puis nouvelle ligne distincte |
+| F10 | Deux créations concurrentes portant sur la même demande | Recherche et écriture sérialisées ; la seconde opération reçoit la candidate créée par la première |
 
 ## Procédure d'exécution
 

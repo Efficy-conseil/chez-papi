@@ -231,6 +231,7 @@ Relances et suivis :
 - Une réponse à un sujet `Re: Devis`, `TR: Devis`, `Fwd: Devis` n'est une relance que si le dernier message parle du devis existant : nouveau devis, devis actualisé, budget par personne, modification, validation, nouvelle version.
 - Une nouvelle demande dans un ancien fil reste une nouvelle demande si elle concerne une nouvelle date, un nouveau lieu, un nouveau type de prestation ou un nouvel événement.
 - Une réponse courte qui accepte ou précise un créneau de rappel, sans redonner la date de prestation, est un suivi. Elle est rattachée uniquement lorsqu’une seule demande active possède exactement la même adresse email ; si aucune ou plusieurs demandes actives correspondent, aucune ligne n’est créée et le message reste à vérifier.
+- Les formulations `Merci pour vos propositions` et `modifier certaines pièces` sont des indices déterministes de suivi commercial. Elles doivent emprunter la route de rattachement même si l’IA retourne à tort `is_followup=false`, et elles sont interdites dans la route de création Email.
 - Les réponses en lien avec une nouvelle demande doit alimenter la partie technique afin d'implémenter plus tard dans le frontend la gestion des fils de discussion et des indicateurs de messages en attente de réponse.
 
 ## Make - Tally
@@ -277,6 +278,9 @@ Contraintes backend :
 - `updateThreadFollowup` rattache par `gmail_thread_id`.
 - `updateWixFollowup` rattache par `gmail_thread_id`, puis fallback dernier `WIX-` par email.
 - `updateExistingDemandFollowup` rattache par email+date, puis nom+date si l'email manque. Sans date de prestation, il accepte uniquement une correspondance exacte et unique sur l’email parmi les demandes actives.
+- Si ces critères exacts échouent, `updateExistingDemandFollowup` peut utiliser le même rapprochement prudent que la saisie manuelle : téléphone ou email exact, ou combinaison forte et unique entre nom, date, convives, type, lieu et statut. Une correspondance absente ou ambiguë ne crée aucune ligne.
+- La nouvelle interface appelle l'action dashboard `add` avec l'option `check_duplicates`. Le backend recherche alors les demandes actives similaires sous le même verrou que l'écriture ; sans décision explicite, il retourne les candidates et ne crée rien. Il accepte ensuite soit l'enrichissement d'un `id_demande` choisi, soit une création forcée confirmée par l'utilisatrice. Un ancien frontend qui n'envoie pas cette option conserve temporairement le comportement historique de création, afin que le déploiement backend reste compatible pendant la publication GitHub Pages.
+- L'enrichissement manuel conserve l'identifiant, la date de réception, le canal et tous les champs techniques de la fiche choisie. Les champs non vides de la saisie complètent la fiche ; le statut `Nouvelle demande` par défaut ne rétrograde pas un dossier déjà avancé.
 - Le backend normalise les canaux autorisés.
 - Le backend normalise `date_evenement`.
 - Le backend force `date_evenement` en texte pour éviter les conversions Google Sheets.
@@ -497,6 +501,9 @@ Contraintes de prévention :
 - Le dashboard affiche `date_evenement` via `formatDateFR`.
 - Les suivis email peuvent fallback sur nom+date quand email absent.
 - Les canaux du formulaire doivent rester synchronisés avec `ALLOWED_CHANNELS`.
+- Une création manuelle similaire à une ou plusieurs demandes actives ne doit pas écrire immédiatement une nouvelle ligne.
+- Le dashboard doit proposer les candidates dans une fenêtre de rapprochement, permettre de consulter leurs différences sans perdre la saisie, puis exiger le choix explicite d'enrichir ou de créer malgré tout.
+- Les variantes françaises d'un même téléphone, avec ou sans espaces, préfixe national ou zéro initial, doivent partager la même clé de rapprochement.
 
 ### Backend / Google Sheets / Calendar
 

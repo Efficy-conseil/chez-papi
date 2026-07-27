@@ -216,6 +216,19 @@ assert(
 
 const serializedMain = JSON.stringify(main);
 const serializedTally = JSON.stringify(tally);
+const existingFollowup = moduleById(mainModules, 81);
+const existingFollowupFilter = JSON.stringify(existingFollowup.filter || {});
+const newEmailDemand = moduleById(mainModules, 39);
+const newEmailDemandFilter = JSON.stringify(newEmailDemand.filter || {});
+['Merci pour vos propositions', 'modifier certaines pièces'].forEach(marker => {
+  assert(existingFollowupFilter.includes(marker), `indice déterministe de suivi absent du module 81 : ${marker}`);
+  assert(newEmailDemandFilter.includes(marker) && newEmailDemandFilter.includes('text:notcontain'), `indice de suivi non exclu de la création Email : ${marker}`);
+});
+assert(
+  (existingFollowup.mapper?.data || '').includes('"lieu_prestation":"{{38.lieu_prestation}}"') &&
+  (existingFollowup.mapper?.data || '').includes('"type_evenement":"{{38.type_evenement}}"'),
+  'indices métier absents du rapprochement de suivi Email'
+);
 assert(!serializedMain.includes('ifempty(60.data.count; 0)'), 'anti-doublon Email/Wix/Voxist encore permissif si count est absent');
 assert(!serializedTally.includes('ifempty(4.data.count; 0)'), 'anti-doublon Tally encore permissif si count est absent');
 

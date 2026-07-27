@@ -1569,6 +1569,131 @@ body.is-saving-event::after {
 
 .modal-form { padding: 16px 20px 0; }
 
+.duplicate-modal {
+  z-index: 760;
+}
+
+.duplicate-modal-box {
+  max-width: 760px;
+}
+
+.duplicate-modal-body {
+  padding: 18px 20px;
+}
+
+.duplicate-modal-body > p {
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+
+.duplicate-modal-body > label {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+#duplicate-candidate-select {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  padding: 9px 10px;
+  width: 100%;
+}
+
+.duplicate-candidate-summary {
+  background: #fcfaf7;
+  border: 1px solid var(--warm);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 12px 0;
+  padding: 12px;
+}
+
+.duplicate-candidate-summary strong {
+  color: var(--brown-dk);
+  font-size: 14px;
+}
+
+.duplicate-candidate-summary span {
+  color: var(--text);
+  font-size: 12px;
+}
+
+.duplicate-candidate-summary small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.duplicate-details {
+  margin-top: 14px;
+}
+
+.duplicate-table-wrap {
+  overflow-x: auto;
+}
+
+.duplicate-comparison-table {
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 560px;
+  width: 100%;
+}
+
+.duplicate-comparison-table th,
+.duplicate-comparison-table td {
+  border-bottom: 1px solid var(--warm);
+  padding: 8px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.duplicate-comparison-table thead th {
+  color: var(--muted);
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.duplicate-comparison-table tbody th {
+  color: var(--brown-dk);
+  width: 120px;
+}
+
+.duplicate-comparison-table tr.duplicate-difference {
+  background: rgba(245,166,35,.10);
+}
+
+.duplicate-help {
+  color: var(--muted) !important;
+  font-size: 11px !important;
+  margin: 10px 0 0 !important;
+}
+
+.duplicate-force-btn {
+  color: #9a5d00;
+}
+
+@media (max-width: 599px) {
+  .duplicate-modal-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .duplicate-modal-actions button {
+    width: 100%;
+  }
+}
+
 .form-row {
   display: flex;
   flex-direction: column;

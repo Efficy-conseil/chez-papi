@@ -349,11 +349,18 @@ La fiche en cours d'édition est exclue de cette comparaison.
 
 ### 10.6 Création
 
-- Utilise l'action backend `add`.
+- Utilise l'action backend `add` avec l'option `check_duplicates` lors d'une première tentative de création.
 - N'envoie pas d'identifiant choisi par le navigateur.
 - Initialise la date de réception si nécessaire.
 - Utilise `Saisie manuelle` comme canal par défaut.
 - Utilise `Nouvelle demande` comme statut par défaut.
+- Avant toute écriture, le backend recherche sous verrou les demandes actives similaires, notamment par téléphone normalisé, email, nom, date, convives, type et lieu.
+- Si des candidates existent, aucune ligne n'est créée et une fenêtre de rapprochement s'affiche au-dessus du formulaire.
+- La fenêtre propose un sélecteur de fiches, un résumé des raisons de correspondance et une comparaison entre la fiche actuelle et la nouvelle saisie.
+- `Voir la fiche` déplie cette comparaison dans la fenêtre sans fermer ni réinitialiser le formulaire en cours.
+- `Retour au formulaire` conserve intégralement la saisie.
+- `Enrichir cette fiche` complète la candidate sélectionnée tout en conservant son identifiant, sa date de réception, son canal et ses champs techniques.
+- `Créer quand même` demande une confirmation explicite avant de forcer une nouvelle ligne.
 - Recharge les données et avertit les autres onglets après succès.
 
 ### 10.7 Modification

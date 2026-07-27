@@ -27,7 +27,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
 
-<link rel="stylesheet" href="styles.css?v=2.37">
+<link rel="stylesheet" href="styles.css?v=2.38">
 </head>
 
 <body>
@@ -561,7 +561,40 @@
 </div>
 </div>
 
-<script src="app.js?v=2.37"></script>
+<!-- ══════════════════════ MODAL RAPPROCHEMENT DOUBLONS ══════════════════════ -->
+<div id="duplicate-modal" class="modal-overlay duplicate-modal" style="display:none;">
+<div class="modal-box duplicate-modal-box" role="dialog" aria-modal="true" aria-labelledby="duplicate-modal-title">
+<div class="modal-hd">
+<h3 id="duplicate-modal-title">Demande similaire détectée</h3>
+<button type="button" class="modal-close" onclick="closeDuplicateModal()" aria-label="Revenir au formulaire">✕</button>
+</div>
+<div class="duplicate-modal-body">
+<p>Une ou plusieurs fiches semblent correspondre à cette saisie. Sélectionnez une fiche à enrichir ou créez une nouvelle demande si l’événement est différent.</p>
+<label for="duplicate-candidate-select">Fiche proposée</label>
+<select id="duplicate-candidate-select"></select>
+<div id="duplicate-candidate-summary" class="duplicate-candidate-summary"></div>
+<button type="button" id="duplicate-view-btn" class="btn-secondary" onclick="toggleDuplicateDetails()">Voir la fiche</button>
+<div id="duplicate-details" class="duplicate-details" style="display:none;">
+<div class="duplicate-table-wrap">
+<table class="duplicate-comparison-table">
+<thead>
+<tr><th>Champ</th><th>Fiche actuelle</th><th>Nouvelle saisie</th></tr>
+</thead>
+<tbody id="duplicate-comparison"></tbody>
+</table>
+</div>
+<p class="duplicate-help">Les champs renseignés dans la nouvelle saisie enrichiront la fiche choisie. L’identifiant, la date de réception, le canal et les références techniques seront conservés.</p>
+</div>
+</div>
+<div class="modal-ft duplicate-modal-actions">
+<button type="button" class="btn-secondary" onclick="closeDuplicateModal()">Retour au formulaire</button>
+<button type="button" id="duplicate-force-btn" class="btn-secondary duplicate-force-btn" onclick="resolveDuplicateSubmission('force')">Créer quand même</button>
+<button type="button" id="duplicate-merge-btn" class="btn-primary" onclick="resolveDuplicateSubmission('merge')">Enrichir cette fiche</button>
+</div>
+</div>
+</div>
+
+<script src="app.js?v=2.38"></script>
 
 <!-- ── BOTTOM NAVIGATION (mobile uniquement) ── -->
 <nav class="bottom-nav" id="bottom-nav">
