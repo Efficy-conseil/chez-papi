@@ -319,6 +319,19 @@ function formatDateFR(ds) {
   catch { return String(ds); }
 }
 
+function formatDateTimeFR(value) {
+  if (!value) return '';
+  const d = parseDateTime(value);
+  if (!d) return String(value);
+  return d.toLocaleString('fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
 function formatTime(value) {
   if (!value) return '';
   const match = String(value).trim().match(/\b([01]?\d|2[0-3])[:hH]([0-5]\d)\b/);
@@ -804,6 +817,20 @@ function isEventPast(e) {
   return d.getTime() < today.getTime();
 }
 
+function isTruthy(value) {
+  const normalized = String(value ?? '').trim().toLowerCase();
+  return value === true || ['true', 'vrai', 'oui', '1', 'yes'].includes(normalized);
+}
+
+function hasClientMessage(e) {
+  return !!e && !isEventPast(e) && isTruthy(e.relance_a_traiter);
+}
+
+function clientMessageStar(e) {
+  if (!hasClientMessage(e)) return '';
+  return '<span class="new-message-star" role="img" aria-label="Nouveau message client" title="Nouveau message client">★</span>';
+}
+
 let _completingPastEvents = null;
 
 async function completePastConfirmedEvents(rows) {
@@ -1054,6 +1081,7 @@ function renderDashboard() {
   const devisAPreparer = actives.filter(e => e.statut === 'Devis à préparer');
   const aRappeler = actives.filter(e => e.statut === 'À rappeler');
   const enAttenteReponse = actives.filter(e => e.statut === WAITING_RESPONSE_STATUS);
+  const messagesRecus = actives.filter(hasClientMessage);
   const nouveaux = actives.filter(e => e.statut === 'Nouvelle demande');
 
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
@@ -1061,6 +1089,7 @@ function renderDashboard() {
   set('kpi-devis-val',       devisAPreparer.length || '—');
   set('kpi-rappel-val',      aRappeler.length || '—');
   set('kpi-attente-val',     enAttenteReponse.length || '—');
+  set('kpi-messages-val',    messagesRecus.length || '—');
   set('kpi-leads-val',       nouveaux.length || '—');
 
   // Dernières demandes
@@ -1086,7 +1115,7 @@ function renderDashboard() {
         const summaryText = eventSummary(e);
         return `<tr style="cursor:pointer" onclick="openEventModal(${e._row})">
           <td title="${escAttr(dateText)}"><strong>${safeText(dateText)}</strong></td>
-          <td title="${escAttr(clientText)}">${safeText(clientText)}${warningBadge}</td>
+          <td title="${escAttr(clientText)}">${clientMessageStar(e)}${safeText(clientText)}${warningBadge}</td>
           <td title="${escAttr(summaryText)}">${safeText(summaryText)}</td>
           <td title="${escAttr(ageText)}">${ageBadge}</td>
           <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e, 'home-status-sel')}</td>
@@ -1128,7 +1157,7 @@ function renderDashboard() {
         const clientText = e.nom_client || '—';
         return `<tr class="${urgClass}" style="cursor:pointer" onclick="openEventModal(${e._row})">
           <td title="${escAttr(dateText)}"><strong>${safeText(dateText)}</strong></td>
-          <td title="${escAttr(clientText)}">${safeText(clientText)}${warningBadge}</td>
+          <td title="${escAttr(clientText)}">${clientMessageStar(e)}${safeText(clientText)}${warningBadge}</td>
           <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e, 'home-status-sel')}</td>
         </tr>`;
       }).join('');
@@ -1154,7 +1183,7 @@ function renderDashboard() {
         const clientText = e.nom_client || '—';
         return `<tr style="cursor:pointer" onclick="openEventModal(${e._row})">
           <td title="${escAttr(dateText)}"><strong>${safeText(dateText)}</strong></td>
-          <td title="${escAttr(clientText)}">${safeText(clientText)}${warningBadge}</td>
+          <td title="${escAttr(clientText)}">${clientMessageStar(e)}${safeText(clientText)}${warningBadge}</td>
           <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e, 'home-status-sel')}</td>
         </tr>`;
       }).join('') + '</tbody></table>';
@@ -1248,7 +1277,7 @@ function renderPipeline() {
       return `
       <div class="pipe-card" onclick="openEventModal(${e._row})">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
-          <div class="pipe-client" style="margin-bottom:0;">${safeText(e.nom_client)}</div>
+          <div class="pipe-client" style="margin-bottom:0;">${clientMessageStar(e)}${safeText(e.nom_client)}</div>
           ${warningBadge}
         </div>
         <div class="pipe-event">${safeText(eventSummary(e))}${e.date_evenement ? ' \xb7 ' + safeText(formatEventDateTime(e)) : ''}</div>
@@ -1350,7 +1379,7 @@ function renderClients() {
 
     return `<div class="prestation-card">
       <div class="pc-header" onclick="openEventModal(${e._row})" style="cursor:pointer">
-        <div class="pc-line1"><strong>${safeText(e.nom_client)}</strong> · ${safeText(eventSummary(e))} · <em>${safeText(formatEventDateTime(e))}</em></div>
+        <div class="pc-line1">${clientMessageStar(e)}<strong>${safeText(e.nom_client)}</strong> · ${safeText(eventSummary(e))} · <em>${safeText(formatEventDateTime(e))}</em></div>
         <div class="pc-line2">${safeText(eventSummary(e))} &nbsp;${pill}</div>
         ${contactLine ? `<div class="pc-contact">${contactLine}</div>` : ''}
         ${linksLine ? `<div onclick="event.stopPropagation()">${linksLine}</div>` : ''}
@@ -1512,7 +1541,7 @@ function renderHistorique() {
     const phoneText = e.telephone || '—';
     return `<tr style="cursor:pointer" onclick="openEventModal(${e._row})">
       <td title="${escAttr(dateText)}"><strong>${safeText(dateText)}</strong></td>
-      <td title="${escAttr(clientText)}">${safeText(clientText)}</td>
+      <td title="${escAttr(clientText)}">${clientMessageStar(e)}${safeText(clientText)}</td>
       <td title="${escAttr(typeText)}">${safeText(typeText)}</td>
       <td title="${escAttr(lieuText)}">${safeText(lieuText)}</td>
       <td title="${escAttr(convivesText)}">${safeText(convivesText)}</td>
@@ -1807,6 +1836,9 @@ function openEventModal(rowIndex = null) {
   const replyBtn = document.getElementById('view-email-reply-btn');
   const phoneCallBtn = document.getElementById('view-phone-call-btn');
   const emailThreadBtn = document.getElementById('view-email-thread-btn');
+  const followupRow = document.getElementById('followup-detail-row');
+  const followupMeta = document.getElementById('followup-detail-meta');
+  const followupButton = document.getElementById('mark-followup-handled-btn');
   const derniereModifContainer = document.getElementById('event-derniere-modif-container');
   const derniereModif = document.getElementById('view-derniere-modif');
 
@@ -1880,6 +1912,19 @@ function openEventModal(rowIndex = null) {
         derniereModif.textContent = modifStr;
         derniereModifContainer.style.display = 'block';
       }
+
+      if (followupRow) {
+        const hasMessageHistory = hasClientMessage(existing) || !!String(existing.dernier_message_client || '').trim() || Number(existing.nb_relances_client || 0) > 0;
+        followupRow.style.display = hasMessageHistory ? '' : 'none';
+      }
+      if (followupMeta) {
+        const received = formatDateTimeFR(existing.dernier_email_recu_le) || 'Date non renseignée';
+        const count = Number(existing.nb_relances_client || 0);
+        followupMeta.textContent = `${received} · ${count} échange${count > 1 ? 's' : ''}`;
+      }
+      if (followupButton) {
+        followupButton.style.display = hasClientMessage(existing) ? 'inline-flex' : 'none';
+      }
     }
   } else {
     form.elements['date_reception'].value = localDateTimeInputValue();
@@ -1890,6 +1935,8 @@ function openEventModal(rowIndex = null) {
     if (replyContainer) replyContainer.style.display = 'none';
     if (phoneCallBtn) phoneCallBtn.style.display = 'none';
     if (emailThreadBtn) emailThreadBtn.style.display = 'none';
+    if (followupRow) followupRow.style.display = 'none';
+    if (followupButton) followupButton.style.display = 'none';
     if (derniereModifContainer) derniereModifContainer.style.display = 'none';
   }
 
@@ -2242,6 +2289,41 @@ document.getElementById('event-form').addEventListener('submit', async e => {
   }
 });
 
+async function markFollowupHandled() {
+  if (!editingRow) return;
+  const row = appData.find(r => r._row === editingRow);
+  if (!row || !eventId(row)) {
+    showNotification('Demande introuvable', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('mark-followup-handled-btn');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Traitement…';
+  }
+
+  try {
+    const result = await SheetsAPI.update(eventId(row), { relance_a_traiter: false });
+    if (result.success) {
+      row.relance_a_traiter = false;
+      renderAll();
+      openEventModal(editingRow);
+      showNotification('Message marqué comme traité', 'success');
+      broadcastSync();
+    } else {
+      showNotification('Erreur : ' + (result.error || 'inconnue'), 'error');
+    }
+  } catch (err) {
+    showNotification('Erreur réseau', 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Marquer comme traité';
+    }
+  }
+}
+
 async function deleteCurrentEvent() {
   if (!editingRow) return;
   const row = appData.find(r => r._row === editingRow);
@@ -2438,7 +2520,7 @@ function renderAgenda() {
       const statutLabel = STATUS_LABEL[e.statut] || e.statut;
       return `<tr style="cursor:pointer" onclick="openEventModal(${e._row})">
         <td class="ag-date" title="${escAttr(dateStr)}">${safeText(dateStr)}</td>
-        <td title="${escAttr(client)}">${safeText(client)}</td>
+        <td title="${escAttr(client)}">${clientMessageStar(e)}${safeText(client)}</td>
         <td ${isEntreprise ? 'class="ag-entreprise"' : ''} title="${escAttr(typeVal)}">${safeText(typeVal)}</td>
         <td title="${escAttr(lieu)}">${safeText(lieu)}</td>
         <td title="${escAttr(convives)}">${safeText(convives)}</td>
@@ -2532,6 +2614,23 @@ function showKpiModal(type) {
         <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e)}</td>
       </tr>`;
     }).join('') : '<tr><td colspan="4" class="tbl-empty">Aucun devis à préparer</td></tr>';
+  }
+  else if (type === 'messages') {
+    title.textContent = 'Messages reçus';
+    const evts = actives.filter(hasClientMessage);
+    evts.sort((a, b) => dateTimeSortValue(b.dernier_email_recu_le) - dateTimeSortValue(a.dernier_email_recu_le));
+
+    thead.innerHTML = '<tr><th style="width:22%">Reçu</th><th style="width:25%">Client</th><th style="width:33%">Message</th><th style="width:20%">Statut</th></tr>';
+    tbody.innerHTML = evts.length ? evts.map(e => {
+      const message = String(e.dernier_message_client || '').trim();
+      const shortMessage = message.length > 90 ? message.slice(0, 90) + '…' : message;
+      return `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})">
+        <td>${safeText(formatDateTimeFR(e.dernier_email_recu_le) || 'À déterminer')}</td>
+        <td>${clientMessageStar(e)}<strong>${safeText(e.nom_client || '—')}</strong></td>
+        <td>${safeText(shortMessage || 'Nouveau message client')}</td>
+        <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e)}</td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="4" class="tbl-empty">Aucun message client à traiter</td></tr>';
   }
   else if (type === 'confirmes') {
     title.textContent = 'Événements confirmés';

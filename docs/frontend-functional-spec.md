@@ -142,17 +142,20 @@ Une demande `Événement confirmé` dont la date de fin est passée est automati
 
 ### 5.2 Indicateurs cliquables
 
-Cinq indicateurs affichent le nombre de dossiers actifs :
+Six indicateurs affichent le nombre de dossiers actifs :
 
 - nouvelles demandes ;
 - demandes à rappeler ;
 - demandes en attente de réponse ;
+- messages reçus à traiter ;
 - devis à préparer ;
 - événements confirmés.
 
-Chaque indicateur ouvre une fenêtre détaillée. Les lignes de cette fenêtre ouvrent la fiche, et le statut peut y être modifié directement. Le détail `À rappeler` affiche également le téléphone ; le détail `En attente de réponse` affiche la colonne `Depuis` avec le nombre de jours écoulés depuis la proposition d'appel ; le nombre est mis en évidence à partir de sept jours. Le détail `Devis à préparer` affiche le budget.
+Chaque indicateur ouvre une fenêtre détaillée. Les lignes de cette fenêtre ouvrent la fiche, et le statut peut y être modifié directement. Le détail `À rappeler` affiche également le téléphone ; le détail `En attente de réponse` affiche la colonne `Depuis` avec le nombre de jours écoulés depuis la proposition d'appel ; le nombre est mis en évidence à partir de sept jours. Le détail `Messages reçus` regroupe les demandes dont `relance_a_traiter` est vrai, les trie par date de dernier message décroissante et affiche un extrait du message sans remplacer leur statut commercial. Le détail `Devis à préparer` affiche le budget.
 
 Lorsqu'un dossier passe au statut `En attente de réponse`, le backend renseigne `en_attente_reponse_depuis`. La carte d'accueil affiche uniquement le nombre total de dossiers dans cet état ; la colonne `Depuis` de la fenêtre détaillée signale les attentes de sept jours ou plus.
+
+Lorsqu'un échange est rattaché à une demande existante, une étoile discrète `★` apparaît à côté du client dans les listes actives. Elle dépend de `relance_a_traiter`, indépendamment du statut : une demande peut donc être simultanément `En attente de réponse`, `Devis envoyé` ou `Événement confirmé` et avoir un nouveau message.
 
 ### 5.3 Dernières demandes
 
@@ -161,6 +164,7 @@ Lorsqu'un dossier passe au statut `En attente de réponse`, le backend renseigne
 - Affiche date d'événement, client, résumé, ancienneté de réception et statut.
 - Colore l'ancienneté selon qu'elle est récente, à surveiller ou ancienne.
 - Signale les informations manquantes.
+- Signale par une étoile les nouveaux messages clients à traiter.
 - Permet d'ouvrir la fiche et de modifier le statut.
 - Un libellé `Voir plus…` en bas de section permet d'en afficher dix de plus à chaque clic.
 - Le lien `Voir tout` ouvre la section complète correspondante.
@@ -170,6 +174,7 @@ Lorsqu'un dossier passe au statut `En attente de réponse`, le backend renseigne
 - Affiche initialement dix dossiers `Devis à préparer` ou `Devis envoyé`.
 - Trie les dossiers par date d'événement croissante.
 - Affiche date, client et statut.
+- Signale par une étoile les nouveaux messages clients à traiter.
 - Un libellé `Voir plus…` en bas de section permet d'en afficher dix de plus à chaque clic.
 - Le lien `Voir tout` ouvre la section complète correspondante.
 - Met en évidence la proximité de la date : moins de 7 jours puis de 7 à 30 jours pour les demandes ordinaires ; mise en gras pour les événements `Entreprise`.
@@ -179,6 +184,7 @@ Lorsqu'un dossier passe au statut `En attente de réponse`, le backend renseigne
 - Affiche initialement dix événements confirmés non passés.
 - Trie les événements par date croissante.
 - Affiche date, client et statut.
+- Signale par une étoile les nouveaux messages clients à traiter.
 - Un libellé `Voir plus…` en bas de section permet d'en afficher dix de plus à chaque clic.
 - Le lien `Voir tout` ouvre la section complète correspondante.
 
@@ -202,6 +208,7 @@ Les cartes sont triées par date croissante dans chaque colonne et affichent :
 - icônes Gmail et Drive si disponibles ;
 - ancienneté de réception pour les premières étapes ;
 - avertissement d'informations manquantes ;
+- étoile de nouveau message lorsque `relance_a_traiter` est vrai ;
 - sélecteur de statut.
 
 Un clic sur la carte ouvre la fiche. Les clics sur coordonnées, liens ou statut n'ouvrent pas la fiche par erreur.
@@ -210,7 +217,7 @@ Un clic sur la carte ouvre la fiche. Les clics sur coordonnées, liens ou statut
 
 - Affiche uniquement les événements `Événement confirmé` non passés.
 - Trie les prestations par date croissante.
-- Affiche client, résumé, date, statut, coordonnées et liens Gmail/Drive.
+- Affiche client, résumé, date, statut, coordonnées, liens Gmail/Drive et l'étoile de nouveau message lorsqu'elle s'applique.
 - Permet l'ouverture de la fiche et le changement rapide de statut.
 
 Chaque prestation possède une liste de tâches. Cette fonctionnalité devra être réévaluée ultérieurement selon l'usage réel du client :
@@ -323,6 +330,7 @@ Elle affiche :
 - fil de discussion Gmail, en lecture seule ;
 - dossier Drive ;
 - message original, en lecture seule ;
+- dernier message client, sa date et le nombre d'échanges, en lecture seule lorsqu'un suivi a été reçu ;
 - notes internes ;
 - dernière modification, en lecture seule.
 
@@ -335,7 +343,10 @@ Selon les données présentes, la fiche propose :
 - `Appeler` ;
 - `Répondre` par Gmail si seule l'adresse est connue ;
 - `Ouvrir le fil` si une URL Gmail est connue ;
-- ouvrir le dossier Drive.
+- ouvrir le dossier Drive ;
+- `Marquer comme traité` lorsqu'un nouveau message client est signalé.
+
+`Marquer comme traité` positionne `relance_a_traiter` à faux. L'étoile disparaît et la demande sort du regroupement `Messages reçus`, sans changement de statut. Un nouvel échange rattaché réactive automatiquement l'indicateur.
 
 ### 10.5 Conflits de date
 

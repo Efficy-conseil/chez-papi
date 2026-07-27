@@ -660,13 +660,13 @@ body {
 
 @media (min-width: 900px) {
   .kpi-strip {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
-@media (min-width: 1180px) {
+@media (min-width: 1400px) {
   .kpi-strip {
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
   }
 }
 
@@ -693,6 +693,7 @@ body {
 .kpi-card.terra::before { background: var(--terracotta); }
 .kpi-card.red::before { background: var(--red-soft); }
 .kpi-card.blue::before { background: var(--blue); }
+.kpi-card.message::before { background: var(--gold-lt); }
 
 .kpi-label {
   font-size: 0.8rem;
@@ -1119,6 +1120,24 @@ body {
 
 .pipe-card:hover {
   box-shadow: 0 2px 8px rgba(122,92,58,.12);
+}
+
+.new-message-star {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 5px;
+  color: var(--gold);
+  font-size: 13px;
+  line-height: 1;
+  vertical-align: baseline;
+}
+
+.followup-meta {
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .pipe-client {

@@ -27,7 +27,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
 
-<link rel="stylesheet" href="styles.css?v=2.38">
+<link rel="stylesheet" href="styles.css?v=2.39">
 </head>
 
 <body>
@@ -193,6 +193,10 @@
 <div class="kpi-card blue" onclick="showKpiModal('attente')" style="cursor:pointer">
 <div class="kpi-label">En attente de réponse</div>
 <div class="kpi-val" id="kpi-attente-val">—</div>
+</div>
+<div class="kpi-card message" onclick="showKpiModal('messages')" style="cursor:pointer">
+<div class="kpi-label">Messages reçus</div>
+<div class="kpi-val" id="kpi-messages-val">—</div>
 </div>
 <div class="kpi-card" onclick="showKpiModal('devis')" style="cursor:pointer">
 <div class="kpi-label">Devis à préparer</div>
@@ -534,6 +538,14 @@
 <label>Message original</label>
 <textarea name="message_original" rows="3" placeholder="Message original reçu du client..." readonly></textarea>
 </div>
+<div class="form-row textarea-row followup-row" id="followup-detail-row" style="display:none;">
+<label>Dernier message client</label>
+<div>
+  <div id="followup-detail-meta" class="followup-meta">—</div>
+  <textarea name="dernier_message_client" rows="3" readonly></textarea>
+  <button type="button" class="btn-secondary" id="mark-followup-handled-btn" onclick="markFollowupHandled()" style="margin-top:8px; display:none;">Marquer comme traité</button>
+</div>
+</div>
 <div class="form-row textarea-row">
 <label>Notes</label>
 <textarea name="notes" rows="3" placeholder="Notes de suivi interne..."></textarea>
@@ -594,7 +606,7 @@
 </div>
 </div>
 
-<script src="app.js?v=2.38"></script>
+<script src="app.js?v=2.39"></script>
 
 <!-- ── BOTTOM NAVIGATION (mobile uniquement) ── -->
 <nav class="bottom-nav" id="bottom-nav">

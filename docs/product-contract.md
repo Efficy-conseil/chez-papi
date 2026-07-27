@@ -232,7 +232,9 @@ Relances et suivis :
 - Une nouvelle demande dans un ancien fil reste une nouvelle demande si elle concerne une nouvelle date, un nouveau lieu, un nouveau type de prestation ou un nouvel événement.
 - Une réponse courte qui accepte ou précise un créneau de rappel, sans redonner la date de prestation, est un suivi. Elle est rattachée uniquement lorsqu’une seule demande active possède exactement la même adresse email ; si aucune ou plusieurs demandes actives correspondent, aucune ligne n’est créée et le message reste à vérifier.
 - Les formulations `Merci pour vos propositions` et `modifier certaines pièces` sont des indices déterministes de suivi commercial. Elles doivent emprunter la route de rattachement même si l’IA retourne à tort `is_followup=false`, et elles sont interdites dans la route de création Email.
-- Les réponses en lien avec une nouvelle demande doit alimenter la partie technique afin d'implémenter plus tard dans le frontend la gestion des fils de discussion et des indicateurs de messages en attente de réponse.
+- Une réponse rattachée à une demande existante renseigne `dernier_email_recu_le`, `dernier_message_client`, incrémente `nb_relances_client` et positionne `relance_a_traiter = TRUE`.
+- Le frontend présente ces réponses dans le regroupement transversal `Messages reçus`, sans modifier automatiquement le statut commercial de la demande.
+- Une étoile signale les demandes ayant un message à traiter. L'action explicite `Marquer comme traité` positionne `relance_a_traiter = FALSE` ; un échange ultérieur le réactive.
 
 ## Make - Tally
 
