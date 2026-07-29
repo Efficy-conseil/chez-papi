@@ -12800,6 +12800,10 @@
                                     },
                                     {
                                         "role": "system",
+                                        "content": "Règle prioritaire pour les confirmations de réservation : un message qui confirme un virement, une réservation ou une prestation déjà prévue, ou qui pose une question pratique sur le menu d’un événement déjà réservé, est un suivi. Retourne is_demande=true, is_followup=true et send_ack=false. Si l’expéditeur indique écrire pour son conjoint, sa conjointe, son époux, son épouse ou un proche déjà nommé dans le message, utilise dans nom_client le nom de cette personne déjà cliente (et non le nom de l’expéditeur) ; conserve la date de l’événement lorsqu’elle est indiquée. Exemple : « Je suis le conjoint de Mme De Régis, je vais effectuer le virement pour confirmer la réservation du 25 octobre 2026 » doit retourner is_followup=true, nom_client=\"Mme De Régis\", date_evenement=\"25/10/2026\" et send_ack=false."
+                                    },
+                                    {
+                                        "role": "system",
                                         "content": "Règle prioritaire pour les réponses courtes : un message qui accepte ou précise un créneau de rappel, par exemple « Ok pour lundi, plutôt en fin de matinée », est le suivi d’une demande existante. Retourne is_demande=true, is_followup=true, send_ack=false et date_evenement=null. Le jour ou l’heure du rappel ne sont jamais la date ou l’heure de l’événement. Conserve exactement l’email expéditeur dans email_client afin que le backend rattache le suivi seulement s’il existe une unique demande active avec cette adresse."
                                     },
                                     {
@@ -16469,6 +16473,11 @@
                                                             "o": "boolean:equal"
                                                         },
                                                         {
+                                                            "a": "{{60.data.count}}",
+                                                            "b": "0",
+                                                            "o": "number:equal"
+                                                        },
+                                                        {
                                                             "a": "{{1.fromEmail}}",
                                                             "b": "notifications@wix-forms.com",
                                                             "o": "text:notequal"
@@ -16554,6 +16563,11 @@
                                                             "a": "{{38.is_followup}}",
                                                             "b": "false",
                                                             "o": "boolean:equal"
+                                                        },
+                                                        {
+                                                            "a": "{{60.data.count}}",
+                                                            "b": "0",
+                                                            "o": "number:equal"
                                                         },
                                                         {
                                                             "a": "{{1.fromEmail}}",

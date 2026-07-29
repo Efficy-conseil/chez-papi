@@ -64,6 +64,8 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | E13 | Bon de commande ou commande validée dans un nouveau fil, envoyé par un portail ou une adresse technique | Si un unique dossier partage le contact identifié et la date de prestation : mise à jour et `Historique_Email`, sans accusé ni nouvelle ligne ; sinon le message reste en boîte de réception pour vérification | Backend + statique + essai Make |
 | E14 | Réponse courte à une proposition de rappel, par exemple `Ok pour lundi, plutôt en fin de matinée`, sans date de prestation | Si une unique demande active partage exactement l’email : mise à jour du suivi et `Historique_Email`, sans nouvelle ligne ni accusé ; sinon le message reste en boîte de réception | Backend + statique + essai Make |
 | E15 | Email commençant par `Merci pour vos propositions` et demandant de `modifier certaines pièces`, sans rappeler la date | Route de suivi obligatoire même si l’IA retourne `is_followup=false` ; rattachement uniquement si une candidate fiable et unique existe, sinon aucune création et email conservé pour vérification | Backend + automatique + essai Make |
+| E16 | Message de Flore de Régis dans un fil déjà connu demandant un devis mis à jour (remplacement et ajouts) | Le fil existant est marqué avec le nouveau message ; aucune nouvelle ligne ni accusé n’est créé | Automatique + essai Make |
+| E17 | Conjoint d’une cliente confirme le virement pour la réservation du 25/10/2026 et demande si le couscous comprend les légumes | Rattachement à l’unique demande de Mme De Régis pour cette date, `relance_a_traiter = TRUE`, aucun doublon ni accusé | Automatique + essai Make |
 
 ## Tally
 

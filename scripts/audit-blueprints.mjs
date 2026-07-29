@@ -116,6 +116,13 @@ assert(
   emailAckConditions.some(condition => condition?.a === '{{60.data.count}}' && condition?.b === '0' && condition?.o === 'number:equal'),
   'accusé Email direct non protégé contre un fil déjà rattaché à une demande'
 );
+const emailCreationConditions = (moduleById(mainModules, 39).filter?.conditions || []);
+assert(
+  emailCreationConditions.every(conditionSet => conditionSet.some(
+    condition => condition?.a === '{{60.data.count}}' && condition?.b === '0' && condition?.o === 'number:equal'
+  )),
+  'création Email direct non protégée contre un fil déjà rattaché à une demande'
+);
 
 const confirmationFollowup = moduleById(mainModules, 81);
 const confirmationConditions = (confirmationFollowup.filter?.conditions || []).flat();
@@ -152,6 +159,12 @@ assert(
     directEmailSystemPrompt.includes('date_evenement=null') &&
     directEmailSystemPrompt.includes('unique demande active'),
   'règle de rattachement des réponses courtes de rappel absente du prompt Email direct'
+);
+assert(
+  directEmailSystemPrompt.includes('confirmations de réservation') &&
+    directEmailSystemPrompt.includes('Mme De Régis') &&
+    directEmailSystemPrompt.includes('25/10/2026'),
+  'règle de rattachement des confirmations envoyées par un proche absente du prompt Email direct'
 );
 const followupConditionSets = confirmationFollowup.filter?.conditions || [];
 assert(
