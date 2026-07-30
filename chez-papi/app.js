@@ -114,10 +114,16 @@ function gmailLabelForEvent(e) {
 
 function emailThreadUrl(e) {
   const rawUrl = safeUrl(e?.url_email_origine, ['https://mail.google.com/']);
-  if (!rawUrl) return '';
-  const messageIdMatch = rawUrl.match(/(FMfc[A-Za-z0-9_-]+)/);
-  if (!messageIdMatch) return rawUrl;
-  return `https://mail.google.com/mail/u/0/#label/${encodeURIComponent(gmailLabelForEvent(e))}/${messageIdMatch[1]}`;
+  if (rawUrl) {
+    const messageIdMatch = rawUrl.match(/(FMfc[A-Za-z0-9_-]+)/);
+    if (!messageIdMatch) return rawUrl;
+    return `https://mail.google.com/mail/u/0/#label/${encodeURIComponent(gmailLabelForEvent(e))}/${messageIdMatch[1]}`;
+  }
+
+  const gmailId = String(e?.gmail_thread_id || e?.gmail_message_id || '').trim();
+  return gmailId
+    ? `https://mail.google.com/mail/u/0/#label/${encodeURIComponent(gmailLabelForEvent(e))}/${gmailId}`
+    : '';
 }
 
 function eventId(e) {
@@ -1839,6 +1845,7 @@ function openEventModal(rowIndex = null) {
   const followupRow = document.getElementById('followup-detail-row');
   const followupMeta = document.getElementById('followup-detail-meta');
   const followupButton = document.getElementById('mark-followup-handled-btn');
+  const followupReplyButton = document.getElementById('reply-followup-btn');
   const derniereModifContainer = document.getElementById('event-derniere-modif-container');
   const derniereModif = document.getElementById('view-derniere-modif');
 
@@ -1925,6 +1932,12 @@ function openEventModal(rowIndex = null) {
       if (followupButton) {
         followupButton.style.display = hasClientMessage(existing) ? 'inline-flex' : 'none';
       }
+      if (followupReplyButton) {
+        followupReplyButton.href = threadUrl || (isEmailKnown
+          ? `https://mail.google.com/mail/u/demande.chezpapimaisongourmande@gmail.com/?view=cm&fs=1&to=${encodeURIComponent(clientEmail)}`
+          : '#');
+        followupReplyButton.style.display = hasClientMessage(existing) && (threadUrl || isEmailKnown) ? 'inline-flex' : 'none';
+      }
     }
   } else {
     form.elements['date_reception'].value = localDateTimeInputValue();
@@ -1937,6 +1950,7 @@ function openEventModal(rowIndex = null) {
     if (emailThreadBtn) emailThreadBtn.style.display = 'none';
     if (followupRow) followupRow.style.display = 'none';
     if (followupButton) followupButton.style.display = 'none';
+    if (followupReplyButton) followupReplyButton.style.display = 'none';
     if (derniereModifContainer) derniereModifContainer.style.display = 'none';
   }
 

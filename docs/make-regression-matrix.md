@@ -90,6 +90,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | F08 | Enrichissement d'une candidate sélectionnée | Une seule ligne conservée, informations métier complétées, identifiant et champs techniques préservés |
 | F09 | Choix `Créer quand même` | Confirmation explicite puis nouvelle ligne distincte |
 | F10 | Deux créations concurrentes portant sur la même demande | Recherche et écriture sérialisées ; la seconde opération reçoit la candidate créée par la première |
+| F11 | Message client rattaché à une demande, y compris une ancienne fiche sans `url_email_origine` | La fiche ouverte depuis `Messages reçus` permet d'ouvrir le fil et propose `Répondre` à côté de `Marquer comme traité` |
 
 ## Procédure d'exécution
 

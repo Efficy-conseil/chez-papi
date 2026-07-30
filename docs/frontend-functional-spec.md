@@ -346,6 +346,8 @@ Selon les données présentes, la fiche propose :
 - ouvrir le dossier Drive ;
 - `Marquer comme traité` lorsqu'un nouveau message client est signalé.
 
+Pour un message client à traiter, le bouton `Répondre` est également présenté à côté de `Marquer comme traité`. Il ouvre le fil Gmail si son identifiant est connu ; sinon, il ouvre un nouveau message préadressé au client. L'accès au fil est reconstruit à partir de `gmail_thread_id` ou `gmail_message_id` si `url_email_origine` est vide.
+
 `Marquer comme traité` positionne `relance_a_traiter` à faux. L'étoile disparaît et la demande sort du regroupement `Messages reçus`, sans changement de statut. Un nouvel échange rattaché réactive automatiquement l'indicateur.
 
 ### 10.5 Conflits de date

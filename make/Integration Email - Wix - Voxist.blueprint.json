@@ -646,7 +646,7 @@
                                 "gzip": true,
                                 "useMtls": false,
                                 "contentType": "application/json",
-                                "data": "{\"action\":\"updateWixFollowup\",\"make_token\":\"cp_make_followup_2026_06\",\"gmail_thread_id\":\"{{1.threadId}}\",\"email_client\":\"{{1.fromEmail}}\",\"fields\":{\"gmail_message_id\":\"{{1.id}}\",\"dernier_email_recu_le\":\"{{1.internalDate}}\",\"dernier_message_client\":\"{{escapeJSON(substring(1.fullTextBody; 0; 900))}}\",\"relance_a_traiter\":true}}",
+                                "data": "{\"action\":\"updateWixFollowup\",\"make_token\":\"cp_make_followup_2026_06\",\"gmail_thread_id\":\"{{1.threadId}}\",\"email_client\":\"{{1.fromEmail}}\",\"fields\":{\"gmail_message_id\":\"{{1.id}}\",\"url_email_origine\":\"https://mail.google.com/mail/u/0/#label/Historique_Wix/{{1.threadId}}\",\"dernier_email_recu_le\":\"{{1.internalDate}}\",\"dernier_message_client\":\"{{escapeJSON(substring(1.fullTextBody; 0; 900))}}\",\"relance_a_traiter\":true}}",
                                 "followAllRedirects": true
                             },
                             "metadata": {
@@ -1193,7 +1193,7 @@
                                 "gzip": true,
                                 "useMtls": false,
                                 "contentType": "application/json",
-                                "data": "{\"action\":\"updateThreadFollowup\",\"make_token\":\"cp_make_followup_2026_06\",\"gmail_thread_id\":\"{{1.threadId}}\",\"fields\":{\"gmail_message_id\":\"{{1.id}}\",\"dernier_email_recu_le\":\"{{1.internalDate}}\",\"dernier_message_client\":\"{{escapeJSON(substring(1.fullTextBody; 0; 900))}}\",\"relance_a_traiter\":true}}",
+                                "data": "{\"action\":\"updateThreadFollowup\",\"make_token\":\"cp_make_followup_2026_06\",\"gmail_thread_id\":\"{{1.threadId}}\",\"fields\":{\"gmail_message_id\":\"{{1.id}}\",\"url_email_origine\":\"https://mail.google.com/mail/u/0/#label/Historique_Email/{{1.threadId}}\",\"dernier_email_recu_le\":\"{{1.internalDate}}\",\"dernier_message_client\":\"{{escapeJSON(substring(1.fullTextBody; 0; 900))}}\",\"relance_a_traiter\":true}}",
                                 "followAllRedirects": true
                             },
                             "metadata": {
@@ -1575,7 +1575,7 @@
                                 "gzip": true,
                                 "useMtls": false,
                                 "contentType": "application/json",
-                                "data": "{\"action\":\"updateThreadFollowup\",\"make_token\":\"cp_make_followup_2026_06\",\"gmail_thread_id\":\"{{1.threadId}}\",\"fields\":{\"gmail_message_id\":\"{{1.id}}\",\"dernier_email_recu_le\":\"{{1.internalDate}}\",\"dernier_message_client\":\"{{escapeJSON(substring(1.fullTextBody; 0; 900))}}\",\"relance_a_traiter\":true}}",
+                                "data": "{\"action\":\"updateThreadFollowup\",\"make_token\":\"cp_make_followup_2026_06\",\"gmail_thread_id\":\"{{1.threadId}}\",\"fields\":{\"gmail_message_id\":\"{{1.id}}\",\"url_email_origine\":\"https://mail.google.com/mail/u/0/#label/Historique_Email/{{1.threadId}}\",\"dernier_email_recu_le\":\"{{1.internalDate}}\",\"dernier_message_client\":\"{{escapeJSON(substring(1.fullTextBody; 0; 900))}}\",\"relance_a_traiter\":true}}",
                                 "followAllRedirects": true
                             },
                             "metadata": {
@@ -15094,7 +15094,7 @@
                                                 "gzip": true,
                                                 "useMtls": false,
                                                 "contentType": "application/json",
-                                                "data": "{\"action\":\"updateExistingDemandFollowup\",\"make_token\":\"cp_make_followup_2026_06\",\"match\":{\"email_client\":\"{{38.email_client}}\",\"date_evenement\":\"{{38.date_evenement}}\",\"nom_client\":\"{{38.nom_client}}\",\"telephone\":\"{{38.telephone}}\",\"nb_convives\":\"{{38.nb_convives}}\",\"lieu_prestation\":\"{{38.lieu_prestation}}\",\"type_evenement\":\"{{38.type_evenement}}\"},\"fields\":{\"gmail_thread_id\":\"{{1.threadId}}\",\"gmail_message_id\":\"{{1.id}}\",\"dernier_email_recu_le\":\"{{1.internalDate}}\",\"dernier_message_client\":\"{{escapeJSON(substring(1.fullTextBody; 0; 900))}}\",\"relance_a_traiter\":true,\"email_client\":\"{{38.email_client}}\",\"telephone\":\"{{38.telephone}}\",\"nb_convives\":\"{{38.nb_convives}}\"}}",
+                                                "data": "{\"action\":\"updateExistingDemandFollowup\",\"make_token\":\"cp_make_followup_2026_06\",\"match\":{\"email_client\":\"{{38.email_client}}\",\"date_evenement\":\"{{38.date_evenement}}\",\"nom_client\":\"{{38.nom_client}}\",\"telephone\":\"{{38.telephone}}\",\"nb_convives\":\"{{38.nb_convives}}\",\"lieu_prestation\":\"{{38.lieu_prestation}}\",\"type_evenement\":\"{{38.type_evenement}}\"},\"fields\":{\"gmail_thread_id\":\"{{1.threadId}}\",\"gmail_message_id\":\"{{1.id}}\",\"url_email_origine\":\"https://mail.google.com/mail/u/0/#label/Historique_Email/{{1.threadId}}\",\"dernier_email_recu_le\":\"{{1.internalDate}}\",\"dernier_message_client\":\"{{escapeJSON(substring(1.fullTextBody; 0; 900))}}\",\"relance_a_traiter\":true,\"email_client\":\"{{38.email_client}}\",\"telephone\":\"{{38.telephone}}\",\"nb_convives\":\"{{38.nb_convives}}\"}}",
                                                 "followAllRedirects": true
                                             },
                                             "metadata": {
