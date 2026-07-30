@@ -1,0 +1,4 @@
+interface:
+  display_name: "Corriger une demande Chez Papi"
+  short_description: "Mettre à jour une demande avec confirmation"
+  default_prompt: "Utilise $corriger-demande-chez-papi pour préparer une correction de demande, puis attends mon accord avant de l’appliquer."

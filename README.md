@@ -48,6 +48,8 @@ Le dépôt reste la source de vérité. Ne pas modifier directement le code dans
 
 La compétence projet `skills/deploy-chez-papi-backend/SKILL.md` rend ce redéploiement systématique après toute modification du backend, sauf demande explicite contraire.
 
+La compétence `skills/corriger-demande-chez-papi/SKILL.md` prépare les corrections ponctuelles de demandes via le backend et exige une confirmation explicite avant chaque écriture.
+
 ## Déploiement du frontend
 
 Le workflow `.github/workflows/deploy-pages.yml` publie uniquement `chez-papi/` après chaque push sur `main` qui touche ce répertoire.
