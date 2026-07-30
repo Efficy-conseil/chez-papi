@@ -84,15 +84,14 @@ context.testSheet = {
   },
   getRange(row, column, rowCount, columnCount) {
     assert.equal(row, 2);
-    assert.equal(column, 1);
     assert.equal(rowCount, rows.length);
-    assert.equal(columnCount, headers.length);
+    const selected = rows.map(values => values.slice(column - 1, column - 1 + columnCount));
     return {
       getValues() {
-        return rows;
+        return selected;
       },
       getDisplayValues() {
-        return rows.map(values => values.map(String));
+        return selected.map(values => values.map(String));
       }
     };
   }
@@ -125,5 +124,13 @@ const weakCandidates = evaluate(
   'findDemandMatchCandidates(testSheet, testHeaders, weakIncoming, { mode: "manual" })'
 );
 assert.equal(weakCandidates.length, 0);
+
+const activeDateMatches = evaluate(
+  'findActiveRowsByEventDate(testSheet, testHeaders, "12/09/2026")'
+);
+assert.deepEqual(
+  Array.from(activeDateMatches, candidate => candidate.id_demande),
+  ['MANUAL-1']
+);
 
 console.log('Tests de rapprochement réussis.');

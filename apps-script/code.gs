@@ -198,7 +198,7 @@ function doPost(e) {
     if (body.action === 'update') return withDocumentLock(function() { return updateRowById(body.id_demande, body.fields || {}); });
     if (body.action === 'updateThreadFollowup') return withDocumentLock(function() { return updateThreadFollowup(body.gmail_thread_id, body.fields || {}); });
     if (body.action === 'updateWixFollowup') return withDocumentLock(function() { return updateWixFollowup(body.gmail_thread_id, body.email_client, body.fields || {}); });
-    if (body.action === 'updateExistingDemandFollowup') return withDocumentLock(function() { return updateExistingDemandFollowup(body.match || {}, body.fields || {}); });
+    if (body.action === 'updateExistingDemandFollowup') return withDocumentLock(function() { return updateExistingDemandFollowup(body.match || {}, body.fields || {}, body.options || {}); });
     if (body.action === 'checkDuplicate') return checkDuplicate(body.match || {});
     if (body.action === 'upsertWixDemand') return withDocumentLock(function() { return upsertWixDemand(body.row || {}, body.options || {}); });
     if (body.action === 'delete') return withDocumentLock(function() { return deleteRowById(body.id_demande); });
@@ -468,7 +468,7 @@ function updateWixFollowup(gmailThreadId, emailClient, fields) {
   });
 }
 
-function updateExistingDemandFollowup(match, fields) {
+function updateExistingDemandFollowup(match, fields, options) {
   const email = String(match.email_client || '').trim().toLowerCase();
   const name = normalizePersonName(match.nom_client);
   const dateEvenement = normalizeEventDateText(match.date_evenement);
@@ -500,6 +500,9 @@ function updateExistingDemandFollowup(match, fields) {
       lieu_prestation: match.lieu_prestation || fields.lieu_prestation,
       type_evenement: match.type_evenement || fields.type_evenement
     }, { mode: "followup" });
+  }
+  if (matches.length === 0 && options && options.allow_unique_active_event_date && hasSpecificEventDate) {
+    matches = findActiveRowsByEventDate(sheet, headers, dateEvenement);
   }
   if (matches.length !== 1) {
     return ok({
@@ -1162,6 +1165,32 @@ function findActiveRowsByEmail(sheet, headers, emailClient) {
         rowIndex: i + 2,
         id_demande: idCol > 0 ? String(ids[i][0] || '').trim() : ""
       });
+    }
+  }
+  return matches;
+}
+
+function findActiveRowsByEventDate(sheet, headers, dateEvenement) {
+  const dateCol = headers.findIndex(function(h) { return canonicalKey(h) === "date_evenement"; }) + 1;
+  const statusCol = headers.findIndex(function(h) { return canonicalKey(h) === "statut"; }) + 1;
+  const idCol = headers.findIndex(function(h) { return canonicalKey(h) === "id_demande"; }) + 1;
+  if (dateCol <= 0) throw new Error("Colonne date_evenement introuvable");
+  if (statusCol <= 0) throw new Error("Colonne statut introuvable");
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+
+  const targetDate = normalizeEventDateText(dateEvenement);
+  const dates = sheet.getRange(2, dateCol, lastRow - 1, 1).getValues();
+  const dateDisplays = sheet.getRange(2, dateCol, lastRow - 1, 1).getDisplayValues();
+  const statuses = sheet.getRange(2, statusCol, lastRow - 1, 1).getValues();
+  const ids = idCol > 0 ? sheet.getRange(2, idCol, lastRow - 1, 1).getValues() : [];
+  const matches = [];
+
+  for (var i = 0; i < dates.length; i++) {
+    const rowDate = normalizeEventDateText(dateDisplays[i][0] || dates[i][0]);
+    if (rowDate === targetDate && isActiveDemandStatus(statuses[i][0])) {
+      matches.push({ rowIndex: i + 2, id_demande: idCol > 0 ? String(ids[i][0] || "").trim() : "" });
     }
   }
   return matches;

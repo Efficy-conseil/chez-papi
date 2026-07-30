@@ -70,6 +70,8 @@ requireText('apps-script/code.gs', 'const gmailThreadId = isMessageScopedSource 
 requireText('apps-script/code.gs', 'function findRowsByEmailAndEventDate');
 requireText('apps-script/code.gs', 'function findRowsByNameAndEventDate');
 requireText('apps-script/code.gs', 'function findActiveRowsByEmail');
+requireText('apps-script/code.gs', 'function findActiveRowsByEventDate');
+requireText('apps-script/code.gs', 'allow_unique_active_event_date');
 requireText('apps-script/code.gs', 'const hasSpecificEventDate = !!dateEvenement && dateEvenement !== "Inconnu / à compléter";');
 requireText('apps-script/code.gs', 'reason: matches.length === 0 ? "existing_demand_not_found" : "existing_demand_ambiguous"');
 requireText('apps-script/code.gs', 'function findDemandMatchCandidates');
@@ -81,5 +83,7 @@ requireText('chez-papi/index.html', 'id="duplicate-modal"');
 requireText('chez-papi/app.js', 'function showDuplicateResolution');
 requireText('chez-papi/index.html', "resolveDuplicateSubmission('merge')");
 requireText('docs/frontend-functional-spec.md', '`Créer quand même` demande une confirmation explicite');
+requireText('make/Integration Email - Wix - Voxist.blueprint.json', 'Voxist — rechercher une demande active unique avant création');
+requireText('make/Integration Email - Wix - Voxist.blueprint.json', 'allow_unique_active_event_date');
 
 console.log('Vérifications locales réussies.');

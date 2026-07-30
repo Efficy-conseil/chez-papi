@@ -44,6 +44,8 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | V09 | Audio retranscrit puis rejeté par l’IA | Aucune ligne, archivage dans `Hors_Scope_Make` | Automatique + essai Make |
 | V10 | Vocal de demande d’anniversaire sans nom énoncé | `nom_client` = `Inconnu / à compléter`, type = `Anniversaire`, sans jamais utiliser le type comme nom | Automatique + essai Make |
 | V11 | Vocal demandant une disponibilité le 15 août pour les 20 ans de sa fille, un apéro dînatoire et 30 personnes | La transcription atteint l’IA, puis une ligne `VOXIST-<messageId>`, `Téléphone`, `Anniversaire`, `Nouvelle demande`, `Historique_Voxist` | Automatique + essai Make |
+| V12 | Appel Voxist « Monsieur Petit, chemin des Crozes », pour définir les besoins du 12 septembre, avec une unique demande Wix active de Daniel Petit à cette date | Rattachement à `WIX-19fae44050c5c754`, conservation du statut, transcription enregistrée, téléphone `06 95 40 81 33`, `relance_a_traiter = TRUE`, `Historique_Voxist`, aucun doublon | Backend + automatique + essai Make |
+| V13 | Appel Voxist avec une date correspondant à plusieurs demandes actives, sans autre rapprochement déterminant | Aucune modification ni création ; le message reste à vérifier et n'est pas archivé comme traité | Backend + essai Make |
 
 ## Email direct
 

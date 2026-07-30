@@ -184,6 +184,8 @@ Comportement attendu :
 - Aucun accusé email automatique.
 - Le téléphone doit prioriser le numéro appelant détecté par l'email Voxist si la transcription donne un numéro incohérent.
 - Si l'appelant n'énonce aucun nom ou prénom, `nom_client` doit être `Inconnu / à compléter`. Le type d'événement ou le motif de l'appel ne doit jamais être utilisé comme nom client.
+- Avant toute création Voxist, un appel contenant une date peut être rattaché à une unique demande active, y compris d'origine Wix, lorsque les indices disponibles (nom, téléphone, lieu, date, convives, type ou statut) convergent. En dernier recours, une date de prestation unique parmi les demandes actives suffit uniquement pour cette route Voxist explicite ; une absence ou une ambiguïté de candidate ne crée ni ne modifie aucune ligne.
+- Un rattachement Voxist conserve le statut commercial de la demande, enregistre la transcription comme `dernier_message_client`, remplace le téléphone par le numéro appelant exploitable et positionne `relance_a_traiter = TRUE`.
 
 Critères de vraie demande Voxist :
 
@@ -281,6 +283,7 @@ Contraintes backend :
 - `updateWixFollowup` rattache par `gmail_thread_id`, puis fallback dernier `WIX-` par email.
 - `updateExistingDemandFollowup` rattache par email+date, puis nom+date si l'email manque. Sans date de prestation, il accepte uniquement une correspondance exacte et unique sur l’email parmi les demandes actives.
 - Si ces critères exacts échouent, `updateExistingDemandFollowup` peut utiliser le même rapprochement prudent que la saisie manuelle : téléphone ou email exact, ou combinaison forte et unique entre nom, date, convives, type, lieu et statut. Une correspondance absente ou ambiguë ne crée aucune ligne.
+- L'option Make `allow_unique_active_event_date` est réservée au parcours Voxist : après les rapprochements habituels, elle autorise seulement une demande active unique partageant la même date de prestation.
 - La nouvelle interface appelle l'action dashboard `add` avec l'option `check_duplicates`. Le backend recherche alors les demandes actives similaires sous le même verrou que l'écriture ; sans décision explicite, il retourne les candidates et ne crée rien. Il accepte ensuite soit l'enrichissement d'un `id_demande` choisi, soit une création forcée confirmée par l'utilisatrice. Un ancien frontend qui n'envoie pas cette option conserve temporairement le comportement historique de création, afin que le déploiement backend reste compatible pendant la publication GitHub Pages.
 - L'enrichissement manuel conserve l'identifiant, la date de réception, le canal et tous les champs techniques de la fiche choisie. Les champs non vides de la saisie complètent la fiche ; le statut `Nouvelle demande` par défaut ne rétrograde pas un dossier déjà avancé.
 - Le backend normalise les canaux autorisés.
