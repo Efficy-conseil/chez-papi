@@ -704,6 +704,12 @@ body {
   margin-bottom: 6px;
 }
 
+.kpi-message-star {
+  color: var(--gold);
+  font-size: 0.9rem;
+  letter-spacing: 0;
+}
+
 @media (min-width: 768px) {
   .kpi-label { font-size: 0.85rem; }
 }
