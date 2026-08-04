@@ -52,6 +52,25 @@ assert(duplicateBody.includes('"gmail_thread_id":"{{1.threadId}}"'), 'gmail_thre
 assert(!duplicateBody.includes('toJSON('), 'fonction Make toJSON non prise en charge dans le module 60');
 assert(!duplicateBody.includes('\\) +'), 'expression Make corrompue dans le module 60');
 
+assert(main.metadata?.scenario?.dlq === true, 'conservation des exécutions incomplètes désactivée');
+const retryModules = new Map([
+  [60, 'checkDuplicate'],
+  [43, 'upsertWixDemand'],
+  [80, 'updateThreadFollowup'],
+  [81, 'updateExistingDemandFollowup'],
+  [84, 'updateWixFollowup'],
+  [85, 'updateThreadFollowup'],
+  [94, 'updateExistingDemandFollowup']
+]);
+retryModules.forEach((action, id) => {
+  const module = moduleById(mainModules, id);
+  assert((module.mapper?.data || '').includes(`"action":"${action}"`), `action backend inattendue sur le module ${id}`);
+  const retry = module.onerror?.[0];
+  assert(retry?.module === 'builtin:Break', `gestionnaire Retry absent sur le module ${id}`);
+  assert(retry.mapper?.retry === true, `reprise automatique désactivée sur le module ${id}`);
+  assert(retry.mapper?.count === '3' && retry.mapper?.interval === '5', `reprise attendue 3 × 5 min absente sur le module ${id}`);
+});
+
 const wixUpsertModule = moduleById(mainModules, 43);
 const wixUpsertBody = wixUpsertModule.mapper?.data || '';
 [

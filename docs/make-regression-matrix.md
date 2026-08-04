@@ -15,6 +15,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | C08 | Demande reçue en 2026, avec date complète à venir saisie `2016` ou `2007` au lieu de `2026` ou `2027` | L'année est corrigée vers l'année courante ou suivante, jour et mois conservés, seulement si la date reste future ; sinon date à compléter | Automatique + essai Make |
 | C09 | Relance contenant retours à la ligne, guillemets ou antislashs | Mise à jour de la demande existante, incrément de `nb_relances_client`, `relance_a_traiter = TRUE`, puis archivage | Automatique + essai Make |
 | C07 | Réponse anti-doublon sans champ `count` ou inexploitable | Aucune création ; exécution en erreur visible, message conservé pour reprise | Automatique + essai Make |
+| C10 | Réponse HTTP Apps Script perdue après une écriture réussie, puis reprise Make | Le même `gmail_message_id` renvoie le résultat initial ; aucune seconde écriture, aucun second incrément de `nb_relances_client` et le flux restant reprend | Backend + essai Make |
 
 ## Wix
 

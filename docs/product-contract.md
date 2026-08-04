@@ -65,6 +65,7 @@ Champs techniques :
 - `nb_relances_client`
 - `relance_a_traiter`
 - `en_attente_reponse_depuis`
+- `make_operation_log` (journal technique interne des opérations Make déjà appliquées)
 
 ## Statuts autorisés
 
@@ -279,6 +280,8 @@ Contraintes backend :
 - `checkDuplicate` est la source commune d'anti-doublon pour Make.
 - Tous les modules HTTP Make qui appellent Apps Script doivent avoir `Follow redirect` activé. Sinon Make reçoit seulement une réponse Google `302 Moved Temporarily` au lieu du JSON backend, et les champs comme `count` deviennent inexploitables.
 - `upsertWixDemand` doit créer ou fusionner les doublons Wix rapprochés.
+- Les écritures Make doivent être idempotentes par `gmail_message_id` : après une écriture réussie dont la réponse HTTP est perdue, la reprise doit renvoyer le résultat initial sans ré-incrémenter `nb_relances_client`.
+- `upsertWixDemand` doit mémoriser le résultat d'un message Wix déjà appliqué afin qu'une reprise poursuive l'archivage et l'accusé attendus sans créer de seconde ligne.
 - `updateThreadFollowup` rattache par `gmail_thread_id`.
 - `updateWixFollowup` rattache par `gmail_thread_id`, puis fallback dernier `WIX-` par email.
 - `updateExistingDemandFollowup` rattache par email+date, puis nom+date si l'email manque. Sans date de prestation, il accepte uniquement une correspondance exacte et unique sur l’email parmi les demandes actives.

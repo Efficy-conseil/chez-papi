@@ -64,3 +64,17 @@ Références : `docs/product-contract.md` et `docs/make-regression-matrix.md`.
 - Les sorties exactes des modules OpenAI doivent être testées avec les messages de référence.
 - Les filtres et expressions Make doivent être confirmés par un `Run once` après import.
 - Les blueprints locaux ne sont pas automatiquement déployés dans Make : l'import et l'activation restent volontaires pour préserver le retour arrière.
+
+## Reprise des indisponibilités Apps Script
+
+Le 02/08/2026, le module `60` (`checkDuplicate`) a reçu une réponse HTTP `404` temporaire sous la forme d'une page Google Drive. Une relance manuelle immédiate a réussi, sans modification du scénario ni du backend. Cette situation est donc traitée comme une indisponibilité ponctuelle de la chaîne Google Apps Script / Content Service, et non comme une erreur persistante de configuration.
+
+L'incident s'étant reproduit le 04/08/2026, la protection suivante est désormais présente dans le blueprint versionné et le backend :
+
+1. Le scénario conserve ses exécutions incomplètes.
+2. Les modules backend `60`, `43`, `80`, `81`, `84`, `85` et `94` possèdent un gestionnaire `Retry` : trois tentatives automatiques, espacées de cinq minutes.
+3. Le backend journalise les opérations Make par `gmail_message_id`. Une reprise renvoie le résultat déjà obtenu sans ré-incrémenter `nb_relances_client`.
+4. `upsertWixDemand` journalise également ses créations et fusions, afin qu'une reprise conserve le résultat `created` ou `merged` nécessaire à la suite du flux.
+5. Le cas de non-régression `C10` couvre une réponse HTTP perdue après une écriture effectivement réalisée.
+
+Ne pas utiliser les gestionnaires `Skip` ou `Resume` pour ces appels : une réponse backend non confirmée ne doit jamais permettre au scénario de poursuivre son classement Gmail ou ses écritures. L'import et l'activation du blueprint dans Make restent manuels.

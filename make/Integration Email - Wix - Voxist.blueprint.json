@@ -369,6 +369,19 @@
                 "data": "{\"action\":\"checkDuplicate\",\"make_token\":\"cp_make_followup_2026_06\",\"match\":{\"source_email\":\"{{1.fromEmail}}\",\"gmail_message_id\":\"{{1.id}}\",\"gmail_thread_id\":\"{{1.threadId}}\",\"legacy_id\":\"{{1.threadId}}\"}}",
                 "followAllRedirects": true
             },
+            "onerror": [
+                {
+                    "id": 95,
+                    "module": "builtin:Break",
+                    "version": 1,
+                    "parameters": {},
+                    "mapper": {
+                        "count": "3",
+                        "retry": true,
+                        "interval": "5"
+                    }
+                }
+            ],
             "metadata": {
                 "designer": {
                     "x": 300,
@@ -649,6 +662,19 @@
                                 "data": "{\"action\":\"updateWixFollowup\",\"make_token\":\"cp_make_followup_2026_06\",\"gmail_thread_id\":\"{{1.threadId}}\",\"email_client\":\"{{1.fromEmail}}\",\"fields\":{\"gmail_message_id\":\"{{1.id}}\",\"url_email_origine\":\"https://mail.google.com/mail/u/0/#label/Historique_Wix/{{1.threadId}}\",\"dernier_email_recu_le\":\"{{1.internalDate}}\",\"dernier_message_client\":\"{{escapeJSON(substring(1.fullTextBody; 0; 900))}}\",\"relance_a_traiter\":true}}",
                                 "followAllRedirects": true
                             },
+                            "onerror": [
+                                {
+                                    "id": 96,
+                                    "module": "builtin:Break",
+                                    "version": 1,
+                                    "parameters": {},
+                                    "mapper": {
+                                        "count": "3",
+                                        "retry": true,
+                                        "interval": "5"
+                                    }
+                                }
+                            ],
                             "metadata": {
                                 "designer": {
                                     "x": 900,
@@ -1196,6 +1222,19 @@
                                 "data": "{\"action\":\"updateThreadFollowup\",\"make_token\":\"cp_make_followup_2026_06\",\"gmail_thread_id\":\"{{1.threadId}}\",\"fields\":{\"gmail_message_id\":\"{{1.id}}\",\"url_email_origine\":\"https://mail.google.com/mail/u/0/#label/Historique_Email/{{1.threadId}}\",\"dernier_email_recu_le\":\"{{1.internalDate}}\",\"dernier_message_client\":\"{{escapeJSON(substring(1.fullTextBody; 0; 900))}}\",\"relance_a_traiter\":true}}",
                                 "followAllRedirects": true
                             },
+                            "onerror": [
+                                {
+                                    "id": 97,
+                                    "module": "builtin:Break",
+                                    "version": 1,
+                                    "parameters": {},
+                                    "mapper": {
+                                        "count": "3",
+                                        "retry": true,
+                                        "interval": "5"
+                                    }
+                                }
+                            ],
                             "metadata": {
                                 "designer": {
                                     "x": 900,
@@ -1578,6 +1617,19 @@
                                 "data": "{\"action\":\"updateThreadFollowup\",\"make_token\":\"cp_make_followup_2026_06\",\"gmail_thread_id\":\"{{1.threadId}}\",\"fields\":{\"gmail_message_id\":\"{{1.id}}\",\"url_email_origine\":\"https://mail.google.com/mail/u/0/#label/Historique_Email/{{1.threadId}}\",\"dernier_email_recu_le\":\"{{1.internalDate}}\",\"dernier_message_client\":\"{{escapeJSON(substring(1.fullTextBody; 0; 900))}}\",\"relance_a_traiter\":true}}",
                                 "followAllRedirects": true
                             },
+                            "onerror": [
+                                {
+                                    "id": 98,
+                                    "module": "builtin:Break",
+                                    "version": 1,
+                                    "parameters": {},
+                                    "mapper": {
+                                        "count": "3",
+                                        "retry": true,
+                                        "interval": "5"
+                                    }
+                                }
+                            ],
                             "metadata": {
                                 "designer": {
                                     "x": 900,
@@ -3335,6 +3387,19 @@
                                                 "data": "{\"action\":\"upsertWixDemand\",\"make_token\":\"cp_make_followup_2026_06\",\"options\":{\"merge_window_minutes\":15},\"row\":{\"id_demande\":\"WIX-{{1.id}}\",\"date_reception\":\"{{1.internalDate}}\",\"canal\":\"Site Internet\",\"nom_client\":\"{{escapeJSON(42.nom_client)}}\",\"telephone\":\"{{escapeJSON(42.telephone)}}\",\"email_client\":\"{{escapeJSON(42.email_client)}}\",\"type_evenement\":\"{{escapeJSON(42.type_evenement)}}\",\"date_evenement\":\"{{escapeJSON(42.date_evenement)}}\",\"heure_evenement\":\"{{escapeJSON(42.heure_evenement)}}\",\"nb_convives\":\"{{escapeJSON(42.nb_convives)}}\",\"lieu_prestation\":\"{{escapeJSON(42.lieu_prestation)}}\",\"budget_estime\":\"{{escapeJSON(42.budget_estime)}}\",\"statut\":\"Nouvelle demande\",\"message_original\":\"{{escapeJSON(42.message_original)}}\",\"url_email_origine\":\"https://mail.google.com/mail/u/0/#label/Historique_Wix/{{1.id}}\",\"notes\":\"{{escapeJSON(42.notes)}}\",\"derniere_modification\":\"{{now}}\",\"gmail_thread_id\":\"{{1.threadId}}\",\"gmail_message_id\":\"{{1.id}}\",\"wix_form_fingerprint\":\"{{escapeJSON(42.nom_client)}}|{{escapeJSON(42.email_client)}}|{{escapeJSON(42.date_evenement)}}|{{escapeJSON(42.telephone)}}\",\"dernier_email_recu_le\":\"\",\"dernier_message_client\":\"\",\"nb_relances_client\":\"0\",\"relance_a_traiter\":\"FALSE\"}}",
                                                 "followAllRedirects": true
                                             },
+                                            "onerror": [
+                                                {
+                                                    "id": 99,
+                                                    "module": "builtin:Break",
+                                                    "version": 1,
+                                                    "parameters": {},
+                                                    "mapper": {
+                                                        "count": "3",
+                                                        "retry": true,
+                                                        "interval": "5"
+                                                    }
+                                                }
+                                            ],
                                             "metadata": {
                                                 "designer": {
                                                     "x": 1500,
@@ -5930,6 +5995,19 @@
                                                 "data": "{\"action\":\"updateExistingDemandFollowup\",\"make_token\":\"cp_make_followup_2026_06\",\"options\":{\"allow_unique_active_event_date\":true},\"match\":{\"email_client\":\"\",\"date_evenement\":\"{{61.date_evenement}}\",\"nom_client\":\"{{61.nom_client}}\",\"telephone\":\"{{replace(ifempty(11.telephone_e164; 61.telephone); 33; \\\"0\\\")}}\",\"nb_convives\":\"{{61.nb_convives}}\",\"lieu_prestation\":\"{{61.lieu_prestation}}\",\"type_evenement\":\"{{61.type_evenement}}\"},\"fields\":{\"gmail_thread_id\":\"{{1.threadId}}\",\"gmail_message_id\":\"{{1.id}}\",\"url_email_origine\":\"https://mail.google.com/mail/u/0/#label/Historique_Voxist/{{1.threadId}}\",\"dernier_email_recu_le\":\"{{1.internalDate}}\",\"dernier_message_client\":\"{{escapeJSON(28.`$1`)}}\",\"relance_a_traiter\":true,\"telephone\":\"{{replace(ifempty(11.telephone_e164; 61.telephone); 33; \\\"0\\\")}}\"}}",
                                                 "followAllRedirects": true
                                             },
+                                            "onerror": [
+                                                {
+                                                    "id": 100,
+                                                    "module": "builtin:Break",
+                                                    "version": 1,
+                                                    "parameters": {},
+                                                    "mapper": {
+                                                        "count": "3",
+                                                        "retry": true,
+                                                        "interval": "5"
+                                                    }
+                                                }
+                                            ],
                                             "metadata": {
                                                 "designer": {
                                                     "x": 2550,
@@ -15185,6 +15263,19 @@
                                                 "data": "{\"action\":\"updateExistingDemandFollowup\",\"make_token\":\"cp_make_followup_2026_06\",\"match\":{\"email_client\":\"{{38.email_client}}\",\"date_evenement\":\"{{38.date_evenement}}\",\"nom_client\":\"{{38.nom_client}}\",\"telephone\":\"{{38.telephone}}\",\"nb_convives\":\"{{38.nb_convives}}\",\"lieu_prestation\":\"{{38.lieu_prestation}}\",\"type_evenement\":\"{{38.type_evenement}}\"},\"fields\":{\"gmail_thread_id\":\"{{1.threadId}}\",\"gmail_message_id\":\"{{1.id}}\",\"url_email_origine\":\"https://mail.google.com/mail/u/0/#label/Historique_Email/{{1.threadId}}\",\"dernier_email_recu_le\":\"{{1.internalDate}}\",\"dernier_message_client\":\"{{escapeJSON(substring(1.fullTextBody; 0; 900))}}\",\"relance_a_traiter\":true,\"email_client\":\"{{38.email_client}}\",\"telephone\":\"{{38.telephone}}\",\"nb_convives\":\"{{38.nb_convives}}\"}}",
                                                 "followAllRedirects": true
                                             },
+                                            "onerror": [
+                                                {
+                                                    "id": 101,
+                                                    "module": "builtin:Break",
+                                                    "version": 1,
+                                                    "parameters": {},
+                                                    "mapper": {
+                                                        "count": "3",
+                                                        "retry": true,
+                                                        "interval": "5"
+                                                    }
+                                                }
+                                            ],
                                             "metadata": {
                                                 "designer": {
                                                     "x": 1800,
@@ -18338,7 +18429,7 @@
             "slots": null,
             "confidential": false,
             "dataloss": false,
-            "dlq": false,
+            "dlq": true,
             "freshVariables": false
         },
         "designer": {

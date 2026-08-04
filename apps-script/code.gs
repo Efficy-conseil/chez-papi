@@ -85,7 +85,8 @@ const SCHEMA_HEADERS = [
   "dernier_message_client",
   "nb_relances_client",
   "relance_a_traiter",
-  "en_attente_reponse_depuis"
+  "en_attente_reponse_depuis",
+  "make_operation_log"
 ];
 
 const KEY_MAP = {
@@ -152,6 +153,8 @@ const KEY_MAP = {
   "Relance À Traiter": "relance_a_traiter",
   "en_attente_reponse_depuis": "en_attente_reponse_depuis",
   "En Attente Réponse Depuis": "en_attente_reponse_depuis",
+  "make_operation_log": "make_operation_log",
+  "Make Operation Log": "make_operation_log",
   "derniere_modification": "derniere_modification",
   "Dernière Modification": "derniere_modification"
 };
@@ -326,10 +329,22 @@ function upsertWixDemand(rowData, options) {
   if (!clean.date_evenement) clean.date_evenement = "Inconnu / à compléter";
   clean.derniere_modification = new Date();
 
+  const replay = findMakeOperationByMessageId(sheet, headers, clean.gmail_message_id);
+  if (replay) {
+    return ok(Object.assign({}, replay.result, {
+      id_demande: replay.id_demande,
+      row: replay.rowIndex,
+      replayed: true
+    }));
+  }
+
   const windowMinutes = Math.max(1, Number(options.merge_window_minutes || 15));
   const duplicate = findRecentWixDuplicate(sheet, headers, clean.wix_form_fingerprint, clean.date_reception, windowMinutes);
   if (duplicate) {
-    mergeWixDemandRow(sheet, headers, duplicate.rowIndex, clean);
+    mergeWixDemandRow(sheet, headers, duplicate.rowIndex, clean, {
+      created: false,
+      merged: true
+    });
     applyDefaultRowHeight(sheet, duplicate.rowIndex);
     return ok({
       id_demande: duplicate.id_demande || clean.id_demande,
@@ -339,6 +354,10 @@ function upsertWixDemand(rowData, options) {
     });
   }
 
+  clean.make_operation_log = appendMakeOperationLog('', clean.gmail_message_id, {
+    created: true,
+    merged: false
+  });
   sheet.appendRow(headers.map(function(h) {
     return clean[canonicalKey(h)] !== undefined ? clean[canonicalKey(h)] : '';
   }));
@@ -401,6 +420,8 @@ function updateThreadFollowup(gmailThreadId, fields) {
   const sheet = getSheet();
   ensureSchemaHeaders(sheet);
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
+  const replay = findMakeOperationByMessageId(sheet, headers, getMakeMessageId(fields));
+  if (replay) return ok(replayFollowupResult(replay));
   const found = findRowByCanonicalValue(sheet, headers, "gmail_thread_id", gmailThreadId);
   if (!found) return ok({ updated: false, reason: "thread_not_found", gmail_thread_id: gmailThreadId });
 
@@ -415,12 +436,7 @@ function updateThreadFollowup(gmailThreadId, fields) {
     clean.nb_relances_client = current + 1;
   }
 
-  headers.forEach(function(h, i) {
-    const key = canonicalKey(h);
-    if (clean[key] !== undefined) {
-      sheet.getRange(found.rowIndex, i + 1).setValue(clean[key]);
-    }
-  });
+  writeMakeFollowup(sheet, headers, found.rowIndex, clean, { updated: true });
   applyDefaultRowHeight(sheet, found.rowIndex);
 
   return ok({ updated: true, id_demande: found.id_demande || "", row: found.rowIndex });
@@ -434,6 +450,8 @@ function updateWixFollowup(gmailThreadId, emailClient, fields) {
   const sheet = getSheet();
   ensureSchemaHeaders(sheet);
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
+  const replay = findMakeOperationByMessageId(sheet, headers, getMakeMessageId(fields));
+  if (replay) return ok(replayFollowupResult(replay));
   const foundByThread = findRowByCanonicalValue(sheet, headers, "gmail_thread_id", gmailThreadId);
   const found = foundByThread || findLatestRowByEmailAndIdPrefix(sheet, headers, email, "WIX-");
   if (!found) {
@@ -452,12 +470,7 @@ function updateWixFollowup(gmailThreadId, emailClient, fields) {
     clean.nb_relances_client = current + 1;
   }
 
-  headers.forEach(function(h, i) {
-    const key = canonicalKey(h);
-    if (clean[key] !== undefined) {
-      sheet.getRange(found.rowIndex, i + 1).setValue(clean[key]);
-    }
-  });
+  writeMakeFollowup(sheet, headers, found.rowIndex, clean, { updated: true });
   applyDefaultRowHeight(sheet, found.rowIndex);
 
   return ok({
@@ -478,6 +491,8 @@ function updateExistingDemandFollowup(match, fields, options) {
   const sheet = getSheet();
   ensureSchemaHeaders(sheet);
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
+  const replay = findMakeOperationByMessageId(sheet, headers, getMakeMessageId(fields));
+  if (replay) return ok(replayFollowupResult(replay));
   const emailMatches = hasSpecificEventDate && email
     ? findRowsByEmailAndEventDate(sheet, headers, email, dateEvenement)
     : [];
@@ -527,12 +542,7 @@ function updateExistingDemandFollowup(match, fields, options) {
     clean.nb_relances_client = current + 1;
   }
 
-  headers.forEach(function(h, i) {
-    const key = canonicalKey(h);
-    if (clean[key] !== undefined) {
-      sheet.getRange(found.rowIndex, i + 1).setValue(clean[key]);
-    }
-  });
+  writeMakeFollowup(sheet, headers, found.rowIndex, clean, { updated: true });
   applyDefaultRowHeight(sheet, found.rowIndex);
 
   return ok({ updated: true, id_demande: found.id_demande || "", row: found.rowIndex });
@@ -641,6 +651,74 @@ function ensureSchemaHeaders(sheet) {
     sheet.getRange(1, headers.length + 1, 1, missing.length).setValues([missing]);
     applyDefaultRowHeight(sheet, 1);
   }
+}
+
+function getMakeMessageId(fields) {
+  return String((fields || {}).gmail_message_id || '').trim();
+}
+
+function parseMakeOperationLog(value) {
+  try {
+    const parsed = JSON.parse(String(value || ''));
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch (err) {
+    return {};
+  }
+}
+
+function appendMakeOperationLog(value, messageId, result) {
+  const id = String(messageId || '').trim();
+  const log = parseMakeOperationLog(value);
+  if (id) log[id] = result || {};
+  const ids = Object.keys(log);
+  if (ids.length > 200) {
+    ids.slice(0, ids.length - 200).forEach(function(key) { delete log[key]; });
+  }
+  return JSON.stringify(log);
+}
+
+function findMakeOperationByMessageId(sheet, headers, messageId) {
+  const id = String(messageId || '').trim();
+  if (!id) return null;
+  const logCol = headers.findIndex(function(h) { return canonicalKey(h) === 'make_operation_log'; }) + 1;
+  const demandCol = headers.findIndex(function(h) { return canonicalKey(h) === 'id_demande'; }) + 1;
+  if (logCol <= 0) return null;
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return null;
+  const logs = sheet.getRange(2, logCol, lastRow - 1, 1).getValues();
+  const demandIds = demandCol > 0 ? sheet.getRange(2, demandCol, lastRow - 1, 1).getValues() : [];
+  for (var i = logs.length - 1; i >= 0; i--) {
+    const result = parseMakeOperationLog(logs[i][0])[id];
+    if (result) {
+      return {
+        rowIndex: i + 2,
+        id_demande: demandCol > 0 ? String(demandIds[i][0] || '').trim() : '',
+        result: result
+      };
+    }
+  }
+  return null;
+}
+
+function replayFollowupResult(replay) {
+  return Object.assign({}, replay.result, {
+    updated: replay.result.updated !== false,
+    id_demande: replay.id_demande,
+    row: replay.rowIndex,
+    replayed: true
+  });
+}
+
+function writeMakeFollowup(sheet, headers, rowIndex, fields, result) {
+  const values = sheet.getRange(rowIndex, 1, 1, sheet.getLastColumn()).getValues()[0];
+  headers.forEach(function(h, i) {
+    const key = canonicalKey(h);
+    if (fields[key] !== undefined) values[i] = fields[key];
+  });
+  const logCol = headers.findIndex(function(h) { return canonicalKey(h) === 'make_operation_log'; }) + 1;
+  if (logCol <= 0) throw new Error('Colonne make_operation_log introuvable');
+  values[logCol - 1] = appendMakeOperationLog(values[logCol - 1], getMakeMessageId(fields), result);
+  sheet.getRange(rowIndex, 1, 1, values.length).setValues([values]);
 }
 
 function applyDefaultRowHeights(sheet) {
@@ -1309,9 +1387,10 @@ function findRecentWixDuplicate(sheet, headers, fingerprint, dateReception, wind
   return null;
 }
 
-function mergeWixDemandRow(sheet, headers, rowIndex, incoming) {
+function mergeWixDemandRow(sheet, headers, rowIndex, incoming, operationResult) {
   const currentValues = sheet.getRange(rowIndex, 1, 1, sheet.getLastColumn()).getValues()[0];
   const current = {};
+  const nextValues = currentValues.slice();
   headers.forEach(function(h, i) {
     current[canonicalKey(h)] = currentValues[i];
   });
@@ -1342,11 +1421,20 @@ function mergeWixDemandRow(sheet, headers, rowIndex, incoming) {
       (key === "notes" && incomingText.length > currentText.length);
 
     if (shouldReplace) {
-      const cell = sheet.getRange(rowIndex, i + 1);
-      if (key === "date_evenement") cell.setNumberFormat("@");
-      cell.setValue(incomingValue);
+      nextValues[i] = incomingValue;
     }
   });
+
+  const logCol = headers.findIndex(function(h) { return canonicalKey(h) === "make_operation_log"; }) + 1;
+  if (logCol <= 0) throw new Error("Colonne make_operation_log introuvable");
+  nextValues[logCol - 1] = appendMakeOperationLog(
+    nextValues[logCol - 1],
+    getMakeMessageId(incoming),
+    operationResult
+  );
+  const dateCol = headers.findIndex(function(h) { return canonicalKey(h) === "date_evenement"; }) + 1;
+  if (dateCol > 0) sheet.getRange(rowIndex, dateCol).setNumberFormat("@");
+  sheet.getRange(rowIndex, 1, 1, nextValues.length).setValues([nextValues]);
 }
 
 function findDuplicateDemand(sheet, headers, demandIds, gmailThreadId) {
