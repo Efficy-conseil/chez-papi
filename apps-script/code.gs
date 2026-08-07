@@ -189,7 +189,7 @@ function doPost(e) {
     const body = JSON.parse(e.postData.contents);
     const auth = body.auth || { user: body.user, pass: body.pass };
     const isMakeFollowup = (
-      (body.action === 'updateThreadFollowup' || body.action === 'updateWixFollowup' || body.action === 'updateExistingDemandFollowup' || body.action === 'checkDuplicate' || body.action === 'upsertWixDemand') &&
+      (body.action === 'updateThreadFollowup' || body.action === 'updateWixFollowup' || body.action === 'updateExistingDemandFollowup' || body.action === 'checkDuplicate' || body.action === 'upsertWixDemand' || body.action === 'createMakeDemand') &&
       body.make_token === MAKE_FOLLOWUP_TOKEN
     );
     if (!isMakeFollowup && !checkAuth(auth.user, auth.pass)) {
@@ -204,11 +204,34 @@ function doPost(e) {
     if (body.action === 'updateExistingDemandFollowup') return withDocumentLock(function() { return updateExistingDemandFollowup(body.match || {}, body.fields || {}, body.options || {}); });
     if (body.action === 'checkDuplicate') return checkDuplicate(body.match || {});
     if (body.action === 'upsertWixDemand') return withDocumentLock(function() { return upsertWixDemand(body.row || {}, body.options || {}); });
+    if (body.action === 'createMakeDemand') return withDocumentLock(function() { return createMakeDemand(body.row || {}); });
     if (body.action === 'delete') return withDocumentLock(function() { return deleteRowById(body.id_demande); });
     return ko('Action inconnue : ' + body.action);
   } catch (err) {
     return ko(err.message);
   }
+}
+
+function createMakeDemand(rowData) {
+  const sheet = getSheet();
+  ensureSchemaHeaders(sheet);
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
+  const raw = normalizeRowKeys(rowData || {});
+  const clean = sanitizeFields(raw, false);
+  clean.id_demande = String(raw.id_demande || '').trim();
+  if (!clean.id_demande) throw new Error('id_demande manquant');
+
+  const existing = findRowByDemandId(sheet, headers, clean.id_demande);
+  if (existing) return ok({ id_demande: clean.id_demande, row: existing.rowIndex, created: false, replayed: true });
+
+  if (!clean.date_reception) clean.date_reception = new Date();
+  if (!clean.date_evenement) clean.date_evenement = 'Inconnu / à compléter';
+  clean.derniere_modification = new Date();
+  sheet.appendRow(headers.map(function(h) { return clean[canonicalKey(h)] ?? ''; }));
+  clean._row = sheet.getLastRow();
+  forceTextCell(sheet, headers, clean._row, 'date_evenement', clean.date_evenement);
+  applyDefaultRowHeight(sheet, clean._row);
+  return ok({ id_demande: clean.id_demande, row: clean._row, created: true, replayed: false });
 }
 
 function withDocumentLock(fn) {
@@ -819,6 +842,25 @@ function normalizePersonName(value) {
 }
 
 function normalizePhoneKey(value) {
+  return normalizePhoneKeys(value)[0] || '';
+}
+
+function normalizePhoneKeys(value) {
+  return splitPhoneEntries(value)
+    .map(normalizeSingleFrenchPhone)
+    .filter(function(phone, index, phones) {
+      return !!phone && phones.indexOf(phone) === index;
+    });
+}
+
+function splitPhoneEntries(value) {
+  return String(value || '')
+    .split(/\s*(?:\/|;|,|\bet\b|\bou\b)\s*/i)
+    .map(function(entry) { return entry.trim(); })
+    .filter(Boolean);
+}
+
+function normalizeSingleFrenchPhone(value) {
   let digits = String(value || '').replace(/\D/g, '');
   if (digits.indexOf('0033') === 0) digits = digits.substring(4);
   if (digits.indexOf('33') === 0 && digits.length >= 11) digits = digits.substring(2);
@@ -827,8 +869,12 @@ function normalizePhoneKey(value) {
 }
 
 function formatFrenchPhone(value) {
-  const normalized = normalizePhoneKey(value);
-  return normalized ? normalized.replace(/(\d{2})(?=\d)/g, '$1 ').trim() : String(value || '').trim();
+  const entries = splitPhoneEntries(value);
+  if (!entries.length) return '';
+  return entries.map(function(entry) {
+    const normalized = normalizeSingleFrenchPhone(entry);
+    return normalized ? normalized.replace(/(\d{2})(?=\d)/g, '$1 ').trim() : entry;
+  }).join(' / ');
 }
 
 function normalizeComparableText(value) {
@@ -999,7 +1045,7 @@ function findDemandMatchCandidates(sheet, headers, incoming, options) {
   const displays = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getDisplayValues();
   const target = {
     email: String(incoming.email_client || '').trim().toLowerCase(),
-    phone: normalizePhoneKey(incoming.telephone),
+    phones: normalizePhoneKeys(incoming.telephone),
     name: normalizePersonName(incoming.nom_client),
     date: normalizeEventDateText(incoming.date_evenement),
     guests: normalizeGuestCountKey(incoming.nb_convives),
@@ -1020,7 +1066,7 @@ function findDemandMatchCandidates(sheet, headers, incoming, options) {
     if (!row.id_demande || !isActiveDemandStatus(row.statut)) return;
 
     const rowEmail = String(row.email_client || '').trim().toLowerCase();
-    const rowPhone = normalizePhoneKey(row.telephone);
+    const rowPhones = normalizePhoneKeys(row.telephone);
     const rowName = normalizePersonName(row.nom_client);
     const rowDate = normalizeEventDateText(row.date_evenement);
     const rowGuests = normalizeGuestCountKey(row.nb_convives);
@@ -1034,7 +1080,7 @@ function findDemandMatchCandidates(sheet, headers, incoming, options) {
       score += 100;
       reasons.push("même email");
     }
-    if (target.phone && rowPhone && target.phone === rowPhone) {
+    if (target.phones.length && rowPhones.some(function(phone) { return target.phones.indexOf(phone) !== -1; })) {
       score += 100;
       reasons.push("même téléphone");
     }
@@ -1074,7 +1120,7 @@ function findDemandMatchCandidates(sheet, headers, incoming, options) {
 
     const hasStrongIdentity =
       (target.email && rowEmail && target.email === rowEmail) ||
-      (target.phone && rowPhone && target.phone === rowPhone) ||
+      (target.phones.length && rowPhones.some(function(phone) { return target.phones.indexOf(phone) !== -1; })) ||
       (sameDate && target.name && rowName && (
         target.name === rowName || hasSharedToken(target.name, rowName)
       )) ||
@@ -1276,15 +1322,16 @@ function findActiveRowsByPhone(sheet, headers, telephone) {
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return [];
 
-  const targetPhone = normalizePhoneKey(telephone);
-  if (!targetPhone) return [];
+  const targetPhones = normalizePhoneKeys(telephone);
+  if (!targetPhones.length) return [];
   const phones = sheet.getRange(2, phoneCol, lastRow - 1, 1).getValues();
   const statuses = sheet.getRange(2, statusCol, lastRow - 1, 1).getValues();
   const ids = idCol > 0 ? sheet.getRange(2, idCol, lastRow - 1, 1).getValues() : [];
   const matches = [];
 
   for (var i = 0; i < phones.length; i++) {
-    if (normalizePhoneKey(phones[i][0]) === targetPhone && isActiveDemandStatus(statuses[i][0])) {
+    const rowPhones = normalizePhoneKeys(phones[i][0]);
+    if (rowPhones.some(function(phone) { return targetPhones.indexOf(phone) !== -1; }) && isActiveDemandStatus(statuses[i][0])) {
       matches.push({
         rowIndex: i + 2,
         id_demande: idCol > 0 ? String(ids[i][0] || '').trim() : ""
@@ -1292,6 +1339,34 @@ function findActiveRowsByPhone(sheet, headers, telephone) {
     }
   }
   return matches;
+}
+
+// Opération de maintenance explicite, exécutée avec les droits Apps Script.
+// Elle ne touche qu'aux numéros français valides et conserve les numéros non
+// interprétables afin d'éviter toute correction destructive.
+function normalizeExistingPhones() {
+  return withDocumentLock(function() {
+    const sheet = getSheet();
+    ensureSchemaHeaders(sheet);
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
+    const phoneCol = headers.findIndex(function(h) { return canonicalKey(h) === 'telephone'; }) + 1;
+    if (phoneCol <= 0) throw new Error('Colonne telephone introuvable');
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 2) return { scanned: 0, updated: 0 };
+
+    const range = sheet.getRange(2, phoneCol, lastRow - 1, 1);
+    const values = range.getValues();
+    let updated = 0;
+    const normalized = values.map(function(row) {
+      const current = String(row[0] || '').trim();
+      // Une valeur sans aucun numéro français valide est conservée telle quelle.
+      const formatted = normalizePhoneKeys(current).length ? formatFrenchPhone(current) : current;
+      if (formatted !== current) updated++;
+      return [formatted];
+    });
+    if (updated) range.setValues(normalized);
+    return { scanned: values.length, updated: updated };
+  });
 }
 
 function findActiveRowsByEventDate(sheet, headers, dateEvenement) {

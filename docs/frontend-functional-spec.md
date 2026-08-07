@@ -105,7 +105,7 @@ Les anciennes variantes connues, par exemple `Nouveau`, `Contacté`, `Signé`, `
 
 ### 4.5 Coordonnées et liens
 
-- Les numéros français sont normalisés lorsque possible et deviennent des liens `tel:`.
+- Les numéros français sont normalisés lorsque possible et deviennent des liens `tel:`. Lorsqu'une fiche contient plusieurs numéros séparés par ` / `, chacun possède son propre lien et sa propre action `Appeler` dans la fiche détaillée.
 - Les emails deviennent des liens `mailto:` ou ouvrent Gmail.
 - Le lien Gmail choisit le libellé attendu selon le canal : Wix, Voxist ou Email.
 - Les liens Drive sont ouverts dans un nouvel onglet.

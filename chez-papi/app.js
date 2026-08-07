@@ -470,32 +470,25 @@ function generateStatusSelectHtml(e, extraClass = '') {
 }
 
 function normalizeFrenchPhone(phone) {
-  if (!phone) return '';
-  let clean = String(phone).replace(/\s+/g, '').trim();
-  
-  // Extract all digits
-  let digits = clean.replace(/\D/g, '');
-  
-  // Handle international +33 or 33 prefix
-  if (digits.startsWith('33')) {
-    if (digits.startsWith('330')) {
-      digits = digits.substring(2); // remove '33', keeps the '0'
-    } else {
-      digits = '0' + digits.substring(2); // replace '33' with '0'
-    }
-  }
-  
-  // If it's 9 digits starting with 1-9 (e.g. 663515474), prepend 0
-  if (digits.length === 9 && /^[1-9]/.test(digits)) {
-    digits = '0' + digits;
-  }
-  
-  // If we have exactly 10 digits now, format as "0X XX XX XX XX"
-  if (digits.length === 10) {
-    return digits.replace(/(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/, '$1 $2 $3 $4 $5');
-  }
-  
-  return phone;
+  return phoneEntries(phone).map(entry => entry.display).join(' / ');
+}
+
+function phoneEntries(phone) {
+  return String(phone || '')
+    .split(/\s*(?:\/|;|,|\bet\b|\bou\b)\s*/i)
+    .map(entry => entry.trim())
+    .filter(Boolean)
+    .map(entry => {
+      let digits = entry.replace(/\D/g, '');
+      if (digits.startsWith('0033')) digits = digits.substring(4);
+      if (digits.startsWith('33') && digits.length >= 11) digits = digits.substring(2);
+      if (digits.length === 9 && /^[1-9]/.test(digits)) digits = `0${digits}`;
+      const valid = digits.length === 10;
+      return {
+        display: valid ? digits.replace(/(\d{2})(?=\d)/g, '$1 ').trim() : entry,
+        raw: valid ? digits : ''
+      };
+    });
 }
 
 // Rend un numéro de téléphone ou email cliquable, sinon retourne le texte brut
@@ -513,23 +506,16 @@ function formatContact(contact) {
     return `<a href="mailto:${encodeURIComponent(c)}" style="${linkStyle}">${displayText}</a>`;
   }
 
-  // Téléphone
-  const normalized = normalizeFrenchPhone(c);
-  if (normalized && normalized.replace(/\s/g, '').length >= 9) {
-    const rawTel = normalized.replace(/\s/g, '');
-    // Seuls les chiffres, +, espaces sont autorisés dans un tel:
-    if (/^[\d\s+]+$/.test(rawTel)) {
-      return `<a href="tel:${encodeURIComponent(rawTel)}" style="${linkStyle}">${escHtml(normalized)}</a>`;
-    }
-  }
-
-  return displayText;
+  const phones = phoneEntries(c);
+  if (!phones.length || phones.some(phone => !phone.raw)) return displayText;
+  return phones.map(phone =>
+    `<a href="tel:${encodeURIComponent(phone.raw)}" onclick="event.stopPropagation()" style="${linkStyle}">${escHtml(phone.display)}</a>`
+  ).join(' / ');
 }
 
 function telHref(phone) {
-  const normalized = normalizeFrenchPhone(phone || '');
-  const rawTel = String(normalized || '').replace(/\s/g, '');
-  return /^[\d+]{9,}$/.test(rawTel) ? `tel:${encodeURIComponent(rawTel)}` : '';
+  const first = phoneEntries(phone).find(entry => entry.raw);
+  return first ? `tel:${encodeURIComponent(first.raw)}` : '';
 }
 
 // ── SYNC INDICATOR ──
@@ -1880,10 +1866,12 @@ function openEventModal(rowIndex = null) {
         }
       }
 
-      const phoneLink = telHref(existing.telephone);
       if (phoneCallBtn) {
-        phoneCallBtn.href = phoneLink || '#';
-        phoneCallBtn.style.display = phoneLink ? 'inline-flex' : 'none';
+        const phones = phoneEntries(existing.telephone).filter(entry => entry.raw);
+        phoneCallBtn.innerHTML = phones.map(phone =>
+          `<a href="tel:${encodeURIComponent(phone.raw)}" class="btn-primary contact-action-btn">📞 Appeler ${escHtml(phone.display)}</a>`
+        ).join('');
+        phoneCallBtn.style.display = phones.length ? 'flex' : 'none';
       }
 
       const threadUrl = emailThreadUrl(existing);
@@ -2583,8 +2571,7 @@ function showKpiModal(type) {
     
     thead.innerHTML = '<tr><th style="width:20%">Date</th><th style="width:27%">Client</th><th style="width:20%">Type</th><th style="width:17%">Téléphone</th><th style="width:16%">Statut</th></tr>';
     tbody.innerHTML = evts.length ? evts.map(e => {
-      const tel = normalizeFrenchPhone(e.telephone || '').replace(/\s/g, '');
-      const telHtml = e.telephone && /^[\d+]+$/.test(tel) ? `<a href="tel:${encodeURIComponent(tel)}" style="color:var(--gold);text-decoration:none;" onclick="event.stopPropagation()">${formatContact(e.telephone)}</a>` : '—';
+      const telHtml = e.telephone ? formatContact(e.telephone) : '—';
       return `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})">
         <td>${safeText(formatEventDateTime(e) || 'À dét.')}</td>
         <td><strong>${safeText(e.nom_client)}</strong></td>

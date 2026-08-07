@@ -19,6 +19,8 @@ const phoneVariants = [
 ].map(value => evaluate(`normalizePhoneKey(${JSON.stringify(value)})`));
 assert.deepEqual(phoneVariants, ['0683782160', '0683782160', '0683782160']);
 assert.equal(evaluate('formatFrenchPhone("+33683782160")'), '06 83 78 21 60');
+assert.equal(evaluate('formatFrenchPhone("0769893745 / 0665301812")'), '07 69 89 37 45 / 06 65 30 18 12');
+assert.equal(evaluate('formatFrenchPhone("+33(0)6 64 35 00 42")'), '06 64 35 00 42');
 
 const headers = [
   'id_demande',

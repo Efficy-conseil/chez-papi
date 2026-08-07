@@ -146,6 +146,7 @@ Contrainte critique :
 - Une source métier ne doit jamais être uniquement exclue d'une route sans disposer d'une route de secours.
 - Si une route source est bloquée par `count > 0`, il doit exister un comportement explicite : archiver comme déjà traité, mettre à jour une demande existante, ou signaler une anomalie.
 - Tout texte libre interpolé dans un corps JSON brut Make doit être protégé avec `escapeJSON` afin de préserver les retours à la ligne, guillemets et antislashs sans produire un JSON invalide.
+- Toute création Make passe par l'action backend `createMakeDemand`, y compris Voxist, Email direct et Tally, afin d'appliquer les mêmes validations et la normalisation des coordonnées que les créations manuelles.
 
 ## Make - Wix
 
@@ -184,7 +185,7 @@ Comportement attendu :
 - Label Gmail -> `Historique_Voxist`.
 - Aucun accusé email automatique.
 - Le téléphone doit prioriser le numéro appelant détecté par l'email Voxist si la transcription donne un numéro incohérent.
-- Les numéros de téléphone reçus par le backend sont enregistrés au format français lisible `06 00 00 00 00` lorsqu'ils sont valides. Cette normalisation intervient à l'écriture uniquement et ne déclenche aucune réécriture de masse lors de la consultation.
+- Les numéros de téléphone reçus par le backend sont enregistrés au format français lisible `06 00 00 00 00` lorsqu'ils sont valides. Plusieurs numéros valides sont conservés et séparés par ` / `. Cette normalisation intervient à l'écriture uniquement et ne déclenche aucune réécriture lors de la consultation.
 - Si l'appelant n'énonce aucun nom ou prénom, `nom_client` doit être `Inconnu / à compléter`. Le type d'événement ou le motif de l'appel ne doit jamais être utilisé comme nom client.
 - Avant toute création Voxist, un appel contenant une date peut être rattaché à une unique demande active, y compris d'origine Wix, lorsque les indices disponibles (nom, téléphone, lieu, date, convives, type ou statut) convergent. En dernier recours, une date de prestation unique parmi les demandes actives suffit uniquement pour cette route Voxist explicite ; une absence ou une ambiguïté de candidate ne crée ni ne modifie aucune ligne.
 - Un rattachement Voxist conserve le statut commercial de la demande, enregistre la transcription comme `dernier_message_client`, remplace le téléphone par le numéro appelant exploitable et positionne `relance_a_traiter = TRUE`.

@@ -97,6 +97,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | F09 | Choix `Créer quand même` | Confirmation explicite puis nouvelle ligne distincte |
 | F10 | Deux créations concurrentes portant sur la même demande | Recherche et écriture sérialisées ; la seconde opération reçoit la candidate créée par la première |
 | F11 | Message client rattaché à une demande, y compris une ancienne fiche sans `url_email_origine` | La fiche ouverte depuis `Messages reçus` permet d'ouvrir le fil et propose `Répondre` à côté de `Marquer comme traité` |
+| F12 | Fiche ayant `07 69 89 37 45 / 06 65 30 18 12` | Les deux numéros sont affichés au format français et proposent chacun leur propre lien ou bouton `Appeler` |
 
 ## Procédure d'exécution
 

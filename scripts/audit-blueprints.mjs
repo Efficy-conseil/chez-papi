@@ -205,7 +205,7 @@ assert(
 );
 
 [62, 15, 39].forEach(id => {
-  const value = moduleById(mainModules, id).mapper?.values?.date_evenement || '';
+  const value = moduleById(mainModules, id).mapper?.values?.date_evenement || moduleById(mainModules, id).mapper?.data || '';
   assert(value.includes('Inconnu / à compléter'), `date inconnue non normalisée sur le module ${id}`);
 });
 

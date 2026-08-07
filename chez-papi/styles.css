@@ -2491,3 +2491,8 @@ body.is-saving-event::after {
 .tbl-search:focus {
   border-color: var(--brown);
 }
+.contact-action-list {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
