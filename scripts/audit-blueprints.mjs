@@ -123,6 +123,16 @@ assert(router91.routes?.some(route => route.flow.some(module => module.id === 71
 assert(router92.routes?.some(route => route.flow.some(module => module.id === 93)), 'archivage hors scope Wix absent');
 assert(moduleById(mainModules, 93).mapper?.to === 'Label_2633677580427542522', 'Wix hors scope vers le mauvais libellé');
 
+const voxistAudioFollowup = moduleById(mainModules, 102);
+const voxistAudioFollowupConditions = voxistAudioFollowup.filter?.conditions || [];
+assert(
+  voxistAudioFollowupConditions.some(conditionSet =>
+    conditionSet.some(condition => condition?.a === '{{14.statut}}' && condition?.b === 'À rappeler' && condition?.o === 'text:equal') &&
+    conditionSet.some(condition => condition?.a === '{{14.message_original}}' && condition?.b === 'devis' && condition?.o === 'text:contain')
+  ),
+  'suivi Voxist sur devis rejeté par l’IA encore bloqué avant le rattachement'
+);
+
 const wixSuccessFlow = router92.routes?.find(route => route.flow.some(module => module.id === 43))?.flow || [];
 assert(wixSuccessFlow.findIndex(module => module.id === 45) < wixSuccessFlow.findIndex(module => module.id === 44), 'archivage Wix encore placé après l’accusé optionnel');
 

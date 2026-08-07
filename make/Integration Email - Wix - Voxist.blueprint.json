@@ -9929,6 +9929,18 @@
                                                                             "b": "true",
                                                                             "o": "boolean:equal"
                                                                         }
+                                                                    ],
+                                                                    [
+                                                                        {
+                                                                            "a": "{{14.statut}}",
+                                                                            "b": "À rappeler",
+                                                                            "o": "text:equal"
+                                                                        },
+                                                                        {
+                                                                            "a": "{{14.message_original}}",
+                                                                            "b": "devis",
+                                                                            "o": "text:contain"
+                                                                        }
                                                                     ]
                                                                 ]
                                                             },

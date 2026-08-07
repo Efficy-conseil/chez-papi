@@ -50,6 +50,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | V14 | Transcription Voxist contenant « Si vous pouviez me rappeler » avant le pied d'e-mail | La transcription complète, y compris le nom et les coordonnées prononcés après « rappeler », atteint l'IA et est enregistrée | Automatique + essai Make |
 | V15 | Vocal Voxist sans transcription, retranscrit depuis l'audio, correspondant à une unique demande active | La demande existante est enrichie (transcription, téléphone appelant, relance à traiter) et conservée ; aucune nouvelle ligne n'est créée, puis l'e-mail est archivé dans `Historique_Voxist` | Backend + automatique + essai Make |
 | V16 | Vocal Voxist de « Madame Blanchard », appelant `06 83 78 21 60`, alors qu'une unique demande active de Delphine Blanchon contient `683782160` | Le numéro est normalisé ; le dossier existant est enrichi et apparaît dans `Messages reçus`, sans création d'une seconde ligne malgré le nom divergent | Backend + automatique + essai Make |
+| V17 | Vocal Voxist de Madame Leclerc de Grange, appelant `06 07 03 40 37`, demandant des précisions sur un devis déjà envoyé ; l'IA retourne à tort `is_demande=false` mais conserve `statut=À rappeler` et le mot « devis » | Le module 102 exécute le rattachement ; l'unique demande active portant ce numéro est enrichie, apparaît dans `Messages reçus`, sans création de ligne | Automatique + essai Make |
 
 ## Email direct
 
