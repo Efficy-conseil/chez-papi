@@ -18,6 +18,7 @@ const phoneVariants = [
   '06 83 78 21 60'
 ].map(value => evaluate(`normalizePhoneKey(${JSON.stringify(value)})`));
 assert.deepEqual(phoneVariants, ['0683782160', '0683782160', '0683782160']);
+assert.equal(evaluate('formatFrenchPhone("+33683782160")'), '06 83 78 21 60');
 
 const headers = [
   'id_demande',
@@ -115,6 +116,14 @@ assert.deepEqual(
 );
 assert(candidates.every(candidate => candidate.reasons.includes('même téléphone')));
 assert(!candidates.some(candidate => candidate.id_demande === 'CLOSED-1'));
+
+const phoneMatches = evaluate(
+  'findActiveRowsByPhone(testSheet, testHeaders, "06 83 78 21 60")'
+);
+assert.deepEqual(
+  Array.from(phoneMatches, candidate => candidate.id_demande).sort(),
+  ['MANUAL-1', 'VOXIST-1']
+);
 
 context.weakIncoming = {
   nom_client: 'Delphine',

@@ -184,9 +184,11 @@ Comportement attendu :
 - Label Gmail -> `Historique_Voxist`.
 - Aucun accusé email automatique.
 - Le téléphone doit prioriser le numéro appelant détecté par l'email Voxist si la transcription donne un numéro incohérent.
+- Les numéros de téléphone reçus par le backend sont enregistrés au format français lisible `06 00 00 00 00` lorsqu'ils sont valides. Cette normalisation intervient à l'écriture uniquement et ne déclenche aucune réécriture de masse lors de la consultation.
 - Si l'appelant n'énonce aucun nom ou prénom, `nom_client` doit être `Inconnu / à compléter`. Le type d'événement ou le motif de l'appel ne doit jamais être utilisé comme nom client.
 - Avant toute création Voxist, un appel contenant une date peut être rattaché à une unique demande active, y compris d'origine Wix, lorsque les indices disponibles (nom, téléphone, lieu, date, convives, type ou statut) convergent. En dernier recours, une date de prestation unique parmi les demandes actives suffit uniquement pour cette route Voxist explicite ; une absence ou une ambiguïté de candidate ne crée ni ne modifie aucune ligne.
 - Un rattachement Voxist conserve le statut commercial de la demande, enregistre la transcription comme `dernier_message_client`, remplace le téléphone par le numéro appelant exploitable et positionne `relance_a_traiter = TRUE`.
+- Lorsqu'un unique dossier actif porte le même numéro normalisé, Voxist le rattache directement avant d'évaluer le nom ou la date. Le nom retranscrit est alors secondaire ; si plusieurs dossiers actifs partagent ce numéro, aucun rattachement ni création automatique n'est effectué.
 
 Critères de vraie demande Voxist :
 

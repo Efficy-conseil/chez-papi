@@ -483,28 +483,37 @@ function updateWixFollowup(gmailThreadId, emailClient, fields) {
 
 function updateExistingDemandFollowup(match, fields, options) {
   const email = String(match.email_client || '').trim().toLowerCase();
+  const phone = normalizePhoneKey(match.telephone || fields.telephone);
   const name = normalizePersonName(match.nom_client);
   const dateEvenement = normalizeEventDateText(match.date_evenement);
   const hasSpecificEventDate = !!dateEvenement && dateEvenement !== "Inconnu / à compléter";
-  if (!email && !name) throw new Error("email_client ou nom_client manquant");
+  const preferUniquePhone = !!(options && options.prefer_unique_phone);
+  if (!email && !name && !phone) throw new Error("email_client, téléphone ou nom_client manquant");
 
   const sheet = getSheet();
   ensureSchemaHeaders(sheet);
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
   const replay = findMakeOperationByMessageId(sheet, headers, getMakeMessageId(fields));
   if (replay) return ok(replayFollowupResult(replay));
-  const emailMatches = hasSpecificEventDate && email
+  // Voxist fournit un numéro appelant fiable : une unique demande active portant
+  // ce numéro prévaut sur un nom éventuellement mal retranscrit par l'audio.
+  const phoneMatches = preferUniquePhone && phone
+    ? findActiveRowsByPhone(sheet, headers, phone)
+    : [];
+  const emailMatches = phoneMatches.length === 0 && hasSpecificEventDate && email
     ? findRowsByEmailAndEventDate(sheet, headers, email, dateEvenement)
     : [];
-  const nameMatches = hasSpecificEventDate && emailMatches.length === 0 && name
+  const nameMatches = phoneMatches.length === 0 && hasSpecificEventDate && emailMatches.length === 0 && name
     ? findRowsByNameAndEventDate(sheet, headers, name, dateEvenement)
     : [];
-  const activeEmailMatches = !hasSpecificEventDate && email
+  const activeEmailMatches = phoneMatches.length === 0 && !hasSpecificEventDate && email
     ? findActiveRowsByEmail(sheet, headers, email)
     : [];
-  let matches = emailMatches.length > 0
+  let matches = phoneMatches.length > 0
+    ? phoneMatches
+    : (emailMatches.length > 0
     ? emailMatches
-    : (nameMatches.length > 0 ? nameMatches : activeEmailMatches);
+    : (nameMatches.length > 0 ? nameMatches : activeEmailMatches));
   if (matches.length === 0) {
     matches = findDemandMatchCandidates(sheet, headers, {
       email_client: email,
@@ -768,6 +777,10 @@ function sanitizeFields(rawFields, isUpdate) {
     clean.date_evenement = normalizeEventDateText(clean.date_evenement);
   }
 
+  if (clean.telephone !== undefined) {
+    clean.telephone = formatFrenchPhone(clean.telephone);
+  }
+
   if (clean.relance_a_traiter !== undefined) {
     clean.relance_a_traiter = normalizeBoolean(clean.relance_a_traiter);
   }
@@ -811,6 +824,11 @@ function normalizePhoneKey(value) {
   if (digits.indexOf('33') === 0 && digits.length >= 11) digits = digits.substring(2);
   if (digits.length === 9 && /^[1-9]/.test(digits)) digits = '0' + digits;
   return digits.length === 10 ? digits : '';
+}
+
+function formatFrenchPhone(value) {
+  const normalized = normalizePhoneKey(value);
+  return normalized ? normalized.replace(/(\d{2})(?=\d)/g, '$1 ').trim() : String(value || '').trim();
 }
 
 function normalizeComparableText(value) {
@@ -1239,6 +1257,34 @@ function findActiveRowsByEmail(sheet, headers, emailClient) {
     const rowEmail = String(emails[i][0] || '').trim().toLowerCase();
     const rowStatus = String(statuses[i][0] || '').trim();
     if (rowEmail === targetEmail && !terminalStatuses[rowStatus]) {
+      matches.push({
+        rowIndex: i + 2,
+        id_demande: idCol > 0 ? String(ids[i][0] || '').trim() : ""
+      });
+    }
+  }
+  return matches;
+}
+
+function findActiveRowsByPhone(sheet, headers, telephone) {
+  const phoneCol = headers.findIndex(function(h) { return canonicalKey(h) === "telephone"; }) + 1;
+  const statusCol = headers.findIndex(function(h) { return canonicalKey(h) === "statut"; }) + 1;
+  const idCol = headers.findIndex(function(h) { return canonicalKey(h) === "id_demande"; }) + 1;
+  if (phoneCol <= 0) throw new Error("Colonne telephone introuvable");
+  if (statusCol <= 0) throw new Error("Colonne statut introuvable");
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+
+  const targetPhone = normalizePhoneKey(telephone);
+  if (!targetPhone) return [];
+  const phones = sheet.getRange(2, phoneCol, lastRow - 1, 1).getValues();
+  const statuses = sheet.getRange(2, statusCol, lastRow - 1, 1).getValues();
+  const ids = idCol > 0 ? sheet.getRange(2, idCol, lastRow - 1, 1).getValues() : [];
+  const matches = [];
+
+  for (var i = 0; i < phones.length; i++) {
+    if (normalizePhoneKey(phones[i][0]) === targetPhone && isActiveDemandStatus(statuses[i][0])) {
       matches.push({
         rowIndex: i + 2,
         id_demande: idCol > 0 ? String(ids[i][0] || '').trim() : ""
