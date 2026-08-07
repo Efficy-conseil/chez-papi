@@ -37,7 +37,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | V01 | Transcription avec renseignements, prestations, formules, quarantaine, 18 ans, 12 septembre | Une ligne `VOXIST-<messageId>`, `Téléphone`, `Anniversaire`, `Nouvelle demande`, `Historique_Voxist` | Statique + essai Make |
 | V02 | Nouveau vocal dans un fil Gmail déjà utilisé | Contrôle uniquement de `VOXIST-<messageId>`, création autorisée | Backend + essai Make |
 | V03 | Même vocal déjà traité (`count > 0`) | Aucun doublon, archivage explicite dans `Historique_Voxist` | Statique |
-| V04 | Vocal sans transcription exploitable | Téléchargement et transcription audio, puis même qualification | Statique + essai Make |
+| V04 | Vocal sans transcription Voxist car le quota de retranscriptions est épuisé, avec audio joint | Téléchargement et transcription audio, puis même qualification ; le texte de quota ne doit pas empêcher cette branche | Statique + essai Make |
 | V05 | Vocal personnel hors traiteur/événement | Aucune ligne, `Hors_Scope_Make` | Statique + essai Make |
 | V06 | Numéro appelant différent de la transcription | Numéro appelant conservé en priorité | Essai Make |
 | V07 | Email Voxist | Ne passe jamais dans Wix, Email direct ou relance email | Automatique |
@@ -47,6 +47,9 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | V11 | Vocal demandant une disponibilité le 15 août pour les 20 ans de sa fille, un apéro dînatoire et 30 personnes | La transcription atteint l’IA, puis une ligne `VOXIST-<messageId>`, `Téléphone`, `Anniversaire`, `Nouvelle demande`, `Historique_Voxist` | Automatique + essai Make |
 | V12 | Appel Voxist « Monsieur Petit, chemin des Crozes », pour définir les besoins du 12 septembre, avec une unique demande Wix active de Daniel Petit à cette date | Rattachement à `WIX-19fae44050c5c754`, conservation du statut, transcription enregistrée, téléphone `06 95 40 81 33`, `relance_a_traiter = TRUE`, `Historique_Voxist`, aucun doublon | Backend + automatique + essai Make |
 | V13 | Appel Voxist avec une date correspondant à plusieurs demandes actives, sans autre rapprochement déterminant | Aucune modification ni création ; le message reste à vérifier et n'est pas archivé comme traité | Backend + essai Make |
+| V14 | Transcription Voxist contenant « Si vous pouviez me rappeler » avant le pied d'e-mail | La transcription complète, y compris le nom et les coordonnées prononcés après « rappeler », atteint l'IA et est enregistrée | Automatique + essai Make |
+| V15 | Vocal Voxist sans transcription, retranscrit depuis l'audio, correspondant à une unique demande active | La demande existante est enrichie (transcription, téléphone appelant, relance à traiter) et conservée ; aucune nouvelle ligne n'est créée, puis l'e-mail est archivé dans `Historique_Voxist` | Backend + automatique + essai Make |
+| V16 | Vocal Voxist de « Madame Blanchard », appelant `06 83 78 21 60`, alors qu'une unique demande active de Delphine Blanchon contient `683782160` | Le numéro est normalisé ; le dossier existant est enrichi et apparaît dans `Messages reçus`, sans création d'une seconde ligne malgré le nom divergent | Backend + automatique + essai Make |
 
 ## Email direct
 

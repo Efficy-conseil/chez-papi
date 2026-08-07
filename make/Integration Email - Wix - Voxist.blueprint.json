@@ -4515,7 +4515,7 @@
                             "version": 1,
                             "parameters": {
                                 "global": false,
-                                "pattern": "Transcription\\s*([\\s\\S]*?)(?:Vous pouvez l['’]écouter|Rappeler|Cet email a été envoyé)",
+                                "pattern": "Transcription\\s*([\\s\\S]*?)(?:Vous pouvez l['’]écouter|Cet email a été envoyé)",
                                 "multiline": false,
                                 "sensitive": false,
                                 "singleline": false,
@@ -5992,7 +5992,7 @@
                                                 "gzip": true,
                                                 "useMtls": false,
                                                 "contentType": "application/json",
-                                                "data": "{\"action\":\"updateExistingDemandFollowup\",\"make_token\":\"cp_make_followup_2026_06\",\"options\":{\"allow_unique_active_event_date\":true},\"match\":{\"email_client\":\"\",\"date_evenement\":\"{{61.date_evenement}}\",\"nom_client\":\"{{61.nom_client}}\",\"telephone\":\"{{replace(ifempty(11.telephone_e164; 61.telephone); 33; \\\"0\\\")}}\",\"nb_convives\":\"{{61.nb_convives}}\",\"lieu_prestation\":\"{{61.lieu_prestation}}\",\"type_evenement\":\"{{61.type_evenement}}\"},\"fields\":{\"gmail_thread_id\":\"{{1.threadId}}\",\"gmail_message_id\":\"{{1.id}}\",\"url_email_origine\":\"https://mail.google.com/mail/u/0/#label/Historique_Voxist/{{1.threadId}}\",\"dernier_email_recu_le\":\"{{1.internalDate}}\",\"dernier_message_client\":\"{{escapeJSON(28.`$1`)}}\",\"relance_a_traiter\":true,\"telephone\":\"{{replace(ifempty(11.telephone_e164; 61.telephone); 33; \\\"0\\\")}}\"}}",
+                                                "data": "{\"action\":\"updateExistingDemandFollowup\",\"make_token\":\"cp_make_followup_2026_06\",\"options\":{\"allow_unique_active_event_date\":true,\"prefer_unique_phone\":true},\"match\":{\"email_client\":\"\",\"date_evenement\":\"{{61.date_evenement}}\",\"nom_client\":\"{{61.nom_client}}\",\"telephone\":\"{{replace(ifempty(11.telephone_e164; 61.telephone); 33; \\\"0\\\")}}\",\"nb_convives\":\"{{61.nb_convives}}\",\"lieu_prestation\":\"{{61.lieu_prestation}}\",\"type_evenement\":\"{{61.type_evenement}}\"},\"fields\":{\"gmail_thread_id\":\"{{1.threadId}}\",\"gmail_message_id\":\"{{1.id}}\",\"url_email_origine\":\"https://mail.google.com/mail/u/0/#label/Historique_Voxist/{{1.threadId}}\",\"dernier_email_recu_le\":\"{{1.internalDate}}\",\"dernier_message_client\":\"{{escapeJSON(28.`$1`)}}\",\"relance_a_traiter\":true,\"telephone\":\"{{replace(ifempty(11.telephone_e164; 61.telephone); 33; \\\"0\\\")}}\"}}",
                                                 "followAllRedirects": true
                                             },
                                             "onerror": [
@@ -7186,13 +7186,6 @@
                                             "filter": {
                                                 "name": "Voxist sans transcription exploitable",
                                                 "conditions": [
-                                                    [
-                                                        {
-                                                            "a": "{{ifempty(28.$1; )}}",
-                                                            "b": "",
-                                                            "o": "text:equal"
-                                                        }
-                                                    ],
                                                     [
                                                         {
                                                             "a": "{{1.fullTextBody}}",
@@ -10434,6 +10427,69 @@
                                                             }
                                                         },
                                                         {
+                                                            "id": 102,
+                                                            "module": "http:ActionSendData",
+                                                            "version": 3,
+                                                            "parameters": {
+                                                                "handleErrors": true,
+                                                                "useNewZLibDeCompress": true
+                                                            },
+                                                            "filter": {
+                                                                "name": "Voxist audio — rechercher une demande existante avant création",
+                                                                "conditions": [
+                                                                    [
+                                                                        {
+                                                                            "a": "{{14.is_demande}}",
+                                                                            "b": "true",
+                                                                            "o": "boolean:equal"
+                                                                        }
+                                                                    ]
+                                                                ]
+                                                            },
+                                                            "mapper": {
+                                                                "url": "https://script.google.com/macros/s/AKfycbzouc3kD6Qc68XzK3Ne_Rlnh5_e5o_IVMkAkHKAXJl-BFrxIIVEj7IS684CugVmh2Qlow/exec",
+                                                                "serializeUrl": false,
+                                                                "method": "post",
+                                                                "headers": [],
+                                                                "qs": [],
+                                                                "bodyType": "raw",
+                                                                "parseResponse": true,
+                                                                "authUser": "",
+                                                                "authPass": "",
+                                                                "timeout": "",
+                                                                "shareCookies": false,
+                                                                "ca": "",
+                                                                "rejectUnauthorized": true,
+                                                                "followRedirect": true,
+                                                                "useQuerystring": false,
+                                                                "gzip": true,
+                                                                "useMtls": false,
+                                                                "contentType": "application/json",
+                                                                "data": "{\"action\":\"updateExistingDemandFollowup\",\"make_token\":\"cp_make_followup_2026_06\",\"options\":{\"allow_unique_active_event_date\":true,\"prefer_unique_phone\":true},\"match\":{\"email_client\":\"\",\"date_evenement\":\"{{14.date_evenement}}\",\"nom_client\":\"{{14.nom_client}}\",\"telephone\":\"{{replace(ifempty(11.telephone_e164; 14.telephone); 33; \\\"0\\\")}}\",\"nb_convives\":\"{{14.nb_convives}}\",\"lieu_prestation\":\"{{14.lieu_prestation}}\",\"type_evenement\":\"{{14.type_evenement}}\"},\"fields\":{\"gmail_thread_id\":\"{{1.threadId}}\",\"gmail_message_id\":\"{{1.id}}\",\"url_email_origine\":\"https://mail.google.com/mail/u/0/#label/Historique_Voxist/{{1.threadId}}\",\"dernier_email_recu_le\":\"{{1.internalDate}}\",\"dernier_message_client\":\"{{escapeJSON(7.text.text)}}\",\"relance_a_traiter\":true,\"telephone\":\"{{replace(ifempty(11.telephone_e164; 14.telephone); 33; \\\"0\\\")}}\"}}",
+                                                                "followAllRedirects": true
+                                                            },
+                                                            "onerror": [
+                                                                {
+                                                                    "id": 103,
+                                                                    "module": "builtin:Break",
+                                                                    "version": 1,
+                                                                    "parameters": {},
+                                                                    "mapper": {
+                                                                        "count": "3",
+                                                                        "retry": true,
+                                                                        "interval": "5"
+                                                                    }
+                                                                }
+                                                            ],
+                                                            "metadata": {
+                                                                "designer": {
+                                                                    "x": 3900,
+                                                                    "y": 1500,
+                                                                    "name": "Voxist audio — rattacher demande existante"
+                                                                }
+                                                            }
+                                                        },
+                                                        {
                                                             "id": 91,
                                                             "module": "builtin:BasicRouter",
                                                             "version": 1,
@@ -10458,13 +10514,23 @@
                                                                                 "__IMTCONN__": 7978056
                                                                             },
                                                                             "filter": {
-                                                                                "name": "Demande réelle uniquement",
+                                                                                "name": "Demande Voxist audio réelle sans candidate existante",
                                                                                 "conditions": [
                                                                                     [
                                                                                         {
                                                                                             "a": "{{14.is_demande}}",
                                                                                             "b": "true",
                                                                                             "o": "boolean:equal"
+                                                                                        },
+                                                                                        {
+                                                                                            "a": "{{ifempty(102.data.updated; false)}}",
+                                                                                            "b": "false",
+                                                                                            "o": "boolean:equal"
+                                                                                        },
+                                                                                        {
+                                                                                            "a": "{{ifempty(102.data.reason; \"\")}}",
+                                                                                            "b": "existing_demand_ambiguous",
+                                                                                            "o": "text:notequal"
                                                                                         }
                                                                                     ]
                                                                                 ]
@@ -11022,13 +11088,23 @@
                                                                                 "__IMTCONN__": 7978131
                                                                             },
                                                                             "filter": {
-                                                                                "name": "Archiver après traitement demande",
+                                                                                "name": "Archiver Voxist audio après création",
                                                                                 "conditions": [
                                                                                     [
                                                                                         {
                                                                                             "a": "{{14.is_demande}}",
                                                                                             "b": "true",
                                                                                             "o": "boolean:equal"
+                                                                                        },
+                                                                                        {
+                                                                                            "a": "{{ifempty(102.data.updated; false)}}",
+                                                                                            "b": "false",
+                                                                                            "o": "boolean:equal"
+                                                                                        },
+                                                                                        {
+                                                                                            "a": "{{ifempty(102.data.reason; \"\")}}",
+                                                                                            "b": "existing_demand_ambiguous",
+                                                                                            "o": "text:notequal"
                                                                                         }
                                                                                     ]
                                                                                 ]
@@ -11302,6 +11378,13 @@
                                                                                         {
                                                                                             "a": "{{14.is_demande}}",
                                                                                             "b": "false",
+                                                                                            "o": "boolean:equal"
+                                                                                        }
+                                                                                    ],
+                                                                                    [
+                                                                                        {
+                                                                                            "a": "{{102.data.updated}}",
+                                                                                            "b": "true",
                                                                                             "o": "boolean:equal"
                                                                                         }
                                                                                     ]
