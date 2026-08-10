@@ -282,6 +282,7 @@ Contraintes backend :
 
 - `checkDuplicate` est la source commune d'anti-doublon pour Make.
 - Tous les modules HTTP Make qui appellent Apps Script doivent avoir `Follow redirect` activé. Sinon Make reçoit seulement une réponse Google `302 Moved Temporarily` au lieu du JSON backend, et les champs comme `count` deviennent inexploitables.
+- Les réponses de succès Apps Script sont enveloppées sous `data` (`{ ok: true, data: { … } }`). Dans Make, un champ métier du module HTTP se référence donc avec deux niveaux `data`, par exemple `{{60.data.data.count}}` ou `{{81.data.data.updated}}`.
 - `upsertWixDemand` doit créer ou fusionner les doublons Wix rapprochés.
 - Les écritures Make doivent être idempotentes par `gmail_message_id` : après une écriture réussie dont la réponse HTTP est perdue, la reprise doit renvoyer le résultat initial sans ré-incrémenter `nb_relances_client`.
 - `upsertWixDemand` doit mémoriser le résultat d'un message Wix déjà appliqué afin qu'une reprise poursuive l'archivage et l'accusé attendus sans créer de seconde ligne.

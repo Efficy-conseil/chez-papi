@@ -16,6 +16,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | C09 | Relance contenant retours à la ligne, guillemets ou antislashs | Mise à jour de la demande existante, incrément de `nb_relances_client`, `relance_a_traiter = TRUE`, puis archivage | Automatique + essai Make |
 | C07 | Réponse anti-doublon sans champ `count` ou inexploitable | Aucune création ; exécution en erreur visible, message conservé pour reprise | Automatique + essai Make |
 | C10 | Réponse HTTP Apps Script perdue après une écriture réussie, puis reprise Make | Le même `gmail_message_id` renvoie le résultat initial ; aucune seconde écriture, aucun second incrément de `nb_relances_client` et le flux restant reprend | Backend + essai Make |
+| C11 | Réponse HTTP Apps Script réussie | Les filtres Make lisent les champs métier sous `data.data` (par exemple `updated` ou `count`) et poursuivent la route attendue | Automatique + essai Make |
 
 ## Wix
 

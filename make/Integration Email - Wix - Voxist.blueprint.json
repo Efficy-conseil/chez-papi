@@ -1558,7 +1558,7 @@
                                             "o": "text:notcontain"
                                         },
                                         {
-                                            "a": "{{60.data.count}}",
+                                            "a": "{{60.data.data.count}}",
                                             "b": "0",
                                             "o": "number:greater"
                                         },
@@ -1901,7 +1901,7 @@
                                             "o": "text:contain"
                                         },
                                         {
-                                            "a": "{{60.data.count}}",
+                                            "a": "{{60.data.data.count}}",
                                             "b": "0",
                                             "o": "number:equal"
                                         }
@@ -3897,7 +3897,7 @@
                                                             "o": "exist"
                                                         },
                                                         {
-                                                            "a": "{{43.data.created}}",
+                                                            "a": "{{43.data.data.created}}",
                                                             "b": "true",
                                                             "o": "boolean:equal"
                                                         }
@@ -4439,7 +4439,7 @@
                                             "o": "text:equal"
                                         },
                                         {
-                                            "a": "{{60.data.count}}",
+                                            "a": "{{60.data.data.count}}",
                                             "b": "0",
                                             "o": "number:equal"
                                         }
@@ -6396,7 +6396,7 @@
                                                                     ],
                                                                     [
                                                                         {
-                                                                            "a": "{{94.data.updated}}",
+                                                                            "a": "{{94.data.data.updated}}",
                                                                             "b": "true",
                                                                             "o": "boolean:equal"
                                                                         }
@@ -10367,7 +10367,7 @@
                                                                                     ],
                                                                                     [
                                                                                         {
-                                                                                            "a": "{{102.data.updated}}",
+                                                                                            "a": "{{102.data.data.updated}}",
                                                                                             "b": "true",
                                                                                             "o": "boolean:equal"
                                                                                         }
@@ -11182,7 +11182,7 @@
                                             "o": "text:equal"
                                         },
                                         {
-                                            "a": "{{60.data.count}}",
+                                            "a": "{{60.data.data.count}}",
                                             "b": "0",
                                             "o": "number:greater"
                                         }
@@ -11235,7 +11235,7 @@
                                             "o": "text:equal"
                                         },
                                         {
-                                            "a": "{{60.data.count}}",
+                                            "a": "{{60.data.data.count}}",
                                             "b": "0",
                                             "o": "number:greater"
                                         }
@@ -14577,7 +14577,7 @@
                                                             "b": "true"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -14603,7 +14603,7 @@
                                                             "b": "pour le nouveau devis"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -14629,7 +14629,7 @@
                                                             "b": "devis actualisé"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -14655,7 +14655,7 @@
                                                             "b": "budget par personne"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -14681,7 +14681,7 @@
                                                             "b": "modifier le devis"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -14707,7 +14707,7 @@
                                                             "b": "mettre votre devis à jour"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -14733,7 +14733,7 @@
                                                             "b": "nouvelle version"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -14759,7 +14759,7 @@
                                                             "b": "validation rapidement"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -14785,7 +14785,7 @@
                                                             "b": "devis validé"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -14811,7 +14811,7 @@
                                                             "b": "devis valide"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -14837,7 +14837,7 @@
                                                             "b": "c’est parfait"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -14863,7 +14863,7 @@
                                                             "b": "c'est parfait"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -14889,7 +14889,7 @@
                                                             "b": "pour le nouveau devis"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -14915,7 +14915,7 @@
                                                             "b": "devis actualisé"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -14941,7 +14941,7 @@
                                                             "b": "budget par personne"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -14967,7 +14967,7 @@
                                                             "b": "modifier le devis"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -14993,7 +14993,7 @@
                                                             "b": "mettre votre devis à jour"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -15019,7 +15019,7 @@
                                                             "b": "nouvelle version"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -15045,7 +15045,7 @@
                                                             "b": "validation rapidement"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -15071,7 +15071,7 @@
                                                             "b": "devis validé"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -15097,7 +15097,7 @@
                                                             "b": "devis valide"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -15123,7 +15123,7 @@
                                                             "b": "c’est parfait"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -15149,7 +15149,7 @@
                                                             "b": "c'est parfait"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -15175,7 +15175,7 @@
                                                             "b": "pour le nouveau devis"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -15201,7 +15201,7 @@
                                                             "b": "devis actualisé"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -15227,7 +15227,7 @@
                                                             "b": "budget par personne"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -15253,7 +15253,7 @@
                                                             "b": "modifier le devis"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -15279,7 +15279,7 @@
                                                             "b": "mettre votre devis à jour"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -15305,7 +15305,7 @@
                                                             "b": "nouvelle version"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -15331,7 +15331,7 @@
                                                             "b": "validation rapidement"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -15357,7 +15357,7 @@
                                                             "b": "devis validé"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -15383,7 +15383,7 @@
                                                             "b": "devis valide"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -15409,7 +15409,7 @@
                                                             "b": "c’est parfait"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -15435,7 +15435,7 @@
                                                             "b": "c'est parfait"
                                                         },
                                                         {
-                                                            "a": "{{81.data.updated}}",
+                                                            "a": "{{81.data.data.updated}}",
                                                             "o": "boolean:equal",
                                                             "b": "true"
                                                         }
@@ -15719,7 +15719,7 @@
                                                             "o": "boolean:equal"
                                                         },
                                                         {
-                                                            "a": "{{60.data.count}}",
+                                                            "a": "{{60.data.data.count}}",
                                                             "b": "0",
                                                             "o": "number:equal"
                                                         },
@@ -15811,7 +15811,7 @@
                                                             "o": "boolean:equal"
                                                         },
                                                         {
-                                                            "a": "{{60.data.count}}",
+                                                            "a": "{{60.data.data.count}}",
                                                             "b": "0",
                                                             "o": "number:equal"
                                                         },
@@ -16772,7 +16772,7 @@
                                                             "o": "boolean:equal"
                                                         },
                                                         {
-                                                            "a": "{{60.data.count}}",
+                                                            "a": "{{60.data.data.count}}",
                                                             "b": "0",
                                                             "o": "number:equal"
                                                         },
@@ -16858,7 +16858,7 @@
                                                             "o": "boolean:equal"
                                                         },
                                                         {
-                                                            "a": "{{60.data.count}}",
+                                                            "a": "{{60.data.data.count}}",
                                                             "b": "0",
                                                             "o": "number:equal"
                                                         },

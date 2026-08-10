@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 
-const main = JSON.parse(readFileSync('make/Integration Email - Wix - Voxist.blueprint.json', 'utf8'));
+const mainRaw = readFileSync('make/Integration Email - Wix - Voxist.blueprint.json', 'utf8');
+const main = JSON.parse(mainRaw);
 const tally = JSON.parse(readFileSync('make/Integration Tally.blueprint.json', 'utf8'));
 
 function collectModules(value, modules = []) {
@@ -25,6 +26,19 @@ function moduleById(modules, id) {
 
 const mainModules = collectModules(main.flow);
 const tallyModules = collectModules(tally.flow);
+
+[
+  [43, 'created'],
+  [60, 'count'],
+  [81, 'updated'],
+  [94, 'updated'],
+  [102, 'updated']
+].forEach(([moduleId, field]) => {
+  const obsoletePath = `{{${moduleId}.data.${field}}}`;
+  const responsePath = `{{${moduleId}.data.data.${field}}}`;
+  assert(!mainRaw.includes(obsoletePath), `réponse HTTP du module ${moduleId} lue sans l'enveloppe data`);
+  assert(mainRaw.includes(responsePath), `champ ${field} de la réponse HTTP du module ${moduleId} absent ou au mauvais chemin`);
+});
 
 const mainIds = mainModules.map(module => module.id);
 assert(new Set(mainIds).size === mainIds.length, 'identifiants de modules dupliqués dans le blueprint principal');
@@ -142,13 +156,13 @@ assert(emailNewDemandFlow.findIndex(module => module.id === 5) < emailNewDemandF
 const emailAck = moduleById(mainModules, 40);
 const emailAckConditions = (emailAck.filter?.conditions || []).flat();
 assert(
-  emailAckConditions.some(condition => condition?.a === '{{60.data.count}}' && condition?.b === '0' && condition?.o === 'number:equal'),
+  emailAckConditions.some(condition => condition?.a === '{{60.data.data.count}}' && condition?.b === '0' && condition?.o === 'number:equal'),
   'accusé Email direct non protégé contre un fil déjà rattaché à une demande'
 );
 const emailCreationConditions = (moduleById(mainModules, 39).filter?.conditions || []);
 assert(
   emailCreationConditions.every(conditionSet => conditionSet.some(
-    condition => condition?.a === '{{60.data.count}}' && condition?.b === '0' && condition?.o === 'number:equal'
+    condition => condition?.a === '{{60.data.data.count}}' && condition?.b === '0' && condition?.o === 'number:equal'
   )),
   'création Email direct non protégée contre un fil déjà rattaché à une demande'
 );
@@ -161,7 +175,7 @@ assert(
 );
 assert(
   (moduleById(mainModules, 82).filter?.conditions || []).every(conditionSet =>
-    conditionSet.some(condition => condition?.a === '{{81.data.updated}}' && condition?.b === 'true' && condition?.o === 'boolean:equal')
+    conditionSet.some(condition => condition?.a === '{{81.data.data.updated}}' && condition?.b === 'true' && condition?.o === 'boolean:equal')
   ),
   'archivage d’une confirmation non conditionné à un rattachement réussi'
 );
@@ -208,7 +222,7 @@ const followupArchiveConditionSets = moduleById(mainModules, 82).filter?.conditi
 assert(
   followupArchiveConditionSets.some(conditionSet =>
     conditionSet.some(condition => condition?.a === '{{38.is_followup}}' && condition?.b === 'true') &&
-    conditionSet.some(condition => condition?.a === '{{81.data.updated}}' && condition?.b === 'true') &&
+    conditionSet.some(condition => condition?.a === '{{81.data.data.updated}}' && condition?.b === 'true') &&
     !conditionSet.some(condition => condition?.a === '{{38.date_evenement}}')
   ),
   'archivage du suivi Email sans date encore bloqué après rattachement'
