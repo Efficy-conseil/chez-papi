@@ -40,6 +40,7 @@ Références : `docs/product-contract.md` et `docs/make-regression-matrix.md`.
 - Les mots métier élargis du contrat sont présents dans le préfiltre.
 - Le préfiltre reconnaît aussi les demandes formulées avec `apéro`, `dînatoire`, un âge en `ans`, un nombre de `personnes` ou une question de disponibilité ; le cas des 20 ans, apéro dînatoire et 30 personnes atteint donc l'analyse IA.
 - Les chemins transcription et audio possèdent chacun une sortie demande et hors scope.
+- La retranscription du fichier audio utilise `whisper-1` : ce modèle reste compatible avec le format de la version actuelle du module Make `CreateTranscription`.
 - Les rejets IA après extraction de transcription ou retranscription audio sont placés sur des branches distinctes et atteignent toujours `Hors_Scope_Make`.
 - Les messages déjà connus sont archivés sans retraitement.
 

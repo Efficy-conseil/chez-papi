@@ -6756,8 +6756,8 @@
                                                 "__IMTCONN__": 8294927
                                             },
                                             "mapper": {
-                                                "model": "gpt-4o-mini-transcribe",
-                                                "prompt": "Message vocal d'un prospect pour une prestation traiteur Chez Papi - Maison Gourmande. \nTranscrire fidèlement en français. \nConserver les dates, nombres de convives, numéros de téléphone, lieux et types d'événements.",
+                                                "model": "whisper-1",
+                                                "prompt": "Chez Papi Maison Gourmande, prestation traiteur, dates, convives, numéros de téléphone, lieux, mariage, anniversaire, baptême, buffet, cocktail, brunch.",
                                                 "fileData": "{{19.data}}",
                                                 "fileName": "{{19.filename}}",
                                                 "language": "fr",
@@ -6773,7 +6773,7 @@
                                                     "expect": {
                                                         "model": {
                                                             "mode": "chose",
-                                                            "label": "gpt-4o-mini-transcribe (system)Speech-to-text model powered by GPT-4o mini",
+                                                            "label": "whisper-1 (system)Speech recognition model",
                                                             "nested": [
                                                                 {
                                                                     "help": "If chosen will return the log probabilities of the tokens in the response to understand the model's confidence in the transcription.",

@@ -139,6 +139,11 @@ assert(router92.routes?.some(route => route.flow.some(module => module.id === 93
 assert(moduleById(mainModules, 93).mapper?.to === 'Label_2633677580427542522', 'Wix hors scope vers le mauvais libellé');
 
 const voxistAudioFollowup = moduleById(mainModules, 102);
+const voxistAudioTranscription = moduleById(mainModules, 7);
+assert(voxistAudioTranscription.module === 'openai-gpt-3:CreateTranscription', 'module de retranscription Voxist inattendu');
+assert(voxistAudioTranscription.mapper?.model === 'whisper-1', 'retranscription Voxist non compatible avec le module OpenAI Make actuel');
+assert(voxistAudioTranscription.mapper?.fileData === '{{19.data}}', 'fichier audio Voxist absent de la retranscription');
+assert(voxistAudioTranscription.mapper?.fileName === '{{19.filename}}', 'nom du fichier audio Voxist absent de la retranscription');
 const voxistAudioFollowupConditions = voxistAudioFollowup.filter?.conditions || [];
 assert(
   voxistAudioFollowupConditions.some(conditionSet =>
