@@ -164,6 +164,7 @@ Comportement attendu :
 - Accusé de réception envoyé au client uniquement lors d'une création réelle.
 - Deux formulaires Wix identiques à quelques minutes d'intervalle avec même `nom_client + email_client + date_evenement + telephone` doivent fusionner.
 - La fusion Wix doit enrichir la première ligne si le second message est plus complet, sans envoyer un deuxième accusé.
+- Lorsqu'un formulaire Wix arrive après une demande active d'un autre canal et qu'il existe une unique ligne avec le même téléphone normalisé et la même date d'événement, il doit enrichir cette première ligne au lieu d'en créer une autre. L'identifiant, la date de réception, le canal et le statut de la première ligne sont conservés ; Wix remplace les coordonnées et détails métier non techniques par ses données, et son lien Gmail devient le seul lien conservé.
 
 Contrainte anti-régression :
 

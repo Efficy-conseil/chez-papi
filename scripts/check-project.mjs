@@ -71,6 +71,8 @@ requireText('apps-script/code.gs', 'function findRowsByEmailAndEventDate');
 requireText('apps-script/code.gs', 'function findRowsByNameAndEventDate');
 requireText('apps-script/code.gs', 'function findActiveRowsByEmail');
 requireText('apps-script/code.gs', 'function findActiveRowsByEventDate');
+requireText('apps-script/code.gs', 'function findActiveRowsByPhoneAndEventDate');
+requireText('apps-script/code.gs', 'matched_by: crossChannelMatches.length === 1 ? "telephone_et_date_evenement" : "wix_form_fingerprint"');
 requireText('apps-script/code.gs', 'allow_unique_active_event_date');
 requireText('apps-script/code.gs', 'const hasSpecificEventDate = !!dateEvenement && dateEvenement !== "Inconnu / à compléter";');
 requireText('apps-script/code.gs', 'reason: matches.length === 0 ? "existing_demand_not_found" : "existing_demand_ambiguous"');

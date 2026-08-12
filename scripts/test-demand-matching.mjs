@@ -127,6 +127,14 @@ assert.deepEqual(
   ['MANUAL-1', 'VOXIST-1']
 );
 
+const crossChannelMatches = evaluate(
+  'findActiveRowsByPhoneAndEventDate(testSheet, testHeaders, "06 83 78 21 60", "12/09/2026")'
+);
+assert.deepEqual(
+  Array.from(crossChannelMatches, candidate => candidate.id_demande),
+  ['MANUAL-1']
+);
+
 context.weakIncoming = {
   nom_client: 'Delphine',
   type_evenement: 'Autres'

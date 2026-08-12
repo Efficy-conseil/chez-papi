@@ -362,7 +362,19 @@ function upsertWixDemand(rowData, options) {
   }
 
   const windowMinutes = Math.max(1, Number(options.merge_window_minutes || 15));
-  const duplicate = findRecentWixDuplicate(sheet, headers, clean.wix_form_fingerprint, clean.date_reception, windowMinutes);
+  // Un même client peut d'abord laisser un vocal puis compléter sa demande via
+  // Wix. Le numéro et la date sont alors des identifiants suffisamment forts,
+  // à condition qu'ils désignent une seule demande active. La première ligne
+  // reste le dossier de référence ; Wix en devient la source la plus fiable.
+  const crossChannelMatches = findActiveRowsByPhoneAndEventDate(
+    sheet,
+    headers,
+    clean.telephone,
+    clean.date_evenement
+  );
+  const duplicate = crossChannelMatches.length === 1
+    ? crossChannelMatches[0]
+    : findRecentWixDuplicate(sheet, headers, clean.wix_form_fingerprint, clean.date_reception, windowMinutes);
   if (duplicate) {
     mergeWixDemandRow(sheet, headers, duplicate.rowIndex, clean, {
       created: false,
@@ -373,7 +385,8 @@ function upsertWixDemand(rowData, options) {
       id_demande: duplicate.id_demande || clean.id_demande,
       row: duplicate.rowIndex,
       created: false,
-      merged: true
+      merged: true,
+      matched_by: crossChannelMatches.length === 1 ? "telephone_et_date_evenement" : "wix_form_fingerprint"
     });
   }
 
@@ -1338,6 +1351,47 @@ function findActiveRowsByPhone(sheet, headers, telephone) {
   return matches;
 }
 
+function findActiveRowsByPhoneAndEventDate(sheet, headers, telephone, dateEvenement) {
+  const targetDate = normalizeEventDateText(dateEvenement);
+  if (!targetDate || targetDate === "Inconnu / à compléter") return [];
+
+  const phoneCol = headers.findIndex(function(h) { return canonicalKey(h) === "telephone"; }) + 1;
+  const dateCol = headers.findIndex(function(h) { return canonicalKey(h) === "date_evenement"; }) + 1;
+  const statusCol = headers.findIndex(function(h) { return canonicalKey(h) === "statut"; }) + 1;
+  const idCol = headers.findIndex(function(h) { return canonicalKey(h) === "id_demande"; }) + 1;
+  if (phoneCol <= 0) throw new Error("Colonne telephone introuvable");
+  if (dateCol <= 0) throw new Error("Colonne date_evenement introuvable");
+  if (statusCol <= 0) throw new Error("Colonne statut introuvable");
+
+  const targetPhones = normalizePhoneKeys(telephone);
+  if (!targetPhones.length) return [];
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+
+  const phones = sheet.getRange(2, phoneCol, lastRow - 1, 1).getValues();
+  const dates = sheet.getRange(2, dateCol, lastRow - 1, 1).getValues();
+  const dateDisplays = sheet.getRange(2, dateCol, lastRow - 1, 1).getDisplayValues();
+  const statuses = sheet.getRange(2, statusCol, lastRow - 1, 1).getValues();
+  const ids = idCol > 0 ? sheet.getRange(2, idCol, lastRow - 1, 1).getValues() : [];
+  const matches = [];
+
+  for (var i = 0; i < phones.length; i++) {
+    const rowPhones = normalizePhoneKeys(phones[i][0]);
+    const rowDate = normalizeEventDateText(dateDisplays[i][0] || dates[i][0]);
+    if (
+      isActiveDemandStatus(statuses[i][0]) &&
+      rowDate === targetDate &&
+      rowPhones.some(function(phone) { return targetPhones.indexOf(phone) !== -1; })
+    ) {
+      matches.push({
+        rowIndex: i + 2,
+        id_demande: idCol > 0 ? String(ids[i][0] || '').trim() : ""
+      });
+    }
+  }
+  return matches;
+}
+
 // Opération de maintenance explicite, exécutée avec les droits Apps Script.
 // Elle ne touche qu'aux numéros français valides et conserve les numéros non
 // interprétables afin d'éviter toute correction destructive.
@@ -1516,6 +1570,7 @@ function mergeWixDemandRow(sheet, headers, rowIndex, incoming, operationResult) 
   const preserveExisting = {
     id_demande: true,
     date_reception: true,
+    canal: true,
     nb_relances_client: true,
     relance_a_traiter: true
   };
@@ -1532,11 +1587,22 @@ function mergeWixDemandRow(sheet, headers, rowIndex, incoming, operationResult) 
     if (!incomingText) return;
 
     const shouldReplace = !currentText ||
+      key === "nom_client" ||
+      key === "telephone" ||
+      key === "email_client" ||
+      key === "type_evenement" ||
+      key === "date_evenement" ||
+      key === "heure_evenement" ||
+      key === "nb_convives" ||
+      key === "lieu_prestation" ||
+      key === "budget_estime" ||
+      key === "message_original" ||
+      key === "notes" ||
       key === "derniere_modification" ||
+      key === "gmail_thread_id" ||
       key === "gmail_message_id" ||
-      key === "url_email_origine" ||
-      (key === "message_original" && incomingText.length > currentText.length) ||
-      (key === "notes" && incomingText.length > currentText.length);
+      key === "wix_form_fingerprint" ||
+      key === "url_email_origine";
 
     if (shouldReplace) {
       nextValues[i] = incomingValue;
