@@ -620,15 +620,12 @@ function checkDuplicate(match) {
   });
 
   const found = findDuplicateDemand(sheet, headers, ids, gmailThreadId);
-  return ContentService
-    .createTextOutput(JSON.stringify({
-      ok: true,
-      count: found ? 1 : 0,
-      duplicate: !!found,
-      id_demande: found ? found.id_demande || "" : "",
-      row: found ? found.rowIndex : ""
-    }))
-    .setMimeType(ContentService.MimeType.JSON);
+  return ok({
+    count: found ? 1 : 0,
+    duplicate: !!found,
+    id_demande: found ? found.id_demande || "" : "",
+    row: found ? found.rowIndex : ""
+  });
 }
 
 function deleteRowById(idDemande) {

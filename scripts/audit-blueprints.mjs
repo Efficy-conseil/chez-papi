@@ -65,6 +65,7 @@ assert(duplicateBody.includes('"gmail_message_id":"{{1.id}}"'), 'gmail_message_i
 assert(duplicateBody.includes('"gmail_thread_id":"{{1.threadId}}"'), 'gmail_thread_id absent du module 60');
 assert(!duplicateBody.includes('toJSON('), 'fonction Make toJSON non prise en charge dans le module 60');
 assert(!duplicateBody.includes('\\) +'), 'expression Make corrompue dans le module 60');
+assert(!mainRaw.includes('60.data.count'), 'anti-doublon du module 60 lu sans l’enveloppe data');
 
 assert(main.metadata?.scenario?.dlq === true, 'conservation des exécutions incomplètes désactivée');
 const retryModules = new Map([
