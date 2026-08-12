@@ -73,7 +73,7 @@ Le 02/08/2026, le module `60` (`checkDuplicate`) a reçu une réponse HTTP `404`
 L'incident s'étant reproduit le 04/08/2026, la protection suivante est désormais présente dans le blueprint versionné et le backend :
 
 1. Le scénario conserve ses exécutions incomplètes.
-2. Les modules backend `60`, `43`, `80`, `81`, `84`, `85` et `94` possèdent un gestionnaire `Retry` : trois tentatives automatiques, espacées de cinq minutes.
+2. Les modules backend `60`, `43`, `80`, `81`, `84`, `85`, `94`, `62` et `15` possèdent un gestionnaire `Retry` : trois tentatives automatiques, espacées de cinq minutes.
 3. Le backend journalise les opérations Make par `gmail_message_id`. Une reprise renvoie le résultat déjà obtenu sans ré-incrémenter `nb_relances_client`.
 4. `upsertWixDemand` journalise également ses créations et fusions, afin qu'une reprise conserve le résultat `created` ou `merged` nécessaire à la suite du flux.
 5. Le cas de non-régression `C10` couvre une réponse HTTP perdue après une écriture effectivement réalisée.

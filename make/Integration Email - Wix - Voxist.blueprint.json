@@ -6033,14 +6033,27 @@
                                             "routes": [
                                                 {
                                                     "flow": [
+                                                {
+                                                    "id": 62,
+                                                    "module": "http:ActionSendData",
+                                                    "version": 3,
+                                                    "parameters": {
+                                                        "handleErrors": true,
+                                                        "useNewZLibDeCompress": true
+                                                    },
+                                                    "onerror": [
                                                         {
-                                                            "id": 62,
-                                                            "module": "http:ActionSendData",
-                                                            "version": 3,
-                                                            "parameters": {
-                                                                "handleErrors": true,
-                                                                "useNewZLibDeCompress": true
-                                                            },
+                                                            "id": 105,
+                                                            "module": "builtin:Break",
+                                                            "version": 1,
+                                                            "parameters": {},
+                                                            "mapper": {
+                                                                "count": "3",
+                                                                "retry": true,
+                                                                "interval": "5"
+                                                            }
+                                                        }
+                                                    ],
                                                             "filter": {
                                                                 "name": "Demande Voxist réelle sans candidate existante",
                                                                 "conditions": [
@@ -10004,14 +10017,27 @@
                                                             "routes": [
                                                                 {
                                                                     "flow": [
-                                                                        {
-                                                                            "id": 15,
-                                                                            "module": "http:ActionSendData",
-                                                                            "version": 3,
-                                                                            "parameters": {
-                                                                                "handleErrors": true,
-                                                                                "useNewZLibDeCompress": true
-                                                                            },
+                                                        {
+                                                            "id": 15,
+                                                            "module": "http:ActionSendData",
+                                                            "version": 3,
+                                                            "parameters": {
+                                                                "handleErrors": true,
+                                                                "useNewZLibDeCompress": true
+                                                            },
+                                                            "onerror": [
+                                                                {
+                                                                    "id": 106,
+                                                                    "module": "builtin:Break",
+                                                                    "version": 1,
+                                                                    "parameters": {},
+                                                                    "mapper": {
+                                                                        "count": "3",
+                                                                        "retry": true,
+                                                                        "interval": "5"
+                                                                    }
+                                                                }
+                                                            ],
                                                                             "filter": {
                                                                                 "name": "Demande Voxist audio réelle sans candidate existante",
                                                                                 "conditions": [

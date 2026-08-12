@@ -75,7 +75,9 @@ const retryModules = new Map([
   [81, 'updateExistingDemandFollowup'],
   [84, 'updateWixFollowup'],
   [85, 'updateThreadFollowup'],
-  [94, 'updateExistingDemandFollowup']
+  [94, 'updateExistingDemandFollowup'],
+  [62, 'createMakeDemand'],
+  [15, 'createMakeDemand']
 ]);
 retryModules.forEach((action, id) => {
   const module = moduleById(mainModules, id);
