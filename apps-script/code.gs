@@ -189,7 +189,7 @@ function doPost(e) {
     const body = JSON.parse(e.postData.contents);
     const auth = body.auth || { user: body.user, pass: body.pass };
     const isMakeFollowup = (
-      (body.action === 'updateThreadFollowup' || body.action === 'updateWixFollowup' || body.action === 'updateExistingDemandFollowup' || body.action === 'checkDuplicate' || body.action === 'upsertWixDemand' || body.action === 'createMakeDemand') &&
+      (body.action === 'updateThreadFollowup' || body.action === 'updateWixFollowup' || body.action === 'updateExistingDemandFollowup' || body.action === 'checkDuplicate' || body.action === 'upsertWixDemand' || body.action === 'createMakeDemand' || body.action === 'mergeWixDuplicateDemand') &&
       body.make_token === MAKE_FOLLOWUP_TOKEN
     );
     if (!isMakeFollowup && !checkAuth(auth.user, auth.pass)) {
@@ -205,6 +205,7 @@ function doPost(e) {
     if (body.action === 'checkDuplicate') return checkDuplicate(body.match || {});
     if (body.action === 'upsertWixDemand') return withDocumentLock(function() { return upsertWixDemand(body.row || {}, body.options || {}); });
     if (body.action === 'createMakeDemand') return withDocumentLock(function() { return createMakeDemand(body.row || {}); });
+    if (body.action === 'mergeWixDuplicateDemand') return withDocumentLock(function() { return mergeWixDuplicateDemand(body.primary_id_demande, body.wix_duplicate_id); });
     if (body.action === 'delete') return withDocumentLock(function() { return deleteRowById(body.id_demande); });
     return ko('Action inconnue : ' + body.action);
   } catch (err) {
@@ -401,6 +402,53 @@ function upsertWixDemand(rowData, options) {
   forceTextCell(sheet, headers, clean._row, "date_evenement", clean.date_evenement);
   applyDefaultRowHeight(sheet, clean._row);
   return ok({ id_demande: clean.id_demande, row: clean._row, created: true, merged: false });
+}
+
+// Opération de maintenance explicitement bornée : elle ne supprime une ligne
+// Wix que si celle-ci représente de façon certaine le même événement qu'un
+// dossier principal déjà actif. Elle sert à résorber les doublons antérieurs à
+// la règle de fusion automatique dans upsertWixDemand.
+function mergeWixDuplicateDemand(primaryIdDemande, wixDuplicateId) {
+  const primaryId = String(primaryIdDemande || '').trim();
+  const wixId = String(wixDuplicateId || '').trim();
+  if (!primaryId) throw new Error('primary_id_demande manquant');
+  if (wixId.indexOf('WIX-') !== 0) throw new Error('Le doublon doit être une demande Wix');
+  if (primaryId === wixId) throw new Error('Les deux identifiants doivent être différents');
+
+  const sheet = getSheet();
+  ensureSchemaHeaders(sheet);
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
+  const primary = findRowByDemandId(sheet, headers, primaryId);
+  const wixDuplicate = findRowByDemandId(sheet, headers, wixId);
+  if (!primary) throw new Error('Dossier principal introuvable : ' + primaryId);
+  if (!wixDuplicate) throw new Error('Doublon Wix introuvable : ' + wixId);
+
+  const primaryData = readRowData(sheet, headers, primary.rowIndex);
+  const wixData = readRowData(sheet, headers, wixDuplicate.rowIndex);
+  const matchingRows = findActiveRowsByPhoneAndEventDate(
+    sheet,
+    headers,
+    wixData.telephone,
+    wixData.date_evenement
+  );
+  if (!isActiveDemandStatus(primaryData.statut)) throw new Error('Le dossier principal doit être actif');
+  if (matchingRows.length !== 2 || !matchingRows.some(function(row) { return row.id_demande === primaryId; }) || !matchingRows.some(function(row) { return row.id_demande === wixId; })) {
+    throw new Error('Les dossiers ne forment pas un doublon Wix unique par téléphone et date');
+  }
+
+  mergeWixDemandRow(sheet, headers, primary.rowIndex, wixData, {
+    created: false,
+    merged: true,
+    merged_from_id: wixId
+  });
+  sheet.deleteRow(wixDuplicate.rowIndex);
+  applyDefaultRowHeight(sheet, primary.rowIndex > wixDuplicate.rowIndex ? primary.rowIndex - 1 : primary.rowIndex);
+  return ok({
+    id_demande: primaryId,
+    deleted_id_demande: wixId,
+    merged: true,
+    matched_by: 'telephone_et_date_evenement'
+  });
 }
 
 function updateRowById(idDemande, fields) {
@@ -1044,6 +1092,19 @@ function findRowByDemandId(sheet, headers, idDemande) {
     }
   }
   return null;
+}
+
+function readRowData(sheet, headers, rowIndex) {
+  const values = sheet.getRange(rowIndex, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const displays = sheet.getRange(rowIndex, 1, 1, sheet.getLastColumn()).getDisplayValues()[0];
+  const row = {};
+  headers.forEach(function(h, i) {
+    const key = canonicalKey(h);
+    row[key] = key === 'date_evenement'
+      ? normalizeEventDateText(displays[i] || values[i])
+      : values[i];
+  });
+  return row;
 }
 
 function findDemandMatchCandidates(sheet, headers, incoming, options) {
