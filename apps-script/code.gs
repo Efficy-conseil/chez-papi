@@ -189,7 +189,7 @@ function doPost(e) {
     const body = JSON.parse(e.postData.contents);
     const auth = body.auth || { user: body.user, pass: body.pass };
     const isMakeFollowup = (
-      (body.action === 'updateThreadFollowup' || body.action === 'updateWixFollowup' || body.action === 'updateExistingDemandFollowup' || body.action === 'checkDuplicate' || body.action === 'upsertWixDemand' || body.action === 'createMakeDemand' || body.action === 'mergeWixDuplicateDemand') &&
+      (body.action === 'updateThreadFollowup' || body.action === 'updateWixFollowup' || body.action === 'updateExistingDemandFollowup' || body.action === 'checkDuplicate' || body.action === 'upsertWixDemand' || body.action === 'createMakeDemand' || body.action === 'mergeWixDuplicateDemand' || body.action === 'mergeVoxistDuplicateDemand') &&
       body.make_token === MAKE_FOLLOWUP_TOKEN
     );
     if (!isMakeFollowup && !checkAuth(auth.user, auth.pass)) {
@@ -206,6 +206,7 @@ function doPost(e) {
     if (body.action === 'upsertWixDemand') return withDocumentLock(function() { return upsertWixDemand(body.row || {}, body.options || {}); });
     if (body.action === 'createMakeDemand') return withDocumentLock(function() { return createMakeDemand(body.row || {}); });
     if (body.action === 'mergeWixDuplicateDemand') return withDocumentLock(function() { return mergeWixDuplicateDemand(body.primary_id_demande, body.wix_duplicate_id); });
+    if (body.action === 'mergeVoxistDuplicateDemand') return withDocumentLock(function() { return mergeVoxistDuplicateDemand(body.primary_id_demande, body.voxist_duplicate_id); });
     if (body.action === 'delete') return withDocumentLock(function() { return deleteRowById(body.id_demande); });
     return ko('Action inconnue : ' + body.action);
   } catch (err) {
@@ -224,6 +225,47 @@ function createMakeDemand(rowData) {
 
   const existing = findRowByDemandId(sheet, headers, clean.id_demande);
   if (existing) return ok({ id_demande: clean.id_demande, row: existing.rowIndex, created: false, replayed: true });
+
+  // Deux vocaux distincts peuvent appartenir au même dossier. Contrairement à
+  // checkDuplicate, qui ne protège que la reprise du même message Gmail, ce
+  // rapprochement métier est volontairement limité à un téléphone et une date
+  // d'événement identiques, et seulement si la cible active est unique.
+  if (clean.id_demande.indexOf('VOXIST-') === 0) {
+    const matches = findActiveRowsByPhoneAndEventDate(
+      sheet,
+      headers,
+      clean.telephone,
+      clean.date_evenement
+    );
+    if (matches.length === 1) {
+      const target = matches[0];
+      const followupFields = {
+        gmail_thread_id: clean.gmail_thread_id,
+        gmail_message_id: clean.gmail_message_id,
+        url_email_origine: clean.url_email_origine,
+        dernier_email_recu_le: clean.date_reception,
+        dernier_message_client: clean.message_original,
+        relance_a_traiter: true,
+        telephone: clean.telephone,
+        derniere_modification: new Date()
+      };
+      writeMakeFollowup(sheet, headers, target.rowIndex, followupFields, {
+        created: false,
+        merged: true,
+        updated: true,
+        matched_by: 'telephone_et_date_evenement'
+      });
+      applyDefaultRowHeight(sheet, target.rowIndex);
+      return ok({
+        id_demande: target.id_demande,
+        row: target.rowIndex,
+        created: false,
+        merged: true,
+        updated: true,
+        matched_by: 'telephone_et_date_evenement'
+      });
+    }
+  }
 
   if (!clean.date_reception) clean.date_reception = new Date();
   if (!clean.date_evenement) clean.date_evenement = 'Inconnu / à compléter';
@@ -446,6 +488,52 @@ function mergeWixDuplicateDemand(primaryIdDemande, wixDuplicateId) {
   return ok({
     id_demande: primaryId,
     deleted_id_demande: wixId,
+    merged: true,
+    matched_by: 'telephone_et_date_evenement'
+  });
+}
+
+// Opération de maintenance explicitement bornée pour résorber un doublon
+// Voxist historique. Le dossier le plus récent reste la référence et reçoit
+// les informations absentes du premier vocal ; la transcription antérieure est
+// conservée dans les notes avant suppression de sa ligne.
+function mergeVoxistDuplicateDemand(primaryIdDemande, voxistDuplicateId) {
+  const primaryId = String(primaryIdDemande || '').trim();
+  const duplicateId = String(voxistDuplicateId || '').trim();
+  if (!primaryId || !duplicateId) throw new Error('Identifiants de fusion Voxist manquants');
+  if (primaryId.indexOf('VOXIST-') !== 0 || duplicateId.indexOf('VOXIST-') !== 0) throw new Error('Les deux dossiers doivent être des demandes Voxist');
+  if (primaryId === duplicateId) throw new Error('Les deux identifiants doivent être différents');
+
+  const sheet = getSheet();
+  ensureSchemaHeaders(sheet);
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
+  const primary = findRowByDemandId(sheet, headers, primaryId);
+  const duplicate = findRowByDemandId(sheet, headers, duplicateId);
+  if (!primary || !duplicate) throw new Error('Dossier Voxist introuvable');
+
+  const primaryData = readRowData(sheet, headers, primary.rowIndex);
+  const duplicateData = readRowData(sheet, headers, duplicate.rowIndex);
+  const matchingRows = findActiveRowsByPhoneAndEventDate(sheet, headers, primaryData.telephone, primaryData.date_evenement);
+  if (!isActiveDemandStatus(primaryData.statut) || !isActiveDemandStatus(duplicateData.statut) ||
+      matchingRows.length !== 2 ||
+      !matchingRows.some(function(row) { return row.id_demande === primaryId; }) ||
+      !matchingRows.some(function(row) { return row.id_demande === duplicateId; })) {
+    throw new Error('Les dossiers ne forment pas un doublon Voxist unique par téléphone et date');
+  }
+
+  mergeManualDemandRow(sheet, headers, primary.rowIndex, duplicateData);
+  const transcript = String(duplicateData.message_original || '').trim();
+  if (transcript) {
+    const notesCol = headers.findIndex(function(h) { return canonicalKey(h) === 'notes'; }) + 1;
+    const currentNotes = String(sheet.getRange(primary.rowIndex, notesCol).getValue() || '').trim();
+    const historyNote = 'Transcription du vocal fusionné (' + duplicateId + ') : ' + transcript;
+    sheet.getRange(primary.rowIndex, notesCol).setValue(currentNotes ? currentNotes + '\n' + historyNote : historyNote);
+  }
+  sheet.deleteRow(duplicate.rowIndex);
+  applyDefaultRowHeight(sheet, primary.rowIndex > duplicate.rowIndex ? primary.rowIndex - 1 : primary.rowIndex);
+  return ok({
+    id_demande: primaryId,
+    deleted_id_demande: duplicateId,
     merged: true,
     matched_by: 'telephone_et_date_evenement'
   });

@@ -54,6 +54,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | V16 | Vocal Voxist de « Madame Blanchard », appelant `06 83 78 21 60`, alors qu'une unique demande active de Delphine Blanchon contient `683782160` | Le numéro est normalisé ; le dossier existant est enrichi et apparaît dans `Messages reçus`, sans création d'une seconde ligne malgré le nom divergent | Backend + automatique + essai Make |
 | V17 | Vocal Voxist de Madame Leclerc de Grange, appelant `06 07 03 40 37`, demandant des précisions sur un devis déjà envoyé ; l'IA retourne à tort `is_demande=false` mais conserve `statut=À rappeler` et le mot « devis » | Le module 102 exécute le rattachement ; l'unique demande active portant ce numéro est enrichie, apparaît dans `Messages reçus`, sans création de ligne | Automatique + essai Make |
 | V18 | Création Voxist transcription ou audio interrompue par un `404` Apps Script / Google Drive temporaire | Trois reprises automatiques à cinq minutes d’intervalle ; une création déjà enregistrée ne produit pas de doublon | Automatique + essai Make |
+| V19 | Deux nouveaux vocaux Voxist de M. Borel, téléphone `06 21 66 22 77`, date `19/09/2026`, avec noms, type et transcription divergents | Le second vocal enrichit l'unique dossier actif existant ; aucune seconde ligne, statut conservé, transcription dans `dernier_message_client`, `relance_a_traiter = TRUE` | Backend + automatique + essai Make |
 
 ## Email direct
 

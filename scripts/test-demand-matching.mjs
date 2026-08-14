@@ -135,6 +135,24 @@ assert.deepEqual(
   ['MANUAL-1']
 );
 
+const borelRows = [
+  ['VOXIST-OLD', 'Borel', '06 21 66 22 77', '', 'Entreprise', '19/09/2026', '60 personnes', '', 'Nouvelle demande', 'Téléphone', ''],
+  ['VOXIST-NEW', 'M. Borel', '0621662277', '', 'Anniversaire', '19/09/2026', 'environ 60 personnes', '', 'Nouvelle demande', 'Téléphone', '']
+];
+context.borelSheet = {
+  getLastRow() { return borelRows.length + 1; },
+  getRange(row, column, rowCount, columnCount) {
+    assert.equal(row, 2);
+    assert.equal(rowCount, borelRows.length);
+    const selected = borelRows.map(values => values.slice(column - 1, column - 1 + columnCount));
+    return { getValues() { return selected; }, getDisplayValues() { return selected.map(values => values.map(String)); } };
+  }
+};
+const borelMatches = evaluate(
+  'findActiveRowsByPhoneAndEventDate(borelSheet, testHeaders, "06 21 66 22 77", "19/09/2026")'
+);
+assert.deepEqual(Array.from(borelMatches, candidate => candidate.id_demande), ['VOXIST-OLD', 'VOXIST-NEW']);
+
 context.weakIncoming = {
   nom_client: 'Delphine',
   type_evenement: 'Autres'
