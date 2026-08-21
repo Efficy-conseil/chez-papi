@@ -55,6 +55,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | V17 | Vocal Voxist de Madame Leclerc de Grange, appelant `06 07 03 40 37`, demandant des précisions sur un devis déjà envoyé ; l'IA retourne à tort `is_demande=false` mais conserve `statut=À rappeler` et le mot « devis » | Le module 102 exécute le rattachement ; l'unique demande active portant ce numéro est enrichie, apparaît dans `Messages reçus`, sans création de ligne | Automatique + essai Make |
 | V18 | Création Voxist transcription ou audio interrompue par un `404` Apps Script / Google Drive temporaire | Trois reprises automatiques à cinq minutes d’intervalle ; une création déjà enregistrée ne produit pas de doublon | Automatique + essai Make |
 | V19 | Deux nouveaux vocaux Voxist de M. Borel, téléphone `06 21 66 22 77`, date `19/09/2026`, avec noms, type et transcription divergents | Le second vocal enrichit l'unique dossier actif existant ; aucune seconde ligne, statut conservé, transcription dans `dernier_message_client`, `relance_a_traiter = TRUE` | Backend + automatique + essai Make |
+| V20 | Vocal Voxist hors périmètre avec transcription très longue (message personnel, radio ou publicité) | La qualification renvoie un JSON complet, avec `message_original` limité à 900 caractères ; le module Parse JSON ne doit pas échouer et l'e-mail est classé `Hors_Scope_Make` | Statique + essai Make |
 
 ## Email direct
 
