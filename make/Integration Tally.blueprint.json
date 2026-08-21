@@ -1770,20 +1770,6 @@
                                     ]
                                 ]
                             }
-                        },
-                        {
-                            "id": 106,
-                            "module": "builtin:Commit",
-                            "version": 1,
-                            "parameters": {},
-                            "mapper": {},
-                            "metadata": {
-                                "designer": {
-                                    "x": 900,
-                                    "y": 300,
-                                    "name": "Stop après réponse anti-doublon invalide"
-                                }
-                            }
                         }
                     ]
                 }
