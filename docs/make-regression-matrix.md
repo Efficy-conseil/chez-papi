@@ -56,6 +56,9 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | V18 | Création Voxist transcription ou audio interrompue par un `404` Apps Script / Google Drive temporaire | Trois reprises automatiques à cinq minutes d’intervalle ; une création déjà enregistrée ne produit pas de doublon | Automatique + essai Make |
 | V19 | Deux nouveaux vocaux Voxist de M. Borel, téléphone `06 21 66 22 77`, date `19/09/2026`, avec noms, type et transcription divergents | Le second vocal enrichit l'unique dossier actif existant ; aucune seconde ligne, statut conservé, transcription dans `dernier_message_client`, `relance_a_traiter = TRUE` | Backend + automatique + essai Make |
 | V20 | Vocal Voxist hors périmètre avec transcription très longue (message personnel, radio ou publicité) | La qualification renvoie un JSON complet, avec `message_original` limité à 900 caractères ; le module Parse JSON ne doit pas échouer et l'e-mail est classé `Hors_Scope_Make` | Statique + essai Make |
+| V21 | Qualification finale Voxist transcription ou audio avec `is_demande=false` | Le message atteint une branche explicite après le Parse JSON et est archivé dans `Hors_Scope_Make`, sans appel de rattachement ni création | Automatique + essai Make |
+| V22 | Vraie demande Voxist sans date exploitable | La recherche par téléphone ou autres indices reste possible ; sans candidate unique, une demande est créée avec une date à compléter | Backend + automatique + essai Make |
+| V23 | Rattachement Voxist transcription ou audio réussi (`updated=true`) | Aucun doublon n'est créé et l'e-mail est archivé dans `Historique_Voxist`, en lisant `updated` et `reason` sous `data.data` | Backend + automatique + essai Make |
 
 ## Email direct
 

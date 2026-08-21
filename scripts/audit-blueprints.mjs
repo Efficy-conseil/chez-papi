@@ -37,11 +37,54 @@ const tallyModules = collectModules(tally.flow);
   const obsoletePath = `{{${moduleId}.data.${field}}}`;
   const responsePath = `{{${moduleId}.data.data.${field}}}`;
   assert(!mainRaw.includes(obsoletePath), `réponse HTTP du module ${moduleId} lue sans l'enveloppe data`);
+  assert(
+    !new RegExp(`${moduleId}\\.data\\.(?!data\\.)`).test(mainRaw),
+    `réponse HTTP du module ${moduleId} encore lue sans l'enveloppe data dans une expression`
+  );
   assert(mainRaw.includes(responsePath), `champ ${field} de la réponse HTTP du module ${moduleId} absent ou au mauvais chemin`);
 });
 
 const mainIds = mainModules.map(module => module.id);
 assert(new Set(mainIds).size === mainIds.length, 'identifiants de modules dupliqués dans le blueprint principal');
+
+const transcriptionFinalRouter = moduleById(mainModules, 107);
+assert(
+  transcriptionFinalRouter.routes?.some(route => route.flow?.[0]?.id === 94) &&
+  transcriptionFinalRouter.routes?.some(route =>
+    route.flow?.[0]?.id === 108 &&
+    route.flow[0].filter?.conditions?.flat().some(condition => condition?.a === '{{61.is_demande}}' && condition?.b === 'false')
+  ),
+  'route finale Voxist transcription incomplète : demande et hors scope ne sont pas séparés après le Parse JSON'
+);
+assert(
+  !(moduleById(mainModules, 94).filter?.conditions || []).flat().some(condition => condition?.a === '{{61.date_evenement}}'),
+  'recherche Voxist encore bloquée lorsque la date événement est absente'
+);
+
+const audioFinalRouter = moduleById(mainModules, 109);
+assert(
+  audioFinalRouter.routes?.some(route => route.flow?.[0]?.id === 102) &&
+  audioFinalRouter.routes?.some(route => route.flow?.[0]?.id === 110),
+  'route finale Voxist audio incomplète après le Parse JSON'
+);
+
+[
+  [70, 'Label_5869457419717567046', '{{94.data.data.updated}}'],
+  [71, 'Label_5869457419717567046', '{{102.data.data.updated}}']
+].forEach(([moduleId, labelId, updatedPath]) => {
+  const archiveModule = moduleById(mainModules, moduleId);
+  assert(archiveModule.mapper?.to === labelId, `suivi Voxist du module ${moduleId} archivé hors de Historique_Voxist`);
+  assert(
+    (archiveModule.filter?.conditions || []).flat().some(condition => condition?.a === updatedPath && condition?.b === 'true'),
+    `archivage du module ${moduleId} non conditionné au rattachement backend réussi`
+  );
+});
+
+const audioExtraction = moduleById(mainModules, 13);
+const audioExtractionPrompt = JSON.stringify(audioExtraction.mapper?.messages || []);
+assert(!audioExtractionPrompt.includes('transcription complète'), 'sortie JSON audio encore exposée à une transcription complète non bornée');
+assert(audioExtractionPrompt.includes('limité à 900 caractères'), 'limite de message_original absente de la qualification audio');
+assert(audioExtraction.mapper?.max_tokens === '1600', 'marge de sortie JSON audio insuffisante');
 
 const httpModules = [...mainModules, ...tallyModules].filter(module => module.module === 'http:ActionSendData');
 assert(httpModules.length > 0, 'aucun module HTTP trouvé');
