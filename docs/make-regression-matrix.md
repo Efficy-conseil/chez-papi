@@ -90,6 +90,10 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | T02 | Soumission déjà connue | Aucune seconde ligne et aucun second accusé | Statique + essai Make |
 | T03 | Autre formulaire Tally | Ignoré | Automatique |
 | T04 | Anti-doublon | Appel du backend, aucune lecture Google Sheets | Automatique |
+| T05 | Réponse HTTP anti-doublon `{ data: { count: 0 } }` | Le filtre de création lit `4.data.data.count` et laisse passer la soumission | Automatique + essai Make |
+| T06 | Réponse anti-doublon sans champ `count` exploitable | Aucune ligne et aucun accusé ; alerte explicite envoyée pour reprise manuelle | Automatique + essai Make |
+| T07 | Téléphone Tally `'+33603156125`, `+33603156125` ou `0603156125` | La ligne Google Sheets contient `06 03 15 61 25`, sans apostrophe ni préfixe international | Automatique + essai Make |
+| T08 | Scénario Tally activé sans nouvelle réponse | Aucune exécution périodique ni crédit consommé ; le scénario démarre uniquement à la réception du webhook `watchNewResponse` | Automatique + contrôle Make |
 
 ## Frontend après traitement Make
 

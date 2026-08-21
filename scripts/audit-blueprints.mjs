@@ -340,8 +340,47 @@ assert(!serializedMain.includes('ifempty(60.data.count; 0)'), 'anti-doublon Emai
 assert(!serializedTally.includes('ifempty(4.data.count; 0)'), 'anti-doublon Tally encore permissif si count est absent');
 
 const tallyHttp = moduleById(tallyModules, 4);
+const tallyTrigger = moduleById(tallyModules, 1);
+assert(tallyTrigger.module === 'tally:watchNewResponse', 'déclencheur Tally remplacé par un module non instantané');
+assert(tallyTrigger.parameters?.__IMTHOOK__, 'webhook absent du déclencheur Tally');
+assert(tally.metadata?.instant === true, 'scénario Tally non déclaré instantané dans le blueprint');
 assert(tallyHttp.filter?.conditions?.flat().some(condition => condition.b === 'Gx52AQ'), 'formId Tally de production absent');
 assert((tallyHttp.mapper?.data || '').includes('"action":"checkDuplicate"'), 'anti-doublon Tally non relié au backend');
+const tallyCreationConditions = (moduleById(tallyModules, 2).filter?.conditions || []).flat();
+assert(
+  tallyCreationConditions.some(condition => condition?.a === '{{4.data.data.count}}' && condition?.b === '0' && condition?.o === 'number:equal'),
+  'création Tally non protégée par le count de la réponse HTTP sous data.data'
+);
+const tallyResultRouter = moduleById(tallyModules, 5);
+assert(
+  tallyResultRouter.routes?.some(route => route.flow?.[0]?.id === 2) &&
+  tallyResultRouter.routes?.some(route => route.flow?.[0]?.id === 105),
+  'route explicite absente lorsque la réponse anti-doublon Tally est invalide'
+);
+const tallyInvalidResponseAlert = moduleById(tallyModules, 105);
+assert(
+  (tallyInvalidResponseAlert.filter?.conditions || []).flat().some(condition =>
+    condition?.a === '{{ifempty(4.data.data.count; -1)}}' && condition?.b === '-1' && condition?.o === 'number:equal'
+  ),
+  'réponse Tally sans count non transformée en erreur visible'
+);
+
+const tallyPhoneMapping = moduleById(tallyModules, 2).mapper?.values?.telephone || '';
+assert(
+  tallyPhoneMapping.includes('/\\D/g') &&
+  tallyPhoneMapping.includes('/^(?:0033|33)0?/') &&
+  tallyPhoneMapping.includes('$1 $2 $3 $4 $5'),
+  'normalisation du téléphone Tally absente ou incomplète'
+);
+function formatTallyPhoneSample(value) {
+  return String(value || '')
+    .replace(/\D/g, '')
+    .replace(/^(?:0033|33)0?/, '0')
+    .replace(/^(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/, '$1 $2 $3 $4 $5');
+}
+[`'+33603156125`, '+33603156125', '0603156125'].forEach(value => {
+  assert(formatTallyPhoneSample(value) === '06 03 15 61 25', `normalisation Tally incorrecte pour ${value}`);
+});
 assert(!tallyModules.some(module => /google-sheets:(search|select|get|list)/i.test(module.module)), 'lecture Google Sheets détectée dans Tally');
 assert(tallyModules.some(module => module.module === 'google-sheets:addRow'), 'création Tally absente');
 assert((moduleById(tallyModules, 2).mapper?.values?.date_evenement || '').includes('DD/MM/YYYY'), 'date Tally non normalisée au format français');

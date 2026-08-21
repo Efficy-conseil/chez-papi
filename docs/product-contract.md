@@ -146,7 +146,7 @@ Contrainte critique :
 - Une source métier ne doit jamais être uniquement exclue d'une route sans disposer d'une route de secours.
 - Si une route source est bloquée par `count > 0`, il doit exister un comportement explicite : archiver comme déjà traité, mettre à jour une demande existante, ou signaler une anomalie.
 - Tout texte libre interpolé dans un corps JSON brut Make doit être protégé avec `escapeJSON` afin de préserver les retours à la ligne, guillemets et antislashs sans produire un JSON invalide.
-- Toute création Make passe par l'action backend `createMakeDemand`, y compris Voxist, Email direct et Tally, afin d'appliquer les mêmes validations et la normalisation des coordonnées que les créations manuelles.
+- Lorsqu'une création Make passe par le backend, elle utilise l'action `createMakeDemand`. Les écritures directes encore conservées pour Voxist, Email direct et Tally restent l'exception transitoire documentée dans les décisions issues de l'audit et doivent appliquer elles-mêmes les normalisations nécessaires.
 
 ## Make - Wix
 
@@ -253,15 +253,18 @@ Le nom du blueprint ne doit pas être modifié, la gestion des versions est gér
 
 Comportement attendu :
 
-- Déclencheur Tally production uniquement `formId = Gx52AQ`.
+- Déclencheur webhook instantané `tally:watchNewResponse`, limité au formulaire Tally de production `formId = Gx52AQ`. Aucun contrôle planifié périodique ne doit être activé.
 - Anti-doublon via backend `checkDuplicate`.
 - Création `TALLY-<submissionId>`.
 - Canal -> `Réseaux sociaux`.
+- Téléphone normalisé au format français lisible avant l'écriture directe dans Google Sheets.
 - Accusé Tally propre après création.
 
 Contrainte :
 
 - Le module anti-doublon ne doit pas relire Google Sheets directement via Make, pour éviter les quotas Sheets API.
+- Une réponse anti-doublon sans champ `count` exploitable doit produire une erreur visible et ne doit créer ni ligne ni accusé.
+- Après import du blueprint dans un nouveau scénario, un webhook Tally doit être créé ou sélectionné dans le premier module et le scénario doit afficher une exécution immédiate à l'arrivée des données, jamais une planification toutes les 15 minutes.
 
 ## Backend Apps Script
 
