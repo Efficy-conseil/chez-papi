@@ -59,6 +59,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | V21 | Qualification finale Voxist transcription ou audio avec `is_demande=false` | Le message atteint une branche explicite après le Parse JSON et est archivé dans `Hors_Scope_Make`, sans appel de rattachement ni création | Automatique + essai Make |
 | V22 | Vraie demande Voxist sans date exploitable | La recherche par téléphone ou autres indices reste possible ; sans candidate unique, une demande est créée avec une date à compléter | Backend + automatique + essai Make |
 | V23 | Rattachement Voxist transcription ou audio réussi (`updated=true`) | Aucun doublon n'est créé et l'e-mail est archivé dans `Historique_Voxist`, en lisant `updated` et `reason` sous `data.data` | Backend + automatique + essai Make |
+| V24 | Vocal Voxist de Marilyn, appelante `06 98 20 58 92`, demandant confirmation de l'adresse et de l'heure de livraison | Le mot `livraison` atteint la qualification Voxist ; la demande active unique portant ce numéro est enrichie, apparaît dans `Messages reçus`, puis l'e-mail est archivé dans `Historique_Voxist` | Automatique + essai Make |
 
 ## Email direct
 

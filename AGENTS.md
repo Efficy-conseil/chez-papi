@@ -46,6 +46,7 @@
 ## Git
 
 - Ne versionner que les fichiers liés à la demande en cours.
+- Après chaque modification validée, créer un commit ciblé puis le pousser sur la branche courante. Si des modifications locales non liées empêchent un commit sûr, les préserver et signaler explicitement le blocage.
 - Utiliser des commits ciblés avec un message décrivant le résultat.
 - Ne pas inclure `TODO.md` dans un commit sauf demande explicite.
 - Après un push, indiquer le commit et les éventuelles étapes manuelles restantes.

@@ -317,9 +317,13 @@ assert(
   voxistPrefilterTerms.some(term => voxistBirthdayAperoTranscript.includes(term)),
   'le vocal anniversaire avec apéro dînatoire et 30 personnes reste exclu du préfiltre Voxist'
 );
-['apéro', 'apero', 'dînatoire', 'dinatoire', 'personnes', 'disponible', ' ans'].forEach(term => {
+['apéro', 'apero', 'dînatoire', 'dinatoire', 'personnes', 'disponible', ' ans', 'livraison', 'adresse'].forEach(term => {
   assert(voxistPrefilterTerms.includes(term), `terme Voxist ${term} absent du préfiltre`);
 });
+assert(
+  JSON.stringify(voxistTranscriptionAi.mapper?.messages || []).includes("adresse, d'une heure ou d'une livraison"),
+  'le suivi Voxist de livraison n’est pas qualifié avant le rattachement par téléphone'
+);
 
 const serializedMain = JSON.stringify(main);
 const serializedTally = JSON.stringify(tally);
