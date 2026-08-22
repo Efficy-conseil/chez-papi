@@ -82,6 +82,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | E15 | Email commençant par `Merci pour vos propositions` et demandant de `modifier certaines pièces`, sans rappeler la date | Route de suivi obligatoire même si l’IA retourne `is_followup=false` ; rattachement uniquement si une candidate fiable et unique existe, sinon aucune création et email conservé pour vérification | Backend + automatique + essai Make |
 | E16 | Message de Flore de Régis dans un fil déjà connu demandant un devis mis à jour (remplacement et ajouts) | Le fil existant est marqué avec le nouveau message ; aucune nouvelle ligne ni accusé n’est créé | Automatique + essai Make |
 | E17 | Conjoint d’une cliente confirme le virement pour la réservation du 25/10/2026 et demande si le couscous comprend les légumes | Rattachement à l’unique demande de Mme De Régis pour cette date, `relance_a_traiter = TRUE`, aucun doublon ni accusé | Automatique + essai Make |
+| E18 | Suivi Email d’une demande Voxist sans email, avec même nom d’expéditeur Gmail et même date de prestation | Rattachement à l’unique demande active sur nom + date, enrichissement avec l’email, statut et canal conservés, puis `Historique_Email` ; aucun rattachement sur la date seule | Automatique + essai Make |
 
 ## Tally
 

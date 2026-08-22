@@ -340,6 +340,15 @@ assert(
   (existingFollowup.mapper?.data || '').includes('"type_evenement":"{{38.type_evenement}}"'),
   'indices métier absents du rapprochement de suivi Email'
 );
+assert(
+  (existingFollowup.mapper?.data || '').includes('"nom_client":"{{escapeJSON(ifempty(38.nom_client; 1.fromName))}}"'),
+  "repli vers le nom d'expéditeur Gmail absent du rapprochement de suivi Email"
+);
+const emailAnalysisPrompt = JSON.stringify(moduleById(mainModules, 37).mapper?.messages || []);
+assert(
+  emailAnalysisPrompt.includes('recopie ce nom dans nom_client') && emailAnalysisPrompt.includes("l'en-tête Gmail"),
+  "extraction du nom d'expéditeur Gmail absente de l'analyse Email direct"
+);
 assert(!serializedMain.includes('ifempty(60.data.count; 0)'), 'anti-doublon Email/Wix/Voxist encore permissif si count est absent');
 assert(!serializedTally.includes('ifempty(4.data.count; 0)'), 'anti-doublon Tally encore permissif si count est absent');
 
