@@ -83,6 +83,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | E16 | Message de Flore de Régis dans un fil déjà connu demandant un devis mis à jour (remplacement et ajouts) | Le fil existant est marqué avec le nouveau message ; aucune nouvelle ligne ni accusé n’est créé | Automatique + essai Make |
 | E17 | Conjoint d’une cliente confirme le virement pour la réservation du 25/10/2026 et demande si le couscous comprend les légumes | Rattachement à l’unique demande de Mme De Régis pour cette date, `relance_a_traiter = TRUE`, aucun doublon ni accusé | Automatique + essai Make |
 | E18 | Suivi Email d’une demande Voxist sans email, avec même nom d’expéditeur Gmail et même date de prestation | Rattachement à l’unique demande active sur nom + date, enrichissement avec l’email, statut et canal conservés, puis `Historique_Email` ; aucun rattachement sur la date seule | Automatique + essai Make |
+| E19 | Nouvelle demande Email avec téléphone `6xxxxxxxx`, `06xxxxxxxx` ou `+336xxxxxxxx` | La ligne contient `06 xx xx xx xx` | Automatique + essai Make |
 
 ## Tally
 
@@ -96,6 +97,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | T06 | Réponse anti-doublon sans champ `count` exploitable | Aucune ligne et aucun accusé ; alerte explicite envoyée pour reprise manuelle | Automatique + essai Make |
 | T07 | Téléphone Tally `'+33603156125`, `+33603156125` ou `0603156125` | La ligne Google Sheets contient `06 03 15 61 25`, sans apostrophe ni préfixe international | Automatique + essai Make |
 | T08 | Scénario Tally activé sans nouvelle réponse | Aucune exécution périodique ni crédit consommé ; le scénario démarre uniquement à la réception du webhook `watchNewResponse` | Automatique + contrôle Make |
+| T09 | Téléphone Tally `6xxxxxxxx` sans zéro initial | La ligne Google Sheets contient `06 xx xx xx xx` | Automatique + essai Make |
 
 ## Frontend après traitement Make
 

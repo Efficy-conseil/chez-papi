@@ -16583,7 +16583,7 @@
                                                     "date_reception": "{{1.internalDate}}",
                                                     "canal": "Email",
                                                     "nom_client": "{{38.nom_client}}",
-                                                    "telephone": "{{38.telephone}}",
+                                                    "telephone": "{{replace(replace(replace(replace(38.telephone; \"/\\D/g\"; \"\"); \"/^(?:0033|33)0?/\"; \"0\"); \"/^(\\d{9})$/\"; \"0$1\"); \"/^(\\d{2})(\\d{2})(\\d{2})(\\d{2})(\\d{2})$/\"; \"$1 $2 $3 $4 $5\")}}",
                                                     "email_client": "{{38.email_client}}",
                                                     "type_evenement": "{{38.type_evenement}}",
                                                     "date_evenement": "{{ifempty(38.date_evenement; \"Inconnu / à compléter\")}}",

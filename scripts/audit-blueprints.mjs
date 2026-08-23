@@ -378,21 +378,29 @@ assert(
   'réponse Tally sans count non transformée en erreur visible'
 );
 
-const tallyPhoneMapping = moduleById(tallyModules, 2).mapper?.values?.telephone || '';
-assert(
-  tallyPhoneMapping.includes('/\\D/g') &&
-  tallyPhoneMapping.includes('/^(?:0033|33)0?/') &&
-  tallyPhoneMapping.includes('$1 $2 $3 $4 $5'),
-  'normalisation du téléphone Tally absente ou incomplète'
-);
-function formatTallyPhoneSample(value) {
+function assertDirectPhoneMapping(mapping, source) {
+  assert(
+    mapping.includes('/\\D/g') &&
+    mapping.includes('/^(?:0033|33)0?/') &&
+    mapping.includes('/^(\\d{9})$/') &&
+    mapping.includes('$1 $2 $3 $4 $5'),
+    `normalisation du téléphone ${source} absente ou incomplète`
+  );
+}
+function formatDirectPhoneSample(value) {
   return String(value || '')
     .replace(/\D/g, '')
     .replace(/^(?:0033|33)0?/, '0')
+    .replace(/^(\d{9})$/, '0$1')
     .replace(/^(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/, '$1 $2 $3 $4 $5');
 }
-[`'+33603156125`, '+33603156125', '0603156125'].forEach(value => {
-  assert(formatTallyPhoneSample(value) === '06 03 15 61 25', `normalisation Tally incorrecte pour ${value}`);
+const directPhoneSamples = [`'+33603156125`, '+33603156125', '0603156125', '603156125'];
+const tallyPhoneMapping = moduleById(tallyModules, 2).mapper?.values?.telephone || '';
+assertDirectPhoneMapping(tallyPhoneMapping, 'Tally');
+const emailPhoneMapping = moduleById(mainModules, 39).mapper?.values?.telephone || '';
+assertDirectPhoneMapping(emailPhoneMapping, 'Email direct');
+directPhoneSamples.forEach(value => {
+  assert(formatDirectPhoneSample(value) === '06 03 15 61 25', `normalisation directe incorrecte pour ${value}`);
 });
 assert(!tallyModules.some(module => /google-sheets:(search|select|get|list)/i.test(module.module)), 'lecture Google Sheets détectée dans Tally');
 assert(tallyModules.some(module => module.module === 'google-sheets:addRow'), 'création Tally absente');
