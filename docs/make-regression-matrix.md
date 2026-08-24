@@ -84,6 +84,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | E17 | Conjoint d’une cliente confirme le virement pour la réservation du 25/10/2026 et demande si le couscous comprend les légumes | Rattachement à l’unique demande de Mme De Régis pour cette date, `relance_a_traiter = TRUE`, aucun doublon ni accusé | Automatique + essai Make |
 | E18 | Suivi Email d’une demande Voxist sans email, avec même nom d’expéditeur Gmail et même date de prestation | Rattachement à l’unique demande active sur nom + date, enrichissement avec l’email, statut et canal conservés, puis `Historique_Email` ; aucun rattachement sur la date seule | Automatique + essai Make |
 | E19 | Nouvelle demande Email avec téléphone `6xxxxxxxx`, `06xxxxxxxx` ou `+336xxxxxxxx` | La ligne contient `06 xx xx xx xx` | Automatique + essai Make |
+| E20 | Manon Bordas répond qu’elle a choisi un autre prestataire à la demande Voxist active `Bordas Manon`, sans email initial | Le message est un suivi même si l’IA le classe hors périmètre ; la comparaison prénom/nom est indépendante de l’ordre, l’adresse de l’expéditeur complète la fiche, puis le message apparaît dans `Messages reçus` et est archivé dans `Historique_Email` ; aucune nouvelle ligne | Backend + automatique + essai Make |
 
 ## Tally
 

@@ -713,6 +713,12 @@ function updateExistingDemandFollowup(match, fields, options) {
   const found = matches[0];
 
   const clean = sanitizeFields(fields || {}, true);
+  // Un suivi reçu depuis une adresse inconnue peut compléter la fiche. En
+  // revanche, l'adresse déjà enregistrée reste la référence : un message
+  // transféré ou envoyé par un proche ne doit pas la remplacer.
+  if (clean.email_client && String(found.email_client || '').trim()) {
+    delete clean.email_client;
+  }
   clean.relance_a_traiter = clean.relance_a_traiter !== undefined ? clean.relance_a_traiter : true;
   clean.dernier_email_recu_le = clean.dernier_email_recu_le || new Date();
   clean.derniere_modification = new Date();
@@ -984,7 +990,11 @@ function normalizePersonName(value) {
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-zA-Z0-9]+/g, ' ')
     .trim()
-    .toLowerCase();
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .sort()
+    .join(' ');
 }
 
 function normalizePhoneKey(value) {
@@ -1285,7 +1295,11 @@ function findDemandMatchCandidates(sheet, headers, incoming, options) {
       )) ||
       (target.name && rowName && target.name === rowName && secondaryScore > 0) ||
       (mode === "followup" && target.name && rowName && target.name === rowName);
-    const minimumScore = mode === "followup" ? 60 : 70;
+    // Dans un suivi, un nom complet exact est suffisant à condition que la
+    // demande active soit unique. Cela permet notamment de rattacher une
+    // réponse email à une ancienne demande téléphonique sans adresse email.
+    const exactNameFollowup = mode === "followup" && target.name && rowName && target.name === rowName;
+    const minimumScore = exactNameFollowup ? 50 : (mode === "followup" ? 60 : 70);
     if (!hasStrongIdentity || score < minimumScore) return;
 
     candidates.push({

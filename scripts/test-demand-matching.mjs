@@ -162,6 +162,30 @@ const weakCandidates = evaluate(
 );
 assert.equal(weakCandidates.length, 0);
 
+assert.equal(
+  evaluate('normalizePersonName("Bordas Manon")'),
+  evaluate('normalizePersonName("Manon BORDAS")')
+);
+
+const bordasRows = [
+  ['VOXIST-BORDAS', 'Bordas Manon', '06 13 89 02 36', '', 'Mariage', '04/09/2027', '', '', 'Devis à préparer', 'Téléphone', ''],
+  ['VOXIST-OTHER', 'Manon Martin', '06 00 00 00 00', '', 'Mariage', '04/09/2027', '', '', 'Devis à préparer', 'Téléphone', '']
+];
+context.bordasSheet = {
+  getLastRow() { return bordasRows.length + 1; },
+  getLastColumn() { return headers.length; },
+  getRange(row, column, rowCount, columnCount) {
+    assert.equal(row, 2);
+    assert.equal(rowCount, bordasRows.length);
+    const selected = bordasRows.map(values => values.slice(column - 1, column - 1 + columnCount));
+    return { getValues() { return selected; }, getDisplayValues() { return selected.map(values => values.map(String)); } };
+  }
+};
+const bordasMatches = evaluate(
+  'findDemandMatchCandidates(bordasSheet, testHeaders, { nom_client: "Manon Bordas" }, { mode: "followup" })'
+);
+assert.deepEqual(Array.from(bordasMatches, candidate => candidate.id_demande), ['VOXIST-BORDAS']);
+
 const activeDateMatches = evaluate(
   'findActiveRowsByEventDate(testSheet, testHeaders, "12/09/2026")'
 );

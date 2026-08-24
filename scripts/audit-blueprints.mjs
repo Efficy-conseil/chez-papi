@@ -336,6 +336,14 @@ const newEmailDemandFilter = JSON.stringify(newEmailDemand.filter || {});
   assert(newEmailDemandFilter.includes(marker) && newEmailDemandFilter.includes('text:notcontain'), `indice de suivi non exclu de la création Email : ${marker}`);
 });
 assert(
+  existingFollowupFilter.includes('choisi un autre prestataire'),
+  'réponse de refus après devis absente de la route déterministe de suivi'
+);
+assert(
+  JSON.stringify(moduleById(mainModules, 82).filter || {}).includes('choisi un autre prestataire'),
+  'archivage de la réponse de refus après devis absent après rattachement'
+);
+assert(
   (existingFollowup.mapper?.data || '').includes('"lieu_prestation":"{{38.lieu_prestation}}"') &&
   (existingFollowup.mapper?.data || '').includes('"type_evenement":"{{38.type_evenement}}"'),
   'indices métier absents du rapprochement de suivi Email'
@@ -344,10 +352,22 @@ assert(
   (existingFollowup.mapper?.data || '').includes('"nom_client":"{{escapeJSON(ifempty(38.nom_client; 1.fromName))}}"'),
   "repli vers le nom d'expéditeur Gmail absent du rapprochement de suivi Email"
 );
+assert(
+  (existingFollowup.mapper?.data || '').includes('"email_client":"{{1.fromEmail}}"'),
+  "adresse Gmail de l'expéditeur absente du rapprochement de suivi Email"
+);
 const emailAnalysisPrompt = JSON.stringify(moduleById(mainModules, 37).mapper?.messages || []);
 assert(
   emailAnalysisPrompt.includes('recopie ce nom dans nom_client') && emailAnalysisPrompt.includes("l'en-tête Gmail"),
   "extraction du nom d'expéditeur Gmail absente de l'analyse Email direct"
+);
+assert(
+  emailAnalysisPrompt.includes('choisi un autre prestataire'),
+  'règle de suivi pour une réponse de refus après devis absente de l’analyse Email direct'
+);
+assert(
+  readFileSync('apps-script/code.gs', 'utf8').includes('const exactNameFollowup'),
+  'rattachement d’un suivi par nom complet exact absent du backend'
 );
 assert(!serializedMain.includes('ifempty(60.data.count; 0)'), 'anti-doublon Email/Wix/Voxist encore permissif si count est absent');
 assert(!serializedTally.includes('ifempty(4.data.count; 0)'), 'anti-doublon Tally encore permissif si count est absent');
