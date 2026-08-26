@@ -287,17 +287,24 @@ Les filtres exercice et trimestre sont actuellement figés sur 2026. Ils devront
 
 ### 9.4 Statistiques
 
-La vue Statistiques utilise actuellement toutes les demandes, indépendamment des filtres actifs de la vue Liste.
+La vue Statistiques répond à deux objectifs : analyser l'origine des demandes et piloter la performance commerciale. Ses périodes sont indépendantes des filtres de la vue Liste et utilisent exclusivement `date_reception`.
 
-Elle affiche :
+Les filtres disponibles sont : toutes les dates de réception, année, trimestre et plage personnalisée. Les demandes sans date de réception restent incluses dans la vue globale, sont exclues des périodes datées et font l'objet d'un avertissement visible.
 
-- un graphique en anneau de répartition par canal ;
-- le volume et le pourcentage de chaque canal ;
-- un tableau de conversion par canal ;
-- demandes totales ;
-- événements confirmés ou terminés ;
-- demandes `Refusé / Complet` ;
-- taux de conversion vers confirmé ou terminé.
+Les indicateurs globaux affichent : demandes reçues, dossiers ouverts, gagnés, perdus, refusés/complets, taux de transformation commercial et taux de refus. Les catégories sont définies ainsi :
+
+- gagnés : `Événement confirmé` ou `Événement terminé` ;
+- perdus commercialement : `Perdu / Sans suite` ;
+- refusés séparément : `Refusé / Complet` ;
+- ouverts : tous les autres statuts.
+
+Le taux de transformation commercial est `gagnés / (gagnés + perdus)`. Les dossiers ouverts et les refus sont exclus de son dénominateur. Le taux de refus est `Refusé / Complet / demandes reçues`.
+
+Le graphique en anneau présente le volume et la part de chaque canal. Pour les statistiques uniquement, la variante historique `Téléphone + Email` est regroupée sous `Téléphone` sans réécriture de la base. `Saisie manuelle` reste une catégorie à part entière lorsque l'origine réelle n'est pas connue.
+
+Le tableau par canal affiche : reçues, ouvertes, gagnées, perdues, refusées, taux de transformation commercial et taux de refus. Un avertissement `Échantillon faible` apparaît lorsque moins de cinq dossiers sont commercialement décidés.
+
+Les anomalies connues utiles à l'interprétation, notamment les dates de réception absentes et la valeur de type historique `Autre`, sont signalées sans modifier les données de production.
 
 ## 10. Fiche d'une demande
 
@@ -441,7 +448,7 @@ La fiche en cours d'édition est exclue de cette comparaison.
 ## 14. Limites et points à décider
 
 - Les filtres annuels et trimestriels sont figés sur 2026.
-- Les statistiques ignorent les filtres de la vue historique.
+- Les statistiques possèdent leurs propres filtres fondés sur la date de réception ; les filtres de la liste Historique restent fondés sur la date d'événement.
 - Les tâches sont locales au navigateur et rattachées à un numéro de ligne mutable.
 - Les prototypes publics utilisent le backend de production : une écriture depuis une démo modifie les données réelles.
 - Les identifiants sont conservés dans le navigateur pour permettre les appels et notifications en arrière-plan.
@@ -466,7 +473,7 @@ La fiche en cours d'édition est exclue de cette comparaison.
 - [ ] Historique complet et recherches par colonne.
 - [ ] Filtres temporels et plage personnalisée.
 - [ ] Export CSV filtré.
-- [ ] Répartition et conversion par canal.
+- [ ] Répartition par canal, filtres sur la date de réception et transformation commerciale hors dossiers ouverts et refusés.
 - [ ] Création manuelle en saisie rapide.
 - [ ] Consultation et modification en mode complet.
 - [ ] Confirmation des modifications non enregistrées.

@@ -1612,6 +1612,71 @@ const PIE_COLORS = [
   '#E67E22', '#1ABC9C', '#8E44AD', '#C0392B', '#16A085'
 ];
 
+let statsFilter = { mode: 'all' };
+
+function statsReceiptDate(value) {
+  return parseDateTime(value);
+}
+
+function statsPercent(value) {
+  return value === null || value === undefined ? '—' : `${Math.round(value * 100)} %`;
+}
+
+function populateStatsYears() {
+  const select = document.getElementById('stats-year');
+  if (!select) return;
+  const previous = select.value;
+  const years = [...new Set(appData
+    .map(row => statsReceiptDate(row.date_reception)?.getFullYear())
+    .filter(Boolean))]
+    .sort((a, b) => b - a);
+  select.innerHTML = years.map(year => `<option value="${year}">${year}</option>`).join('');
+  if (years.includes(Number(previous))) select.value = previous;
+}
+
+function resetStatsFilters() {
+  statsFilter = { mode: 'all' };
+  const from = document.getElementById('stats-date-from');
+  const to = document.getElementById('stats-date-to');
+  const quarter = document.getElementById('stats-quarter');
+  if (from) from.value = '';
+  if (to) to.value = '';
+  if (quarter) quarter.value = '';
+  renderStats();
+}
+
+function applyStatsYearQuarter() {
+  const year = document.getElementById('stats-year')?.value;
+  const quarter = document.getElementById('stats-quarter')?.value;
+  if (!year) return;
+  statsFilter = quarter
+    ? { mode: 'quarter', year: Number(year), quarter: Number(quarter) }
+    : { mode: 'year', year: Number(year) };
+  renderStats();
+}
+
+function applyStatsDateRange() {
+  const from = document.getElementById('stats-date-from')?.value || '';
+  const to = document.getElementById('stats-date-to')?.value || '';
+  if (!from && !to) {
+    resetStatsFilters();
+    return;
+  }
+  statsFilter = { mode: 'range', from, to };
+  renderStats();
+}
+
+function statsPeriodLabel() {
+  if (statsFilter.mode === 'year') return `Demandes reçues en ${statsFilter.year}`;
+  if (statsFilter.mode === 'quarter') return `Demandes reçues au T${statsFilter.quarter} ${statsFilter.year}`;
+  if (statsFilter.mode === 'range') {
+    const from = statsFilter.from ? formatDateFR(statsFilter.from) : 'début';
+    const to = statsFilter.to ? formatDateFR(statsFilter.to) : 'aujourd’hui';
+    return `Demandes reçues du ${from} au ${to}`;
+  }
+  return 'Toutes les dates de réception';
+}
+
 function switchHistTab(tab, btn) {
   document.getElementById('hist-view-liste').style.display = tab === 'liste' ? '' : 'none';
   document.getElementById('hist-view-stats').style.display = tab === 'stats' ? '' : 'none';
@@ -1621,26 +1686,62 @@ function switchHistTab(tab, btn) {
 }
 
 function renderStats() {
-  // Utilise TOUTES les demandes (pas seulement l'historique filtré)
-  const all = appData;
-  renderPieChart(all);
-  renderConversionTable(all);
+  populateStatsYears();
+  const rows = ChezPapiStats.filterByReceiptDate(appData, statsFilter, statsReceiptDate);
+  const summary = ChezPapiStats.summarize(rows);
+  const label = statsPeriodLabel();
+  const missingReceiptDates = appData.filter(row => !statsReceiptDate(row.date_reception)).length;
+  const hybridChannels = appData.filter(row => /t[ée]l[ée]phone\s*\+\s*email/i.test(String(row.canal || ''))).length;
+  const legacyOtherTypes = appData.filter(row => String(row.type_evenement || '').trim() === 'Autre').length;
+
+  const allButton = document.getElementById('stats-filter-all');
+  if (allButton) allButton.classList.toggle('active', statsFilter.mode === 'all');
+  ['stats-period-label', 'stats-scope-note'].forEach(id => {
+    const element = document.getElementById(id);
+    if (element) element.textContent = label;
+  });
+
+  const warning = document.getElementById('stats-data-warning');
+  if (warning) {
+    const warnings = [];
+    if (missingReceiptDates > 0) {
+      warnings.push(statsFilter.mode === 'all'
+        ? `${missingReceiptDates} demandes sans date de réception restent incluses dans ce total`
+        : `${missingReceiptDates} demandes sans date de réception sont exclues de cette période`);
+    }
+    if (hybridChannels > 0) warnings.push(`${hybridChannels} canal « Téléphone + Email » est regroupé sous « Téléphone » sans modifier la base`);
+    if (legacyOtherTypes > 0) warnings.push(`${legacyOtherTypes} type « Autre » reste à harmoniser avec « Autres » dans la base`);
+    warning.textContent = warnings.length ? `⚠ ${warnings.join(' · ')}.` : '';
+  }
+
+  const values = {
+    'stats-kpi-total': summary.total.total,
+    'stats-kpi-open': summary.total.open,
+    'stats-kpi-open-rate': statsPercent(summary.total.openRate),
+    'stats-kpi-won': summary.total.won,
+    'stats-kpi-lost': summary.total.lost,
+    'stats-kpi-rejected': summary.total.rejected,
+    'stats-kpi-rejection-rate': statsPercent(summary.total.rejectionRate),
+    'stats-kpi-conversion': statsPercent(summary.total.conversionRate)
+  };
+  Object.entries(values).forEach(([id, value]) => {
+    const element = document.getElementById(id);
+    if (element) element.textContent = value;
+  });
+
+  renderPieChart(rows, summary.byChannel);
+  renderConversionTable(summary.byChannel);
 }
 
-function renderPieChart(rows) {
+function renderPieChart(rows, channelMetrics = ChezPapiStats.summarize(rows).byChannel) {
   const svg    = document.getElementById('stats-pie-svg');
   const legend = document.getElementById('stats-pie-legend');
   if (!svg || !legend) return;
 
-  // Comptage par canal
-  const counts = {};
-  rows.forEach(e => {
-    const canal = normalizeCanal(e.canal) || 'Non renseigné';
-    counts[canal] = (counts[canal] || 0) + 1;
-  });
   const total = rows.length;
-
-  const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  const entries = channelMetrics
+    .map(metrics => [metrics.channel, metrics.total])
+    .sort((a, b) => b[1] - a[1]);
 
   // SVG pie (arc paths)
   const cx = 100, cy = 100, r = 80;
@@ -1696,48 +1797,37 @@ function renderPieChart(rows) {
   legend.innerHTML = legendHtml;
 }
 
-function renderConversionTable(rows) {
+function renderConversionTable(channelMetrics) {
   const tbody = document.getElementById('stats-conversion-tbody');
   if (!tbody) return;
 
-  const CONFIRMED = ['Événement confirmé', 'Événement terminé'];
-  const REJECTED = 'Refusé / Complet';
-
-  // Comptage par canal
-  const byCanal = {};
-  rows.forEach(e => {
-    const canal = normalizeCanal(e.canal) || 'Non renseigné';
-    if (!byCanal[canal]) byCanal[canal] = { total: 0, confirmed: 0, rejected: 0 };
-    byCanal[canal].total++;
-    if (CONFIRMED.includes(e.statut)) byCanal[canal].confirmed++;
-    if (e.statut === REJECTED) byCanal[canal].rejected++;
-  });
-
-  const entries = Object.entries(byCanal).sort((a, b) => b[1].total - a[1].total);
-
-  if (!entries.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="tbl-empty">Aucune donnée</td></tr>';
+  if (!channelMetrics.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="tbl-empty">Aucune donnée</td></tr>';
     return;
   }
 
-  const maxPct = Math.max(...entries.map(([, v]) => v.total > 0 ? v.confirmed / v.total : 0));
-
-  tbody.innerHTML = entries.map(([canal, v]) => {
-    const pct  = v.total > 0 ? v.confirmed / v.total : 0;
-    const pctDisplay = Math.round(pct * 100);
-    // Largeur de la barre relative au maximum pour la lisibilité
-    const barWidth = maxPct > 0 ? Math.round((pct / maxPct) * 100) : 0;
+  tbody.innerHTML = channelMetrics.map(metrics => {
+    const conversion = statsPercent(metrics.conversionRate);
+    const rejection = statsPercent(metrics.rejectionRate);
+    const barWidth = metrics.conversionRate === null ? 0 : Math.round(metrics.conversionRate * 100);
+    const sampleWarning = metrics.commerciallyDecided < 5
+      ? '<span class="stats-sample-warning">Échantillon faible</span>'
+      : '';
     return `<tr>
-      <td><strong>${escHtml(canal)}</strong></td>
-      <td style="text-align:center">${v.total}</td>
-      <td style="text-align:center">${v.confirmed}</td>
-      <td style="text-align:center">${v.rejected}</td>
+      <td><strong>${escHtml(metrics.channel)}</strong></td>
+      <td class="stats-number">${metrics.total}</td>
+      <td class="stats-number">${metrics.open}</td>
+      <td class="stats-number">${metrics.won}</td>
+      <td class="stats-number">${metrics.lost}</td>
+      <td class="stats-number">${metrics.rejected}</td>
       <td>
         <div class="conv-bar-wrap">
           <div class="conv-bar-bg"><div class="conv-bar-fill" style="width:${barWidth}%"></div></div>
-          <span class="conv-pct">${pctDisplay}%</span>
+          <span class="conv-pct">${conversion}</span>
         </div>
+        ${sampleWarning}
       </td>
+      <td class="stats-number">${rejection}</td>
     </tr>`;
   }).join('');
 }

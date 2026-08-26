@@ -34,11 +34,18 @@ run(process.execPath, ['--check', 'chez-papi/prototypes/relances/app.js']);
 run(process.execPath, ['--check', 'chez-papi/prototypes/relances/sw.js']);
 run(process.execPath, ['scripts/audit-blueprints.mjs']);
 run(process.execPath, ['scripts/test-demand-matching.mjs']);
+run(process.execPath, ['scripts/test-statistics.mjs']);
 run('python3', ['-m', 'json.tool', 'make/Integration Email - Wix - Voxist.blueprint.json'], { stdio: 'ignore' });
 run('python3', ['-m', 'json.tool', 'make/Integration Tally.blueprint.json'], { stdio: 'ignore' });
 
 requireText('chez-papi/app.js', 'const HOME_PAGE_SIZE = 10;');
 requireText('chez-papi/app.js', 'function showMoreHome(section)');
+requireText('chez-papi/app.js', 'function applyStatsYearQuarter()');
+requireText('chez-papi/app.js', 'ChezPapiStats.filterByReceiptDate(appData, statsFilter, statsReceiptDate)');
+requireText('chez-papi/index.html', 'id="stats-kpi-conversion"');
+requireText('chez-papi/index.html', 'id="stats-date-from"');
+requireText('chez-papi/statistics.js', "metrics.won + metrics.lost");
+requireText('chez-papi/statistics.js', "lower === 'téléphone + email'");
 requireText('chez-papi/index.html', 'id="new-demandes-more"');
 requireText('chez-papi/index.html', 'id="upcoming-more"');
 requireText('chez-papi/index.html', 'id="confirmed-more"');

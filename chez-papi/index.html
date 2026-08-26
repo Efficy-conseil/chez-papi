@@ -27,7 +27,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
 
-<link rel="stylesheet" href="styles.css?v=2.39">
+<link rel="stylesheet" href="styles.css?v=2.40">
 </head>
 
 <body>
@@ -373,30 +373,70 @@
 
 <!-- ── Vue Statistiques ── -->
 <div id="hist-view-stats" style="display:none;">
+  <div class="card stats-filters-card">
+    <div>
+      <h3 class="stats-title">Période analysée</h3>
+      <div class="stats-scope-note" id="stats-period-label">Toutes les dates de réception</div>
+    </div>
+    <div class="stats-filter-controls">
+      <button type="button" class="hist-filter-btn active" id="stats-filter-all" onclick="resetStatsFilters()">Tout</button>
+      <label>Année
+        <select id="stats-year"></select>
+      </label>
+      <label>Trimestre
+        <select id="stats-quarter">
+          <option value="">Année entière</option>
+          <option value="1">T1</option>
+          <option value="2">T2</option>
+          <option value="3">T3</option>
+          <option value="4">T4</option>
+        </select>
+      </label>
+      <button type="button" class="hist-filter-btn" onclick="applyStatsYearQuarter()">Appliquer</button>
+      <span class="stats-range">
+        Du <input type="date" id="stats-date-from">
+        au <input type="date" id="stats-date-to">
+        <button type="button" class="hist-filter-btn" onclick="applyStatsDateRange()">Appliquer</button>
+      </span>
+    </div>
+    <div class="stats-data-warning" id="stats-data-warning"></div>
+  </div>
+
+  <div class="stats-kpi-grid" id="stats-kpi-grid">
+    <div class="card stats-kpi"><span>Demandes reçues</span><strong id="stats-kpi-total">0</strong></div>
+    <div class="card stats-kpi"><span>Dossiers ouverts</span><strong id="stats-kpi-open">0</strong><small id="stats-kpi-open-rate">0 %</small></div>
+    <div class="card stats-kpi stats-kpi-success"><span>Gagnés</span><strong id="stats-kpi-won">0</strong></div>
+    <div class="card stats-kpi"><span>Perdus</span><strong id="stats-kpi-lost">0</strong></div>
+    <div class="card stats-kpi stats-kpi-warning"><span>Refusés / complets</span><strong id="stats-kpi-rejected">0</strong><small id="stats-kpi-rejection-rate">0 %</small></div>
+    <div class="card stats-kpi stats-kpi-primary"><span>Transformation commerciale</span><strong id="stats-kpi-conversion">—</strong><small>gagnés ÷ (gagnés + perdus)</small></div>
+  </div>
+
   <div class="stats-grid">
 
     <!-- Camembert : répartition par canal -->
     <div class="card stats-card">
       <h3 class="stats-title">Origine des demandes par canal</h3>
-      <div class="stats-scope-note" id="stats-scope-note">Toutes les demandes</div>
+      <div class="stats-scope-note" id="stats-scope-note">Toutes les dates de réception</div>
       <div class="pie-wrap">
         <svg id="stats-pie-svg" viewBox="0 0 200 200" width="200" height="200"></svg>
         <div class="pie-legend" id="stats-pie-legend"></div>
       </div>
     </div>
 
-    <!-- Tableau : taux de conversion par canal -->
-    <div class="card stats-card">
-      <h3 class="stats-title">Taux de conversion par canal</h3>
-      <div class="stats-scope-note">Toutes les demandes · « Refusé / Complet » est compté comme non converti</div>
+    <div class="card stats-card stats-performance-card">
+      <h3 class="stats-title">Performance commerciale par canal</h3>
+      <div class="stats-scope-note">Les dossiers ouverts et les refus sont exclus du taux de transformation commercial</div>
       <div class="tbl-wrap">
       <table class="tbl stats-tbl" id="stats-conversion-tbl">
         <thead><tr>
           <th>Canal</th>
-          <th>Demandes</th>
-          <th>Confirmées</th>
-          <th>Refusé / Complet</th>
-          <th>Taux</th>
+          <th>Reçues</th>
+          <th>Ouvertes</th>
+          <th>Gagnées</th>
+          <th>Perdues</th>
+          <th>Refusées</th>
+          <th>Transformation</th>
+          <th>Taux de refus</th>
         </tr></thead>
         <tbody id="stats-conversion-tbody"></tbody>
       </table>
@@ -607,7 +647,8 @@
 </div>
 </div>
 
-<script src="app.js?v=2.39"></script>
+<script src="statistics.js?v=1.0"></script>
+<script src="app.js?v=2.40"></script>
 
 <!-- ── BOTTOM NAVIGATION (mobile uniquement) ── -->
 <nav class="bottom-nav" id="bottom-nav">

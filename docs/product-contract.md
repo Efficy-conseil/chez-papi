@@ -329,6 +329,10 @@ Comportement attendu :
 - Boutons `Appeler` et `Ouvrir le fil` alignés et cohérents visuellement.
 - Le champ `Demande reçue le` doit être renseigné depuis `date_reception`.
 - Les relances doivent être visibles via les champs techniques quand l'IHM V2 les exploite.
+- Les statistiques temporelles utilisent `date_reception`, indépendamment des filtres de l'Historique fondés sur la date d'événement.
+- La transformation commerciale correspond aux demandes `Événement confirmé` ou `Événement terminé` divisées par ces demandes gagnées plus les demandes `Perdu / Sans suite`. Les dossiers ouverts et `Refusé / Complet` sont présentés séparément et exclus de ce taux.
+- Les demandes sans date de réception restent visibles dans le total global, mais sont exclues des périodes datées avec un avertissement explicite.
+- Pour les statistiques uniquement, la valeur historique `Téléphone + Email` est regroupée sous `Téléphone` sans réécriture de la donnée de production ; `Saisie manuelle` reste un canal distinct.
 
 ## Filtres Gmail
 
