@@ -1692,7 +1692,6 @@ function renderStats() {
   const label = statsPeriodLabel();
   const missingReceiptDates = appData.filter(row => !statsReceiptDate(row.date_reception)).length;
   const hybridChannels = appData.filter(row => /t[ée]l[ée]phone\s*\+\s*email/i.test(String(row.canal || ''))).length;
-  const legacyOtherTypes = appData.filter(row => String(row.type_evenement || '').trim() === 'Autre').length;
 
   const allButton = document.getElementById('stats-filter-all');
   if (allButton) allButton.classList.toggle('active', statsFilter.mode === 'all');
@@ -1710,7 +1709,6 @@ function renderStats() {
         : `${missingReceiptDates} demandes sans date de réception sont exclues de cette période`);
     }
     if (hybridChannels > 0) warnings.push(`${hybridChannels} canal « Téléphone + Email » est regroupé sous « Téléphone » sans modifier la base`);
-    if (legacyOtherTypes > 0) warnings.push(`${legacyOtherTypes} type « Autre » reste à harmoniser avec « Autres » dans la base`);
     warning.textContent = warnings.length ? `⚠ ${warnings.join(' · ')}.` : '';
   }
 

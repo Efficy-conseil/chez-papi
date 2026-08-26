@@ -304,7 +304,7 @@ Le graphique en anneau présente le volume et la part de chaque canal. Pour les 
 
 Le tableau par canal affiche : reçues, ouvertes, gagnées, perdues, refusées, taux de transformation commercial et taux de refus. Un avertissement `Échantillon faible` apparaît lorsque moins de cinq dossiers sont commercialement décidés.
 
-Les anomalies connues utiles à l'interprétation, notamment les dates de réception absentes et la valeur de type historique `Autre`, sont signalées sans modifier les données de production.
+Les dates de réception absentes sont signalées sans modifier les données de production.
 
 ## 10. Fiche d'une demande
 
