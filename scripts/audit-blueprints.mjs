@@ -80,11 +80,21 @@ assert(
   );
 });
 
-const audioExtraction = moduleById(mainModules, 13);
-const audioExtractionPrompt = JSON.stringify(audioExtraction.mapper?.messages || []);
-assert(!audioExtractionPrompt.includes('transcription complète'), 'sortie JSON audio encore exposée à une transcription complète non bornée');
-assert(audioExtractionPrompt.includes('limité à 900 caractères'), 'limite de message_original absente de la qualification audio');
-assert(audioExtraction.mapper?.max_tokens === '1600', 'marge de sortie JSON audio insuffisante');
+[
+  [21, 'transcription Voxist'],
+  [13, 'audio Voxist']
+].forEach(([moduleId, routeName]) => {
+  const extraction = moduleById(mainModules, moduleId);
+  const prompt = JSON.stringify(extraction.mapper?.messages || []);
+  assert(prompt.includes('maximum 600 caractères'), `limite de message_original absente de la qualification ${routeName}`);
+  assert(prompt.includes('ne conserve chaque phrase ou séquence répétée qu’une seule fois'), `déduplication des répétitions absente de la qualification ${routeName}`);
+  assert(prompt.includes('ferme immédiatement le JSON'), `fermeture du JSON non prioritaire dans la qualification ${routeName}`);
+  assert(prompt.includes('maximum 300 caractères si is_demande = false'), `sortie hors périmètre non bornée dans la qualification ${routeName}`);
+  assert(prompt.includes('quelle que soit sa durée'), `prise en charge des vocaux longs absente de la qualification ${routeName}`);
+  assert(prompt.includes('toutes les informations métier uniques'), `extraction complète des vocaux longs absente de la qualification ${routeName}`);
+  assert(prompt.includes('La durée du vocal ne doit jamais modifier is_demande'), `durée susceptible de fausser la qualification ${routeName}`);
+  assert(extraction.mapper?.max_tokens === '1600', `marge de sortie JSON ${routeName} insuffisante`);
+});
 
 const httpModules = [...mainModules, ...tallyModules].filter(module => module.module === 'http:ActionSendData');
 assert(httpModules.length > 0, 'aucun module HTTP trouvé');
