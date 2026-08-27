@@ -96,6 +96,29 @@ assert(
   assert(extraction.mapper?.max_tokens === '1600', `marge de sortie JSON ${routeName} insuffisante`);
 });
 
+const voxistPrefilterRouter = moduleById(mainModules, 69);
+const emptyVoxistFallback = voxistPrefilterRouter.routes?.[voxistPrefilterRouter.parameters?.else]?.flow?.[0];
+assert(emptyVoxistFallback?.id === 64, 'route de secours Voxist vide absente ou non archivée hors périmètre');
+
+const audioAttachmentModule = moduleById(mainModules, 19);
+const audioAttachmentConditions = audioAttachmentModule.filter?.conditions?.flat() || [];
+assert(
+  audioAttachmentConditions.some(condition =>
+    condition?.a === '{{1.fullTextBody}}' &&
+    condition?.b === 'Vous avez utilisé toutes vos retranscriptions' &&
+    condition?.o === 'text:contain'
+  ),
+  'route audio Voxist non conditionnée à l’absence de transcription'
+);
+assert(
+  audioAttachmentConditions.some(condition =>
+    condition?.a === '{{1.fullTextBody}}' &&
+    condition?.b === 'Durée 0 seconde' &&
+    condition?.o === 'text:notcontain'
+  ),
+  'vocal Voxist de 0 seconde encore envoyé au module de transcription audio'
+);
+
 const httpModules = [...mainModules, ...tallyModules].filter(module => module.module === 'http:ActionSendData');
 assert(httpModules.length > 0, 'aucun module HTTP trouvé');
 httpModules.forEach(module => {

@@ -6993,6 +6993,11 @@
                                                             "a": "{{1.fullTextBody}}",
                                                             "b": "Vous avez utilisé toutes vos retranscriptions",
                                                             "o": "text:contain"
+                                                        },
+                                                        {
+                                                            "a": "{{1.fullTextBody}}",
+                                                            "b": "Durée 0 seconde",
+                                                            "o": "text:notcontain"
                                                         }
                                                     ]
                                                 ]

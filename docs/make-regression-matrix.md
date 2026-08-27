@@ -61,6 +61,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | V23 | Rattachement Voxist transcription ou audio réussi (`updated=true`) | Aucun doublon n'est créé et l'e-mail est archivé dans `Historique_Voxist`, en lisant `updated` et `reason` sous `data.data` | Backend + automatique + essai Make |
 | V24 | Vocal Voxist de Marilyn, appelante `06 98 20 58 92`, demandant confirmation de l'adresse et de l'heure de livraison | Le mot `livraison` atteint la qualification Voxist ; la demande active unique portant ce numéro est enrichie, apparaît dans `Messages reçus`, puis l'e-mail est archivé dans `Historique_Voxist` | Automatique + essai Make |
 | V25 | Vocal métier de plusieurs minutes contenant hésitations, silences, répétitions et informations utiles réparties du début à la fin | Toute la transcription est analysée ; les informations métier uniques sont extraites dans les champs structurés, la durée ne modifie pas `is_demande`, `message_original` reste synthétique et le JSON est complet | Automatique + essai Make |
+| V26 | Email Voxist annonçant un message de `0 seconde`, sans transcription ni pièce jointe audio exploitable | Le module 7 n'est pas exécuté, aucun appel OpenAI ni aucune demande ne sont créés, et l'e-mail est archivé dans `Hors_Scope_Make` sans exécution incomplète | Automatique + essai Make |
 
 ## Email direct
 
