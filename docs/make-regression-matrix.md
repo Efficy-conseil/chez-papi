@@ -87,6 +87,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | E18 | Suivi Email d’une demande Voxist sans email, avec même nom d’expéditeur Gmail et même date de prestation | Rattachement à l’unique demande active sur nom + date, enrichissement avec l’email, statut et canal conservés, puis `Historique_Email` ; aucun rattachement sur la date seule | Automatique + essai Make |
 | E19 | Nouvelle demande Email avec téléphone `6xxxxxxxx`, `06xxxxxxxx` ou `+336xxxxxxxx` | La ligne contient `06 xx xx xx xx` | Automatique + essai Make |
 | E20 | Manon Bordas répond qu’elle a choisi un autre prestataire à la demande Voxist active `Bordas Manon`, sans email initial | Le message est un suivi même si l’IA le classe hors périmètre ; la comparaison prénom/nom est indépendante de l’ordre, l’adresse de l’expéditeur complète la fiche, puis le message apparaît dans `Messages reçus` et est archivé dans `Historique_Email` ; aucune nouvelle ligne | Backend + automatique + essai Make |
+| E21 | Moreno Manon écrit « Je me permets de vous relancer car mon précédent mail est resté sans réponse » depuis l’adresse d’une unique demande active, sans redonner la date ni le besoin | Le message emprunte la route de suivi même si l’IA le classe hors périmètre, enrichit l’unique demande existante, positionne `relance_a_traiter = TRUE`, puis est archivé dans `Historique_Email` ; aucune nouvelle ligne. Sans candidate unique, l’email reste en boîte de réception | Backend + automatique + essai Make |
 
 ## Tally
 

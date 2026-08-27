@@ -368,6 +368,15 @@ const newEmailDemandFilter = JSON.stringify(newEmailDemand.filter || {});
   assert(existingFollowupFilter.includes(marker), `indice déterministe de suivi absent du module 81 : ${marker}`);
   assert(newEmailDemandFilter.includes(marker) && newEmailDemandFilter.includes('text:notcontain'), `indice de suivi non exclu de la création Email : ${marker}`);
 });
+const explicitReminderMarkers = ['me permets de vous relancer', 'précédent mail', 'sans réponse'];
+const followupArchiveFilter = JSON.stringify(moduleById(mainModules, 82).filter || {});
+const outOfScopeEmailFilter = JSON.stringify(moduleById(mainModules, 51).filter || {});
+explicitReminderMarkers.forEach(marker => {
+  assert(existingFollowupFilter.includes(marker), `relance explicite absente de la route déterministe du module 81 : ${marker}`);
+  assert(followupArchiveFilter.includes(marker) && followupArchiveFilter.includes('{{81.data.data.updated}}'), `archivage après rattachement absent pour la relance explicite : ${marker}`);
+  assert(newEmailDemandFilter.includes(marker) && newEmailDemandFilter.includes('text:notcontain'), `relance explicite non exclue de la création Email : ${marker}`);
+  assert(outOfScopeEmailFilter.includes(marker) && outOfScopeEmailFilter.includes('text:notcontain'), `relance explicite encore archivable hors périmètre : ${marker}`);
+});
 assert(
   existingFollowupFilter.includes('choisi un autre prestataire'),
   'réponse de refus après devis absente de la route déterministe de suivi'
@@ -397,6 +406,11 @@ assert(
 assert(
   emailAnalysisPrompt.includes('choisi un autre prestataire'),
   'règle de suivi pour une réponse de refus après devis absente de l’analyse Email direct'
+);
+assert(
+  explicitReminderMarkers.every(marker => emailAnalysisPrompt.includes(marker)) &&
+    emailAnalysisPrompt.includes('Retourne obligatoirement is_demande=true, is_followup=true'),
+  'règle prioritaire des relances explicites absente de l’analyse Email direct'
 );
 assert(
   readFileSync('apps-script/code.gs', 'utf8').includes('const exactNameFollowup'),
