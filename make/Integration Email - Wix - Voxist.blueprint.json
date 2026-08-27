@@ -18254,10 +18254,10 @@
         "version": 1,
         "scenario": {
             "roundtrips": 1,
-            "maxErrors": 3,
+            "maxErrors": 10,
             "autoCommit": true,
             "autoCommitTriggerLast": true,
-            "sequential": true,
+            "sequential": false,
             "slots": null,
             "confidential": false,
             "dataloss": false,

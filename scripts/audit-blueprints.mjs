@@ -143,7 +143,16 @@ assert(!duplicateBody.includes('toJSON('), 'fonction Make toJSON non prise en ch
 assert(!duplicateBody.includes('\\) +'), 'expression Make corrompue dans le module 60');
 assert(!mainRaw.includes('60.data.count'), 'anti-doublon du module 60 lu sans l’enveloppe data');
 
-assert(main.metadata?.scenario?.dlq === true, 'conservation des exécutions incomplètes désactivée');
+[
+  [main, 'Email/Wix/Voxist'],
+  [tally, 'Tally']
+].forEach(([blueprint, scenarioName]) => {
+  const settings = blueprint.metadata?.scenario || {};
+  assert(settings.dlq === true, `conservation des exécutions incomplètes désactivée pour ${scenarioName}`);
+  assert(settings.dataloss === false, `perte des exécutions incomplètes autorisée pour ${scenarioName}`);
+  assert(settings.sequential === false, `traitement séquentiel encore bloquant pour ${scenarioName}`);
+  assert(settings.maxErrors >= 10, `seuil de désactivation trop bas pour ${scenarioName}`);
+});
 const retryModules = new Map([
   [60, 'checkDuplicate'],
   [43, 'upsertWixDemand'],
@@ -152,6 +161,7 @@ const retryModules = new Map([
   [84, 'updateWixFollowup'],
   [85, 'updateThreadFollowup'],
   [94, 'updateExistingDemandFollowup'],
+  [102, 'updateExistingDemandFollowup'],
   [62, 'createMakeDemand'],
   [15, 'createMakeDemand']
 ]);
@@ -424,17 +434,29 @@ const tallyTrigger = moduleById(tallyModules, 1);
 assert(tallyTrigger.module === 'tally:watchNewResponse', 'déclencheur Tally remplacé par un module non instantané');
 assert(tallyTrigger.parameters?.__IMTHOOK__, 'webhook absent du déclencheur Tally');
 assert(tally.metadata?.instant === true, 'scénario Tally non déclaré instantané dans le blueprint');
-assert(tally.metadata?.scenario?.dlq === true, 'conservation des exécutions Tally incomplètes désactivée');
 assert(tallyHttp.filter?.conditions?.flat().some(condition => condition.b === 'Gx52AQ'), 'formId Tally de production absent');
 assert((tallyHttp.mapper?.data || '').includes('"action":"checkDuplicate"'), 'anti-doublon Tally non relié au backend');
 const tallyRetry = tallyHttp.onerror?.[0];
 assert(tallyRetry?.module === 'builtin:Break', 'gestionnaire Retry absent sur l’anti-doublon Tally');
 assert(tallyRetry.mapper?.retry === true, 'reprise automatique Tally désactivée');
 assert(tallyRetry.mapper?.count === '3' && tallyRetry.mapper?.interval === '5', 'reprise Tally attendue 3 × 5 min absente');
-const tallyCreationConditions = (moduleById(tallyModules, 2).filter?.conditions || []).flat();
+const tallyCreation = moduleById(tallyModules, 2);
+const tallyCreationConditions = (tallyCreation.filter?.conditions || []).flat();
 assert(
   tallyCreationConditions.some(condition => condition?.a === '{{4.data.data.count}}' && condition?.b === '0' && condition?.o === 'number:equal'),
   'création Tally non protégée par le count de la réponse HTTP sous data.data'
+);
+assert(tallyCreation.module === 'http:ActionSendData', 'création Tally encore réalisée directement dans Google Sheets');
+const tallyCreationBody = tallyCreation.mapper?.data || '';
+const tallyCreationRow = JSON.parse(tallyCreationBody).row || {};
+assert(tallyCreationBody.includes('"action":"createMakeDemand"'), 'création Tally non reliée au backend idempotent');
+assert(tallyCreationBody.includes('"id_demande":"TALLY-{{1.submissionId}}"'), 'identifiant idempotent Tally absent');
+const tallyCreationRetry = tallyCreation.onerror?.find(module => module.module === 'builtin:Break');
+assert(tallyCreation.onerror?.length === 1, 'la création Tally dépend encore d’un gestionnaire d’erreur secondaire');
+assert(tallyCreationRetry?.mapper?.retry === true, 'reprise automatique de la création Tally désactivée');
+assert(
+  tallyCreationRetry?.mapper?.count === '3' && tallyCreationRetry?.mapper?.interval === '5',
+  'reprise de création Tally attendue 3 × 5 min absente'
 );
 const tallyResultRouter = moduleById(tallyModules, 5);
 assert(
@@ -467,15 +489,14 @@ function formatDirectPhoneSample(value) {
     .replace(/^(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/, '$1 $2 $3 $4 $5');
 }
 const directPhoneSamples = [`'+33603156125`, '+33603156125', '0603156125', '603156125'];
-const tallyPhoneMapping = moduleById(tallyModules, 2).mapper?.values?.telephone || '';
+const tallyPhoneMapping = tallyCreationRow.telephone || '';
 assertDirectPhoneMapping(tallyPhoneMapping, 'Tally');
 const emailPhoneMapping = moduleById(mainModules, 39).mapper?.values?.telephone || '';
 assertDirectPhoneMapping(emailPhoneMapping, 'Email direct');
 directPhoneSamples.forEach(value => {
   assert(formatDirectPhoneSample(value) === '06 03 15 61 25', `normalisation directe incorrecte pour ${value}`);
 });
-assert(!tallyModules.some(module => /google-sheets:(search|select|get|list)/i.test(module.module)), 'lecture Google Sheets détectée dans Tally');
-assert(tallyModules.some(module => module.module === 'google-sheets:addRow'), 'création Tally absente');
-assert((moduleById(tallyModules, 2).mapper?.values?.date_evenement || '').includes('DD/MM/YYYY'), 'date Tally non normalisée au format français');
+assert(!tallyModules.some(module => /google-sheets:/i.test(module.module)), 'accès Google Sheets direct encore présent dans Tally');
+assert(tallyCreationBody.includes('DD/MM/YYYY'), 'date Tally non normalisée au format français');
 
 console.log(`Audit blueprints réussi : ${mainModules.length} modules principaux, ${tallyModules.length} modules Tally.`);

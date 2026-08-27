@@ -146,7 +146,7 @@ Contrainte critique :
 - Une source métier ne doit jamais être uniquement exclue d'une route sans disposer d'une route de secours.
 - Si une route source est bloquée par `count > 0`, il doit exister un comportement explicite : archiver comme déjà traité, mettre à jour une demande existante, ou signaler une anomalie.
 - Tout texte libre interpolé dans un corps JSON brut Make doit être protégé avec `escapeJSON` afin de préserver les retours à la ligne, guillemets et antislashs sans produire un JSON invalide.
-- Lorsqu'une création Make passe par le backend, elle utilise l'action `createMakeDemand`. Les écritures directes encore conservées pour Voxist, Email direct et Tally restent l'exception transitoire documentée dans les décisions issues de l'audit et doivent appliquer elles-mêmes les normalisations nécessaires.
+- Lorsqu'une création Make passe par le backend, elle utilise l'action `createMakeDemand`. Les écritures directes encore conservées pour Email direct restent l'exception transitoire documentée dans les décisions issues de l'audit et doivent appliquer elles-mêmes les normalisations nécessaires.
 
 ## Make - Wix
 
@@ -259,7 +259,8 @@ Comportement attendu :
 - Anti-doublon via backend `checkDuplicate`.
 - Création `TALLY-<submissionId>`.
 - Canal -> `Réseaux sociaux`.
-- Téléphone normalisé au format français lisible avant l'écriture directe dans Google Sheets.
+- Création via l'action backend idempotente `createMakeDemand`, sous verrou, afin qu'une reprise de `TALLY-<submissionId>` ne puisse pas ajouter une seconde ligne.
+- Téléphone normalisé au format français lisible avant l'écriture backend.
 - Accusé Tally propre après création.
 
 Contrainte :
@@ -267,6 +268,8 @@ Contrainte :
 - Le module anti-doublon ne doit pas relire Google Sheets directement via Make, pour éviter les quotas Sheets API.
 - Une réponse anti-doublon sans champ `count` exploitable doit produire une erreur visible et ne doit créer ni ligne ni accusé.
 - Une erreur HTTP du module anti-doublon doit déclencher trois reprises automatiques espacées de cinq minutes. Si elles échouent, l’exécution incomplète doit rester disponible pour une reprise manuelle.
+- Une erreur HTTP lors de la création backend doit suivre la même politique. Les demandes suivantes ne doivent pas attendre sa résolution.
+- Les scénarios Make ne traitent pas les données dans un ordre bloquant : une exécution incomplète est isolée pendant que les demandes suivantes continuent.
 - Après import du blueprint dans un nouveau scénario, un webhook Tally doit être créé ou sélectionné dans le premier module et le scénario doit afficher une exécution immédiate à l'arrivée des données, jamais une planification toutes les 15 minutes.
 
 ## Backend Apps Script
@@ -287,6 +290,7 @@ Actions Make avec `make_token` :
 - `updateThreadFollowup`
 - `updateWixFollowup`
 - `updateExistingDemandFollowup`
+- `createMakeDemand`
 
 Contraintes backend :
 

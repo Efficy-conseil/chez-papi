@@ -574,10 +574,11 @@
                     "flow": [
                         {
                             "id": 2,
-                            "module": "google-sheets:addRow",
-                            "version": 2,
+                            "module": "http:ActionSendData",
+                            "version": 3,
                             "parameters": {
-                                "__IMTCONN__": 7978056
+                                "handleErrors": true,
+                                "useNewZLibDeCompress": true
                             },
                             "filter": {
                                 "name": "Anti-doublon - créer uniquement si count = 0",
@@ -592,624 +593,50 @@
                                 ]
                             },
                             "mapper": {
-                                "from": "drive",
-                                "mode": "select",
-                                "values": {
-                                    "canal": "Réseaux sociaux",
-                                    "notes": "Type de prestation : {{ifempty(1.fieldsById.question_1Ejxjb; \"Non renseigné\")}}\nOptions : {{ifempty(1.fieldsById.question_M50g08; \"Non renseigné\")}}\nEnvies détaillées : {{ifempty(1.fieldsById.question_pVgMgP; \"Non renseigné\")}}",
-                                    "statut": "Nouvelle demande",
-                                    "telephone": "{{replace(replace(replace(replace(1.fieldsById.question_A8k0kl; \"/\\D/g\"; \"\"); \"/^(?:0033|33)0?/\"; \"0\"); \"/^(\\d{9})$/\"; \"0$1\"); \"/^(\\d{2})(\\d{2})(\\d{2})(\\d{2})(\\d{2})$/\"; \"$1 $2 $3 $4 $5\")}}",
-                                    "id_demande": "TALLY-{{1.submissionId}}",
-                                    "nom_client": "{{1.fieldsById.question_7ZQeQ2}}",
-                                    "nb_convives": "{{1.fieldsById.question_K0XgXD}}",
-                                    "email_client": "{{1.fieldsById.question_bOaDa7}}",
-                                    "budget_estime": "{{1.fieldsById.question_J0ygyX}}",
-                                    "date_evenement": "{{ifempty(formatDate(1.fieldsById.question_BBvgv1; \"DD/MM/YYYY\"); \"Inconnu / à compléter\")}}",
-                                    "date_reception": "{{1.createdAt}}",
-                                    "type_evenement": "{{1.fieldsById.question_kZLpLZ}}",
-                                    "heure_evenement": "",
-                                    "lieu_prestation": "{{1.fieldsById.question_L08g8J}}",
-                                    "message_original": "{{1.fieldsById.question_g4BpBJ}}",
-                                    "url_dossier_drive": "",
-                                    "url_email_origine": "",
-                                    "derniere_modification": "{{1.createdAt}}"
-                                },
-                                "sheetId": "Demandes",
-                                "spreadsheetId": "/1KCHd6vdtlElV7wR9kg1ZhTsvEfE56BMDd_L32Q6KzgQ",
-                                "includesHeaders": true,
-                                "insertDataOption": "INSERT_ROWS",
-                                "useColumnHeaders": true,
-                                "valueInputOption": "RAW",
-                                "insertUnformatted": true
+                                "url": "https://script.google.com/macros/s/AKfycbzouc3kD6Qc68XzK3Ne_Rlnh5_e5o_IVMkAkHKAXJl-BFrxIIVEj7IS684CugVmh2Qlow/exec",
+                                "serializeUrl": false,
+                                "method": "post",
+                                "headers": [],
+                                "qs": [],
+                                "bodyType": "raw",
+                                "parseResponse": true,
+                                "authUser": "",
+                                "authPass": "",
+                                "timeout": "",
+                                "shareCookies": false,
+                                "ca": "",
+                                "rejectUnauthorized": true,
+                                "followRedirect": true,
+                                "useQuerystring": false,
+                                "gzip": true,
+                                "useMtls": false,
+                                "contentType": "application/json",
+                                "data": "{\"action\":\"createMakeDemand\",\"make_token\":\"cp_make_followup_2026_06\",\"row\":{\"id_demande\":\"TALLY-{{1.submissionId}}\",\"date_reception\":\"{{1.createdAt}}\",\"canal\":\"Réseaux sociaux\",\"nom_client\":\"{{escapeJSON(1.fieldsById.question_7ZQeQ2)}}\",\"telephone\":\"{{replace(replace(replace(replace(1.fieldsById.question_A8k0kl; \\\"/\\\\D/g\\\"; \\\"\\\"); \\\"/^(?:0033|33)0?/\\\"; \\\"0\\\"); \\\"/^(\\\\d{9})$/\\\"; \\\"0$1\\\"); \\\"/^(\\\\d{2})(\\\\d{2})(\\\\d{2})(\\\\d{2})(\\\\d{2})$/\\\"; \\\"$1 $2 $3 $4 $5\\\")}}\",\"email_client\":\"{{escapeJSON(1.fieldsById.question_bOaDa7)}}\",\"type_evenement\":\"{{escapeJSON(1.fieldsById.question_kZLpLZ)}}\",\"date_evenement\":\"{{escapeJSON(ifempty(formatDate(1.fieldsById.question_BBvgv1; \\\"DD/MM/YYYY\\\"); \\\"Inconnu / à compléter\\\"))}}\",\"heure_evenement\":\"\",\"nb_convives\":\"{{escapeJSON(1.fieldsById.question_K0XgXD)}}\",\"lieu_prestation\":\"{{escapeJSON(1.fieldsById.question_L08g8J)}}\",\"budget_estime\":\"{{escapeJSON(1.fieldsById.question_J0ygyX)}}\",\"statut\":\"Nouvelle demande\",\"message_original\":\"{{escapeJSON(1.fieldsById.question_g4BpBJ)}}\",\"url_email_origine\":\"\",\"notes\":\"Type de prestation : {{escapeJSON(ifempty(1.fieldsById.question_1Ejxjb; \\\"Non renseigné\\\"))}}\\nOptions : {{escapeJSON(ifempty(1.fieldsById.question_M50g08; \\\"Non renseigné\\\"))}}\\nEnvies détaillées : {{escapeJSON(ifempty(1.fieldsById.question_pVgMgP; \\\"Non renseigné\\\"))}}\",\"url_dossier_drive\":\"\",\"gmail_message_id\":\"TALLY-{{1.submissionId}}\",\"nb_relances_client\":0,\"relance_a_traiter\":false}}",
+                                "followAllRedirects": true
                             },
                             "metadata": {
                                 "designer": {
                                     "x": 600,
                                     "y": 150,
-                                    "name": "Ajouter demande Tally dans Google Sheet"
-                                },
-                                "restore": {
-                                    "expect": {
-                                        "from": {
-                                            "label": "My Drive"
-                                        },
-                                        "mode": {
-                                            "label": "Search by path"
-                                        },
-                                        "sheetId": {
-                                            "label": "Demandes"
-                                        },
-                                        "spreadsheetId": {
-                                            "path": [
-                                                "demande-chez-papi-maison-gourmande"
-                                            ]
-                                        },
-                                        "includesHeaders": {
-                                            "label": "Yes"
-                                        },
-                                        "insertDataOption": {
-                                            "mode": "chose",
-                                            "label": "Insert rows"
-                                        },
-                                        "useColumnHeaders": {
-                                            "label": "Yes",
-                                            "nested": [
-                                                {
-                                                    "name": "values",
-                                                    "spec": [
-                                                        {
-                                                            "name": "id_demande",
-                                                            "type": "text",
-                                                            "label": "id_demande (A)"
-                                                        },
-                                                        {
-                                                            "name": "date_reception",
-                                                            "type": "text",
-                                                            "label": "date_reception (B)"
-                                                        },
-                                                        {
-                                                            "name": "canal",
-                                                            "type": "text",
-                                                            "label": "canal (C)"
-                                                        },
-                                                        {
-                                                            "name": "nom_client",
-                                                            "type": "text",
-                                                            "label": "nom_client (D)"
-                                                        },
-                                                        {
-                                                            "name": "telephone",
-                                                            "type": "text",
-                                                            "label": "telephone (E)"
-                                                        },
-                                                        {
-                                                            "name": "email_client",
-                                                            "type": "text",
-                                                            "label": "email_client (F)"
-                                                        },
-                                                        {
-                                                            "name": "type_evenement",
-                                                            "type": "text",
-                                                            "label": "type_evenement (G)"
-                                                        },
-                                                        {
-                                                            "name": "date_evenement",
-                                                            "type": "text",
-                                                            "label": "date_evenement (H)"
-                                                        },
-                                                        {
-                                                            "name": "heure_evenement",
-                                                            "type": "text",
-                                                            "label": "Heure evenement"
-                                                        },
-                                                        {
-                                                            "name": "nb_convives",
-                                                            "type": "text",
-                                                            "label": "nb_convives (I)"
-                                                        },
-                                                        {
-                                                            "name": "lieu_prestation",
-                                                            "type": "text",
-                                                            "label": "lieu_prestation (J)"
-                                                        },
-                                                        {
-                                                            "name": "budget_estime",
-                                                            "type": "text",
-                                                            "label": "budget_estime (K)"
-                                                        },
-                                                        {
-                                                            "name": "statut",
-                                                            "type": "text",
-                                                            "label": "statut (L)"
-                                                        },
-                                                        {
-                                                            "name": "message_original",
-                                                            "type": "text",
-                                                            "label": "message_original (M)"
-                                                        },
-                                                        {
-                                                            "name": "url_email_origine",
-                                                            "type": "text",
-                                                            "label": "url_email_origine (N)"
-                                                        },
-                                                        {
-                                                            "name": "notes",
-                                                            "type": "text",
-                                                            "label": "notes (O)"
-                                                        },
-                                                        {
-                                                            "name": "url_dossier_drive",
-                                                            "type": "text",
-                                                            "label": "url_dossier_drive (P)"
-                                                        },
-                                                        {
-                                                            "name": "derniere_modification",
-                                                            "type": "text",
-                                                            "label": "derniere_modification (Q)"
-                                                        }
-                                                    ],
-                                                    "type": "collection",
-                                                    "label": "Values in columns",
-                                                    "metadata": [
-                                                        [
-                                                            [
-                                                                "id_demande",
-                                                                "date_reception",
-                                                                "canal",
-                                                                "nom_client",
-                                                                "telephone",
-                                                                "email_client",
-                                                                "type_evenement",
-                                                                "date_evenement",
-                                                                "heure_evenement",
-                                                                "nb_convives",
-                                                                "lieu_prestation",
-                                                                "budget_estime",
-                                                                "statut",
-                                                                "message_original",
-                                                                "url_email_origine",
-                                                                "notes",
-                                                                "url_dossier_drive",
-                                                                "derniere_modification"
-                                                            ]
-                                                        ]
-                                                    ]
-                                                }
-                                            ]
-                                        },
-                                        "valueInputOption": {
-                                            "mode": "chose",
-                                            "label": "Raw"
-                                        },
-                                        "insertUnformatted": {
-                                            "mode": "chose"
-                                        }
-                                    },
-                                    "parameters": {
-                                        "__IMTCONN__": {
-                                            "data": {
-                                                "scoped": "true",
-                                                "connection": "google"
-                                            },
-                                            "label": "My Google connection (demande.chezpapimaisongourmande@gmail.com)"
-                                        }
-                                    }
-                                },
-                                "parameters": [
-                                    {
-                                        "name": "__IMTCONN__",
-                                        "type": "account:google",
-                                        "label": "Connection",
-                                        "required": true
-                                    }
-                                ],
-                                "expect": [
-                                    {
-                                        "name": "mode",
-                                        "type": "select",
-                                        "label": "Search Method",
-                                        "required": true,
-                                        "validate": {
-                                            "enum": [
-                                                "select",
-                                                "fromAll",
-                                                "map"
-                                            ]
-                                        }
-                                    },
-                                    {
-                                        "name": "insertUnformatted",
-                                        "type": "boolean",
-                                        "label": "Unformatted",
-                                        "required": true
-                                    },
-                                    {
-                                        "name": "valueInputOption",
-                                        "type": "select",
-                                        "label": "Value input option",
-                                        "required": true,
-                                        "validate": {
-                                            "enum": [
-                                                "USER_ENTERED",
-                                                "RAW"
-                                            ]
-                                        }
-                                    },
-                                    {
-                                        "name": "insertDataOption",
-                                        "type": "select",
-                                        "label": "Insert data option",
-                                        "validate": {
-                                            "enum": [
-                                                "INSERT_ROWS",
-                                                "OVERWRITE"
-                                            ]
-                                        }
-                                    },
-                                    {
-                                        "name": "from",
-                                        "type": "select",
-                                        "label": "Drive",
-                                        "required": true,
-                                        "validate": {
-                                            "enum": [
-                                                "drive",
-                                                "share",
-                                                "team"
-                                            ]
-                                        }
-                                    },
-                                    {
-                                        "name": "spreadsheetId",
-                                        "type": "file",
-                                        "label": "Spreadsheet Name",
-                                        "required": true
-                                    },
-                                    {
-                                        "name": "sheetId",
-                                        "type": "select",
-                                        "label": "Sheet Name",
-                                        "required": true
-                                    },
-                                    {
-                                        "name": "includesHeaders",
-                                        "type": "select",
-                                        "label": "Table contains headers",
-                                        "required": true,
-                                        "validate": {
-                                            "enum": [
-                                                true,
-                                                false
-                                            ]
-                                        }
-                                    },
-                                    {
-                                        "name": "useColumnHeaders",
-                                        "type": "select",
-                                        "label": "Use column headers as IDs of the columns",
-                                        "required": true,
-                                        "validate": {
-                                            "enum": [
-                                                true,
-                                                false
-                                            ]
-                                        }
-                                    },
-                                    {
-                                        "name": "values",
-                                        "spec": [
-                                            {
-                                                "name": "id_demande",
-                                                "type": "text",
-                                                "label": "id_demande (A)"
-                                            },
-                                            {
-                                                "name": "date_reception",
-                                                "type": "text",
-                                                "label": "date_reception (B)"
-                                            },
-                                            {
-                                                "name": "canal",
-                                                "type": "text",
-                                                "label": "canal (C)"
-                                            },
-                                            {
-                                                "name": "nom_client",
-                                                "type": "text",
-                                                "label": "nom_client (D)"
-                                            },
-                                            {
-                                                "name": "telephone",
-                                                "type": "text",
-                                                "label": "telephone (E)"
-                                            },
-                                            {
-                                                "name": "email_client",
-                                                "type": "text",
-                                                "label": "email_client (F)"
-                                            },
-                                            {
-                                                "name": "type_evenement",
-                                                "type": "text",
-                                                "label": "type_evenement (G)"
-                                            },
-                                            {
-                                                "name": "date_evenement",
-                                                "type": "text",
-                                                "label": "date_evenement (H)"
-                                            },
-                                            {
-                                                "name": "heure_evenement",
-                                                "type": "text",
-                                                "label": "Heure evenement"
-                                            },
-                                            {
-                                                "name": "nb_convives",
-                                                "type": "text",
-                                                "label": "nb_convives (I)"
-                                            },
-                                            {
-                                                "name": "lieu_prestation",
-                                                "type": "text",
-                                                "label": "lieu_prestation (J)"
-                                            },
-                                            {
-                                                "name": "budget_estime",
-                                                "type": "text",
-                                                "label": "budget_estime (K)"
-                                            },
-                                            {
-                                                "name": "statut",
-                                                "type": "text",
-                                                "label": "statut (L)"
-                                            },
-                                            {
-                                                "name": "message_original",
-                                                "type": "text",
-                                                "label": "message_original (M)"
-                                            },
-                                            {
-                                                "name": "url_email_origine",
-                                                "type": "text",
-                                                "label": "url_email_origine (N)"
-                                            },
-                                            {
-                                                "name": "notes",
-                                                "type": "text",
-                                                "label": "notes (O)"
-                                            },
-                                            {
-                                                "name": "url_dossier_drive",
-                                                "type": "text",
-                                                "label": "url_dossier_drive (P)"
-                                            },
-                                            {
-                                                "name": "derniere_modification",
-                                                "type": "text",
-                                                "label": "derniere_modification (Q)"
-                                            }
-                                        ],
-                                        "type": "collection",
-                                        "label": "Values in columns",
-                                        "metadata": [
-                                            [
-                                                [
-                                                    "id_demande",
-                                                    "date_reception",
-                                                    "canal",
-                                                    "nom_client",
-                                                    "telephone",
-                                                    "email_client",
-                                                    "type_evenement",
-                                                    "date_evenement",
-                                                    "heure_evenement",
-                                                    "nb_convives",
-                                                    "lieu_prestation",
-                                                    "budget_estime",
-                                                    "statut",
-                                                    "message_original",
-                                                    "url_email_origine",
-                                                    "notes",
-                                                    "url_dossier_drive",
-                                                    "derniere_modification"
-                                                ]
-                                            ]
-                                        ]
-                                    }
-                                ],
-                                "advanced": true
+                                    "name": "Créer demande Tally via backend idempotent"
+                                }
                             },
                             "onerror": [
                                 {
-                                    "id": 101,
-                                    "module": "google-email:sendAnEmail",
-                                    "version": 4,
-                                    "parameters": {
-                                        "__IMTCONN__": 7978131
-                                    },
-                                    "mapper": {
-                                        "to": [
-                                            "courtois.florian@efficy-conseil.fr"
-                                        ],
-                                        "content": "<p>Erreur détectée dans le scénario Make <strong>Integration Tally</strong>.</p>\n<p><strong>Module concerné :</strong> Google Sheets - Add Row</p>\n<p><strong>submissionId :</strong> {{1.submissionId}}<br>\n<strong>responseId :</strong> {{1.responseId}}<br>\n<strong>formId :</strong> {{1.formId}}<br>\n<strong>Nom :</strong> {{1.fields.`Nom / Prénom`}}<br>\n<strong>Email :</strong> {{1.fields.`Adresse email`}}</p>\n<p>Action requise : consulter l'historique Make, corriger l'erreur, puis reprendre manuellement la demande depuis les soumissions Tally si nécessaire.</p>",
-                                        "subject": "[ERREUR MAKE] Integration Tally - Google Sheets - Add Row",
-                                        "bodyType": "rawHtml"
-                                    },
-                                    "metadata": {
-                                        "designer": {
-                                            "x": 900,
-                                            "y": 300,
-                                            "name": "Alerte erreur Efficy"
-                                        },
-                                        "restore": {
-                                            "expect": {
-                                                "cc": {
-                                                    "mode": "chose"
-                                                },
-                                                "to": {
-                                                    "mode": "chose",
-                                                    "items": [
-                                                        null
-                                                    ]
-                                                },
-                                                "bcc": {
-                                                    "mode": "chose"
-                                                },
-                                                "from": {
-                                                    "mode": "chose"
-                                                },
-                                                "bodyType": {
-                                                    "label": "Raw HTML"
-                                                },
-                                                "attachments": {
-                                                    "mode": "chose"
-                                                },
-                                                "emailHeaders": {
-                                                    "mode": "chose"
-                                                }
-                                            },
-                                            "parameters": {
-                                                "__IMTCONN__": {
-                                                    "data": {
-                                                        "scoped": "true",
-                                                        "connection": "google-email"
-                                                    },
-                                                    "label": "My Gmail connection (demande.chezpapimaisongourmande@gmail.com)"
-                                                }
-                                            }
-                                        },
-                                        "parameters": [
-                                            {
-                                                "name": "__IMTCONN__",
-                                                "type": "account:google-email",
-                                                "label": "Connection",
-                                                "required": true
-                                            }
-                                        ],
-                                        "expect": [
-                                            {
-                                                "name": "to",
-                                                "spec": {
-                                                    "name": "value",
-                                                    "type": "email",
-                                                    "label": "Recipient email address",
-                                                    "required": true,
-                                                    "validate": true
-                                                },
-                                                "type": "array",
-                                                "label": "To",
-                                                "required": true
-                                            },
-                                            {
-                                                "name": "subject",
-                                                "type": "text",
-                                                "label": "Subject"
-                                            },
-                                            {
-                                                "name": "bodyType",
-                                                "type": "select",
-                                                "label": "Body type",
-                                                "required": true,
-                                                "validate": {
-                                                    "enum": [
-                                                        "rawHtml",
-                                                        "collection"
-                                                    ]
-                                                }
-                                            },
-                                            {
-                                                "name": "attachments",
-                                                "spec": {
-                                                    "name": "value",
-                                                    "spec": [
-                                                        {
-                                                            "name": "filename",
-                                                            "type": "filename",
-                                                            "label": "File name",
-                                                            "required": true,
-                                                            "semantic": "file:name"
-                                                        },
-                                                        {
-                                                            "name": "data",
-                                                            "type": "buffer",
-                                                            "label": "Data",
-                                                            "required": true,
-                                                            "semantic": "file:data"
-                                                        }
-                                                    ],
-                                                    "type": "collection",
-                                                    "label": "Attachment"
-                                                },
-                                                "type": "array",
-                                                "label": "Attachments"
-                                            },
-                                            {
-                                                "name": "from",
-                                                "type": "select",
-                                                "label": "From"
-                                            },
-                                            {
-                                                "name": "cc",
-                                                "spec": {
-                                                    "name": "value",
-                                                    "type": "email",
-                                                    "label": "Recipient email address"
-                                                },
-                                                "type": "array",
-                                                "label": "CC recipients"
-                                            },
-                                            {
-                                                "name": "bcc",
-                                                "spec": {
-                                                    "name": "value",
-                                                    "type": "email",
-                                                    "label": "Recipient email address"
-                                                },
-                                                "type": "array",
-                                                "label": "BCC recipients"
-                                            },
-                                            {
-                                                "name": "emailHeaders",
-                                                "spec": {
-                                                    "name": "value",
-                                                    "spec": [
-                                                        {
-                                                            "name": "key",
-                                                            "type": "text",
-                                                            "label": "Key",
-                                                            "required": true
-                                                        },
-                                                        {
-                                                            "name": "value",
-                                                            "type": "text",
-                                                            "label": "Value"
-                                                        }
-                                                    ],
-                                                    "type": "collection",
-                                                    "label": "Email header"
-                                                },
-                                                "type": "array",
-                                                "label": "Additional email headers"
-                                            },
-                                            {
-                                                "name": "content",
-                                                "type": "text",
-                                                "label": "Content"
-                                            }
-                                        ]
-                                    }
-                                },
-                                {
                                     "id": 102,
-                                    "module": "builtin:Commit",
+                                    "module": "builtin:Break",
                                     "version": 1,
                                     "parameters": {},
-                                    "mapper": {},
+                                    "mapper": {
+                                        "count": "3",
+                                        "retry": true,
+                                        "interval": "5"
+                                    },
                                     "metadata": {
                                         "designer": {
                                             "x": 1200,
                                             "y": 300,
-                                            "name": "Stop propre sans retry"
+                                            "name": "Conserver et retenter la création Tally"
                                         }
                                     }
                                 }
@@ -1794,10 +1221,10 @@
         "version": 1,
         "scenario": {
             "roundtrips": 1,
-            "maxErrors": 3,
+            "maxErrors": 10,
             "autoCommit": true,
             "autoCommitTriggerLast": true,
-            "sequential": true,
+            "sequential": false,
             "slots": null,
             "confidential": false,
             "dataloss": false,

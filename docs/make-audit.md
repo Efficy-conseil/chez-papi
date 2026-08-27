@@ -56,9 +56,18 @@ Références : `docs/product-contract.md` et `docs/make-regression-matrix.md`.
 
 - Le filtre de production impose `formId = Gx52AQ`.
 - L'anti-doublon utilise le backend Apps Script.
-- La création Sheets exige explicitement `count = 0` ; une réponse absente ou invalide bloque la création.
+- La création backend exige explicitement `count = 0` ; une réponse absente ou invalide bloque la création.
 - Aucune lecture Google Sheets n'est utilisée pour l'anti-doublon.
 - L'appel anti-doublon effectue trois reprises automatiques espacées de cinq minutes en cas d'erreur HTTP, puis conserve l'exécution incomplète pour une reprise manuelle.
+- La création passe désormais par `createMakeDemand` au lieu d'une écriture Google Sheets directe. L'identifiant `TALLY-<submissionId>` et le verrou backend rendent la reprise idempotente.
+
+## Continuité après une erreur isolée
+
+Les deux blueprints désactivent `Process data in order`. Une exécution incomplète n'immobilise donc plus les demandes suivantes. La conservation des exécutions incomplètes reste active, la perte de données reste interdite et le seuil des erreurs consécutives avant désactivation passe de 3 à 10.
+
+Les appels backend critiques conservent trois reprises automatiques espacées de cinq minutes. Après épuisement, la demande reste disponible dans les exécutions incomplètes. Les notifications natives configurées au niveau du compte Make doivent rester actives ; aucun nouveau module d'alerte personnalisé n'est ajouté.
+
+Pour Tally, le déclencheur est instantané : le seuil global d'erreurs ne suffit pas à le protéger. L'anti-doublon et la création backend possèdent donc chacun un gestionnaire de reprise explicite. L'échec éventuel de l'accusé intervient après la création de la demande et ne peut pas supprimer la ligne déjà enregistrée.
 
 ## Limites nécessitant un essai Make
 

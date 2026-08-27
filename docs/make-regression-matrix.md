@@ -17,6 +17,9 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | C07 | Réponse anti-doublon sans champ `count` ou inexploitable | Aucune création ; exécution en erreur visible, message conservé pour reprise | Automatique + essai Make |
 | C10 | Réponse HTTP Apps Script perdue après une écriture réussie, puis reprise Make | Le même `gmail_message_id` renvoie le résultat initial ; aucune seconde écriture, aucun second incrément de `nb_relances_client` et le flux restant reprend | Backend + essai Make |
 | C11 | Réponse HTTP Apps Script réussie, y compris `checkDuplicate` | Les filtres Make lisent les champs métier sous `data.data` (par exemple `updated` ou `count`) et poursuivent la route attendue | Automatique + essai Make |
+| C12 | Une demande échoue puis une demande valide arrive | La première reste en exécution incomplète ; la suivante est traitée sans attendre sa résolution et le scénario reste actif | Automatique + essai Make |
+| C13 | Plusieurs demandes distinctes échouent successivement | Chaque demande est conservée avec ses données et son point de reprise ; les demandes valides suivantes continuent et les alertes natives Make restent actives | Automatique + essai Make |
+| C14 | Reprise après correction d'une écriture backend déjà appliquée dont la réponse a été perdue | La reprise termine le flux sans seconde création ni répétition d'une mise à jour métier | Backend + automatique + essai Make |
 
 ## Wix
 
@@ -103,6 +106,8 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | T08 | Scénario Tally activé sans nouvelle réponse | Aucune exécution périodique ni crédit consommé ; le scénario démarre uniquement à la réception du webhook `watchNewResponse` | Automatique + contrôle Make |
 | T09 | Téléphone Tally `6xxxxxxxx` sans zéro initial | La ligne Google Sheets contient `06 xx xx xx xx` | Automatique + essai Make |
 | T10 | Anti-doublon Tally interrompu par un `404` Apps Script / Google Drive temporaire | Trois reprises automatiques à cinq minutes d’intervalle ; après épuisement, l’exécution incomplète reste disponible pour une reprise manuelle | Automatique + essai Make |
+| T11 | Création Tally interrompue après écriture backend, puis rejouée | `createMakeDemand` retrouve `TALLY-<submissionId>` ; aucune seconde ligne n'est créée et le flux peut reprendre | Backend + automatique + essai Make |
+| T12 | Une soumission Tally reste en erreur puis une autre soumission valide arrive par webhook | La seconde est traitée immédiatement ; le déclencheur instantané et le scénario restent actifs malgré l'exécution incomplète | Automatique + essai Make |
 
 ## Frontend après traitement Make
 
