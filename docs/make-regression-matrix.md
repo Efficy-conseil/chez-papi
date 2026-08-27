@@ -99,6 +99,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | T07 | Téléphone Tally `'+33603156125`, `+33603156125` ou `0603156125` | La ligne Google Sheets contient `06 03 15 61 25`, sans apostrophe ni préfixe international | Automatique + essai Make |
 | T08 | Scénario Tally activé sans nouvelle réponse | Aucune exécution périodique ni crédit consommé ; le scénario démarre uniquement à la réception du webhook `watchNewResponse` | Automatique + contrôle Make |
 | T09 | Téléphone Tally `6xxxxxxxx` sans zéro initial | La ligne Google Sheets contient `06 xx xx xx xx` | Automatique + essai Make |
+| T10 | Anti-doublon Tally interrompu par un `404` Apps Script / Google Drive temporaire | Trois reprises automatiques à cinq minutes d’intervalle ; après épuisement, l’exécution incomplète reste disponible pour une reprise manuelle | Automatique + essai Make |
 
 ## Frontend après traitement Make
 

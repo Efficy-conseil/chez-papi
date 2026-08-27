@@ -539,7 +539,20 @@
                     }
                 ],
                 "advanced": true
-            }
+            },
+            "onerror": [
+                {
+                    "id": 106,
+                    "module": "builtin:Break",
+                    "version": 1,
+                    "parameters": {},
+                    "mapper": {
+                        "count": "3",
+                        "retry": true,
+                        "interval": "5"
+                    }
+                }
+            ]
         },
         {
             "id": 5,
@@ -1788,7 +1801,7 @@
             "slots": null,
             "confidential": false,
             "dataloss": false,
-            "dlq": false,
+            "dlq": true,
             "freshVariables": false
         },
         "designer": {

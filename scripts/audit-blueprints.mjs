@@ -377,8 +377,13 @@ const tallyTrigger = moduleById(tallyModules, 1);
 assert(tallyTrigger.module === 'tally:watchNewResponse', 'déclencheur Tally remplacé par un module non instantané');
 assert(tallyTrigger.parameters?.__IMTHOOK__, 'webhook absent du déclencheur Tally');
 assert(tally.metadata?.instant === true, 'scénario Tally non déclaré instantané dans le blueprint');
+assert(tally.metadata?.scenario?.dlq === true, 'conservation des exécutions Tally incomplètes désactivée');
 assert(tallyHttp.filter?.conditions?.flat().some(condition => condition.b === 'Gx52AQ'), 'formId Tally de production absent');
 assert((tallyHttp.mapper?.data || '').includes('"action":"checkDuplicate"'), 'anti-doublon Tally non relié au backend');
+const tallyRetry = tallyHttp.onerror?.[0];
+assert(tallyRetry?.module === 'builtin:Break', 'gestionnaire Retry absent sur l’anti-doublon Tally');
+assert(tallyRetry.mapper?.retry === true, 'reprise automatique Tally désactivée');
+assert(tallyRetry.mapper?.count === '3' && tallyRetry.mapper?.interval === '5', 'reprise Tally attendue 3 × 5 min absente');
 const tallyCreationConditions = (moduleById(tallyModules, 2).filter?.conditions || []).flat();
 assert(
   tallyCreationConditions.some(condition => condition?.a === '{{4.data.data.count}}' && condition?.b === '0' && condition?.o === 'number:equal'),

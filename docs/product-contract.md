@@ -265,6 +265,7 @@ Contrainte :
 
 - Le module anti-doublon ne doit pas relire Google Sheets directement via Make, pour éviter les quotas Sheets API.
 - Une réponse anti-doublon sans champ `count` exploitable doit produire une erreur visible et ne doit créer ni ligne ni accusé.
+- Une erreur HTTP du module anti-doublon doit déclencher trois reprises automatiques espacées de cinq minutes. Si elles échouent, l’exécution incomplète doit rester disponible pour une reprise manuelle.
 - Après import du blueprint dans un nouveau scénario, un webhook Tally doit être créé ou sélectionné dans le premier module et le scénario doit afficher une exécution immédiate à l'arrivée des données, jamais une planification toutes les 15 minutes.
 
 ## Backend Apps Script

@@ -58,6 +58,7 @@ Références : `docs/product-contract.md` et `docs/make-regression-matrix.md`.
 - L'anti-doublon utilise le backend Apps Script.
 - La création Sheets exige explicitement `count = 0` ; une réponse absente ou invalide bloque la création.
 - Aucune lecture Google Sheets n'est utilisée pour l'anti-doublon.
+- L'appel anti-doublon effectue trois reprises automatiques espacées de cinq minutes en cas d'erreur HTTP, puis conserve l'exécution incomplète pour une reprise manuelle.
 
 ## Limites nécessitant un essai Make
 
@@ -77,5 +78,7 @@ L'incident s'étant reproduit le 04/08/2026, la protection suivante est désorma
 3. Le backend journalise les opérations Make par `gmail_message_id`. Une reprise renvoie le résultat déjà obtenu sans ré-incrémenter `nb_relances_client`.
 4. `upsertWixDemand` journalise également ses créations et fusions, afin qu'une reprise conserve le résultat `created` ou `merged` nécessaire à la suite du flux.
 5. Le cas de non-régression `C10` couvre une réponse HTTP perdue après une écriture effectivement réalisée.
+
+Le même gestionnaire de reprise protège le module `4` d'anti-doublon du scénario Tally. Comme cet appel ne réalise aucune écriture, une reprise automatique ou manuelle reste sûre ; la création Google Sheets ne peut continuer que si le backend répond explicitement avec `count = 0`.
 
 Ne pas utiliser les gestionnaires `Skip` ou `Resume` pour ces appels : une réponse backend non confirmée ne doit jamais permettre au scénario de poursuivre son classement Gmail ou ses écritures. L'import et l'activation du blueprint dans Make restent manuels.
