@@ -700,6 +700,21 @@ function updateExistingDemandFollowup(match, fields, options) {
   if (matches.length === 0 && options && options.allow_unique_active_event_date && hasSpecificEventDate) {
     matches = findActiveRowsByEventDate(sheet, headers, dateEvenement);
   }
+  let matchedByImminentConfirmedEvent = false;
+  if (
+    matches.length === 0 &&
+    options && options.allow_unique_imminent_confirmed_without_identity &&
+    isExplicitSignedQuoteFollowup(fields.dernier_message_client) &&
+    Number(normalizeGuestCountKey(match.nb_convives || fields.nb_convives)) >= 100
+  ) {
+    matches = findImminentConfirmedRowsWithoutEmail(
+      sheet,
+      headers,
+      fields.dernier_email_recu_le,
+      Number(options.imminent_event_window_days || 14)
+    );
+    matchedByImminentConfirmedEvent = matches.length === 1;
+  }
   if (matches.length !== 1) {
     return ok({
       updated: false,
@@ -732,7 +747,63 @@ function updateExistingDemandFollowup(match, fields, options) {
   writeMakeFollowup(sheet, headers, found.rowIndex, clean, { updated: true });
   applyDefaultRowHeight(sheet, found.rowIndex);
 
-  return ok({ updated: true, id_demande: found.id_demande || "", row: found.rowIndex });
+  return ok({
+    updated: true,
+    matched_by: matchedByImminentConfirmedEvent ? "unique_imminent_confirmed_event_without_email" : "contact_or_event_identity",
+    id_demande: found.id_demande || "",
+    row: found.rowIndex
+  });
+}
+
+function isExplicitSignedQuoteFollowup(value) {
+  const text = normalizeComparableText(value);
+  return [
+    "devis signe",
+    "devis accepte",
+    "devis valide",
+    "bon de commande"
+  ].some(function(marker) { return text.indexOf(marker) !== -1; });
+}
+
+function findImminentConfirmedRowsWithoutEmail(sheet, headers, receivedAt, maxDays) {
+  const emailCol = headers.findIndex(function(h) { return canonicalKey(h) === "email_client"; }) + 1;
+  const dateCol = headers.findIndex(function(h) { return canonicalKey(h) === "date_evenement"; }) + 1;
+  const statusCol = headers.findIndex(function(h) { return canonicalKey(h) === "statut"; }) + 1;
+  const idCol = headers.findIndex(function(h) { return canonicalKey(h) === "id_demande"; }) + 1;
+  if (emailCol <= 0) throw new Error("Colonne email_client introuvable");
+  if (dateCol <= 0) throw new Error("Colonne date_evenement introuvable");
+  if (statusCol <= 0) throw new Error("Colonne statut introuvable");
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+
+  const referenceDate = new Date(receivedAt);
+  if (isNaN(referenceDate.getTime())) return [];
+  referenceDate.setHours(0, 0, 0, 0);
+  const windowDays = Math.max(1, Math.min(Number(maxDays || 14), 31));
+  const windowMs = windowDays * 24 * 60 * 60 * 1000;
+  const emails = sheet.getRange(2, emailCol, lastRow - 1, 1).getValues();
+  const dates = sheet.getRange(2, dateCol, lastRow - 1, 1).getValues();
+  const dateDisplays = sheet.getRange(2, dateCol, lastRow - 1, 1).getDisplayValues();
+  const statuses = sheet.getRange(2, statusCol, lastRow - 1, 1).getValues();
+  const ids = idCol > 0 ? sheet.getRange(2, idCol, lastRow - 1, 1).getValues() : [];
+  const matches = [];
+
+  for (var i = 0; i < dates.length; i++) {
+    const rowEmail = String(emails[i][0] || '').trim();
+    const rowStatus = String(statuses[i][0] || '').trim();
+    const rowDate = parseEventDate(normalizeEventDateText(dateDisplays[i][0] || dates[i][0]));
+    if (!rowDate || rowEmail || rowStatus !== "Événement confirmé") continue;
+    rowDate.setHours(0, 0, 0, 0);
+    const distance = rowDate.getTime() - referenceDate.getTime();
+    if (distance < 0 || distance > windowMs) continue;
+    matches.push({
+      rowIndex: i + 2,
+      id_demande: idCol > 0 ? String(ids[i][0] || '').trim() : "",
+      email_client: ""
+    });
+  }
+  return matches;
 }
 
 function syncCalendarForRow(sheet, headers, rowIndex, context) {

@@ -194,4 +194,42 @@ assert.deepEqual(
   ['MANUAL-1']
 );
 
+assert.equal(evaluate('isExplicitSignedQuoteFollowup("En pj le devis signé.")'), true);
+assert.equal(evaluate('isExplicitSignedQuoteFollowup("Merci pour votre retour.")'), false);
+
+const rossellaRows = [
+  ['VOXIST-ROSSELLA', 'Rossella', '06 20 00 52 66', '', 'Autres', '05/09/2026', 'beaucoup plus de personnes que prévu', '', 'Événement confirmé', 'Téléphone', ''],
+  ['EMAIL-OTHER', 'Autre client', '', 'client@example.com', 'Entreprise', '03/09/2026', '190', '', 'Événement confirmé', 'Email', '']
+];
+context.rossellaSheet = {
+  getLastRow() { return rossellaRows.length + 1; },
+  getRange(row, column, rowCount, columnCount) {
+    assert.equal(row, 2);
+    assert.equal(rowCount, rossellaRows.length);
+    const selected = rossellaRows.map(values => values.slice(column - 1, column - 1 + columnCount));
+    return { getValues() { return selected; }, getDisplayValues() { return selected.map(values => values.map(String)); } };
+  }
+};
+const imminentConfirmedMatches = evaluate(
+  'findImminentConfirmedRowsWithoutEmail(rossellaSheet, testHeaders, "2026-08-28T14:45:01.000Z", 14)'
+);
+assert.deepEqual(Array.from(imminentConfirmedMatches, candidate => candidate.id_demande), ['VOXIST-ROSSELLA']);
+
+const ambiguousRows = rossellaRows.concat([
+  ['VOXIST-AMBIGUOUS', 'Autre appelante', '06 00 00 00 01', '', 'Autres', '07/09/2026', '', '', 'Événement confirmé', 'Téléphone', '']
+]);
+context.ambiguousSheet = {
+  getLastRow() { return ambiguousRows.length + 1; },
+  getRange(row, column, rowCount, columnCount) {
+    assert.equal(row, 2);
+    assert.equal(rowCount, ambiguousRows.length);
+    const selected = ambiguousRows.map(values => values.slice(column - 1, column - 1 + columnCount));
+    return { getValues() { return selected; }, getDisplayValues() { return selected.map(values => values.map(String)); } };
+  }
+};
+assert.equal(
+  evaluate('findImminentConfirmedRowsWithoutEmail(ambiguousSheet, testHeaders, "2026-08-28T14:45:01.000Z", 14).length'),
+  2
+);
+
 console.log('Tests de rapprochement réussis.');
