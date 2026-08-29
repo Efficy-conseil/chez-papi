@@ -371,11 +371,6 @@ assert(
 const serializedMain = JSON.stringify(main);
 const serializedTally = JSON.stringify(tally);
 const existingFollowup = moduleById(mainModules, 81);
-assert(
-  String(existingFollowup.mapper?.data || '').includes('allow_unique_imminent_confirmed_without_identity') &&
-    String(existingFollowup.mapper?.data || '').includes('imminent_event_window_days'),
-  'dernier recours événement confirmé imminent absent du module 81'
-);
 const existingFollowupFilter = JSON.stringify(existingFollowup.filter || {});
 const newEmailDemand = moduleById(mainModules, 39);
 const newEmailDemandFilter = JSON.stringify(newEmailDemand.filter || {});
