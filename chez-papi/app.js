@@ -418,6 +418,7 @@ function compareEventDatesDesc(a, b) {
 
 const STATUS_PILL = {
   'Nouvelle demande': 'pill-terra',
+  'À vérifier': 'pill-gray',
   'À rappeler': 'pill-orange',
   'En attente de réponse': 'pill-blue',
   'Devis à préparer': 'pill-gold',
@@ -430,6 +431,7 @@ const STATUS_PILL = {
 
 const STATUS_LABEL = {
   'Nouvelle demande': '🆕 Nouvelle demande',
+  'À vérifier': '❓ À vérifier',
   'À rappeler': '📞 À rappeler',
   'En attente de réponse': '⏳ En attente de réponse',
   'Devis à préparer': '📝 Devis à préparer',
@@ -442,6 +444,7 @@ const STATUS_LABEL = {
 
 const STATUS_DOT = {
   'Nouvelle demande': 'terra',
+  'À vérifier': 'gray',
   'À rappeler': 'orange',
   'En attente de réponse': 'blue',
   'Devis à préparer': 'gold',
@@ -452,7 +455,7 @@ const STATUS_DOT = {
   'Refusé / Complet': 'red'
 };
 
-const ALL_STATUSES = ['Nouvelle demande', 'À rappeler', 'En attente de réponse', 'Devis à préparer', 'Devis envoyé', 'Événement confirmé', 'Événement terminé', 'Perdu / Sans suite', 'Refusé / Complet'];
+const ALL_STATUSES = ['Nouvelle demande', 'À vérifier', 'À rappeler', 'En attente de réponse', 'Devis à préparer', 'Devis envoyé', 'Événement confirmé', 'Événement terminé', 'Perdu / Sans suite', 'Refusé / Complet'];
 const WAITING_RESPONSE_STATUS = 'En attente de réponse';
 const WAITING_RESPONSE_REMINDER_DAYS = 7;
 
@@ -608,6 +611,7 @@ function syncSeenRowsToSW(rows) {
 function processRows(rawRows) {
   const statOrder = {
     'Nouvelle demande': 1,
+    'À vérifier': 1,
     'À rappeler': 2,
     'En attente de réponse': 3,
     'Devis à préparer': 4,
@@ -790,6 +794,10 @@ const SheetsAPI = {
   async remove(id_demande) {
     if (!CONFIG.SHEETS_URL) return { error: 'Non configuré' };
     return this.request({ action: 'delete', id_demande });
+  },
+  async mergeDemandRecords(source_id_demande, target_id_demande) {
+    if (!CONFIG.SHEETS_URL) return { error: 'Non configuré' };
+    return this.request({ action: 'mergeDemandRecords', source_id_demande, target_id_demande });
   }
 };
 
@@ -815,7 +823,7 @@ function isTruthy(value) {
 }
 
 function hasClientMessage(e) {
-  return !!e && !isEventPast(e) && isTruthy(e.relance_a_traiter);
+  return !!e && isTruthy(e.relance_a_traiter);
 }
 
 function clientMessageStar(e) {
@@ -1073,7 +1081,7 @@ function renderDashboard() {
   const devisAPreparer = actives.filter(e => e.statut === 'Devis à préparer');
   const aRappeler = actives.filter(e => e.statut === 'À rappeler');
   const enAttenteReponse = actives.filter(e => e.statut === WAITING_RESPONSE_STATUS);
-  const messagesRecus = actives.filter(hasClientMessage);
+  const messagesRecus = appData.filter(hasClientMessage);
   const nouveaux = actives.filter(e => e.statut === 'Nouvelle demande');
 
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
@@ -1086,7 +1094,7 @@ function renderDashboard() {
 
   // Dernières demandes
   const allNewDemandes = appData
-    .filter(e => !isEventPast(e) && ['Nouvelle demande', 'À rappeler', WAITING_RESPONSE_STATUS].includes(e.statut))
+    .filter(e => !isEventPast(e) && ['Nouvelle demande', 'À vérifier', 'À rappeler', WAITING_RESPONSE_STATUS].includes(e.statut))
     .sort((a, b) => dateTimeSortValue(b.date_reception) - dateTimeSortValue(a.date_reception));
   const newDemandes = allNewDemandes.slice(0, homeDisplayLimits.new);
   updateHomeSeeMore('new-demandes-more', allNewDemandes.length, newDemandes.length);
@@ -1204,7 +1212,7 @@ function renderPipeline() {
   const today = new Date();
   today.setHours(0,0,0,0);
 
-  const PIPELINE_SCOPE = ['Nouvelle demande', 'À rappeler', WAITING_RESPONSE_STATUS, 'Devis à préparer', 'Devis envoyé'];
+  const PIPELINE_SCOPE = ['Nouvelle demande', 'À vérifier', 'À rappeler', WAITING_RESPONSE_STATUS, 'Devis à préparer', 'Devis envoyé'];
   const colsData = { 'entreprise': [], 'urgent': [], 'important': [], 'normal': [] };
 
   appData.forEach(e => {
@@ -1920,6 +1928,7 @@ function openEventModal(rowIndex = null) {
   const followupMeta = document.getElementById('followup-detail-meta');
   const followupButton = document.getElementById('mark-followup-handled-btn');
   const followupReplyButton = document.getElementById('reply-followup-btn');
+  const attachButton = document.getElementById('btn-attach-demand');
   const derniereModifContainer = document.getElementById('event-derniere-modif-container');
   const derniereModif = document.getElementById('view-derniere-modif');
 
@@ -2014,6 +2023,7 @@ function openEventModal(rowIndex = null) {
           : '#');
         followupReplyButton.style.display = hasClientMessage(existing) && (threadUrl || isEmailKnown) ? 'inline-flex' : 'none';
       }
+      if (attachButton) attachButton.style.display = 'inline-flex';
     }
   } else {
     form.elements['date_reception'].value = localDateTimeInputValue();
@@ -2027,6 +2037,7 @@ function openEventModal(rowIndex = null) {
     if (followupRow) followupRow.style.display = 'none';
     if (followupButton) followupButton.style.display = 'none';
     if (followupReplyButton) followupReplyButton.style.display = 'none';
+    if (attachButton) attachButton.style.display = 'none';
     if (derniereModifContainer) derniereModifContainer.style.display = 'none';
   }
 
@@ -2286,6 +2297,104 @@ document.getElementById('duplicate-candidate-select').addEventListener('change',
 
 document.getElementById('duplicate-modal').addEventListener('click', event => {
   if (event.target === document.getElementById('duplicate-modal')) closeDuplicateModal();
+});
+
+let mergeSourceDemand = null;
+
+function openDemandMergeModal() {
+  if (!editingRow) return;
+  mergeSourceDemand = appData.find(row => row._row === editingRow) || null;
+  if (!mergeSourceDemand) {
+    showNotification('Demande source introuvable', 'error');
+    return;
+  }
+  const candidates = appData
+    .filter(row => eventId(row) && eventId(row) !== eventId(mergeSourceDemand))
+    .sort((a, b) => String(a.nom_client || '').localeCompare(String(b.nom_client || ''), 'fr'));
+  const select = document.getElementById('merge-target-select');
+  select.replaceChildren();
+  candidates.forEach(candidate => {
+    const option = document.createElement('option');
+    option.value = eventId(candidate);
+    option.textContent = [
+      candidate.nom_client || 'Sans nom',
+      formatDateFR(candidate.date_evenement) || 'Date inconnue',
+      candidate.statut || 'Statut inconnu'
+    ].join(' — ');
+    select.appendChild(option);
+  });
+  document.getElementById('merge-confirm-btn').disabled = candidates.length === 0;
+  renderDemandMergeComparison();
+  document.getElementById('demand-merge-modal').style.display = 'flex';
+}
+
+function closeDemandMergeModal() {
+  document.getElementById('demand-merge-modal').style.display = 'none';
+  mergeSourceDemand = null;
+}
+
+function selectedMergeTarget() {
+  const id = document.getElementById('merge-target-select').value;
+  return appData.find(row => eventId(row) === id) || null;
+}
+
+function renderDemandMergeComparison() {
+  const target = selectedMergeTarget();
+  const body = document.getElementById('merge-comparison');
+  if (!mergeSourceDemand || !target) {
+    body.innerHTML = '<tr><td colspan="3">Aucune demande de destination disponible.</td></tr>';
+    return;
+  }
+  const fields = ['nom_client', 'date_evenement', 'telephone', 'email_client', 'type_evenement', 'nb_convives', 'lieu_prestation', 'statut'];
+  body.innerHTML = fields.map(key => {
+    const source = String(mergeSourceDemand[key] || '').trim();
+    const destination = String(target[key] || '').trim();
+    const conflict = source && destination && source !== destination;
+    return `<tr class="${conflict ? 'duplicate-difference' : ''}"><th>${safeText(duplicateFieldLabel(key))}</th><td>${safeText(source || '—')}</td><td>${safeText(destination || '—')}</td></tr>`;
+  }).join('');
+  const conflicts = fields.filter(key => {
+    const source = String(mergeSourceDemand[key] || '').trim();
+    const destination = String(target[key] || '').trim();
+    return source && destination && source !== destination;
+  });
+  document.getElementById('merge-conflict-note').textContent = conflicts.length
+    ? 'Les valeurs différentes signalées resteront celles de la destination. Les informations et messages de la source seront conservés dans les notes.'
+    : 'Les champs vides de la destination seront complétés avec les informations de la source.';
+}
+
+async function confirmDemandMerge() {
+  const target = selectedMergeTarget();
+  if (!mergeSourceDemand || !target) return;
+  const sourceId = eventId(mergeSourceDemand);
+  const targetId = eventId(target);
+  if (!confirm(`Rattacher la demande ${sourceId} à ${targetId} ? La fiche source sera conservée.`)) return;
+  const button = document.getElementById('merge-confirm-btn');
+  button.disabled = true;
+  showBusyOverlay('Rattachement des demandes…');
+  try {
+    const result = await SheetsAPI.mergeDemandRecords(sourceId, targetId);
+    if (!result.success) {
+      showNotification('Erreur : ' + (result.error || 'inconnue'), 'error');
+      return;
+    }
+    closeDemandMergeModal();
+    closeEventModal(true);
+    await loadData();
+    const merged = appData.find(row => eventId(row) === targetId);
+    if (merged) openEventModal(merged._row);
+    showNotification('Demandes rattachées. La fiche source est conservée pour vérification.', 'success', 6000);
+    broadcastSync();
+  } catch (err) {
+    showNotification('Erreur réseau', 'error');
+  } finally {
+    hideBusyOverlay();
+    button.disabled = false;
+  }
+}
+
+document.getElementById('merge-target-select').addEventListener('change', renderDemandMergeComparison);
+document.getElementById('demand-merge-modal').addEventListener('click', event => {
+  if (event.target === document.getElementById('demand-merge-modal')) closeDemandMergeModal();
 });
 
 document.getElementById('event-form').addEventListener('submit', async e => {
@@ -2706,7 +2815,7 @@ function showKpiModal(type) {
   }
   else if (type === 'messages') {
     title.textContent = 'Messages reçus';
-    const evts = actives.filter(hasClientMessage);
+    const evts = appData.filter(hasClientMessage);
     evts.sort((a, b) => dateTimeSortValue(b.dernier_email_recu_le) - dateTimeSortValue(a.dernier_email_recu_le));
 
     thead.innerHTML = '<tr><th style="width:22%">Reçu</th><th style="width:25%">Client</th><th style="width:33%">Message</th><th style="width:20%">Statut</th></tr>';

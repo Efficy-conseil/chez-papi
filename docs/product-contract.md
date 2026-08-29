@@ -70,6 +70,7 @@ Champs techniques :
 ## Statuts autorisés
 
 - `Nouvelle demande`
+- `À vérifier`
 - `À rappeler`
 - `En attente de réponse`
 - `Devis à préparer`
@@ -80,6 +81,8 @@ Champs techniques :
 - `Refusé / Complet`
 
 Lorsqu'une demande passe à `En attente de réponse`, le backend renseigne `en_attente_reponse_depuis`. Cette date est conservée tant que le statut ne quitte pas puis ne réintègre pas cet état ; elle sert au dashboard pour compter les jours sans réponse et signaler une relance à partir de sept jours.
+
+`À vérifier` identifie une fiche qui demande une validation humaine, notamment lorsqu'un message qualifié comme suivi ne peut être rattaché à aucune demande existante et que le statut proposé par l'IA est absent ou invalide. Le frontend l'affiche avec un point d'interrogation visible.
 
 ## Dates
 
@@ -240,13 +243,24 @@ Relances et suivis :
 - Un bon de commande, une commande validée ou un document confirmant un devis est un suivi, même lorsqu'il vient d'un portail ou d'un expéditeur technique dans un nouveau fil Gmail. Il doit être rattaché uniquement s'il existe une seule demande correspondant exactement au contact identifié et à la date de prestation ; sinon, aucune ligne ne doit être créée et le message reste à vérifier dans la boîte de réception.
 - Une réponse à un sujet `Re: Devis`, `TR: Devis`, `Fwd: Devis` n'est une relance que si le dernier message parle du devis existant : nouveau devis, devis actualisé, budget par personne, modification, validation, nouvelle version.
 - Une nouvelle demande dans un ancien fil reste une nouvelle demande si elle concerne une nouvelle date, un nouveau lieu, un nouveau type de prestation ou un nouvel événement.
-- Une réponse courte qui accepte ou précise un créneau de rappel, sans redonner la date de prestation, est un suivi. Elle est rattachée uniquement lorsqu’une seule demande active possède exactement la même adresse email ; si aucune ou plusieurs demandes actives correspondent, aucune ligne n’est créée et le message reste à vérifier.
-- Un message indiquant explicitement qu'il relance un précédent email resté sans réponse est un suivi, même sans date ni rappel du besoin. Il doit emprunter la route de rapprochement malgré une qualification IA hors périmètre, être rattaché uniquement à une demande active unique par email exact ou nom complet normalisé, et rester en boîte de réception si le rapprochement échoue ou reste ambigu.
+- Une réponse courte qui accepte ou précise un créneau de rappel, sans redonner la date de prestation, est un suivi. Elle est rattachée lorsqu’une seule demande active possède exactement la même adresse email. Si aucune candidate n'existe, le filet de sécurité décrit ci-dessous crée une fiche à vérifier ; si plusieurs candidates existent, aucune ligne n’est créée et le message reste en boîte de réception.
+- Un message indiquant explicitement qu'il relance un précédent email resté sans réponse est un suivi, même sans date ni rappel du besoin. Il doit emprunter la route de rapprochement malgré une qualification IA hors périmètre et être rattaché à une demande active unique par email exact ou nom complet normalisé. Une absence totale de candidate déclenche le filet de sécurité ; une ambiguïté laisse le message en boîte de réception.
 - Les formulations `Merci pour vos propositions` et `modifier certaines pièces` sont des indices déterministes de suivi commercial. Elles doivent emprunter la route de rattachement même si l’IA retourne à tort `is_followup=false`, et elles sont interdites dans la route de création Email.
 - Une réponse indiquant avoir choisi un autre prestataire après réception d’un devis est un suivi commercial, y compris si l’IA la classe à tort hors périmètre. Elle est rattachée seulement à une unique demande active identifiée par l’adresse email ou par le nom normalisé, indépendant de l’ordre prénom/nom ; un nom complet exact suffit pour un suivi si la candidate est unique. L’adresse de l’expéditeur complète une fiche sans email mais ne remplace jamais une adresse déjà enregistrée.
 - Une réponse rattachée à une demande existante renseigne `dernier_email_recu_le`, `dernier_message_client`, incrémente `nb_relances_client`, positionne `relance_a_traiter = TRUE` et conserve une `url_email_origine` ouvrant le fil Gmail.
 - Le frontend présente ces réponses dans le regroupement transversal `Messages reçus`, sans modifier automatiquement le statut commercial de la demande.
 - Une étoile signale les demandes ayant un message à traiter. L'action explicite `Marquer comme traité` positionne `relance_a_traiter = FALSE` ; un échange ultérieur le réactive.
+
+Filet de sécurité des suivis Email sans dossier :
+
+- lorsque `updateExistingDemandFollowup` ne trouve aucune candidate (`existing_demand_not_found`), le module 81 demande au backend de créer une fiche `GMAIL-<gmail_thread_id>` ;
+- la création est idempotente, reprend les informations extraites par l'IA, ajoute dans les notes qu'elle est automatique, conserve le message comme `dernier_message_client` et positionne `relance_a_traiter = TRUE` ;
+- le statut proposé par l'IA est conservé uniquement s'il appartient aux statuts autorisés ; sinon `À vérifier` est appliqué ;
+- le message est ensuite archivé dans `Historique_Email` et la fiche apparaît dans `Messages reçus`, même si son statut la place par ailleurs dans l'historique ;
+- aucune création de secours n'est autorisée lorsque plusieurs candidates existent (`existing_demand_ambiguous`) ;
+- aucun accusé automatique n'est envoyé pour cette création de secours.
+
+Le frontend permet de rattacher manuellement une fiche source à une demande de destination. La comparaison des champs et les conflits sont montrés avant confirmation. Les champs déjà renseignés sur la destination sont prioritaires ; les messages, notes et champs manquants de la source sont transférés sans duplication. La fiche source est conservée et annotée ; sa suppression éventuelle reste une action séparée avec confirmation explicite.
 
 ## Make - Tally
 
@@ -302,6 +316,8 @@ Contraintes backend :
 - `upsertWixDemand` doit mémoriser le résultat d'un message Wix déjà appliqué afin qu'une reprise poursuive l'archivage et l'accusé attendus sans créer de seconde ligne.
 - `updateThreadFollowup` rattache par `gmail_thread_id`.
 - `updateWixFollowup` rattache par `gmail_thread_id`, puis fallback dernier `WIX-` par email.
+- `updateExistingDemandFollowup` peut créer une fiche de secours uniquement avec l'option explicite `create_if_not_found`, et seulement lorsque le nombre de candidates est nul.
+- `mergeDemandRecords` rattache manuellement une fiche source à une cible sans supprimer la source et rejoue sans dupliquer les notes.
 - `updateExistingDemandFollowup` rattache par email+date, puis nom+date si l'email manque. Sans date de prestation, il accepte uniquement une correspondance exacte et unique sur l’email parmi les demandes actives.
 - Si ces critères exacts échouent, `updateExistingDemandFollowup` peut utiliser le même rapprochement prudent que la saisie manuelle : téléphone ou email exact, ou combinaison forte et unique entre nom, date, convives, type, lieu et statut. Une correspondance absente ou ambiguë ne crée aucune ligne.
 - L'option Make `allow_unique_active_event_date` est réservée au parcours Voxist : après les rapprochements habituels, elle autorise seulement une demande active unique partageant la même date de prestation.

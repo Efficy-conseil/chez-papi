@@ -31,6 +31,7 @@ const DEFAULT_ROW_HEIGHT_PX = 20;
 
 const ALLOWED_STATUSES = [
   "Nouvelle demande",
+  "À vérifier",
   "À rappeler",
   "En attente de réponse",
   "Devis à préparer",
@@ -207,6 +208,7 @@ function doPost(e) {
     if (body.action === 'createMakeDemand') return withDocumentLock(function() { return createMakeDemand(body.row || {}); });
     if (body.action === 'mergeWixDuplicateDemand') return withDocumentLock(function() { return mergeWixDuplicateDemand(body.primary_id_demande, body.wix_duplicate_id); });
     if (body.action === 'mergeVoxistDuplicateDemand') return withDocumentLock(function() { return mergeVoxistDuplicateDemand(body.primary_id_demande, body.voxist_duplicate_id); });
+    if (body.action === 'mergeDemandRecords') return withDocumentLock(function() { return mergeDemandRecords(body.source_id_demande, body.target_id_demande); });
     if (body.action === 'delete') return withDocumentLock(function() { return deleteRowById(body.id_demande); });
     return ko('Action inconnue : ' + body.action);
   } catch (err) {
@@ -701,6 +703,9 @@ function updateExistingDemandFollowup(match, fields, options) {
     matches = findActiveRowsByEventDate(sheet, headers, dateEvenement);
   }
   if (matches.length !== 1) {
+    if (matches.length === 0 && options && options.create_if_not_found) {
+      return createUnmatchedFollowupDemand(options.fallback_row || {}, fields || {});
+    }
     return ok({
       updated: false,
       reason: matches.length === 0 ? "existing_demand_not_found" : "existing_demand_ambiguous",
@@ -733,6 +738,110 @@ function updateExistingDemandFollowup(match, fields, options) {
   applyDefaultRowHeight(sheet, found.rowIndex);
 
   return ok({ updated: true, id_demande: found.id_demande || "", row: found.rowIndex });
+}
+
+function createUnmatchedFollowupDemand(rowData, followupFields) {
+  const raw = normalizeRowKeys(rowData || {});
+  const incomingStatus = String(raw.statut || '').trim();
+  const automaticNote = "Demande créée automatiquement : aucun dossier existant n'a été trouvé pour ce message entrant. À vérifier et à rattacher si nécessaire.";
+  const existingNotes = String(raw.notes || '').trim();
+  const message = String(raw.message_original || followupFields.dernier_message_client || '').trim();
+  const row = Object.assign({}, raw, followupFields || {}, {
+    statut: ALLOWED_STATUSES.indexOf(incomingStatus) !== -1 ? incomingStatus : "À vérifier",
+    notes: appendUniqueLine(existingNotes, automaticNote),
+    dernier_message_client: String(followupFields.dernier_message_client || message).slice(0, 900),
+    dernier_email_recu_le: followupFields.dernier_email_recu_le || raw.date_reception || new Date(),
+    relance_a_traiter: true,
+    nb_relances_client: Math.max(1, Number(raw.nb_relances_client || 0))
+  });
+  const result = createMakeDemand(row);
+  const data = result && result.getContent ? JSON.parse(result.getContent()).data : null;
+  return ok(Object.assign({}, data || {}, {
+    updated: true,
+    created_from_unmatched_followup: true,
+    reason: data && data.created === false ? "automatic_demand_replayed" : "automatic_demand_created"
+  }));
+}
+
+function mergeDemandRecords(sourceIdDemande, targetIdDemande) {
+  const sourceId = String(sourceIdDemande || '').trim();
+  const targetId = String(targetIdDemande || '').trim();
+  if (!sourceId || !targetId) throw new Error('Demandes source et cible obligatoires');
+  if (sourceId === targetId) throw new Error('Les demandes source et cible doivent être différentes');
+
+  const sheet = getSheet();
+  ensureSchemaHeaders(sheet);
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
+  const source = findRowByDemandId(sheet, headers, sourceId);
+  const target = findRowByDemandId(sheet, headers, targetId);
+  if (!source) throw new Error('Demande source introuvable : ' + sourceId);
+  if (!target) throw new Error('Demande cible introuvable : ' + targetId);
+
+  const sourceData = readRowData(sheet, headers, source.rowIndex);
+  const targetData = readRowData(sheet, headers, target.rowIndex);
+  const mergeMarker = 'Rattachement manuel depuis ' + sourceId;
+  if (String(targetData.notes || '').indexOf(mergeMarker) !== -1) {
+    return ok({ merged: true, replayed: true, source_retained: true, source_id_demande: sourceId, id_demande: targetId });
+  }
+
+  const fillIfMissing = [
+    'nom_client', 'telephone', 'email_client', 'type_evenement', 'date_evenement',
+    'heure_evenement', 'nb_convives', 'lieu_prestation', 'budget_estime',
+    'url_dossier_drive', 'message_original'
+  ];
+  const updates = {};
+  fillIfMissing.forEach(function(key) {
+    if (!String(targetData[key] || '').trim() && String(sourceData[key] || '').trim()) updates[key] = sourceData[key];
+  });
+
+  ['gmail_thread_id', 'gmail_message_id', 'url_email_origine', 'dernier_email_recu_le', 'dernier_message_client'].forEach(function(key) {
+    if (String(sourceData[key] || '').trim()) updates[key] = sourceData[key];
+  });
+  updates.relance_a_traiter = normalizeBoolean(targetData.relance_a_traiter) || normalizeBoolean(sourceData.relance_a_traiter);
+  updates.nb_relances_client = Number(targetData.nb_relances_client || 0) + Number(sourceData.nb_relances_client || 0);
+
+  const noteParts = [mergeMarker + ' (fiche source conservée).'];
+  const sourceNotes = String(sourceData.notes || '').trim();
+  const sourceOriginal = String(sourceData.message_original || '').trim();
+  if (sourceNotes) noteParts.push(sourceNotes);
+  if (sourceOriginal && sourceOriginal !== String(targetData.message_original || '').trim()) {
+    noteParts.push('Message d’origine de ' + sourceId + ' : ' + sourceOriginal);
+  }
+  updates.notes = appendUniqueLine(String(targetData.notes || '').trim(), noteParts.join('\n'));
+  updates.derniere_modification = new Date();
+
+  writeFieldsToRow(sheet, headers, target.rowIndex, sanitizeFields(updates, true));
+  const sourceNote = appendUniqueLine(String(sourceData.notes || '').trim(), 'Rattachée manuellement à ' + targetId + '. Cette fiche source est conservée et peut être supprimée séparément après vérification.');
+  writeFieldsToRow(sheet, headers, source.rowIndex, sanitizeFields({ notes: sourceNote, derniere_modification: new Date() }, true));
+  applyDefaultRowHeight(sheet, target.rowIndex);
+  applyDefaultRowHeight(sheet, source.rowIndex);
+  syncCalendarForRow(sheet, headers, target.rowIndex, 'mergeDemandRecords');
+
+  return ok({
+    merged: true,
+    replayed: false,
+    source_retained: true,
+    source_id_demande: sourceId,
+    id_demande: targetId,
+    fields: updates
+  });
+}
+
+function writeFieldsToRow(sheet, headers, rowIndex, fields) {
+  headers.forEach(function(h, i) {
+    const key = canonicalKey(h);
+    if (fields[key] === undefined) return;
+    const cell = sheet.getRange(rowIndex, i + 1);
+    if (key === 'date_evenement') cell.setNumberFormat('@');
+    cell.setValue(fields[key]);
+  });
+}
+
+function appendUniqueLine(existing, addition) {
+  const current = String(existing || '').trim();
+  const next = String(addition || '').trim();
+  if (!next || current.indexOf(next) !== -1) return current;
+  return current ? current + '\n' + next : next;
 }
 
 function syncCalendarForRow(sheet, headers, rowIndex, context) {

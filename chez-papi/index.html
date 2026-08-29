@@ -475,6 +475,7 @@
 <label>Statut de la demande</label>
 <select name="statut">
 <option value="Nouvelle demande">🆕 Nouvelle demande</option>
+<option value="À vérifier">❓ À vérifier</option>
 <option value="À rappeler">📞 À rappeler</option>
 <option value="En attente de réponse">⏳ En attente de réponse</option>
 <option value="Devis à préparer">📝 Devis à préparer</option>
@@ -605,12 +606,39 @@
 
 <div class="modal-ft" style="justify-content:space-between; display:flex; gap:10px;">
 <button type="button" class="btn-danger" id="btn-delete-event" style="display:none;" onclick="deleteCurrentEvent()">Supprimer</button>
+<button type="button" class="btn-secondary" id="btn-attach-demand" style="display:none;" onclick="openDemandMergeModal()">Rattacher à une demande</button>
 <div style="display:flex;gap:10px;margin-left:auto;">
 <button type="button" class="btn-secondary" onclick="closeEventModal()">Annuler</button>
 <button type="submit" class="btn-primary">Enregistrer</button>
 </div>
 </div>
 </form>
+</div>
+</div>
+
+<!-- ══════════════════════ MODAL RATTACHEMENT DE DEMANDES ══════════════════════ -->
+<div id="demand-merge-modal" class="modal-overlay duplicate-modal" style="display:none;">
+<div class="modal-box duplicate-modal-box" role="dialog" aria-modal="true" aria-labelledby="demand-merge-title">
+<div class="modal-hd">
+<h3 id="demand-merge-title">Rattacher cette demande</h3>
+<button type="button" class="modal-close" onclick="closeDemandMergeModal()" aria-label="Fermer">✕</button>
+</div>
+<div class="duplicate-modal-body">
+<p>Choisissez la demande de destination. Les messages et informations utiles seront transférés sans supprimer la fiche source.</p>
+<label for="merge-target-select">Demande de destination</label>
+<select id="merge-target-select"></select>
+<div class="duplicate-table-wrap">
+<table class="duplicate-comparison-table">
+<thead><tr><th>Champ</th><th>Source</th><th>Destination</th></tr></thead>
+<tbody id="merge-comparison"></tbody>
+</table>
+</div>
+<p id="merge-conflict-note" class="duplicate-help"></p>
+</div>
+<div class="modal-ft duplicate-modal-actions">
+<button type="button" class="btn-secondary" onclick="closeDemandMergeModal()">Annuler</button>
+<button type="button" id="merge-confirm-btn" class="btn-primary" onclick="confirmDemandMerge()">Confirmer le rattachement</button>
+</div>
 </div>
 </div>
 
@@ -648,7 +676,7 @@
 </div>
 
 <script src="statistics.js?v=1.0"></script>
-<script src="app.js?v=2.40"></script>
+<script src="app.js?v=2.41"></script>
 
 <!-- ── BOTTOM NAVIGATION (mobile uniquement) ── -->
 <nav class="bottom-nav" id="bottom-nav">

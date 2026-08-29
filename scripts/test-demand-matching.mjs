@@ -4,7 +4,16 @@ import vm from 'node:vm';
 
 const context = vm.createContext({
   console,
-  Logger: { log() {} }
+  Logger: { log() {} },
+  ContentService: {
+    MimeType: { JSON: 'application/json' },
+    createTextOutput(content) {
+      return {
+        getContent() { return content; },
+        setMimeType() { return this; }
+      };
+    }
+  }
 });
 vm.runInContext(readFileSync('apps-script/code.gs', 'utf8'), context);
 
@@ -193,5 +202,95 @@ assert.deepEqual(
   Array.from(activeDateMatches, candidate => candidate.id_demande),
   ['MANUAL-1']
 );
+
+assert.equal(evaluate('ALLOWED_STATUSES.indexOf("À vérifier") >= 0'), true);
+assert.equal(evaluate('sanitizeFields({ statut: "À vérifier" }, false).statut'), 'À vérifier');
+assert.equal(evaluate('appendUniqueLine("Note existante", "Note existante")'), 'Note existante');
+assert.equal(evaluate('appendUniqueLine("Note existante", "Nouvelle note")'), 'Note existante\nNouvelle note');
+
+context.createMakeDemand = row => ({
+  getContent() {
+    return JSON.stringify({ data: { id_demande: row.id_demande, created: true } });
+  }
+});
+context.unmatchedRow = {
+  id_demande: 'GMAIL-THREAD-81',
+  statut: 'Statut inventé',
+  notes: 'Information IA',
+  message_original: 'Message reçu sans demande correspondante'
+};
+context.unmatchedFields = {
+  gmail_message_id: 'MESSAGE-81',
+  dernier_message_client: 'Message reçu sans demande correspondante',
+  relance_a_traiter: true
+};
+const automaticDemand = evaluate('JSON.parse(createUnmatchedFollowupDemand(unmatchedRow, unmatchedFields).getContent()).data');
+assert.equal(automaticDemand.updated, true);
+assert.equal(automaticDemand.created_from_unmatched_followup, true);
+assert.equal(automaticDemand.reason, 'automatic_demand_created');
+
+const capturedAutomaticRow = evaluate(`(() => {
+  let captured;
+  createMakeDemand = row => {
+    captured = row;
+    return { getContent: () => JSON.stringify({ data: { id_demande: row.id_demande, created: true } }) };
+  };
+  createUnmatchedFollowupDemand(unmatchedRow, unmatchedFields);
+  return captured;
+})()`);
+assert.equal(capturedAutomaticRow.statut, 'À vérifier');
+assert.equal(capturedAutomaticRow.relance_a_traiter, true);
+assert.equal(capturedAutomaticRow.nb_relances_client, 1);
+assert.match(capturedAutomaticRow.notes, /créée automatiquement/);
+
+const mergeHeaders = [
+  'id_demande', 'nom_client', 'email_client', 'telephone', 'date_evenement',
+  'lieu_prestation', 'statut', 'notes', 'message_original', 'gmail_thread_id',
+  'gmail_message_id', 'url_email_origine', 'dernier_email_recu_le',
+  'dernier_message_client', 'nb_relances_client', 'relance_a_traiter',
+  'derniere_modification'
+];
+const mergeRows = [
+  mergeHeaders,
+  ['GMAIL-SOURCE', 'Solange Ramero', 'solange@example.com', '', '01/09/2026', 'Salon', 'À vérifier', 'Création automatique', 'Demande de précision', 'THREAD-SOURCE', 'MESSAGE-SOURCE', 'https://mail.google.com/mail/u/0/#inbox/THREAD-SOURCE', '29/08/2026', 'Pouvez-vous confirmer ?', 1, true, ''],
+  ['MANUAL-TARGET', 'Solange Ramero', 'solange@example.com', '06 00 00 00 00', '01/09/2026', '', 'Devis envoyé', 'Note cible', 'Demande initiale', '', '', '', '', '', 2, false, '']
+];
+context.mergeSheet = {
+  getLastRow() { return mergeRows.length; },
+  getLastColumn() { return mergeHeaders.length; },
+  getRange(row, column, rowCount = 1, columnCount = 1) {
+    const values = () => mergeRows.slice(row - 1, row - 1 + rowCount).map(line => line.slice(column - 1, column - 1 + columnCount));
+    return {
+      getValues: values,
+      getDisplayValues() { return values().map(line => line.map(value => String(value ?? ''))); },
+      getValue() { return mergeRows[row - 1][column - 1]; },
+      setValue(value) { mergeRows[row - 1][column - 1] = value; return this; },
+      setNumberFormat() { return this; }
+    };
+  }
+};
+context.getSheet = () => context.mergeSheet;
+context.ensureSchemaHeaders = () => {};
+context.applyDefaultRowHeight = () => {};
+context.syncCalendarForRow = () => {};
+context.mergeSourceId = 'GMAIL-SOURCE';
+context.mergeTargetId = 'MANUAL-TARGET';
+
+const firstMerge = evaluate('JSON.parse(mergeDemandRecords(mergeSourceId, mergeTargetId).getContent()).data');
+assert.equal(firstMerge.merged, true);
+assert.equal(firstMerge.replayed, false);
+assert.equal(firstMerge.source_retained, true);
+const targetAfterMerge = mergeRows[2];
+assert.equal(targetAfterMerge[mergeHeaders.indexOf('statut')], 'Devis envoyé');
+assert.equal(targetAfterMerge[mergeHeaders.indexOf('lieu_prestation')], 'Salon');
+assert.equal(targetAfterMerge[mergeHeaders.indexOf('dernier_message_client')], 'Pouvez-vous confirmer ?');
+assert.equal(targetAfterMerge[mergeHeaders.indexOf('relance_a_traiter')], true);
+assert.match(targetAfterMerge[mergeHeaders.indexOf('notes')], /Rattachement manuel depuis GMAIL-SOURCE/);
+assert.match(mergeRows[1][mergeHeaders.indexOf('notes')], /Rattachée manuellement à MANUAL-TARGET/);
+
+const targetNotesBeforeReplay = targetAfterMerge[mergeHeaders.indexOf('notes')];
+const replayedMerge = evaluate('JSON.parse(mergeDemandRecords(mergeSourceId, mergeTargetId).getContent()).data');
+assert.equal(replayedMerge.replayed, true);
+assert.equal(targetAfterMerge[mergeHeaders.indexOf('notes')], targetNotesBeforeReplay);
 
 console.log('Tests de rapprochement réussis.');

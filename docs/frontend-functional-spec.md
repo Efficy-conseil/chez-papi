@@ -159,7 +159,7 @@ Lorsqu'un échange est rattaché à une demande existante, une étoile discrète
 
 ### 5.3 Dernières demandes
 
-- Affiche initialement dix demandes actives aux statuts `Nouvelle demande`, `À rappeler` ou `En attente de réponse`.
+- Affiche initialement dix demandes actives aux statuts `Nouvelle demande`, `À vérifier`, `À rappeler` ou `En attente de réponse`.
 - Trie les demandes par date de réception décroissante.
 - Affiche date d'événement, client, résumé, ancienneté de réception et statut.
 - Colore l'ancienneté selon qu'elle est récente, à surveiller ou ancienne.
@@ -190,7 +190,7 @@ Lorsqu'un échange est rattaché à une demande existante, une étoile discrète
 
 ## 6. Demandes en cours — pipeline
 
-Le pipeline contient les statuts commerciaux actifs : `Nouvelle demande`, `À rappeler`, `En attente de réponse`, `Devis à préparer` et `Devis envoyé`.
+Le pipeline contient les statuts commerciaux actifs : `Nouvelle demande`, `À vérifier`, `À rappeler`, `En attente de réponse`, `Devis à préparer` et `Devis envoyé`. `À vérifier` est affiché avec l'icône `❓` pour attirer l'attention.
 
 Les dossiers sont répartis dans quatre colonnes :
 
@@ -357,7 +357,19 @@ Pour un message client à traiter, le bouton `Répondre` est également présent
 
 `Marquer comme traité` positionne `relance_a_traiter` à faux. L'étoile disparaît et la demande sort du regroupement `Messages reçus`, sans changement de statut. Un nouvel échange rattaché réactive automatiquement l'indicateur.
 
-### 10.5 Conflits de date
+Le regroupement `Messages reçus` est transversal à tous les statuts : une fiche close ou historisée reste visible dans ce regroupement tant que son message n'a pas été marqué comme traité.
+
+### 10.5 Rattachement manuel d'une demande
+
+Depuis une fiche existante, l'action `Rattacher à une demande` ouvre une fenêtre qui permet de choisir la destination et de comparer les informations principales. Les valeurs différentes sont mises en évidence. Après confirmation :
+
+- les champs déjà renseignés sur la destination restent prioritaires ;
+- les champs manquants, messages et notes utiles de la source sont transférés ;
+- une répétition de la même opération ne duplique pas les notes ;
+- la source est annotée et conservée ;
+- sa suppression reste une action séparée qui utilise la confirmation irréversible existante.
+
+### 10.6 Conflits de date
 
 Pendant la saisie ou l'ouverture d'une fiche, l'interface recherche les autres demandes à la même date :
 
@@ -367,7 +379,7 @@ Pendant la saisie ou l'ouverture d'une fiche, l'interface recherche les autres d
 
 La fiche en cours d'édition est exclue de cette comparaison.
 
-### 10.6 Création
+### 10.7 Création
 
 - Utilise l'action backend `add` avec l'option `check_duplicates` lors d'une première tentative de création.
 - N'envoie pas d'identifiant choisi par le navigateur.
@@ -383,14 +395,14 @@ La fiche en cours d'édition est exclue de cette comparaison.
 - `Créer quand même` demande une confirmation explicite avant de forcer une nouvelle ligne.
 - Recharge les données et avertit les autres onglets après succès.
 
-### 10.7 Modification
+### 10.8 Modification
 
 - Utilise l'action backend `update` et `id_demande`.
 - Met à jour localement l'affichage après succès puis recharge les données.
 - Si la date change, l'agenda se positionne sur le nouveau mois.
 - Les champs techniques absents du formulaire ne doivent pas être effacés.
 
-### 10.8 Suppression
+### 10.9 Suppression
 
 - Le bouton n'apparaît que pour une demande existante.
 - Une confirmation explicite indique que l'action est irréversible.
@@ -459,7 +471,7 @@ La fiche en cours d'édition est exclue de cette comparaison.
 
 - [ ] Connexion, erreurs d'identifiants et déconnexion.
 - [ ] Chargement, erreur réseau et indicateur de synchronisation.
-- [ ] Normalisation des cinq canaux et huit statuts.
+- [ ] Normalisation des cinq canaux et dix statuts, dont `❓ À vérifier`.
 - [ ] Déduplication par identifiant.
 - [ ] Dates françaises, plages, années seules et heures.
 - [ ] Cinq sections de navigation sur ordinateur et mobile.

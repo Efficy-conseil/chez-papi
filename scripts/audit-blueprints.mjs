@@ -218,6 +218,16 @@ assert(moduleById(mainModules, 87).mapper?.to === 'Label_2648810022094724776', '
   );
 });
 
+const unmatchedEmailBody = moduleById(mainModules, 81).mapper?.data || '';
+assert(unmatchedEmailBody.includes('"create_if_not_found":true'), 'création de secours absente du module 81');
+assert(unmatchedEmailBody.includes('"id_demande":"GMAIL-{{1.threadId}}"'), 'identifiant anti-doublon absent de la création de secours du module 81');
+assert(unmatchedEmailBody.includes('"fallback_row"'), 'données de création de secours absentes du module 81');
+assert(unmatchedEmailBody.includes('"relance_a_traiter":true'), 'message reçu non signalé dans la création de secours du module 81');
+assert(
+  JSON.stringify(moduleById(mainModules, 37).mapper?.messages || []).includes('À vérifier'),
+  'statut À vérifier absent des instructions IA Email direct'
+);
+
 const router90 = moduleById(mainModules, 90);
 const router91 = moduleById(mainModules, 91);
 const router92 = moduleById(mainModules, 92);
