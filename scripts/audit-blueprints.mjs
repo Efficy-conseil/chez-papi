@@ -238,6 +238,8 @@ assert(moduleById(mainModules, 93).mapper?.to === 'Label_2633677580427542522', '
 
 const voxistAudioFollowup = moduleById(mainModules, 102);
 const voxistAudioTranscription = moduleById(mainModules, 7);
+const voxistAudioPrequalification = moduleById(mainModules, 65);
+const voxistAudioExtraction = moduleById(mainModules, 13);
 assert(voxistAudioTranscription.module === 'openai-gpt-3:CreateTranscription', 'module de retranscription Voxist inattendu');
 assert(voxistAudioTranscription.mapper?.model === 'whisper-1', 'retranscription Voxist non compatible avec le module OpenAI Make actuel');
 assert(voxistAudioTranscription.mapper?.fileData === '{{19.data}}', 'fichier audio Voxist absent de la retranscription');
@@ -245,10 +247,32 @@ assert(voxistAudioTranscription.mapper?.fileName === '{{19.filename}}', 'nom du 
 const voxistAudioFollowupConditions = voxistAudioFollowup.filter?.conditions || [];
 assert(
   voxistAudioFollowupConditions.some(conditionSet =>
-    conditionSet.some(condition => condition?.a === '{{14.statut}}' && condition?.b === 'À rappeler' && condition?.o === 'text:equal') &&
-    conditionSet.some(condition => condition?.a === '{{14.message_original}}' && condition?.b === 'devis' && condition?.o === 'text:contain')
+    conditionSet.some(condition => condition?.a === '{{ifempty(11.telephone_e164; "")}}' && condition?.b === '' && condition?.o === 'text:notequal')
   ),
-  'suivi Voxist sur devis rejeté par l’IA encore bloqué avant le rattachement'
+  'vocal Voxist avec numéro appelant encore bloqué avant le rattachement lorsqu’il est rejeté par l’IA'
+);
+assert(
+  (voxistAudioExtraction.filter?.conditions || []).some(conditionSet =>
+    conditionSet.some(condition => condition?.a === '{{ifempty(11.telephone_e164; "")}}' && condition?.b === '' && condition?.o === 'text:notequal')
+  ),
+  'extraction audio détaillée encore bloquée par la préqualification malgré un numéro appelant'
+);
+const audioPrequalificationPrompt = JSON.stringify(voxistAudioPrequalification.mapper?.messages || []);
+assert(audioPrequalificationPrompt.includes('{{11.telephone_e164}}'), 'numéro appelant absent de la préqualification audio Voxist');
+assert(!audioPrequalificationPrompt.includes('{{11.telephone_raw}}'), 'préqualification audio reliée à un champ téléphone inexistant');
+
+const unmatchedPersonalAudioArchive = moduleById(mainModules, 111);
+assert(
+  (unmatchedPersonalAudioArchive.filter?.conditions || []).flat().some(condition =>
+    condition?.a === '{{ifempty(102.data.data.reason; "")}}' &&
+    condition?.b === 'existing_demand_not_found' &&
+    condition?.o === 'text:equal'
+  ),
+  'vocal personnel sans dossier actif non archivé après la recherche par téléphone'
+);
+assert(
+  unmatchedPersonalAudioArchive.mapper?.to === 'Label_2633677580427542522',
+  'vocal personnel sans dossier actif archivé hors de Hors_Scope_Make'
 );
 
 const wixSuccessFlow = router92.routes?.find(route => route.flow.some(module => module.id === 43))?.flow || [];

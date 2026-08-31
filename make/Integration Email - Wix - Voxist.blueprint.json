@@ -7365,7 +7365,7 @@
                                                     },
                                                     {
                                                         "role": "user",
-                                                        "content": "Source : Voxist\nCanal : Téléphone\nDate de réception : {{1.internalDate}}\nTéléphone brut détecté : {{11.telephone_raw}}\n\nTranscription audio :\n{{7.text.text}}\n\nEmail Voxist brut limité :\n{{substring(1.fullTextBody; 0; 1500)}}\n\nRègles de qualification :\n- is_demande = true si le message concerne une demande client ou prospect pour Chez Papi Maison Gourmande.\n- Exemples à accepter : devis, renseignements sur prestations, formules à la carte, prestation traiteur, événement, mariage, baptême, anniversaire, 18 ans, buffet, cocktail, brunch, repas, petit déjeuner, déjeuner, dîner, réception, entreprise, séminaire, convives, quarantaine de personnes, plateau repas.\n- is_demande = false si message personnel, familial, amical, fournisseur, erreur de numéro, spam, publicité, rappel sans contexte ou message non lié à une prestation traiteur.\n- Si le message est incomplet mais contient un indice clair de demande professionnelle ou événementielle, mettre is_demande = true.\n- Si le message dit seulement \"rappelle-moi\" sans indice traiteur ou événementiel, mettre is_demande = false.\n- canal = \"Téléphone\" ; source = \"Voxist\" ; send_ack = false ; ack_mode = \"\".\n- nom_client : retourne uniquement le nom explicitement énoncé par l’appelant. Si aucun nom ou prénom n’est donné, retourne exactement nom_client = \"Inconnu / à compléter\". Ne jamais utiliser le type_evenement, le motif de l’appel, un lieu ou un autre champ comme nom_client.\n- Si is_demande = true : statut = \"À rappeler\", archive_label = \"Historique_Voxist\", resume_court = résumé très court du besoin potentiel.\n- Si is_demande = false : statut = \"\", archive_label = \"Hors_Scope_Make\", resume_court = \"\", message_original = résumé très court du message hors scope.\n- notes doit contenir la raison courte de qualification, maximum 180 caractères.",
+                                                        "content": "Source : Voxist\nCanal : Téléphone\nDate de réception : {{1.internalDate}}\nTéléphone brut détecté : {{11.telephone_e164}}\n\nTranscription audio :\n{{7.text.text}}\n\nEmail Voxist brut limité :\n{{substring(1.fullTextBody; 0; 1500)}}\n\nRègles de qualification :\n- is_demande = true si le message concerne une demande client ou prospect pour Chez Papi Maison Gourmande.\n- Exemples à accepter : devis, renseignements sur prestations, formules à la carte, prestation traiteur, événement, mariage, baptême, anniversaire, 18 ans, buffet, cocktail, brunch, repas, petit déjeuner, déjeuner, dîner, réception, entreprise, séminaire, convives, quarantaine de personnes, plateau repas.\n- is_demande = false si message personnel, familial, amical, fournisseur, erreur de numéro, spam, publicité, rappel sans contexte ou message non lié à une prestation traiteur.\n- Si le message est incomplet mais contient un indice clair de demande professionnelle ou événementielle, mettre is_demande = true.\n- Si le message dit seulement \"rappelle-moi\" sans indice traiteur ou événementiel, mettre is_demande = false.\n- canal = \"Téléphone\" ; source = \"Voxist\" ; send_ack = false ; ack_mode = \"\".\n- telephone = numéro appelant fourni dans Téléphone brut détecté ; ne le remplace pas par un numéro éventuellement prononcé dans la transcription.\n- nom_client : retourne uniquement le nom explicitement énoncé par l’appelant. Si aucun nom ou prénom n’est donné, retourne exactement nom_client = \"Inconnu / à compléter\". Ne jamais utiliser le type_evenement, le motif de l’appel, un lieu ou un autre champ comme nom_client.\n- Si is_demande = true : statut = \"À rappeler\", archive_label = \"Historique_Voxist\", resume_court = résumé très court du besoin potentiel.\n- Si is_demande = false : statut = \"\", archive_label = \"Hors_Scope_Make\", resume_court = \"\", message_original = résumé très court du message hors scope.\n- notes doit contenir la raison courte de qualification, maximum 180 caractères.",
                                                         "imageDetail": "auto"
                                                     }
                                                 ],
@@ -8808,6 +8808,13 @@
                                                                             "a": "{{66.is_demande}}",
                                                                             "b": "true",
                                                                             "o": "boolean:equal"
+                                                                        }
+                                                                    ],
+                                                                    [
+                                                                        {
+                                                                            "a": "{{ifempty(11.telephone_e164; \"\")}}",
+                                                                            "b": "",
+                                                                            "o": "text:notequal"
                                                                         }
                                                                     ]
                                                                 ]
@@ -10271,14 +10278,9 @@
                                                                                     ],
                                                                                     [
                                                                                         {
-                                                                                            "a": "{{14.statut}}",
-                                                                                            "b": "À rappeler",
-                                                                                            "o": "text:equal"
-                                                                                        },
-                                                                                        {
-                                                                                            "a": "{{14.message_original}}",
-                                                                                            "b": "devis",
-                                                                                            "o": "text:contain"
+                                                                                            "a": "{{ifempty(11.telephone_e164; \"\")}}",
+                                                                                            "b": "",
+                                                                                            "o": "text:notequal"
                                                                                         }
                                                                                     ]
                                                                                 ]
@@ -10331,7 +10333,7 @@
                                                                             "module": "builtin:BasicRouter",
                                                                             "version": 1,
                                                                             "parameters": {
-                                                                                "else": 1
+                                                                                "else": 2
                                                                             },
                                                                             "mapper": null,
                                                                             "metadata": {
@@ -10701,6 +10703,52 @@
                                                                                 {
                                                                                     "flow": [
                                                                                         {
+                                                                                            "id": 111,
+                                                                                            "module": "google-email:moveAnEmail",
+                                                                                            "version": 4,
+                                                                                            "parameters": {
+                                                                                                "__IMTCONN__": 7978131
+                                                                                            },
+                                                                                            "filter": {
+                                                                                                "name": "Archiver le vocal personnel sans dossier actif",
+                                                                                                "conditions": [
+                                                                                                    [
+                                                                                                        {
+                                                                                                            "a": "{{14.is_demande}}",
+                                                                                                            "b": "false",
+                                                                                                            "o": "boolean:equal"
+                                                                                                        },
+                                                                                                        {
+                                                                                                            "a": "{{ifempty(102.data.data.updated; false)}}",
+                                                                                                            "b": "false",
+                                                                                                            "o": "boolean:equal"
+                                                                                                        },
+                                                                                                        {
+                                                                                                            "a": "{{ifempty(102.data.data.reason; \"\")}}",
+                                                                                                            "b": "existing_demand_not_found",
+                                                                                                            "o": "text:equal"
+                                                                                                        }
+                                                                                                    ]
+                                                                                                ]
+                                                                                            },
+                                                                                            "mapper": {
+                                                                                                "to": "Label_2633677580427542522",
+                                                                                                "from": "INBOX",
+                                                                                                "messageId": "{{1.id}}"
+                                                                                            },
+                                                                                            "metadata": {
+                                                                                                "designer": {
+                                                                                                    "x": 4500,
+                                                                                                    "y": 1800,
+                                                                                                    "name": "Archiver le vocal personnel sans dossier actif"
+                                                                                                }
+                                                                                            }
+                                                                                        }
+                                                                                    ]
+                                                                                },
+                                                                                {
+                                                                                    "flow": [
+                                                                                        {
                                                                                             "id": 71,
                                                                                             "module": "google-email:moveAnEmail",
                                                                                             "version": 4,
@@ -10995,21 +11043,9 @@
                                                                                             "o": "boolean:equal"
                                                                                         },
                                                                                         {
-                                                                                            "a": "{{14.statut}}",
-                                                                                            "b": "À rappeler",
-                                                                                            "o": "text:notequal"
-                                                                                        }
-                                                                                    ],
-                                                                                    [
-                                                                                        {
-                                                                                            "a": "{{14.is_demande}}",
-                                                                                            "b": "false",
-                                                                                            "o": "boolean:equal"
-                                                                                        },
-                                                                                        {
-                                                                                            "a": "{{14.message_original}}",
-                                                                                            "b": "devis",
-                                                                                            "o": "text:notcontain"
+                                                                                            "a": "{{ifempty(11.telephone_e164; \"\")}}",
+                                                                                            "b": "",
+                                                                                            "o": "text:equal"
                                                                                         }
                                                                                     ]
                                                                                 ]
