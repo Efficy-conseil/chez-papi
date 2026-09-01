@@ -5,21 +5,67 @@ import vm from 'node:vm';
 const context = vm.createContext({
   console,
   Logger: { log() {} },
+  Utilities: {
+    sleep(duration) { context.sleepDurations.push(duration); }
+  },
   ContentService: {
     MimeType: { JSON: 'application/json' },
     createTextOutput(content) {
       return {
         getContent() { return content; },
-        setMimeType() { return this; }
+        getMimeType() { return this.mimeType; },
+        setMimeType(mimeType) { this.mimeType = mimeType; return this; }
       };
     }
   }
 });
+context.sleepDurations = [];
 vm.runInContext(readFileSync('apps-script/code.gs', 'utf8'), context);
 
 function evaluate(expression) {
   return vm.runInContext(expression, context);
 }
+
+const getError = evaluate('doGet({})');
+assert.deepEqual(JSON.parse(getError.getContent()), { ok: false, error: 'Utilisez POST' });
+assert.equal(getError.getMimeType(), 'application/json');
+assert.deepEqual(context.sleepDurations, [20000]);
+context.malformedMakeRequest = {
+  postData: {
+    contents: `{"action":"checkDuplicate","make_token":"cp_make_followup_2026_06",`
+  }
+};
+const malformedMakeError = evaluate('doPost(malformedMakeRequest)');
+assert.equal(JSON.parse(malformedMakeError.getContent()).ok, false);
+assert.equal(malformedMakeError.getMimeType(), 'application/json');
+assert.deepEqual(context.sleepDurations, [20000, 20000]);
+assert.equal(evaluate('DELAY_MAKE_ERRORS_FOR_HTTP_TIMEOUT'), false);
+context.validMakeRequest = {
+  postData: {
+    contents: JSON.stringify({
+      action: 'checkDuplicate',
+      make_token: 'cp_make_followup_2026_06',
+      match: { gmail_message_id: 'TEST-MAKE-ERROR' }
+    })
+  }
+};
+const validMakeError = evaluate(`(() => {
+    const original = checkDuplicate;
+    try {
+      checkDuplicate = function() { return ko('Erreur backend Make'); };
+      return doPost(validMakeRequest);
+    } finally {
+      checkDuplicate = original;
+    }
+  })()`);
+assert.deepEqual(JSON.parse(validMakeError.getContent()), { ok: false, error: 'Erreur backend Make' });
+assert.equal(validMakeError.getMimeType(), 'application/json');
+assert.deepEqual(context.sleepDurations, [20000, 20000, 20000]);
+assert.equal(evaluate('DELAY_MAKE_ERRORS_FOR_HTTP_TIMEOUT'), false);
+assert.deepEqual(
+  JSON.parse(evaluate('ko("Erreur dashboard").getContent()')),
+  { ok: false, error: 'Erreur dashboard' }
+);
 
 const phoneVariants = [
   '+0683782160',

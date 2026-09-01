@@ -27,6 +27,19 @@ function moduleById(modules, id) {
 const mainModules = collectModules(main.flow);
 const tallyModules = collectModules(tally.flow);
 
+const gmailTrigger = moduleById(mainModules, 1);
+const gmailQuery = gmailTrigger.parameters?.q || '';
+assert(
+  gmailQuery.includes('-from:demande.chezpapimaisongourmande@gmail.com') &&
+  gmailQuery.includes('-from:chezpapimaisongourmande@gmail.com'),
+  'expéditeurs internes absents du filtre anti-boucle Gmail'
+);
+assert(
+  !gmailQuery.includes('-subject:"Votre demande chez Chez Papi Maison Gourmande"') &&
+  !gmailQuery.includes('-subject:"Chez Papi Maison Gourmande - Accusé"'),
+  'réponses clients encore masquées par l’objet des accusés automatiques'
+);
+
 [
   [43, 'created'],
   [60, 'count'],
@@ -135,6 +148,7 @@ httpModules.forEach(module => {
 
 const duplicateModule = moduleById(mainModules, 60);
 const duplicateBody = duplicateModule.mapper?.data || '';
+assert(duplicateModule.mapper?.timeout === '15', 'délai maximal de 15 s absent du module 60');
 assert(duplicateBody.includes('"action":"checkDuplicate"'), 'action checkDuplicate absente du module 60');
 assert(duplicateBody.includes('"source_email":"{{1.fromEmail}}"'), 'source_email absent du module 60');
 assert(duplicateBody.includes('"gmail_message_id":"{{1.id}}"'), 'gmail_message_id absent du module 60');

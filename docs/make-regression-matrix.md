@@ -20,6 +20,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | C12 | Une demande échoue puis une demande valide arrive | La première reste en exécution incomplète ; la suivante est traitée sans attendre sa résolution et le scénario reste actif | Automatique + essai Make |
 | C13 | Plusieurs demandes distinctes échouent successivement | Chaque demande est conservée avec ses données et son point de reprise ; les demandes valides suivantes continuent et les alertes natives Make restent actives | Automatique + essai Make |
 | C14 | Reprise après correction d'une écriture backend déjà appliquée dont la réponse a été perdue | La reprise termine le flux sans seconde création ni répétition d'une mise à jour métier | Backend + automatique + essai Make |
+| C15 | `checkDuplicate` signé Make en erreur ou redirection POST transformée en GET | Le backend dépasse volontairement les 15 secondes du module HTTP 60 ; celui-ci déclenche trois reprises à cinq minutes puis conserve une exécution incomplète | Backend + automatique + essai Make |
 
 ## Wix
 
@@ -97,6 +98,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | E22 | Le module 81 reçoit un suivi qualifié mais ne trouve aucune candidate (`existing_demand_not_found`) | Création unique `GMAIL-<threadId>`, note de création automatique, statut IA autorisé ou `À vérifier`, `relance_a_traiter = TRUE`, présence dans `Messages reçus`, archivage `Historique_Email`, aucun accusé | Backend + automatique + essai Make |
 | E23 | Le module 81 reçoit le même message après une réponse HTTP perdue | La fiche `GMAIL-<threadId>` existante est réutilisée, aucune seconde ligne ni seconde note, puis l'archivage peut se poursuivre | Backend + automatique + essai Make |
 | E24 | Le module 81 trouve plusieurs candidates | Aucune création de secours, aucune modification partielle et message conservé en boîte de réception pour décision humaine | Backend + automatique + essai Make |
+| E25 | Une cliente répond à un accusé dont l'objet est `Votre demande chez Chez Papi Maison Gourmande` ou `Chez Papi Maison Gourmande - Accusé` | Le déclencheur Gmail récupère la réponse grâce aux exclusions par expéditeur uniquement ; le message emprunte la route de suivi et n'est pas masqué par son objet | Automatique + essai Make |
 
 ## Tally
 

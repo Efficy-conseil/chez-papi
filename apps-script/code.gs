@@ -27,7 +27,9 @@ const FRONTEND_URL = "https://efficy-conseil.github.io/chez-papi/";
 const AUTH_USER_PROP = "AUTH_USER";
 const AUTH_PASS_PROP = "AUTH_PASS";
 const MAKE_FOLLOWUP_TOKEN = "cp_make_followup_2026_06";
+const MAKE_ERROR_DELAY_MS = 20000;
 const DEFAULT_ROW_HEIGHT_PX = 20;
+let DELAY_MAKE_ERRORS_FOR_HTTP_TIMEOUT = false;
 
 const ALLOWED_STATUSES = [
   "Nouvelle demande",
@@ -176,18 +178,16 @@ function setupAuthSecrets() {
 // ── GET : désactivé pour ne pas exposer les identifiants en URL ─────────────
 
 function doGet(e) {
-  try {
-    return ko("Utilisez POST");
-  } catch (err) {
-    return ko(err.message);
-  }
+  return makeTransportError("Utilisez POST");
 }
 
 // ── POST : lecture / écriture ──────────────────────────────────
 
 function doPost(e) {
+  const rawBody = String(e && e.postData && e.postData.contents || '');
+  DELAY_MAKE_ERRORS_FOR_HTTP_TIMEOUT = rawBody.indexOf(MAKE_FOLLOWUP_TOKEN) >= 0;
   try {
-    const body = JSON.parse(e.postData.contents);
+    const body = JSON.parse(rawBody);
     const auth = body.auth || { user: body.user, pass: body.pass };
     const isMakeFollowup = (
       (body.action === 'updateThreadFollowup' || body.action === 'updateWixFollowup' || body.action === 'updateExistingDemandFollowup' || body.action === 'checkDuplicate' || body.action === 'upsertWixDemand' || body.action === 'createMakeDemand' || body.action === 'mergeWixDuplicateDemand' || body.action === 'mergeVoxistDuplicateDemand') &&
@@ -213,6 +213,8 @@ function doPost(e) {
     return ko('Action inconnue : ' + body.action);
   } catch (err) {
     return ko(err.message);
+  } finally {
+    DELAY_MAKE_ERRORS_FOR_HTTP_TIMEOUT = false;
   }
 }
 
@@ -1938,8 +1940,18 @@ function ok(data) {
 }
 
 function ko(msg) {
+  if (DELAY_MAKE_ERRORS_FOR_HTTP_TIMEOUT) {
+    return makeTransportError(msg);
+  }
   return ContentService
     .createTextOutput(JSON.stringify({ ok: false, error: msg }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function makeTransportError(msg) {
+  Utilities.sleep(MAKE_ERROR_DELAY_MS);
+  return ContentService
+    .createTextOutput(JSON.stringify({ ok: false, error: String(msg || 'Erreur backend Make') }))
     .setMimeType(ContentService.MimeType.JSON);
 }
 

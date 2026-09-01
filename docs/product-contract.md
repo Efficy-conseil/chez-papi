@@ -239,6 +239,7 @@ Vraies demandes :
 
 Relances et suivis :
 
+- Les réponses clientes conservent souvent l'objet de l'accusé automatique. Le déclencheur Gmail ne doit donc jamais exclure les objets `Votre demande chez Chez Papi Maison Gourmande` ou `Chez Papi Maison Gourmande - Accusé` ; la prévention des boucles repose sur l'exclusion des expéditeurs internes.
 - Une modification de devis existant ne crée pas une nouvelle ligne et ne déclenche pas d'accusé automatique.
 - Une validation de devis ne crée pas une nouvelle ligne et ne déclenche pas d'accusé automatique.
 - Un bon de commande, une commande validée ou un document confirmant un devis est un suivi, même lorsqu'il vient d'un portail ou d'un expéditeur technique dans un nouveau fil Gmail. Il doit être rattaché uniquement s'il existe une seule demande correspondant exactement au contact identifié et à la date de prestation ; sinon, aucune ligne ne doit être créée et le message reste à vérifier dans la boîte de réception.
@@ -312,6 +313,7 @@ Contraintes backend :
 - `checkDuplicate` est la source commune d'anti-doublon pour Make.
 - Tous les modules HTTP Make qui appellent Apps Script doivent avoir `Follow redirect` activé. Sinon Make reçoit seulement une réponse Google `302 Moved Temporarily` au lieu du JSON backend, et les champs comme `count` deviennent inexploitables.
 - Les réponses de succès Apps Script sont toutes enveloppées sous `data` (`{ ok: true, data: { … } }`). Dans Make, un champ métier du module HTTP se référence donc avec deux niveaux `data`, par exemple `{{60.data.data.count}}` ou `{{81.data.data.updated}}`.
+- Le module HTTP Make 60 impose un délai maximal de 15 secondes. Une erreur rencontrée pendant son action signée avec le `make_token`, ou un appel redirigé à tort vers `doGet`, retarde volontairement sa réponse backend de 20 secondes. Make déclenche ainsi son gestionnaire Retry sur le module HTTP lui-même, crée une exécution incomplète et effectue ses trois reprises. Cette convention contourne le statut HTTP 200 imposé par Apps Script même pour une exception non gérée. Les appels dashboard ne sont pas retardés et conservent leurs réponses JSON `{ ok: false, error: … }`.
 - `upsertWixDemand` doit créer ou fusionner les doublons Wix rapprochés.
 - Les écritures Make doivent être idempotentes par `gmail_message_id` : après une écriture réussie dont la réponse HTTP est perdue, la reprise doit renvoyer le résultat initial sans ré-incrémenter `nb_relances_client`.
 - `upsertWixDemand` doit mémoriser le résultat d'un message Wix déjà appliqué afin qu'une reprise poursuive l'archivage et l'accusé attendus sans créer de seconde ligne.
