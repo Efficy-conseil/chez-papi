@@ -81,6 +81,64 @@ assert(
   'route finale Voxist audio incomplète après le Parse JSON'
 );
 
+const audioLookupModule = moduleById(mainModules, 102);
+const audioLookupGroups = audioLookupModule.filter?.conditions || [];
+assert(
+  audioLookupGroups.some(group =>
+    group.some(condition => condition?.a === '{{14.is_demande}}' && condition?.b === 'true') &&
+    group.some(condition => condition?.a === '{{ifempty(11.telephone_e164; "")}}' && condition?.o === 'text:notequal')
+  ),
+  'module 102 non limité aux demandes qualifiées avec téléphone'
+);
+assert(
+  audioLookupGroups.some(group =>
+    group.some(condition => condition?.a === '{{14.statut}}' && condition?.b === 'À rappeler') &&
+    group.some(condition => condition?.a === '{{14.archive_label}}' && condition?.b === 'Historique_Voxist') &&
+    group.some(condition => condition?.a === '{{ifempty(14.resume_court; "")}}' && condition?.o === 'text:notequal') &&
+    group.some(condition => condition?.a === '{{ifempty(11.telephone_e164; "")}}' && condition?.o === 'text:notequal')
+  ),
+  'garde-fou des relances Voxist cohérentes absent du module 102'
+);
+assert(
+  !audioLookupGroups.some(group =>
+    group.length === 1 && group[0]?.a === '{{ifempty(11.telephone_e164; "")}}'
+  ),
+  'le téléphone seul déclenche encore le module 102'
+);
+
+const audioCreationModule = moduleById(mainModules, 15);
+assert(
+  (audioCreationModule.mapper?.data || '').includes('if(14.statut = \\"À vérifier\\"; \\"À vérifier\\"; if(14.is_demande = false; \\"À vérifier\\"; \\"Nouvelle demande\\"))'),
+  'le module 15 écrase encore les relances non rattachées par Nouvelle demande'
+);
+[15, 16].forEach(moduleId => {
+  const groups = moduleById(mainModules, moduleId).filter?.conditions || [];
+  assert(
+    groups.some(group =>
+      group.some(condition => condition?.a === '{{14.statut}}' && condition?.b === 'À rappeler') &&
+      group.some(condition => condition?.a === '{{14.archive_label}}' && condition?.b === 'Historique_Voxist') &&
+      group.some(condition => condition?.a === '{{ifempty(14.resume_court; "")}}' && condition?.o === 'text:notequal')
+    ),
+    `relance Voxist cohérente non récupérée par le module ${moduleId}`
+  );
+});
+[110, 111].forEach(moduleId => {
+  const conditions = (moduleById(mainModules, moduleId).filter?.conditions || []).flat();
+  assert(
+    conditions.some(condition => condition?.a === '{{14.archive_label}}' && condition?.b === 'Hors_Scope_Make') &&
+    conditions.some(condition => condition?.a === '{{ifempty(14.statut; "")}}' && condition?.b === ''),
+    `archivage hors scope du module ${moduleId} non protégé par les marqueurs explicites`
+  );
+});
+
+[65, 13].forEach(moduleId => {
+  const prompt = JSON.stringify(moduleById(mainModules, moduleId).mapper?.messages || []);
+  assert(prompt.includes('Cécile rappelle concernant l’apéro du 3 octobre'), `cas Cécile absent du module ${moduleId}`);
+  assert(prompt.includes('03/10/2026'), `déduction de date future absente du module ${moduleId}`);
+  assert(prompt.includes('Un bruit blanc, un silence, un audio inexploitable'), `exclusion du bruit blanc absente du module ${moduleId}`);
+  assert(prompt.includes('Toute sortie is_demande = false'), `cohérence is_demande absente du module ${moduleId}`);
+});
+
 [
   [70, 'Label_5869457419717567046', '{{94.data.data.updated}}'],
   [71, 'Label_5869457419717567046', '{{102.data.data.updated}}']

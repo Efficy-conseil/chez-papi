@@ -192,10 +192,11 @@ Comportement attendu :
 - Le téléphone doit prioriser le numéro appelant détecté par l'email Voxist si la transcription donne un numéro incohérent.
 - Les numéros de téléphone reçus par le backend sont enregistrés au format français lisible `06 00 00 00 00` lorsqu'ils sont valides. Plusieurs numéros valides sont conservés et séparés par ` / `. Cette normalisation intervient à l'écriture uniquement et ne déclenche aucune réécriture lors de la consultation.
 - Si l'appelant n'énonce aucun nom ou prénom, `nom_client` doit être `Inconnu / à compléter`. Le type d'événement ou le motif de l'appel ne doit jamais être utilisé comme nom client.
-- Avant toute création Voxist, un appel contenant une date peut être rattaché à une unique demande active, y compris d'origine Wix, lorsque les indices disponibles (nom, téléphone, lieu, date, convives, type ou statut) convergent. En dernier recours, une date de prestation unique parmi les demandes actives suffit uniquement pour cette route Voxist explicite ; une absence ou une ambiguïté de candidate ne crée ni ne modifie aucune ligne.
+- Avant toute création Voxist, un appel contenant une date peut être rattaché à une unique demande active, y compris d'origine Wix, lorsque les indices disponibles (nom, téléphone, lieu, date, convives, type ou statut) convergent. En dernier recours, une date de prestation unique parmi les demandes actives suffit uniquement pour cette route Voxist explicite. Une ambiguïté ne crée ni ne modifie aucune ligne ; une absence de candidate poursuit la route de création correspondant à la qualification obtenue.
 - Un rattachement Voxist conserve le statut commercial de la demande, enregistre la transcription comme `dernier_message_client`, remplace le téléphone par le numéro appelant exploitable et positionne `relance_a_traiter = TRUE`.
 - Lorsqu'un unique dossier actif porte le même numéro normalisé, Voxist le rattache directement avant d'évaluer le nom ou la date. Le nom retranscrit est alors secondaire ; si plusieurs dossiers actifs partagent ce numéro, aucun rattachement ni création automatique n'est effectué.
-- Sur le parcours de retranscription audio, une qualification IA `is_demande = false` ne doit pas empêcher cette recherche par numéro appelant. Sans dossier actif correspondant, le vocal reste hors périmètre ; avec plusieurs dossiers actifs correspondants, il reste en boîte de réception pour décision humaine.
+- Sur le parcours de retranscription audio, une qualification IA contradictoire (`is_demande = false`, mais `statut = À rappeler`, `archive_label = Historique_Voxist` et `resume_court` renseigné) est considérée comme une relance cohérente : la recherche par numéro appelant reste autorisée. En revanche, un bruit blanc, un silence, un audio inexploitable ou une sortie explicitement `Hors_Scope_Make` ne doit jamais atteindre le module de rapprochement sur la seule présence du numéro appelant.
+- Une relance cohérente non rattachée à un dossier unique crée une fiche `À vérifier`, puis l'e-mail est archivé dans `Historique_Voxist`. Le module de création ne doit pas écraser ce statut par `Nouvelle demande`.
 - Lorsqu'un vocal Voxist nouveau porte le même téléphone normalisé et la même date d'événement qu'un unique dossier actif, il enrichit ce dossier au lieu de créer une ligne. Le statut commercial et les informations déjà structurées sont conservés ; la nouvelle transcription est enregistrée comme dernier message client et déclenche une relance à traiter. Si plusieurs dossiers correspondent, aucune fusion automatique n'est effectuée.
 - Les doublons Voxist historiques peuvent être résorbés uniquement par l'opération backend `mergeVoxistDuplicateDemand`, lorsque deux dossiers actifs ont le même téléphone normalisé et la même date d'événement. Le dossier choisi comme principal est conservé, les champs manquants sont complétés et la transcription de l'autre vocal est conservée dans les notes avant suppression du doublon.
 
@@ -205,11 +206,13 @@ Critères de vraie demande Voxist :
 - événement, mariage, baptême, anniversaire, buffet, cocktail, repas, réception ;
 - nombre de personnes, convives, invités ;
 - date ou période, même si l'année est absente. Prendre l'année en cours si non précisée ou mal interprétée.
+- une relance cohérente concernant un événement déjà évoqué, par exemple un rappel au sujet d'un apéro et une demande d'être recontacté.
 
 Cas de référence :
 
 - `prendre des renseignements sur vos prestations`, `formules à la carte`, `quarantaine de personnes`, `18 ans de mon fils`, `12 septembre` doit créer une demande `Téléphone`, type `Anniversaire`, statut `Nouvelle demande`.
 - Une demande de disponibilité pour les `20 ans de ma fille`, avec `apéro dînatoire`, `30 personnes` et une date comme le `15 août`, doit créer une demande `Téléphone`, type `Anniversaire`, statut `Nouvelle demande`, même si les mots `anniversaire`, `traiteur` et `devis` ne sont pas prononcés.
+- Reçu le `01/09/2026`, le message « Cécile rappelle concernant l'apéro du 3 octobre et souhaite être recontactée demain » doit produire `date_evenement = 03/10/2026`. Sans dossier unique correspondant, il crée une fiche `À vérifier` dans `Historique_Voxist`.
 
 Contrainte anti-régression :
 
