@@ -67,6 +67,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | V26 | Email Voxist annonçant un message de `0 seconde`, sans transcription ni pièce jointe audio exploitable | Le module 7 n'est pas exécuté, aucun appel OpenAI ni aucune demande ne sont créés, et l'e-mail est archivé dans `Hors_Scope_Make` sans exécution incomplète | Automatique + essai Make |
 | V27 | Vocal audio de Valérie Basque contenant seulement un prénom et une demande de rappel, avec numéro appelant correspondant à une unique demande active | Le rejet `is_demande=false` du module 66 ne bloque pas le module 102 ; le dossier actif est enrichi, `relance_a_traiter = TRUE`, le vocal apparaît dans `Messages reçus` et l'e-mail est archivé dans `Historique_Voxist` | Automatique + essai Make |
 | V28 | Vocal audio personnel rejeté par l’IA, avec numéro appelant partagé par plusieurs demandes actives | Aucun rattachement ni création automatique ; le message reste en boîte de réception pour traitement manuel | Backend + automatique + essai Make |
+| V29 | Vocal audio personnel ou bruit blanc, numéro appelant `+33650988677`, aucune demande active correspondante | Les modules 94 et 102 normalisent le numéro en `0650988677` sans produire d'antislash dans le JSON ; le backend répond `existing_demand_not_found` et l'e-mail est archivé dans `Hors_Scope_Make` | Automatique + essai Make |
 
 ## Email direct
 

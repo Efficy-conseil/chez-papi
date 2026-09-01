@@ -240,6 +240,27 @@ const voxistAudioFollowup = moduleById(mainModules, 102);
 const voxistAudioTranscription = moduleById(mainModules, 7);
 const voxistAudioPrequalification = moduleById(mainModules, 65);
 const voxistAudioExtraction = moduleById(mainModules, 13);
+[
+  [94, 61],
+  [102, 14]
+].forEach(([moduleId, extractionModuleId]) => {
+  const body = moduleById(mainModules, moduleId).mapper?.data || '';
+  const normalizedPhone = `{{escapeJSON(replace(replace(ifempty(11.telephone_e164; ${extractionModuleId}.telephone); \\"/\\\\D/g\\"; \\"\\"); \\"/^33/\\"; \\"0\\"))}}`;
+  assert(
+    body.split(`"telephone":"${normalizedPhone}"`).length - 1 === 2,
+    `téléphone Voxist non normalisé et protégé dans match et fields du module ${moduleId}`
+  );
+  assert(
+    !body.includes(`replace(ifempty(11.telephone_e164; ${extractionModuleId}.telephone); 33; \\"0\\")`),
+    `ancienne normalisation Voxist susceptible de produire un antislash encore présente dans le module ${moduleId}`
+  );
+  ['date_evenement', 'nom_client', 'nb_convives', 'lieu_prestation', 'type_evenement'].forEach(field => {
+    assert(
+      body.includes(`"${field}":"{{escapeJSON(ifempty(${extractionModuleId}.${field}; \\"\\"))}}"`),
+      `champ Voxist ${field} non protégé par escapeJSON dans le module ${moduleId}`
+    );
+  });
+});
 assert(voxistAudioTranscription.module === 'openai-gpt-3:CreateTranscription', 'module de retranscription Voxist inattendu');
 assert(voxistAudioTranscription.mapper?.model === 'whisper-1', 'retranscription Voxist non compatible avec le module OpenAI Make actuel');
 assert(voxistAudioTranscription.mapper?.fileData === '{{19.data}}', 'fichier audio Voxist absent de la retranscription');
