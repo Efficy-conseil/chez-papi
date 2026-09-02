@@ -2158,6 +2158,18 @@ let eventSaveInFlight = false;
 let pendingDuplicateSubmission = null;
 let duplicateCandidates = [];
 
+function changedFormFields(initialValuesStr, currentData) {
+  let initialData = {};
+  try {
+    initialData = JSON.parse(initialValuesStr || '{}');
+  } catch {
+    initialData = {};
+  }
+  return Object.fromEntries(Object.entries(currentData).filter(([key, value]) => (
+    key !== 'id_demande' && value !== initialData[key]
+  )));
+}
+
 function selectedDuplicateCandidate() {
   const select = document.getElementById('duplicate-candidate-select');
   return duplicateCandidates.find(candidate => candidate.id_demande === select?.value) || null;
@@ -2413,9 +2425,11 @@ document.getElementById('event-form').addEventListener('submit', async e => {
     return;
   }
   
-  const data = {};
+  let data = {};
   new FormData(form).forEach((val, key) => { data[key] = val; });
-  if (!editingRow) {
+  if (editingRow) {
+    data = changedFormFields(initialFormValuesStr, data);
+  } else {
     delete data.id_demande;
     data.date_reception = data.date_reception || localDateTimeInputValue();
     data.canal = data.canal || 'Saisie manuelle';

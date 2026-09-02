@@ -316,6 +316,7 @@ Les dates de réception absentes sont signalées sans modifier les données de p
 - Le lien `Compléter la fiche` ou `Saisie rapide` permet de basculer entre les modes.
 - La fermeture par le bouton, le fond ou Échap demande confirmation si des données ont changé.
 - Enregistrer sans modification ferme la fiche sans requête inutile.
+- Lors de la modification d'une fiche existante, seuls les champs réellement changés sont envoyés au backend afin de préserver les valeurs techniques ou non représentables telles quelles dans le formulaire.
 
 ### 10.2 Champs du mode rapide
 

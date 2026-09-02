@@ -64,6 +64,7 @@ requireText('chez-papi/index.html', 'id="reply-followup-btn"');
 requireText('chez-papi/app.js', 'function hasClientMessage(e)');
 requireText('chez-papi/app.js', 'function markFollowupHandled()');
 requireText('chez-papi/app.js', 'function openDemandMergeModal()');
+requireText('chez-papi/app.js', 'data = changedFormFields(initialFormValuesStr, data);');
 requireText('chez-papi/index.html', 'id="demand-merge-modal"');
 requireText('chez-papi/app.js', 'const gmailId = String(e?.gmail_thread_id || e?.gmail_message_id || \'\').trim();');
 requireText('chez-papi/app.js', "{ relance_a_traiter: false }");
