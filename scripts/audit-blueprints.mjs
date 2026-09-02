@@ -111,6 +111,17 @@ assert(
   (audioCreationModule.mapper?.data || '').includes('if(14.statut = \\"À vérifier\\"; \\"À vérifier\\"; if(14.is_demande = false; \\"À vérifier\\"; \\"Nouvelle demande\\"))'),
   'le module 15 écrase encore les relances non rattachées par Nouvelle demande'
 );
+[
+  [62, '61', 'transcription'],
+  [15, '14', 'audio']
+].forEach(([moduleId, parsedModuleId, routeName]) => {
+  const body = JSON.parse(moduleById(mainModules, moduleId).mapper?.data || '{}');
+  const expectedPhone = `{{escapeJSON(replace(replace(ifempty(11.telephone_e164; ${parsedModuleId}.telephone); "/\\D/g"; ""); "/^33/"; "0"))}}`;
+  assert(
+    body.row?.telephone === expectedPhone,
+    `création Voxist ${routeName} encore alimentée par le téléphone IA au lieu du numéro appelant`
+  );
+});
 [15, 16].forEach(moduleId => {
   const groups = moduleById(mainModules, moduleId).filter?.conditions || [];
   assert(
