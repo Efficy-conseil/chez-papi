@@ -60,6 +60,10 @@ assert(
 const mainIds = mainModules.map(module => module.id);
 assert(new Set(mainIds).size === mainIds.length, 'identifiants de modules dupliqués dans le blueprint principal');
 
+[65, 66, 67, 68].forEach(id => {
+  assert(!mainIds.includes(id), `ancienne préqualification audio Voxist encore présente : module ${id}`);
+});
+
 const transcriptionFinalRouter = moduleById(mainModules, 107);
 assert(
   transcriptionFinalRouter.routes?.some(route => route.flow?.[0]?.id === 94) &&
@@ -142,7 +146,7 @@ assert(
   );
 });
 
-[65, 13].forEach(moduleId => {
+[13].forEach(moduleId => {
   const prompt = JSON.stringify(moduleById(mainModules, moduleId).mapper?.messages || []);
   assert(prompt.includes('Cécile rappelle concernant l’apéro du 3 octobre'), `cas Cécile absent du module ${moduleId}`);
   assert(prompt.includes('03/10/2026'), `déduction de date future absente du module ${moduleId}`);
@@ -321,7 +325,6 @@ assert(moduleById(mainModules, 93).mapper?.to === 'Label_2633677580427542522', '
 
 const voxistAudioFollowup = moduleById(mainModules, 102);
 const voxistAudioTranscription = moduleById(mainModules, 7);
-const voxistAudioPrequalification = moduleById(mainModules, 65);
 const voxistAudioExtraction = moduleById(mainModules, 13);
 [
   [94, 61],
@@ -355,15 +358,59 @@ assert(
   ),
   'vocal Voxist avec numéro appelant encore bloqué avant le rattachement lorsqu’il est rejeté par l’IA'
 );
+assert(voxistAudioExtraction.filter === null, 'extraction audio encore bloquée par une préqualification');
+
+const audioRoute = moduleById(mainModules, 69).routes?.find(route => route.flow?.[0]?.id === 19)?.flow || [];
 assert(
-  (voxistAudioExtraction.filter?.conditions || []).some(conditionSet =>
-    conditionSet.some(condition => condition?.a === '{{ifempty(11.telephone_e164; "")}}' && condition?.b === '' && condition?.o === 'text:notequal')
-  ),
-  'extraction audio détaillée encore bloquée par la préqualification malgré un numéro appelant'
+  JSON.stringify(audioRoute.slice(0, 5).map(module => module.id)) === JSON.stringify([19, 7, 13, 14, 109]),
+  'parcours audio Voxist non linéaire après la retranscription'
 );
-const audioPrequalificationPrompt = JSON.stringify(voxistAudioPrequalification.mapper?.messages || []);
-assert(audioPrequalificationPrompt.includes('{{11.telephone_e164}}'), 'numéro appelant absent de la préqualification audio Voxist');
-assert(!audioPrequalificationPrompt.includes('{{11.telephone_raw}}'), 'préqualification audio reliée à un champ téléphone inexistant');
+
+const audioParser = moduleById(mainModules, 14);
+const audioParserRecovery = audioParser.onerror || [];
+assert(
+  JSON.stringify(audioParserRecovery.map(module => module.id)) === JSON.stringify([112, 113, 114]),
+  'reprise JSON audio unique absente ou mal ordonnée'
+);
+const audioRecoveryAi = moduleById(mainModules, 112);
+const audioRecoveryParser = moduleById(mainModules, 113);
+const audioRecoveryResume = moduleById(mainModules, 114);
+const audioRecoveryPrompt = JSON.stringify(audioRecoveryAi.mapper?.messages || []);
+assert(audioRecoveryAi.module === 'openai-gpt-3:CreateCompletion', 'reprise audio non reliée à OpenAI');
+assert(audioRecoveryAi.mapper?.max_tokens === '900', 'reprise audio non bornée à 900 tokens');
+assert(audioRecoveryPrompt.includes('{{7.text.text}}'), 'transcription originale absente de la reprise audio');
+assert(audioRecoveryPrompt.includes('400 caractères maximum'), 'message_original non borné dans la reprise audio');
+assert(
+  audioRecoveryPrompt.includes('2007 vers 2027') && audioRecoveryPrompt.includes('ne corrige jamais une année seule'),
+  'règle de correction de date absente de la reprise audio'
+);
+assert(audioRecoveryParser.mapper?.json?.includes('112.result'), 'parseur de reprise non relié à la seconde extraction');
+assert(!audioRecoveryParser.onerror, 'la seconde erreur JSON ne doit pas déclencher une nouvelle boucle de reprise');
+assert(audioRecoveryResume.module === 'builtin:Resume', 'directive Resume absente après la reprise JSON');
+[
+  'is_demande',
+  'canal',
+  'source',
+  'nom_client',
+  'telephone',
+  'email_client',
+  'type_evenement',
+  'date_evenement',
+  'heure_evenement',
+  'nb_convives',
+  'lieu_prestation',
+  'budget_estime',
+  'statut',
+  'message_original',
+  'resume_court',
+  'send_ack',
+  'ack_mode',
+  'archive_label',
+  'notes',
+  'url_dossier_drive'
+].forEach(field => {
+  assert(audioRecoveryResume.mapper?.[field] === `{{113.${field}}}`, `champ ${field} absent de la reprise JSON audio`);
+});
 
 const unmatchedPersonalAudioArchive = moduleById(mainModules, 111);
 assert(
@@ -470,7 +517,7 @@ assert(emailAi.filter?.name?.includes('analyse complète'), 'route Email direct 
 const emailAiConditions = (emailAi.filter?.conditions || []).flat(Infinity);
 assert(!emailAiConditions.some(condition => condition?.o === 'number:greater'), 'route Email direct encore ouverte aux fils déjà connus');
 
-[41, 21, 65, 13, 37].forEach(id => {
+[41, 21, 13, 37].forEach(id => {
   const datePrompt = moduleById(mainModules, id).mapper?.messages?.find(message => message.role === 'system')?.content || '';
   assert(
     datePrompt.includes('2007') && datePrompt.includes('année suivante') && datePrompt.includes('strictement future') && datePrompt.includes('une année seule'),
@@ -478,7 +525,7 @@ assert(!emailAiConditions.some(condition => condition?.o === 'number:greater'), 
   );
 });
 
-[21, 65, 13].forEach(id => {
+[21, 13].forEach(id => {
   const messages = moduleById(mainModules, id).mapper?.messages || [];
   const prompt = messages.map(message => message.content || '').join('\n');
   assert(

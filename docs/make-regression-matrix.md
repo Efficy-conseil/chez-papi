@@ -71,6 +71,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | V29 | Vocal audio personnel, silence ou bruit blanc avec numéro appelant | Le numéro seul ne permet pas d'atteindre le module 102 ; aucune recherche, aucun rattachement, aucune création et archivage dans `Hors_Scope_Make` | Automatique + essai Make |
 | V30 | Vocal cohérent de Cécile reçu le `01/09/2026`, demandant un rappel au sujet de l'apéro du `3 octobre`, sans dossier unique correspondant | `is_demande=true`, `date_evenement=03/10/2026` ; après échec du module 102, création unique au statut `À vérifier`, puis `Historique_Voxist` | Automatique + essai Make |
 | V31 | Nouvelle demande Voxist avec numéro appelant `609170840`, tandis que l’IA renvoie un téléphone absent ou incohérent | Les parcours transcription et audio utilisent le numéro appelant ; la ligne contient `06 09 17 08 40` | Backend + automatique + essai Make |
+| V32 | La première extraction structurée d'un vocal audio renvoie un JSON invalide ou tronqué, par exemple `"date_evenement=null` avec `finish_reason=length` | Une seule seconde extraction est exécutée depuis la transcription originale avec une sortie bornée ; si elle est valide, le traitement normal reprend sans doublon ; si elle échoue, l'exécution reste incomplète, sans écriture ni archivage | Automatique + essai Make |
 
 ## Email direct
 

@@ -199,6 +199,8 @@ Comportement attendu :
 - Une relance cohérente non rattachée à un dossier unique crée une fiche `À vérifier`, puis l'e-mail est archivé dans `Historique_Voxist`. Le module de création ne doit pas écraser ce statut par `Nouvelle demande`.
 - Lorsqu'un vocal Voxist nouveau porte le même téléphone normalisé et la même date d'événement qu'un unique dossier actif, il enrichit ce dossier au lieu de créer une ligne. Le statut commercial et les informations déjà structurées sont conservés ; la nouvelle transcription est enregistrée comme dernier message client et déclenche une relance à traiter. Si plusieurs dossiers correspondent, aucune fusion automatique n'est effectuée.
 - Les doublons Voxist historiques peuvent être résorbés uniquement par l'opération backend `mergeVoxistDuplicateDemand`, lorsque deux dossiers actifs ont le même téléphone normalisé et la même date d'événement. Le dossier choisi comme principal est conservé, les champs manquants sont complétés et la transcription de l'autre vocal est conservée dans les notes avant suppression du doublon.
+- Le parcours de retranscription audio effectue une seule extraction structurée après Whisper. Il ne doit pas conserver une préqualification IA séparée qui produit la même structure métier.
+- Si le JSON de cette extraction est invalide ou tronqué, Make effectue une seule nouvelle extraction depuis la transcription originale avec une sortie plus courte. Si cette reprise échoue également, l'exécution reste incomplète : aucune demande n'est créée ou modifiée et l'email n'est pas archivé.
 
 Critères de vraie demande Voxist :
 
@@ -219,6 +221,7 @@ Contrainte anti-régression :
 - Voxist ne doit jamais passer dans la route relance email, ni nouvel email, ni Wix.
 - Voxist ne doit jamais être classé `Hors_Scope_Make` s'il contient des indices traiteur ou événementiels.
 - Si `checkDuplicate` renvoie `count > 0` pour un message Voxist, cela doit signifier que le même `VOXIST-<gmail_message_id>` existe déjà. Cela ne doit pas arriver seulement parce que le `gmail_thread_id` existe déjà.
+- Une erreur JSON Voxist ne doit jamais être corrigée heuristiquement ni relancée en boucle sur la même sortie tronquée.
 
 ## Make - Email direct
 
