@@ -113,6 +113,7 @@ Contraintes :
 - Cette règle s'applique à tous les canaux : Téléphone, Email, Site Internet, Réseaux sociaux et Saisie manuelle.
 - La création initiale d'une demande avec un autre statut ne doit pas créer d'événement calendrier.
 - Un changement de statut entre deux états non confirmés ne doit pas consulter Google Calendar.
+- Une écriture limitée à `relance_a_traiter` ne doit ni consulter ni modifier Google Calendar, quel que soit le statut de la demande.
 
 ## Types d'événement
 
@@ -258,6 +259,7 @@ Relances et suivis :
 - Une réponse rattachée à une demande existante renseigne `dernier_email_recu_le`, `dernier_message_client`, incrémente `nb_relances_client`, positionne `relance_a_traiter = TRUE` et conserve une `url_email_origine` ouvrant le fil Gmail.
 - Le frontend présente ces réponses dans le regroupement transversal `Messages reçus`, sans modifier automatiquement le statut commercial de la demande.
 - Une étoile signale les demandes ayant un message à traiter. L'action explicite `Marquer comme traité` positionne `relance_a_traiter = FALSE` ; un échange ultérieur le réactive.
+- Cette action est disponible dans la fiche et directement dans la fenêtre `Messages reçus`, où le dernier message enregistré est affiché intégralement dans une zone défilante. Après confirmation serveur, l'indicateur et le compteur sont actualisés sans rouvrir une fiche ni réinitialiser ses saisies, même si l'utilisateur a enregistré, fermé ou changé de fiche pendant l'attente. Un échec conserve le message à traiter et permet une nouvelle tentative.
 
 Filet de sécurité des suivis Email sans dossier :
 

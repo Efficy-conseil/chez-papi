@@ -552,6 +552,7 @@ function updateRowById(idDemande, fields) {
   if (!found) throw new Error("Demande introuvable : " + idDemande);
   const clean = sanitizeFields(fields || {}, true);
   const isStatusOnlyUpdate = Object.keys(clean).length === 1 && clean.statut !== undefined;
+  const isFollowupOnlyUpdate = Object.keys(clean).length === 1 && clean.relance_a_traiter !== undefined;
   const statusColumn = headers.findIndex(function(h) { return canonicalKey(h) === "statut"; }) + 1;
   const currentStatus = statusColumn > 0 ? String(sheet.getRange(found.rowIndex, statusColumn).getValue() || '').trim() : '';
   if (clean.statut === "En attente de réponse" && currentStatus !== "En attente de réponse") {
@@ -568,12 +569,13 @@ function updateRowById(idDemande, fields) {
       cell.setValue(clean[key]);
     }
   });
-  if (!isStatusOnlyUpdate) {
+  if (!isStatusOnlyUpdate && !isFollowupOnlyUpdate) {
     applyDefaultRowHeight(sheet, found.rowIndex);
   }
 
-  // Un changement de statut entre deux états non confirmés ne concerne pas le calendrier.
-  const requiresCalendarSync = !isStatusOnlyUpdate || isConfirmedStatus(currentStatus) || isConfirmedStatus(clean.statut);
+  // Le marquage d'un message ne change aucune donnée de l'événement calendrier.
+  // Un changement de statut entre deux états non confirmés ne le concerne pas non plus.
+  const requiresCalendarSync = !isFollowupOnlyUpdate && (!isStatusOnlyUpdate || isConfirmedStatus(currentStatus) || isConfirmedStatus(clean.statut));
   if (requiresCalendarSync) {
     SpreadsheetApp.flush();
     try {

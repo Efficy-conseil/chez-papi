@@ -2015,7 +2015,10 @@ function openEventModal(rowIndex = null) {
         followupMeta.textContent = `${received} · ${count} échange${count > 1 ? 's' : ''}`;
       }
       if (followupButton) {
+        followupButton.dataset.followupId = eventId(existing);
         followupButton.style.display = hasClientMessage(existing) ? 'inline-flex' : 'none';
+        followupButton.disabled = followupUpdatesInFlight.has(eventId(existing));
+        followupButton.textContent = followupButton.disabled ? 'Traitement…' : 'Marquer comme traité';
       }
       if (followupReplyButton) {
         followupReplyButton.href = threadUrl || (isEmailKnown
@@ -2035,7 +2038,10 @@ function openEventModal(rowIndex = null) {
     if (phoneCallBtn) phoneCallBtn.style.display = 'none';
     if (emailThreadBtn) emailThreadBtn.style.display = 'none';
     if (followupRow) followupRow.style.display = 'none';
-    if (followupButton) followupButton.style.display = 'none';
+    if (followupButton) {
+      followupButton.style.display = 'none';
+      delete followupButton.dataset.followupId;
+    }
     if (followupReplyButton) followupReplyButton.style.display = 'none';
     if (attachButton) attachButton.style.display = 'none';
     if (derniereModifContainer) derniereModifContainer.style.display = 'none';
@@ -2502,38 +2508,59 @@ document.getElementById('event-form').addEventListener('submit', async e => {
   }
 });
 
+const followupUpdatesInFlight = new Set();
+
 async function markFollowupHandled() {
   if (!editingRow) return;
   const row = appData.find(r => r._row === editingRow);
+  return markClientMessageHandled(eventId(row));
+}
+
+function refreshFollowupButtons() {
+  document.querySelectorAll('[data-followup-id]').forEach(button => {
+    const id = button.dataset.followupId;
+    const pending = followupUpdatesInFlight.has(id);
+    const row = appData.find(r => eventId(r) === id);
+    button.disabled = pending;
+    button.textContent = pending ? 'Traitement…' : 'Marquer comme traité';
+    button.setAttribute('aria-busy', String(pending));
+    if (button.id === 'mark-followup-handled-btn') {
+      button.style.display = hasClientMessage(row) ? 'inline-flex' : 'none';
+    }
+  });
+}
+
+async function markClientMessageHandled(idDemande) {
+  const row = appData.find(r => eventId(r) === idDemande);
   if (!row || !eventId(row)) {
     showNotification('Demande introuvable', 'error');
     return;
   }
-
-  const btn = document.getElementById('mark-followup-handled-btn');
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = 'Traitement…';
-  }
+  if (!hasClientMessage(row) || followupUpdatesInFlight.has(idDemande)) return;
+  followupUpdatesInFlight.add(idDemande);
+  refreshFollowupButtons();
 
   try {
     const result = await SheetsAPI.update(eventId(row), { relance_a_traiter: false });
     if (result.success) {
-      row.relance_a_traiter = false;
+      // Le polling peut avoir remplacé les objets pendant l'écriture.
+      const currentRow = appData.find(r => eventId(r) === idDemande);
+      if (currentRow) Object.assign(currentRow, result.fields || {}, { relance_a_traiter: false });
       renderAll();
-      openEventModal(editingRow);
+      const messagesModal = document.getElementById('kpi-modal');
+      if (messagesModal.style.display === 'flex' && messagesModal.dataset.type === 'messages') {
+        showKpiModal('messages');
+      }
       showNotification('Message marqué comme traité', 'success');
       broadcastSync();
     } else {
       showNotification('Erreur : ' + (result.error || 'inconnue'), 'error');
     }
   } catch (err) {
-    showNotification('Erreur réseau', 'error');
+    showNotification('Traitement non confirmé : ' + (err.message || 'erreur réseau') + '. Le message reste à traiter ; actualisez avant de réessayer.', 'error', 6000);
   } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = 'Marquer comme traité';
-    }
+    followupUpdatesInFlight.delete(idDemande);
+    refreshFollowupButtons();
   }
 }
 
@@ -2753,6 +2780,8 @@ function showKpiModal(type) {
   const tbody = document.getElementById('kpi-tbody');
   const tfoot = document.getElementById('kpi-tfoot');
   if (!tbody) return;
+  const modal = document.getElementById('kpi-modal');
+  modal.dataset.type = type;
   
   thead.innerHTML = '';
   tbody.innerHTML = '';
@@ -2832,17 +2861,18 @@ function showKpiModal(type) {
     const evts = appData.filter(hasClientMessage);
     evts.sort((a, b) => dateTimeSortValue(b.dernier_email_recu_le) - dateTimeSortValue(a.dernier_email_recu_le));
 
-    thead.innerHTML = '<tr><th style="width:22%">Reçu</th><th style="width:25%">Client</th><th style="width:33%">Message</th><th style="width:20%">Statut</th></tr>';
+    thead.innerHTML = '<tr><th style="width:15%">Reçu</th><th style="width:18%">Client</th><th style="width:34%">Message</th><th style="width:16%">Statut</th><th style="width:17%">Marquer comme traité</th></tr>';
     tbody.innerHTML = evts.length ? evts.map(e => {
       const message = String(e.dernier_message_client || '').trim();
-      const shortMessage = message.length > 90 ? message.slice(0, 90) + '…' : message;
+      const pending = followupUpdatesInFlight.has(eventId(e));
       return `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})">
-        <td>${safeText(formatDateTimeFR(e.dernier_email_recu_le) || 'À déterminer')}</td>
-        <td>${clientMessageStar(e)}<strong>${safeText(e.nom_client || '—')}</strong></td>
-        <td>${safeText(shortMessage || 'Nouveau message client')}</td>
-        <td style="overflow:visible; max-width:none;">${generateStatusSelectHtml(e)}</td>
+        <td data-label="Reçu">${safeText(formatDateTimeFR(e.dernier_email_recu_le) || 'À déterminer')}</td>
+        <td data-label="Client">${clientMessageStar(e)}<strong>${safeText(e.nom_client || '—')}</strong></td>
+        <td class="received-message-cell" data-label="Message" onclick="event.stopPropagation()"><div class="received-message-text" tabindex="0" role="region" aria-label="${escAttr('Message de ' + (e.nom_client || 'client'))}">${safeText(message || 'Nouveau message client')}</div></td>
+        <td data-label="Statut" style="overflow:visible; max-width:none;" onclick="event.stopPropagation()">${generateStatusSelectHtml(e)}</td>
+        <td class="received-message-action" onclick="event.stopPropagation()"><button type="button" class="btn-secondary" data-followup-id="${escAttr(eventId(e))}" aria-busy="${pending}" ${pending ? 'disabled' : ''} onclick="markClientMessageHandled(this.dataset.followupId)">${pending ? 'Traitement…' : 'Marquer comme traité'}</button></td>
       </tr>`;
-    }).join('') : '<tr><td colspan="4" class="tbl-empty">Aucun message client à traiter</td></tr>';
+    }).join('') : '<tr><td colspan="5" class="tbl-empty">Aucun message client à traiter</td></tr>';
   }
   else if (type === 'confirmes') {
     title.textContent = 'Événements confirmés';

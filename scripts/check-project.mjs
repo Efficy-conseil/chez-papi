@@ -35,6 +35,7 @@ run(process.execPath, ['--check', 'chez-papi/prototypes/relances/sw.js']);
 run(process.execPath, ['scripts/audit-blueprints.mjs']);
 run(process.execPath, ['scripts/test-demand-matching.mjs']);
 run(process.execPath, ['scripts/test-statistics.mjs']);
+run(process.execPath, ['scripts/test-message-handling.mjs']);
 run('python3', ['-m', 'json.tool', 'make/Integration Email - Wix - Voxist.blueprint.json'], { stdio: 'ignore' });
 run('python3', ['-m', 'json.tool', 'make/Integration Tally.blueprint.json'], { stdio: 'ignore' });
 
@@ -72,7 +73,7 @@ requireText('docs/frontend-functional-spec.md', 'regroupement `Messages reçus`'
 requireText('make/Integration Email - Wix - Voxist.blueprint.json', '\\"url_email_origine\\":\\"https://mail.google.com/mail/u/0/#label/Historique_Email/{{1.threadId}}\\"');
 requireText('make/Integration Email - Wix - Voxist.blueprint.json', '\\"url_email_origine\\":\\"https://mail.google.com/mail/u/0/#label/Historique_Wix/{{1.threadId}}\\"');
 requireText('chez-papi/app.js', 'Object.assign(row, result.fields || {}, { statut: newStatus });');
-requireText('apps-script/code.gs', 'const requiresCalendarSync = !isStatusOnlyUpdate || isConfirmedStatus(currentStatus) || isConfirmedStatus(clean.statut);');
+requireText('apps-script/code.gs', 'const requiresCalendarSync = !isFollowupOnlyUpdate && (!isStatusOnlyUpdate || isConfirmedStatus(currentStatus) || isConfirmedStatus(clean.statut));');
 requireText('chez-papi/app.js', "controller.abort(), 30000");
 requireFunctionNotContains('apps-script/code.gs', 'ensureSchemaHeaders', 'applyDefaultRowHeights(sheet)');
 requireText(

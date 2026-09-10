@@ -151,7 +151,9 @@ Six indicateurs affichent le nombre de dossiers actifs :
 - devis à préparer ;
 - événements confirmés.
 
-Chaque indicateur ouvre une fenêtre détaillée. Les lignes de cette fenêtre ouvrent la fiche, et le statut peut y être modifié directement. Le détail `À rappeler` affiche également le téléphone ; le détail `En attente de réponse` affiche la colonne `Depuis` avec le nombre de jours écoulés depuis la proposition d'appel ; le nombre est mis en évidence à partir de sept jours. Le détail `Messages reçus` regroupe les demandes dont `relance_a_traiter` est vrai, les trie par date de dernier message décroissante et affiche un extrait du message sans remplacer leur statut commercial. Le détail `Devis à préparer` affiche le budget.
+Chaque indicateur ouvre une fenêtre détaillée. Les lignes de cette fenêtre ouvrent la fiche, et le statut peut y être modifié directement. Le détail `À rappeler` affiche également le téléphone ; le détail `En attente de réponse` affiche la colonne `Depuis` avec le nombre de jours écoulés depuis la proposition d'appel ; le nombre est mis en évidence à partir de sept jours. Le détail `Messages reçus` regroupe les demandes dont `relance_a_traiter` est vrai, les trie par date de dernier message décroissante et affiche le dernier message enregistré en entier, sans remplacer leur statut commercial. Le détail `Devis à préparer` affiche le budget.
+
+Dans `Messages reçus`, le texte conserve ses retours à la ligne et défile verticalement dans une zone de hauteur limitée, accessible au clavier. Une colonne `Marquer comme traité` propose un bouton par ligne. Lire, sélectionner ou faire défiler le texte, changer le statut ou cliquer sur ce bouton n'ouvre pas la fiche ; le clic sur la date ou le client conserve l'accès à la fiche. Sur mobile, chaque ligne se présente en bloc avec ses libellés, le message occupant toute la largeur.
 
 Lorsqu'un dossier passe au statut `En attente de réponse`, le backend renseigne `en_attente_reponse_depuis`. La carte d'accueil affiche uniquement le nombre total de dossiers dans cet état ; la colonne `Depuis` de la fenêtre détaillée signale les attentes de sept jours ou plus.
 
@@ -358,6 +360,8 @@ Pour un message client à traiter, le bouton `Répondre` est également présent
 
 `Marquer comme traité` positionne `relance_a_traiter` à faux. L'étoile disparaît et la demande sort du regroupement `Messages reçus`, sans changement de statut. Un nouvel échange rattaché réactive automatiquement l'indicateur.
 
+Le bouton affiche `Traitement…` et empêche les doubles clics pour une même demande pendant l'écriture, depuis la fiche comme depuis le regroupement. L'utilisateur peut enregistrer ou fermer la fiche pendant l'attente : la réponse actualise uniquement la demande identifiée au clic, sans rouvrir de fenêtre ni réinitialiser le formulaire ou ses modifications non enregistrées. La fenêtre `Messages reçus` est actualisée si elle est encore ouverte ; les compteurs et les autres onglets sont synchronisés après confirmation du serveur. En cas d'échec, le message reste visible et le bouton redevient disponible ; si la réponse est incertaine, une notification invite à actualiser avant de réessayer. Ce marquage seul ne déclenche pas de synchronisation Google Calendar.
+
 Le regroupement `Messages reçus` est transversal à tous les statuts : une fiche close ou historisée reste visible dans ce regroupement tant que son message n'a pas été marqué comme traité.
 
 ### 10.5 Rattachement manuel d'une demande
@@ -500,6 +504,13 @@ La fiche en cours d'édition est exclue de cette comparaison.
 - [ ] Notifications de nouvelles demandes.
 - [ ] Échappement des données et validation des URL.
 - [ ] Conservation des champs techniques lors d'une modification.
+- [ ] Marquage avec réponse lente puis Enregistrer sans modification : aucune fenêtre vide ne s'ouvre.
+- [ ] Marquage pendant une saisie, un enregistrement modifié, une fermeture ou un changement de fiche : aucune saisie perdue et seule la demande ciblée est traitée.
+- [ ] Doubles clics ignorés, erreurs serveur/réseau visibles et nouvelle tentative possible.
+- [ ] Messages reçus : texte long intégral, retours à la ligne, sélection et défilement au clavier/tactile, sans ouverture de fiche ; bouton direct, compteur et liste actualisés après succès.
+- [ ] Marquage seul sans Calendar, y compris pour un événement confirmé ; synchronisation Calendar conservée pour les autres modifications.
+
+Les scénarios de concurrence, d'erreur et de routage Calendar du traitement des messages sont automatisés dans `scripts/test-message-handling.mjs`, exécuté par `npm run check`.
 
 ## 16. Dossier à fournir pour une réimplémentation
 

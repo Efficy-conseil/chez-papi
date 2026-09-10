@@ -1543,6 +1543,77 @@ body.is-saving-event::after {
   max-width: 100%;
 }
 
+#kpi-modal[data-type="messages"] .kpi-modal-box {
+  max-width: min(1160px, calc(100vw - 32px));
+}
+
+#kpi-modal[data-type="messages"] .kpi-detail-table th,
+#kpi-modal[data-type="messages"] .kpi-detail-table td {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  vertical-align: top;
+}
+
+.received-message-text {
+  max-height: 180px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+  padding: 8px;
+  background: var(--warm);
+  border-radius: 6px;
+  cursor: text;
+}
+
+.received-message-text:focus-visible {
+  outline: 2px solid var(--brown);
+  outline-offset: -2px;
+}
+
+.received-message-action button {
+  width: 100%;
+  white-space: normal;
+}
+
+[data-followup-id]:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+@media (max-width: 700px) {
+  #kpi-modal[data-type="messages"] .kpi-modal-box { max-width: 100%; }
+  #kpi-modal[data-type="messages"] .kpi-detail-table,
+  #kpi-modal[data-type="messages"] tbody { display: block; }
+  #kpi-modal[data-type="messages"] thead { display: none; }
+  #kpi-modal[data-type="messages"] tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  #kpi-modal[data-type="messages"] .kpi-detail-table td {
+    display: block;
+    min-width: 0;
+    max-width: none;
+    padding: 4px;
+    border: 0;
+  }
+  #kpi-modal[data-type="messages"] td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  #kpi-modal[data-type="messages"] .received-message-cell,
+  #kpi-modal[data-type="messages"] .tbl-empty { grid-column: 1 / -1; }
+  .received-message-action { align-self: end; }
+}
+
 @media (max-width: 599px) {
   .kpi-modal-box {
     max-width: 100%;
