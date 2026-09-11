@@ -27,7 +27,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
 
-<link rel="stylesheet" href="styles.css?v=2.44">
+<link rel="stylesheet" href="styles.css?v=2.45">
 </head>
 
 <body>
@@ -180,6 +180,21 @@
 </div>
 <button class="btn-new" onclick="openEventModal()">+ Nouvel événement</button>
 </div>
+
+<section class="home-search" aria-label="Recherche de demandes">
+  <label for="home-search-input">Retrouver une demande</label>
+  <div class="home-search-control">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg>
+    <input id="home-search-input" type="search" placeholder="Nom, ville, adresse, date…" autocomplete="off" aria-describedby="home-search-help" aria-controls="home-search-results" oninput="scheduleHomeSearch()" onkeydown="if(event.key==='Escape'){event.preventDefault();clearHomeSearch();}">
+    <button id="home-search-clear" type="button" onclick="clearHomeSearch()" aria-label="Effacer la recherche" hidden>Effacer</button>
+  </div>
+  <p id="home-search-help">Toutes les demandes, même terminées · Combinez plusieurs indices.</p>
+  <div id="home-search-results" hidden>
+    <p id="home-search-count" role="status" aria-live="polite" aria-atomic="true"></p>
+    <ul id="home-search-list" class="home-search-list"></ul>
+    <button id="home-search-more" class="home-see-more" type="button" onclick="showMoreHomeSearch()" hidden>Voir plus de résultats</button>
+  </div>
+</section>
 
 <div class="kpi-strip">
 <div class="kpi-card terra" onclick="showKpiModal('leads')" style="cursor:pointer">
@@ -676,7 +691,8 @@
 </div>
 
 <script src="statistics.js?v=1.0"></script>
-<script src="app.js?v=2.44"></script>
+<script src="search.js?v=1.0"></script>
+<script src="app.js?v=2.45"></script>
 
 <!-- ── BOTTOM NAVIGATION (mobile uniquement) ── -->
 <nav class="bottom-nav" id="bottom-nav">

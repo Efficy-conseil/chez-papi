@@ -140,6 +140,19 @@ Une demande `Événement confirmé` dont la date de fin est passée est automati
 - Un bouton `Nouvel événement` ouvre le formulaire de création.
 - Un indicateur présente l'état et l'ancienneté de la synchronisation.
 
+### 5.1.1 Recherche globale
+
+- Une barre `Retrouver une demande` figure en haut de l'accueil, avant les indicateurs, sur ordinateur et mobile.
+- Elle recherche dès la saisie dans toutes les demandes chargées, sans filtre de statut, d'année ou d'historique.
+- Les champs recherchés comprennent client, lieu/adresse/ville, téléphone, email, référence, type, statut, canal, dates, heure, convives, budget, notes, message original et dernier message client. Les journaux techniques ne sont pas indexés.
+- La recherche accepte les fragments, ignore majuscules et accents et exige la présence de chaque indice, éventuellement dans des champs différents (`Dupont Lyon`).
+- Les dates numériques et les mois français sont reconnus (`12/09`, `12 septembre`, `septembre 2026`). Une date composée doit correspondre dans un même champ ; les plages sont recherchées par leurs bornes. Une année seule reste une année, sans date inventée.
+- Les téléphones sont recherchables avec ou sans espaces, points et préfixe français.
+- Le nombre total et les dix premiers résultats apparaissent sous la barre ; `Voir plus de résultats` en ajoute dix. Les correspondances dans le nom, la référence et les coordonnées sont prioritaires.
+- Chaque résultat présente client, date d'événement, lieu, statut et extraits des champs correspondants. Un clic ou une activation clavier ouvre la fiche existante sur l'accueil.
+- `Effacer` ou Échap vide la recherche. Sans saisie, les résultats sont masqués et l'accueil conserve ses sections habituelles.
+- Un message explicite accompagne l'absence de résultat. Les synchronisations et modifications actualisent les résultats sans effacer la saisie.
+
 ### 5.2 Indicateurs cliquables
 
 Six indicateurs affichent le nombre de dossiers actifs :
@@ -482,6 +495,7 @@ La fiche en cours d'édition est exclue de cette comparaison.
 - [ ] Cinq sections de navigation sur ordinateur et mobile.
 - [ ] Quatre indicateurs et leurs fenêtres détaillées.
 - [ ] Dernières demandes, demandes en cours et événements confirmés de l'accueil.
+- [ ] Recherche globale : dossiers clos, indices combinés, accents, dates et téléphones, extraits, ouverture de fiche au clavier, affichage mobile, effacement, pagination et actualisation.
 - [ ] Pipeline Entreprise, moins de 7 jours, moins de 30 jours et Autres.
 - [ ] Badges d'informations manquantes.
 - [ ] Changements rapides de statut dans toutes les vues concernées.

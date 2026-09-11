@@ -1029,6 +1029,8 @@ function setLoading(on) {
 }
 
 function renderAll() {
+  homeSearchIndex = null;
+  try { renderHomeSearch(); } catch(e) { console.error('renderHomeSearch:', e); }
   try { renderDashboard(); } catch(e) { console.error('renderDashboard:', e); }
   try { renderPipeline(); } catch(e) { console.error('renderPipeline:', e); }
   try { renderClients(); } catch(e) { console.error('renderClients:', e); }
@@ -1037,6 +1039,76 @@ function renderAll() {
 }
 
 // ── RENDER: DASHBOARD ──
+
+let homeSearchIndex = null;
+let homeSearchTimer = null;
+let homeSearchLimit = 10;
+
+function scheduleHomeSearch() {
+  clearTimeout(homeSearchTimer);
+  homeSearchLimit = 10;
+  homeSearchTimer = setTimeout(renderHomeSearch, 120);
+}
+
+function clearHomeSearch() {
+  clearTimeout(homeSearchTimer);
+  const input = document.getElementById('home-search-input');
+  input.value = '';
+  homeSearchLimit = 10;
+  renderHomeSearch();
+  input.focus();
+}
+
+function showMoreHomeSearch() {
+  homeSearchLimit += 10;
+  renderHomeSearch();
+}
+
+function renderHomeSearch() {
+  const input = document.getElementById('home-search-input');
+  if (!input) return;
+  const query = input.value.trim();
+  const results = document.getElementById('home-search-results');
+  const list = document.getElementById('home-search-list');
+  const count = document.getElementById('home-search-count');
+  const more = document.getElementById('home-search-more');
+  document.getElementById('home-search-clear').hidden = !input.value;
+  results.hidden = !query;
+  if (!query) {
+    list.replaceChildren();
+    count.textContent = '';
+    more.hidden = true;
+    return;
+  }
+  if (!homeSearchIndex) homeSearchIndex = ChezPapiSearch.buildIndex(appData, formatDateFR);
+  const matches = ChezPapiSearch.search(homeSearchIndex, query);
+  count.textContent = matches.length
+    ? `${matches.length} demande${matches.length > 1 ? 's' : ''} trouvée${matches.length > 1 ? 's' : ''}`
+    : 'Aucune demande trouvée. Essayez un autre nom, lieu ou une autre date.';
+  const focusedId = list.contains(document.activeElement) ? document.activeElement.dataset.demandId : null;
+  const fragment = document.createDocumentFragment();
+  matches.slice(0, homeSearchLimit).forEach(({ row, excerpt }) => {
+    const item = document.createElement('li');
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'home-search-result';
+    button.dataset.demandId = String(row.id_demande || row._row);
+    button.innerHTML = `<span class="home-search-result-top"><strong>${safeText(row.nom_client, 'Client non renseigné')}</strong><span class="home-search-status">${safeText(row.statut)}</span></span>
+      <span class="home-search-meta">${safeText(formatEventDateTime(row), 'Date à compléter')} · ${safeText(row.lieu_prestation, 'Lieu à compléter')}</span>
+      <span class="home-search-excerpt">${escHtml(excerpt)}</span>`;
+    button.addEventListener('click', () => {
+      const current = appData.find(candidate => row.id_demande
+        ? String(candidate.id_demande) === String(row.id_demande)
+        : candidate._row === row._row);
+      if (current) openEventModal(current._row);
+    });
+    item.append(button);
+    fragment.append(item);
+  });
+  list.replaceChildren(fragment);
+  if (focusedId) Array.from(list.querySelectorAll('button')).find(button => button.dataset.demandId === focusedId)?.focus({ preventScroll: true });
+  more.hidden = matches.length <= homeSearchLimit;
+}
 
 const HOME_PAGE_SIZE = 10;
 const homeDisplayLimits = {

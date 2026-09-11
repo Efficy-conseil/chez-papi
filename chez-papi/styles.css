@@ -53,6 +53,33 @@ body {
   position: relative;
 }
 
+/* Recherche globale de l'accueil */
+.home-search { margin: 0 0 24px; padding: 20px; background: #fffdf9; border: 1px solid var(--border); border-radius: 12px; }
+.home-search > label { display: block; margin-bottom: 9px; font-size: 15px; font-weight: 700; color: var(--brown-dk); }
+.home-search-control { display: flex; align-items: center; gap: 10px; border: 1px solid var(--border); border-radius: 8px; padding: 0 12px; background: #fff; color: var(--brown); }
+.home-search-control:focus-within { outline: 2px solid var(--brown); outline-offset: 2px; }
+.home-search-control svg { flex-shrink: 0; }
+.home-search-control input { flex: 1; min-width: 0; width: 100%; min-height: 48px; padding: 10px 0; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; font-size: 16px; }
+.home-search-control input::-webkit-search-cancel-button { -webkit-appearance: none; }
+#home-search-clear { min-height: 44px; border: 0; background: transparent; color: var(--brown-dk); font: inherit; cursor: pointer; }
+#home-search-help { margin-top: 8px; color: var(--brown); font-size: 12px; }
+#home-search-count { margin: 18px 0 10px; font-weight: 700; }
+#home-search-more { display: block; min-height: 44px; color: var(--brown-dk); }
+.home-search-list { list-style: none; display: grid; gap: 8px; }
+.home-search-result { display: flex; flex-direction: column; gap: 5px; width: 100%; text-align: left; padding: 14px; border: 1px solid var(--parchment); border-radius: 8px; background: #fff; color: var(--text); font: inherit; cursor: pointer; overflow-wrap: anywhere; }
+.home-search-result:hover { background: var(--cream); border-color: var(--brown); }
+.home-search button:focus-visible { outline: 2px solid var(--brown); outline-offset: 2px; }
+.home-search-result-top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; justify-content: space-between; width: 100%; }
+.home-search-result-top strong { font-size: 15px; }
+.home-search-status { background: var(--warm); color: var(--brown-dk); padding: 2px 9px; border-radius: 12px; font-size: 12px; }
+.home-search-meta { color: var(--brown-dk); }
+.home-search-excerpt { color: var(--brown); font-size: 12px; }
+.home-search [hidden] { display: none !important; }
+@media (max-width: 600px) {
+  .home-search { padding: 14px; margin-bottom: 18px; }
+  .home-search-result { padding: 12px; }
+}
+
 /* ── PWA UPDATE BANNER ── */
 .pwa-update-banner {
   position: fixed;

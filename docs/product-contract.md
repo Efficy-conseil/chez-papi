@@ -34,6 +34,8 @@ Mapping attendu :
 
 ## Champs de base
 
+La recherche globale de l'accueil porte sur toutes les demandes accessibles, tous statuts et toutes années confondus. Elle croise les champs métier, les coordonnées, les dates, les messages et les notes, sans modifier les données ni dépendre des filtres de l'historique. Les résultats ouvrent la fiche existante depuis l'accueil. Les détails du comportement sont définis dans `docs/frontend-functional-spec.md`, section 5.1.1.
+
 Champs métier principaux :
 
 - `id_demande`
