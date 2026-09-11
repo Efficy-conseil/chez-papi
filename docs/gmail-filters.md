@@ -8,7 +8,13 @@ Le fichier complet prêt à importer est `gmail_filters/chez-papi-filters.xml` (
 
 ## Mise à jour Mailinblack sur une configuration existante
 
-État : fichiers préparés et vérifiés localement ; import et activation Gmail/Make à confirmer manuellement. Cette correction ne répare pas le regroupement des conversations Gmail ni les données historiques.
+État vérifié le 11/09/2026 dans Chrome, compte `demande.chezpapimaisongourmande@gmail.com` : le filtre Mailinblack est créé et actif, et le filtre newsletters existant a été modifié sur place, sans doublon. Gmail a confirmé les deux enregistrements. L'exception `-from:noreply@planity.com`, déjà présente dans la boîte, a été conservée et reportée dans les deux fichiers XML. Les autres filtres sont inchangés ; la boîte contient sept filtres.
+
+La case d'application aux conversations existantes est restée décochée pour les deux opérations. Le critère Mailinblack n'a retourné aucun message existant dans cette boîte lors de la création ; la configuration est vérifiée, mais la réception future d'une invitation reste à observer. Cette intervention ne répare pas le regroupement des conversations Gmail ni les données historiques.
+
+L'utilisateur a confirmé l'import du blueprint Make le 11/09/2026. Son activation et les essais E26 à E29 dans Make ne sont pas confirmés.
+
+La procédure ci-dessous reste disponible pour une autre boîte ou une réinstallation ; ne pas réimporter les filtres dans le compte déjà mis à jour.
 
 1. Exporter les filtres Gmail actuels et conserver l'export pour retour arrière. Créer le libellé `Authentification_À_traiter` dans la boîte qui reçoit les invitations (celle surveillée par Make si elle est différente).
 2. Tester `from:invitations.mailinblack.com` dans Gmail : inspecter l'expéditeur de chaque message correspondant, car un résultat peut afficher toute une conversation avec des réponses clientes.
@@ -85,12 +91,12 @@ Actions : ignorer la boîte de réception ; appliquer `Hors_Scope_Gmail`.
 Critère :
 
 ```text
--from:invitations.mailinblack.com -from:message@voxist.com -from:notifications@wix-forms.com -from:demande.chezpapimaisongourmande@gmail.com -from:chezpapimaisongourmande@gmail.com {unsubscribe désabonnement "se désabonner" newsletter "view in browser" "voir dans le navigateur"}
+-from:invitations.mailinblack.com -from:noreply@planity.com -from:message@voxist.com -from:notifications@wix-forms.com -from:demande.chezpapimaisongourmande@gmail.com -from:chezpapimaisongourmande@gmail.com {unsubscribe désabonnement "se désabonner" newsletter "view in browser" "voir dans le navigateur"}
 ```
 
 Actions : ignorer la boîte de réception ; appliquer `Hors_Scope_Gmail`.
 
-Les termes trop génériques `promotion`, `offre spéciale` et `publicité` sont supprimés : ils peuvent apparaître dans une demande client légitime. Les quatre sources métier et les invitations Mailinblack sont exclues explicitement. Cette dernière exclusion évite qu'une invitation soit archivée à cause de son contenu malgré le filtre 7.
+Les termes trop génériques `promotion`, `offre spéciale` et `publicité` sont supprimés : ils peuvent apparaître dans une demande client légitime. Les quatre sources métier, `noreply@planity.com` et les invitations Mailinblack sont exclus explicitement. L’exception Planity reproduit le réglage préexistant observé dans Gmail le 11/09/2026. Cette dernière exclusion évite qu'une invitation soit archivée à cause de son contenu malgré le filtre 7.
 
 ### 6. Newsletter METRO
 

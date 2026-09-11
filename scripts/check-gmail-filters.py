@@ -38,7 +38,7 @@ assert full[invitation_id] == {
 # Un second filtre peut archiver un message même si le premier le conserve.
 newsletter_query = full[newsletter_id]["hasTheWord"].split()
 for sender in [
-    "invitations.mailinblack.com", "message@voxist.com", "notifications@wix-forms.com",
+    "invitations.mailinblack.com", "noreply@planity.com", "message@voxist.com", "notifications@wix-forms.com",
     "demande.chezpapimaisongourmande@gmail.com", "chezpapimaisongourmande@gmail.com",
 ]:
     assert "-from:" + sender in newsletter_query, f"Source encore archivable comme newsletter : {sender}"
