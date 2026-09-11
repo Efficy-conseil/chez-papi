@@ -6,7 +6,7 @@
             "module": "google-email:triggerWatchNewEmails",
             "version": 4,
             "parameters": {
-                "q": "in:inbox -from:demande.chezpapimaisongourmande@gmail.com -from:chezpapimaisongourmande@gmail.com -subject:\"[Chez Papi] Récapitulatif\" -subject:\"[ERREUR MAKE]\"",
+                "q": "in:inbox -from:demande.chezpapimaisongourmande@gmail.com -from:chezpapimaisongourmande@gmail.com -subject:\"[Chez Papi] Récapitulatif\" -subject:\"[ERREUR MAKE]\" -from:invitations.mailinblack.com",
                 "limit": 20,
                 "format": "full",
                 "markSeen": false,
@@ -346,7 +346,18 @@
                 "handleErrors": true,
                 "useNewZLibDeCompress": true
             },
-            "filter": null,
+            "filter": {
+                "name": "Exclure les invitations Mailinblack avant tout traitement",
+                "conditions": [
+                    [
+                        {
+                            "a": "{{lower(trim(last(split(ifempty(1.fromEmail; \"\"); \"@\"))))}}",
+                            "o": "text:notequal",
+                            "b": "invitations.mailinblack.com"
+                        }
+                    ]
+                ]
+            },
             "mapper": {
                 "url": "https://script.google.com/macros/s/AKfycbzouc3kD6Qc68XzK3Ne_Rlnh5_e5o_IVMkAkHKAXJl-BFrxIIVEj7IS684CugVmh2Qlow/exec",
                 "serializeUrl": false,

@@ -1,20 +1,38 @@
 # Filtres Gmail
 
-Dernière mise à jour : 02/07/2026.
+Dernière mise à jour : 11/09/2026.
 
 Ce fichier contient la configuration cible à appliquer manuellement dans Gmail. Gmail permet de tester le critère avant de créer le filtre ; cette vérification est obligatoire pour les filtres 4 et 5.
 
-Le fichier prêt à importer est `gmail_filters/chez-papi-filters.xml`.
+Le fichier complet prêt à importer est `gmail_filters/chez-papi-filters.xml` (sept filtres). Pour ajouter la protection Mailinblack à une configuration existante, utiliser uniquement `gmail_filters/chez-papi-mailinblack-update.xml` (deux filtres).
+
+## Mise à jour Mailinblack sur une configuration existante
+
+État : fichiers préparés et vérifiés localement ; import et activation Gmail/Make à confirmer manuellement. Cette correction ne répare pas le regroupement des conversations Gmail ni les données historiques.
+
+1. Exporter les filtres Gmail actuels et conserver l'export pour retour arrière. Créer le libellé `Authentification_À_traiter` dans la boîte qui reçoit les invitations (celle surveillée par Make si elle est différente).
+2. Tester `from:invitations.mailinblack.com` dans Gmail : inspecter l'expéditeur de chaque message correspondant, car un résultat peut afficher toute une conversation avec des réponses clientes.
+3. Dans `Paramètres` > `Voir tous les paramètres` > `Filtres et adresses bloquées` > `Importer des filtres`, choisir `gmail_filters/chez-papi-mailinblack-update.xml`. Créer les deux filtres sans cocher l'application aux conversations existantes.
+4. Supprimer uniquement l'ancienne version du filtre général « Newsletters hors sources métier », celle qui ne contient pas `-from:invitations.mailinblack.com`. Garder la nouvelle version et les autres filtres. L'import ajoute des filtres ; il ne remplace pas les anciens. Vérifier aussi qu'aucun ancien filtre personnalisé n'archive ces invitations.
+5. Exporter le scénario Make actif pour retour arrière, puis importer `make/Integration Email - Wix - Voxist.blueprint.json` dans un scénario distinct désactivé. Reconnecter les comptes si nécessaire et vérifier la recherche du module 1 ainsi que le filtre avant le module 60 décrits ci-dessous.
+6. Tester E26 à E29 de `docs/make-regression-matrix.md` avec des données de test et rejouer les chemins critiques Wix, Voxist, Email et Tally selon la procédure de cette matrice. Pour E27, utiliser un scénario de test isolé avec connexions de test et neutraliser temporairement l'exclusion du déclencheur, puis la rétablir avant activation. Ne pas rejouer l'incident réel en production.
+7. Après validation, désactiver l'ancien scénario avant d'activer le nouveau pour éviter un double traitement. Conserver l'ancien scénario désactivé pour retour arrière.
+
+Résultat attendu : les prochaines invitations restent dans la boîte de réception, non marquées comme lues par les filtres ou Make, avec `Authentification_À_traiter`. Elles ne créent ni fiche, ni relance, ni accusé. Une vraie réponse de Julie Morel ou de Caroline Cadet continue son traitement commercial normal.
+
+Dans Make, le déclencheur ajoute `-from:invitations.mailinblack.com`. Le filtre commun avant le module 60 compare `lower(trim(last(split(ifempty(1.fromEmail; ""); "@"))))` à `invitations.mailinblack.com` avec l'opérateur « différent de ». La comparaison porte sur le domaine exact de l'adresse de l'expéditeur, indépendamment de l'objet, du texte cité, de l'IA et du fil Gmail. Si une invitation atteint malgré tout le déclencheur, elle s'arrête avant tout appel backend, traitement commercial ou archivage. Le libellé est posé par Gmail, pas par Make.
+
+La correction cible les invitations émises depuis `invitations.mailinblack.com`. Les autres messages automatiques ne sont pas exclus globalement : les notifications Wix/Voxist et les bons de commande techniques doivent conserver leurs routes métier.
 
 ## Import direct dans Gmail
 
 1. Ouvrir Gmail sur ordinateur, puis `Paramètres` > `Voir tous les paramètres` > `Filtres et adresses bloquées`.
 2. En bas de la page, cliquer sur `Importer des filtres`.
-3. Sélectionner `gmail_filters/chez-papi-filters.xml`, puis créer les six filtres proposés.
+3. Sélectionner `gmail_filters/chez-papi-filters.xml`, puis créer les sept filtres proposés (installation complète seulement ; pour une boîte déjà configurée, suivre la mise à jour ciblée ci-dessus).
 4. Vérifier que `support@efficy-conseil.fr` est toujours une adresse de transfert validée dans Gmail.
 5. Supprimer ensuite les anciens filtres indiqués dans la section « Filtres à supprimer ou remplacer » : l'import ne les remplace pas automatiquement.
 
-L'import n'applique pas ces filtres aux anciens messages. Les libellés `0 - Récap_Quotidien`, `Alerte_Make` et `Hors_Scope_Gmail` doivent exister dans le compte.
+Ne pas cocher l'application aux conversations existantes lors de l'import. Les libellés `0 - Récap_Quotidien`, `Alerte_Make`, `Hors_Scope_Gmail` et `Authentification_À_traiter` doivent exister dans le compte.
 
 ## Configuration cible
 
@@ -67,12 +85,12 @@ Actions : ignorer la boîte de réception ; appliquer `Hors_Scope_Gmail`.
 Critère :
 
 ```text
--from:message@voxist.com -from:notifications@wix-forms.com -from:demande.chezpapimaisongourmande@gmail.com -from:chezpapimaisongourmande@gmail.com {unsubscribe désabonnement "se désabonner" newsletter "view in browser" "voir dans le navigateur"}
+-from:invitations.mailinblack.com -from:message@voxist.com -from:notifications@wix-forms.com -from:demande.chezpapimaisongourmande@gmail.com -from:chezpapimaisongourmande@gmail.com {unsubscribe désabonnement "se désabonner" newsletter "view in browser" "voir dans le navigateur"}
 ```
 
 Actions : ignorer la boîte de réception ; appliquer `Hors_Scope_Gmail`.
 
-Les termes trop génériques `promotion`, `offre spéciale` et `publicité` sont supprimés : ils peuvent apparaître dans une demande client légitime. Les quatre sources métier sont exclues explicitement.
+Les termes trop génériques `promotion`, `offre spéciale` et `publicité` sont supprimés : ils peuvent apparaître dans une demande client légitime. Les quatre sources métier et les invitations Mailinblack sont exclues explicitement. Cette dernière exclusion évite qu'une invitation soit archivée à cause de son contenu malgré le filtre 7.
 
 ### 6. Newsletter METRO
 
@@ -84,6 +102,16 @@ from:email.metro.fr
 
 Actions : ignorer la boîte de réception ; marquer comme lu ; appliquer `Hors_Scope_Gmail`.
 
+### 7. Invitations Mailinblack à traiter
+
+Critère :
+
+```text
+from:invitations.mailinblack.com
+```
+
+Action : appliquer uniquement `Authentification_À_traiter`. Ne pas archiver, supprimer, transférer ni marquer comme lu. Ces invitations peuvent signaler qu'un email envoyé attend l'authentification de son expéditeur avant sa délivrance. La validation reste manuelle ; aucune réponse automatique ni ouverture automatique du lien n'est prévue.
+
 ## Filtres à supprimer ou remplacer
 
 - Remplacer les deux anciens filtres Make « erreurs » et « crédits » par le filtre 2.
@@ -94,7 +122,7 @@ Actions : ignorer la boîte de réception ; marquer comme lu ; appliquer `Hors_S
 
 ## Ordre d'application
 
-1. Créer les six nouveaux filtres sans appliquer les actions aux conversations existantes.
+1. Pour une installation complète, créer les sept filtres sans appliquer les actions aux conversations existantes. Pour la seule correction Mailinblack, suivre la procédure ciblée en début de document.
 2. Tester les critères 4 et 5 dans la barre de recherche Gmail et vérifier qu'aucune demande Wix, Voxist ou client n'apparaît.
 3. Supprimer les anciens filtres remplacés.
 4. Envoyer un email de test pour chaque source métier et vérifier qu'il reste visible pour Make.

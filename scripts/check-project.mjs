@@ -33,6 +33,7 @@ run(process.execPath, ['--check', 'chez-papi/prototypes/ihm-ng/app.js']);
 run(process.execPath, ['--check', 'chez-papi/prototypes/relances/app.js']);
 run(process.execPath, ['--check', 'chez-papi/prototypes/relances/sw.js']);
 run(process.execPath, ['scripts/audit-blueprints.mjs']);
+run('python3', ['scripts/check-gmail-filters.py']);
 run(process.execPath, ['scripts/test-demand-matching.mjs']);
 run(process.execPath, ['scripts/test-statistics.mjs']);
 run(process.execPath, ['scripts/test-search.mjs']);

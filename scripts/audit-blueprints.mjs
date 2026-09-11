@@ -29,6 +29,23 @@ const tallyModules = collectModules(tally.flow);
 
 const gmailTrigger = moduleById(mainModules, 1);
 const gmailQuery = gmailTrigger.parameters?.q || '';
+assert(gmailQuery.split(/\s+/).includes('-from:invitations.mailinblack.com'), 'invitations Mailinblack non exclues du déclencheur Gmail');
+assert(gmailTrigger.parameters.markSeen === false, 'le déclencheur ne doit pas marquer les invitations comme lues');
+// E26 : même dans le fil de Julie Morel, une invitation doit être arrêtée
+// avant checkDuplicate et toutes les routes de création, suivi ou accusé.
+assert(
+  main.flow[0] === gmailTrigger && main.flow[1]?.id === 60 && main.flow[2]?.id === 2 && main.flow.length === 3,
+  'un chemin contourne la protection commune placée avant le module 60'
+);
+const invitationGuard = moduleById(mainModules, 60).filter?.conditions;
+assert(
+  invitationGuard?.length === 1 && invitationGuard[0].length === 1 &&
+  invitationGuard[0][0].a === '{{lower(trim(last(split(ifempty(1.fromEmail; ""); "@"))))}}' &&
+  invitationGuard[0][0].o === 'text:notequal' &&
+  invitationGuard[0][0].b === 'invitations.mailinblack.com',
+  'le garde-fou doit exclure le domaine exact de l’expéditeur, indépendamment du fil, du corps ou du résultat IA'
+);
+
 assert(
   gmailQuery.includes('-from:demande.chezpapimaisongourmande@gmail.com') &&
   gmailQuery.includes('-from:chezpapimaisongourmande@gmail.com'),

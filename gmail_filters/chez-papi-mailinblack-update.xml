@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:apps="http://schemas.google.com/apps/2006">
+  <title>Mail Filters</title>
+  <id>tag:mail.google.com,2008:filters:chez-papi-mailinblack-update</id>
+  <updated>2026-09-11T12:00:00Z</updated>
+  <author>
+    <name>Chez Papi</name>
+    <email>chezpapimaisongourmande@gmail.com</email>
+  </author>
+
+  <entry>
+    <category term="filter"/>
+    <title>Mail Filter</title>
+    <id>tag:mail.google.com,2008:filter:chez-papi-newsletters</id>
+    <updated>2026-09-11T12:00:00Z</updated>
+    <content/>
+    <apps:property name="hasTheWord" value="-from:invitations.mailinblack.com -from:message@voxist.com -from:notifications@wix-forms.com -from:demande.chezpapimaisongourmande@gmail.com -from:chezpapimaisongourmande@gmail.com {unsubscribe désabonnement &quot;se désabonner&quot; newsletter &quot;view in browser&quot; &quot;voir dans le navigateur&quot;}"/>
+    <apps:property name="shouldArchive" value="true"/>
+    <apps:property name="label" value="Hors_Scope_Gmail"/>
+  </entry>
+
+  <entry>
+    <category term="filter"/>
+    <title>Mail Filter</title>
+    <id>tag:mail.google.com,2008:filter:chez-papi-authentification-mailinblack</id>
+    <updated>2026-09-11T12:00:00Z</updated>
+    <content/>
+    <apps:property name="from" value="invitations.mailinblack.com"/>
+    <apps:property name="label" value="Authentification_À_traiter"/>
+  </entry>
+</feed>

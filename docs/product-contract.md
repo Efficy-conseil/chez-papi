@@ -9,6 +9,7 @@ Objectif : ce document est la source de référence avant toute modification du 
 - Une vraie demande client doit créer ou enrichir une seule ligne dans l'onglet `Demandes`.
 - Un suivi client sur une demande existante ne doit pas créer de nouvelle ligne.
 - Un email interne, un accusé automatique, une newsletter, une facture fournisseur ou un spam ne doit pas créer de demande.
+- Une invitation Mailinblack provenant de `invitations.mailinblack.com` ne doit créer ni demande ni relance, même dans un fil client connu. Elle reste visible pour authentification manuelle dans Gmail, sous `Authentification_À_traiter`, sans archivage ni marquage comme lu par l'automatisation.
 - Make doit toujours archiver un message traité dans le bon libellé Gmail, sauf si une erreur volontairement remontée empêche le traitement.
 - Un accusé optionnel ne doit jamais être placé avant l'archivage dans une même branche, car son filtre pourrait interrompre le flux.
 - Les filtres Gmail ne doivent pas masquer les sources métier surveillées par Make.
@@ -141,6 +142,7 @@ Déclencheur : Gmail nouveaux emails.
 
 Étape commune :
 
+- Le déclencheur Gmail exclut `from:invitations.mailinblack.com`. Un second garde-fou avant le module `60` écarte le domaine exact de l'expéditeur, normalisé en minuscules, avant tout appel backend et toutes les routes commerciales. Une invitation arrêtée ici reste en boîte de réception ; son libellé est appliqué par Gmail. Cette exclusion vaut pour les fils nouveaux comme connus et ne filtre pas les réponses clientes qui citent Mailinblack dans leur corps.
 - Module `60` appelle le backend `checkDuplicate` avec `source_email`, `gmail_message_id` et `gmail_thread_id` ; le backend construit l'identifiant métier préfixé.
 - Le backend répond avec `count`.
 - `count = 0` signifie nouveau message non connu.
@@ -380,6 +382,7 @@ Contraintes :
   - `notifications@wix-forms.com`
   - emails clients directs probables
 - Les filtres newsletter doivent exclure explicitement Voxist et Wix si leurs templates contiennent `ouvrir dans le navigateur` ou équivalent.
+- Les filtres newsletter excluent également `from:invitations.mailinblack.com` pour préserver les invitations nécessitant une authentification. Le filtre dédié leur applique uniquement `Authentification_À_traiter` ; ne pas appliquer rétroactivement ces filtres aux conversations existantes.
 - `Hors_Scope_Gmail` doit rester séparé de `Hors_Scope_Make` pour identifier qui a classé l'email.
 
 ## Labels Gmail attendus
@@ -390,6 +393,7 @@ Contraintes :
 - Hors scope Make -> `Hors_Scope_Make`
 - Hors scope Gmail -> `Hors_Scope_Gmail`
 - Alertes Make -> `Alerte_Make`
+- Invitations Mailinblack -> `Authentification_À_traiter` (visibles en boîte de réception, hors traitement Make)
 
 ## Règles de modification obligatoires
 
