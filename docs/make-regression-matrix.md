@@ -6,7 +6,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 
 | ID | Cas | Résultat attendu | Validation locale |
 |---|---|---|---|
-| C01 | Appel Apps Script depuis un module HTTP | `Follow redirect` et `Follow all redirects` actifs | Automatique |
+| C01 | Appel Apps Script critique depuis un module HTTP du blueprint principal | Méthode `POST`, délai maximal de 15 s, `Follow redirect`, `Follow all redirects` et gestionnaire Retry actifs | Automatique |
 | C02 | Réponse anti-doublon `count = 0` | Passage vers la route de création ou d'analyse de la bonne source | Automatique |
 | C03 | Réponse anti-doublon `count > 0` | Mise à jour, archivage explicite ou arrêt documenté, jamais création aveugle | Automatique + essai Make |
 | C04 | Message traité | Retrait de `INBOX` et application du bon libellé Gmail | Essai Make |
@@ -20,7 +20,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | C12 | Une demande échoue puis une demande valide arrive | La première reste en exécution incomplète ; la suivante est traitée sans attendre sa résolution et le scénario reste actif | Automatique + essai Make |
 | C13 | Plusieurs demandes distinctes échouent successivement | Chaque demande est conservée avec ses données et son point de reprise ; les demandes valides suivantes continuent et les alertes natives Make restent actives | Automatique + essai Make |
 | C14 | Reprise après correction d'une écriture backend déjà appliquée dont la réponse a été perdue | La reprise termine le flux sans seconde création ni répétition d'une mise à jour métier | Backend + automatique + essai Make |
-| C15 | `checkDuplicate` signé Make en erreur ou redirection POST transformée en GET | Le backend dépasse volontairement les 15 secondes du module HTTP 60 ; celui-ci déclenche trois reprises à cinq minutes puis conserve une exécution incomplète | Backend + automatique + essai Make |
+| C15 | Un appel Apps Script signé Make, dont le suivi Email du module 81, est en erreur ou sa redirection POST est transformée en GET | Le backend dépasse volontairement les 15 secondes du module HTTP concerné ; celui-ci déclenche trois reprises à cinq minutes puis conserve une exécution incomplète | Backend + automatique + essai Make |
 
 ## Wix
 

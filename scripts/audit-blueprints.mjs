@@ -238,7 +238,6 @@ httpModules.forEach(module => {
 
 const duplicateModule = moduleById(mainModules, 60);
 const duplicateBody = duplicateModule.mapper?.data || '';
-assert(duplicateModule.mapper?.timeout === '15', 'délai maximal de 15 s absent du module 60');
 assert(duplicateBody.includes('"action":"checkDuplicate"'), 'action checkDuplicate absente du module 60');
 assert(duplicateBody.includes('"source_email":"{{1.fromEmail}}"'), 'source_email absent du module 60');
 assert(duplicateBody.includes('"gmail_message_id":"{{1.id}}"'), 'gmail_message_id absent du module 60');
@@ -269,6 +268,21 @@ const retryModules = new Map([
   [62, 'createMakeDemand'],
   [15, 'createMakeDemand']
 ]);
+const appsScriptModuleIds = [...retryModules.keys()].sort((a, b) => a - b);
+const appsScriptModules = mainModules
+  .filter(module =>
+    module.module === 'http:ActionSendData' &&
+    String(module.mapper?.url || '').includes('script.google.com/macros/s/')
+  )
+  .sort((left, right) => left.id - right.id);
+assert(
+  JSON.stringify(appsScriptModules.map(module => module.id)) === JSON.stringify(appsScriptModuleIds),
+  'la liste des appels Apps Script critiques ne correspond plus à la protection de reprise attendue'
+);
+appsScriptModules.forEach(module => {
+  assert(module.mapper?.method === 'post', `méthode POST absente sur le module Apps Script ${module.id}`);
+  assert(module.mapper?.timeout === '15', `délai maximal de 15 s absent du module Apps Script ${module.id}`);
+});
 retryModules.forEach((action, id) => {
   const module = moduleById(mainModules, id);
   assert((module.mapper?.data || '').includes(`"action":"${action}"`), `action backend inattendue sur le module ${id}`);
