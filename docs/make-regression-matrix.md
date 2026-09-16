@@ -106,6 +106,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | E27 | Même invitation injectée dans le scénario de test en neutralisant seulement l'exclusion du déclencheur, avec fil connu puis inconnu et expéditeur en majuscules | Le filtre avant le module 60 arrête le message dans tous les cas ; aucun appel backend, aucune qualification IA, aucune route d'écriture ou d'archivage ne s'exécute | Statique + essai Make isolé |
 | E28 | Réponse réelle de `jmorel@guinot.com` confirmant 12 personnes, ou réponse de `c.cadet@salondeprovence.fr`, citant éventuellement Mailinblack ou un lien d'invitation dans son texte | Le garde-fou laisse passer l'expéditeur réel ; le parcours commercial existant reste inchangé et le texte cité n'entraîne pas d'exclusion | Statique + essai Gmail/Make |
 | E29 | Invitation Mailinblack dont le corps contient `newsletter`, `unsubscribe` ou `voir dans le navigateur` | Le filtre newsletters l'exclut ; seul le libellé d'authentification est ajouté, sans suppression, archivage ou marquage comme lu ; vérifier que l'ancien filtre newsletters a bien été remplacé | XML automatique + essai Gmail |
+| E30 | Confirmation ou notification de `noreply@planity.com` | Le filtre Gmail dédié archive le message et applique `Hors_Scope_Gmail`, sans le transmettre à Make ni modifier une conversation existante | XML automatique + essai Gmail |
 
 ## Tally
 

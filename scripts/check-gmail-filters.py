@@ -1,4 +1,4 @@
-"""Vérifie les imports Gmail et la visibilité des invitations Mailinblack."""
+"""Vérifie les imports Gmail, les invitations Mailinblack et les notifications Planity."""
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
@@ -24,8 +24,9 @@ update = read_filters("chez-papi-mailinblack-update.xml")
 prefix = "tag:mail.google.com,2008:filter:chez-papi-"
 invitation_id = prefix + "authentification-mailinblack"
 newsletter_id = prefix + "newsletters"
-assert len(full) == 7, "La configuration complète doit contenir sept filtres"
-assert set(update) == {invitation_id, newsletter_id}, "L'import ciblé doit contenir seulement les deux filtres concernés"
+planity_id = prefix + "notifications-planity"
+assert len(full) == 8, "La configuration complète doit contenir huit filtres"
+assert set(update) == {invitation_id, newsletter_id, planity_id}, "L'import ciblé doit contenir les trois filtres concernés"
 for key, values in update.items():
     assert values == full[key], f"Import ciblé désynchronisé : {key}"
 
@@ -34,6 +35,12 @@ assert full[invitation_id] == {
     "from": "invitations.mailinblack.com",
     "label": "Authentification_À_traiter",
 }, "L'invitation doit uniquement recevoir son libellé"
+
+assert full[planity_id] == {
+    "from": "noreply@planity.com",
+    "shouldArchive": "true",
+    "label": "Hors_Scope_Gmail",
+}, "Les notifications Planity doivent être archivées hors périmètre"
 
 # Un second filtre peut archiver un message même si le premier le conserve.
 newsletter_query = full[newsletter_id]["hasTheWord"].split()

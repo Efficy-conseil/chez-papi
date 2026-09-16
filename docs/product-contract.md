@@ -9,6 +9,7 @@ Objectif : ce document est la source de référence avant toute modification du 
 - Une vraie demande client doit créer ou enrichir une seule ligne dans l'onglet `Demandes`.
 - Un suivi client sur une demande existante ne doit pas créer de nouvelle ligne.
 - Un email interne, un accusé automatique, une newsletter, une facture fournisseur ou un spam ne doit pas créer de demande.
+- Une confirmation ou notification Planity provenant de `noreply@planity.com` ne doit créer ni demande ni relance. Elle est archivée par Gmail avec le libellé `Hors_Scope_Gmail`, sans application aux conversations existantes.
 - Une invitation Mailinblack provenant de `invitations.mailinblack.com` ne doit créer ni demande ni relance, même dans un fil client connu. Elle reste visible pour authentification manuelle dans Gmail, sous `Authentification_À_traiter`, sans archivage ni marquage comme lu par l'automatisation.
 - Make doit toujours archiver un message traité dans le bon libellé Gmail, sauf si une erreur volontairement remontée empêche le traitement.
 - Un accusé optionnel ne doit jamais être placé avant l'archivage dans une même branche, car son filtre pourrait interrompre le flux.
