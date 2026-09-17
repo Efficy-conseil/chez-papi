@@ -336,6 +336,37 @@ assert(moduleById(mainModules, 87).mapper?.to === 'Label_2648810022094724776', '
   );
 });
 
+[
+  [84, 'Site Internet'],
+  [85, 'Email'],
+  [80, 'Email']
+].forEach(([moduleId, expectedChannel]) => {
+  const body = JSON.parse(moduleById(mainModules, moduleId).mapper?.data || '{}');
+  assert(body.options?.create_if_not_found === true, `création de secours absente du module ${moduleId}`);
+  assert(body.options?.fallback_row?.id_demande === 'GMAIL-{{1.threadId}}', `identifiant de secours non idempotent dans le module ${moduleId}`);
+  assert(body.options?.fallback_row?.statut === 'À vérifier', `statut de secours inattendu dans le module ${moduleId}`);
+  assert(body.options?.fallback_row?.canal === expectedChannel, `canal de secours inattendu dans le module ${moduleId}`);
+});
+[80, 85].forEach(moduleId => {
+  const body = JSON.parse(moduleById(mainModules, moduleId).mapper?.data || '{}');
+  assert(body.options?.match?.email_client === '{{1.fromEmail}}', `recherche de secours par email absente du module ${moduleId}`);
+});
+[
+  [83, 84],
+  [86, 85],
+  [87, 80]
+].forEach(([archiveModuleId, updateModuleId]) => {
+  const conditions = moduleById(mainModules, archiveModuleId).filter?.conditions || [];
+  assert(
+    conditions.every(conditionSet => conditionSet.some(condition =>
+      condition?.a === `{{${updateModuleId}.data.data.updated}}` &&
+      condition?.b === 'true' &&
+      condition?.o === 'boolean:equal'
+    )),
+    `archivage du module ${archiveModuleId} non conditionné à une écriture réussie du module ${updateModuleId}`
+  );
+});
+
 const unmatchedEmailBody = moduleById(mainModules, 81).mapper?.data || '';
 assert(unmatchedEmailBody.includes('"create_if_not_found":true'), 'création de secours absente du module 81');
 assert(unmatchedEmailBody.includes('"id_demande":"GMAIL-{{1.threadId}}"'), 'identifiant anti-doublon absent de la création de secours du module 81');

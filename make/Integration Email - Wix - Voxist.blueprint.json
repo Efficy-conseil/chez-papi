@@ -670,7 +670,7 @@
                                 "gzip": true,
                                 "useMtls": false,
                                 "contentType": "application/json",
-                                "data": "{\"action\":\"updateWixFollowup\",\"make_token\":\"cp_make_followup_2026_06\",\"gmail_thread_id\":\"{{1.threadId}}\",\"email_client\":\"{{1.fromEmail}}\",\"fields\":{\"gmail_message_id\":\"{{1.id}}\",\"url_email_origine\":\"https://mail.google.com/mail/u/0/#label/Historique_Wix/{{1.threadId}}\",\"dernier_email_recu_le\":\"{{1.internalDate}}\",\"dernier_message_client\":\"{{escapeJSON(substring(1.fullTextBody; 0; 900))}}\",\"relance_a_traiter\":true}}",
+                                "data": "{\"action\":\"updateWixFollowup\",\"make_token\":\"cp_make_followup_2026_06\",\"gmail_thread_id\":\"{{1.threadId}}\",\"email_client\":\"{{1.fromEmail}}\",\"options\":{\"create_if_not_found\":true,\"fallback_row\":{\"id_demande\":\"GMAIL-{{1.threadId}}\",\"date_reception\":\"{{1.internalDate}}\",\"canal\":\"Site Internet\",\"nom_client\":\"{{escapeJSON(ifempty(1.fromName; \\\"Inconnu / à compléter\\\"))}}\",\"email_client\":\"{{1.fromEmail}}\",\"statut\":\"À vérifier\",\"message_original\":\"{{escapeJSON(substring(1.fullTextBody; 0; 900))}}\",\"url_email_origine\":\"https://mail.google.com/mail/u/0/#label/Historique_Wix/{{1.threadId}}\",\"gmail_thread_id\":\"{{1.threadId}}\",\"gmail_message_id\":\"{{1.id}}\"}},\"fields\":{\"gmail_message_id\":\"{{1.id}}\",\"url_email_origine\":\"https://mail.google.com/mail/u/0/#label/Historique_Wix/{{1.threadId}}\",\"dernier_email_recu_le\":\"{{1.internalDate}}\",\"dernier_message_client\":\"{{escapeJSON(substring(1.fullTextBody; 0; 900))}}\",\"relance_a_traiter\":true}}",
                                 "followAllRedirects": true
                             },
                             "onerror": [
@@ -918,6 +918,11 @@
                                             "a": "{{1.fromEmail}}",
                                             "b": "notifications@wix-forms.com",
                                             "o": "text:notequal"
+                                        },
+                                        {
+                                            "a": "{{84.data.data.updated}}",
+                                            "b": "true",
+                                            "o": "boolean:equal"
                                         }
                                     ]
                                 ]
@@ -1230,7 +1235,7 @@
                                 "gzip": true,
                                 "useMtls": false,
                                 "contentType": "application/json",
-                                "data": "{\"action\":\"updateThreadFollowup\",\"make_token\":\"cp_make_followup_2026_06\",\"gmail_thread_id\":\"{{1.threadId}}\",\"fields\":{\"gmail_message_id\":\"{{1.id}}\",\"url_email_origine\":\"https://mail.google.com/mail/u/0/#label/Historique_Email/{{1.threadId}}\",\"dernier_email_recu_le\":\"{{1.internalDate}}\",\"dernier_message_client\":\"{{escapeJSON(substring(1.fullTextBody; 0; 900))}}\",\"relance_a_traiter\":true}}",
+                                "data": "{\"action\":\"updateThreadFollowup\",\"make_token\":\"cp_make_followup_2026_06\",\"gmail_thread_id\":\"{{1.threadId}}\",\"options\":{\"create_if_not_found\":true,\"match\":{\"email_client\":\"{{1.fromEmail}}\",\"nom_client\":\"{{escapeJSON(ifempty(1.fromName; \\\"\\\"))}}\"},\"fallback_row\":{\"id_demande\":\"GMAIL-{{1.threadId}}\",\"date_reception\":\"{{1.internalDate}}\",\"canal\":\"Email\",\"nom_client\":\"{{escapeJSON(ifempty(1.fromName; \\\"Inconnu / à compléter\\\"))}}\",\"email_client\":\"{{1.fromEmail}}\",\"statut\":\"À vérifier\",\"message_original\":\"{{escapeJSON(substring(1.fullTextBody; 0; 900))}}\",\"url_email_origine\":\"https://mail.google.com/mail/u/0/#label/Historique_Email/{{1.threadId}}\",\"gmail_thread_id\":\"{{1.threadId}}\",\"gmail_message_id\":\"{{1.id}}\"}},\"fields\":{\"gmail_message_id\":\"{{1.id}}\",\"url_email_origine\":\"https://mail.google.com/mail/u/0/#label/Historique_Email/{{1.threadId}}\",\"dernier_email_recu_le\":\"{{1.internalDate}}\",\"dernier_message_client\":\"{{escapeJSON(substring(1.fullTextBody; 0; 900))}}\",\"relance_a_traiter\":true}}",
                                 "followAllRedirects": true
                             },
                             "onerror": [
@@ -1465,7 +1470,18 @@
                             "parameters": {
                                 "__IMTCONN__": 7978131
                             },
-                            "filter": null,
+                            "filter": {
+                                "name": "Archiver uniquement après rattachement ou création de secours",
+                                "conditions": [
+                                    [
+                                        {
+                                            "a": "{{85.data.data.updated}}",
+                                            "b": "true",
+                                            "o": "boolean:equal"
+                                        }
+                                    ]
+                                ]
+                            },
                             "mapper": {
                                 "to": "Label_2648810022094724776",
                                 "from": "INBOX",
@@ -1625,7 +1641,7 @@
                                 "gzip": true,
                                 "useMtls": false,
                                 "contentType": "application/json",
-                                "data": "{\"action\":\"updateThreadFollowup\",\"make_token\":\"cp_make_followup_2026_06\",\"gmail_thread_id\":\"{{1.threadId}}\",\"fields\":{\"gmail_message_id\":\"{{1.id}}\",\"url_email_origine\":\"https://mail.google.com/mail/u/0/#label/Historique_Email/{{1.threadId}}\",\"dernier_email_recu_le\":\"{{1.internalDate}}\",\"dernier_message_client\":\"{{escapeJSON(substring(1.fullTextBody; 0; 900))}}\",\"relance_a_traiter\":true}}",
+                                "data": "{\"action\":\"updateThreadFollowup\",\"make_token\":\"cp_make_followup_2026_06\",\"gmail_thread_id\":\"{{1.threadId}}\",\"options\":{\"create_if_not_found\":true,\"match\":{\"email_client\":\"{{1.fromEmail}}\",\"nom_client\":\"{{escapeJSON(ifempty(1.fromName; \\\"\\\"))}}\"},\"fallback_row\":{\"id_demande\":\"GMAIL-{{1.threadId}}\",\"date_reception\":\"{{1.internalDate}}\",\"canal\":\"Email\",\"nom_client\":\"{{escapeJSON(ifempty(1.fromName; \\\"Inconnu / à compléter\\\"))}}\",\"email_client\":\"{{1.fromEmail}}\",\"statut\":\"À vérifier\",\"message_original\":\"{{escapeJSON(substring(1.fullTextBody; 0; 900))}}\",\"url_email_origine\":\"https://mail.google.com/mail/u/0/#label/Historique_Email/{{1.threadId}}\",\"gmail_thread_id\":\"{{1.threadId}}\",\"gmail_message_id\":\"{{1.id}}\"}},\"fields\":{\"gmail_message_id\":\"{{1.id}}\",\"url_email_origine\":\"https://mail.google.com/mail/u/0/#label/Historique_Email/{{1.threadId}}\",\"dernier_email_recu_le\":\"{{1.internalDate}}\",\"dernier_message_client\":\"{{escapeJSON(substring(1.fullTextBody; 0; 900))}}\",\"relance_a_traiter\":true}}",
                                 "followAllRedirects": true
                             },
                             "onerror": [
@@ -1860,7 +1876,18 @@
                             "parameters": {
                                 "__IMTCONN__": 7978131
                             },
-                            "filter": null,
+                            "filter": {
+                                "name": "Archiver uniquement après rattachement ou création de secours",
+                                "conditions": [
+                                    [
+                                        {
+                                            "a": "{{80.data.data.updated}}",
+                                            "b": "true",
+                                            "o": "boolean:equal"
+                                        }
+                                    ]
+                                ]
+                            },
                             "mapper": {
                                 "to": "Label_2648810022094724776",
                                 "from": "INBOX",

@@ -200,8 +200,8 @@ function doPost(e) {
     if (body.action === 'list' || body.action === 'getAll') return listRows();
     if (body.action === 'add')    return withDocumentLock(function() { return addRow(body.row || {}, body.options || {}); });
     if (body.action === 'update') return withDocumentLock(function() { return updateRowById(body.id_demande, body.fields || {}); });
-    if (body.action === 'updateThreadFollowup') return withDocumentLock(function() { return updateThreadFollowup(body.gmail_thread_id, body.fields || {}); });
-    if (body.action === 'updateWixFollowup') return withDocumentLock(function() { return updateWixFollowup(body.gmail_thread_id, body.email_client, body.fields || {}); });
+    if (body.action === 'updateThreadFollowup') return withDocumentLock(function() { return updateThreadFollowup(body.gmail_thread_id, body.fields || {}, body.options || {}); });
+    if (body.action === 'updateWixFollowup') return withDocumentLock(function() { return updateWixFollowup(body.gmail_thread_id, body.email_client, body.fields || {}, body.options || {}); });
     if (body.action === 'updateExistingDemandFollowup') return withDocumentLock(function() { return updateExistingDemandFollowup(body.match || {}, body.fields || {}, body.options || {}); });
     if (body.action === 'checkDuplicate') return checkDuplicate(body.match || {});
     if (body.action === 'upsertWixDemand') return withDocumentLock(function() { return upsertWixDemand(body.row || {}, body.options || {}); });
@@ -593,7 +593,7 @@ function updateRowById(idDemande, fields) {
   return ok({ id_demande: idDemande, fields: clean });
 }
 
-function updateThreadFollowup(gmailThreadId, fields) {
+function updateThreadFollowup(gmailThreadId, fields, options) {
   if (!gmailThreadId) throw new Error("gmail_thread_id manquant");
   const sheet = getSheet();
   ensureSchemaHeaders(sheet);
@@ -601,7 +601,15 @@ function updateThreadFollowup(gmailThreadId, fields) {
   const replay = findMakeOperationByMessageId(sheet, headers, getMakeMessageId(fields));
   if (replay) return ok(replayFollowupResult(replay));
   const found = findRowByCanonicalValue(sheet, headers, "gmail_thread_id", gmailThreadId);
-  if (!found) return ok({ updated: false, reason: "thread_not_found", gmail_thread_id: gmailThreadId });
+  if (!found) {
+    if (options && options.match) {
+      return updateExistingDemandFollowup(options.match, fields || {}, options);
+    }
+    if (options && options.create_if_not_found) {
+      return createUnmatchedFollowupDemand(options.fallback_row || {}, fields || {});
+    }
+    return ok({ updated: false, reason: "thread_not_found", gmail_thread_id: gmailThreadId });
+  }
 
   const clean = sanitizeFields(fields || {}, true);
   clean.relance_a_traiter = clean.relance_a_traiter !== undefined ? clean.relance_a_traiter : true;
@@ -620,7 +628,7 @@ function updateThreadFollowup(gmailThreadId, fields) {
   return ok({ updated: true, id_demande: found.id_demande || "", row: found.rowIndex });
 }
 
-function updateWixFollowup(gmailThreadId, emailClient, fields) {
+function updateWixFollowup(gmailThreadId, emailClient, fields, options) {
   if (!gmailThreadId) throw new Error("gmail_thread_id manquant");
   const email = String(emailClient || '').trim().toLowerCase();
   if (!email) throw new Error("email_client manquant");
@@ -633,6 +641,9 @@ function updateWixFollowup(gmailThreadId, emailClient, fields) {
   const foundByThread = findRowByCanonicalValue(sheet, headers, "gmail_thread_id", gmailThreadId);
   const found = foundByThread || findLatestRowByEmailAndIdPrefix(sheet, headers, email, "WIX-");
   if (!found) {
+    if (options && options.create_if_not_found) {
+      return createUnmatchedFollowupDemand(options.fallback_row || {}, fields || {});
+    }
     return ok({ updated: false, reason: "wix_demand_not_found", gmail_thread_id: gmailThreadId, email_client: email });
   }
 
@@ -1010,7 +1021,11 @@ function writeMakeFollowup(sheet, headers, rowIndex, fields, result) {
   const values = sheet.getRange(rowIndex, 1, 1, sheet.getLastColumn()).getValues()[0];
   headers.forEach(function(h, i) {
     const key = canonicalKey(h);
-    if (fields[key] !== undefined) values[i] = fields[key];
+    // Un suivi enrichit une fiche : une valeur absente de l'email ne doit
+    // jamais effacer une information métier déjà connue.
+    if (fields[key] !== undefined && fields[key] !== null && String(fields[key]).trim() !== '') {
+      values[i] = fields[key];
+    }
   });
   const logCol = headers.findIndex(function(h) { return canonicalKey(h) === 'make_operation_log'; }) + 1;
   if (logCol <= 0) throw new Error('Colonne make_operation_log introuvable');

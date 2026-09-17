@@ -289,6 +289,122 @@ assert.equal(capturedAutomaticRow.relance_a_traiter, true);
 assert.equal(capturedAutomaticRow.nb_relances_client, 1);
 assert.match(capturedAutomaticRow.notes, /créée automatiquement/);
 
+const followupHeaders = [
+  'telephone', 'nb_convives', 'email_client', 'gmail_message_id',
+  'relance_a_traiter', 'make_operation_log'
+];
+const followupRows = [
+  followupHeaders,
+  ['06 12 34 56 78', '80', 'ancienne@example.com', 'MESSAGE-INITIAL', false, '']
+];
+context.followupSheet = {
+  getLastColumn() { return followupHeaders.length; },
+  getRange(row, column, rowCount = 1, columnCount = 1) {
+    return {
+      getValues() {
+        return followupRows
+          .slice(row - 1, row - 1 + rowCount)
+          .map(line => line.slice(column - 1, column - 1 + columnCount));
+      },
+      setValues(values) {
+        values.forEach((line, rowOffset) => {
+          line.forEach((value, columnOffset) => {
+            followupRows[row - 1 + rowOffset][column - 1 + columnOffset] = value;
+          });
+        });
+        return this;
+      }
+    };
+  }
+};
+evaluate(`writeMakeFollowup(followupSheet, ${JSON.stringify(followupHeaders)}, 2, {
+  telephone: '',
+  nb_convives: '   ',
+  email_client: 'nouvelle@example.com',
+  gmail_message_id: 'MESSAGE-SUIVI',
+  relance_a_traiter: true
+}, { updated: true })`);
+assert.equal(followupRows[1][followupHeaders.indexOf('telephone')], '06 12 34 56 78');
+assert.equal(followupRows[1][followupHeaders.indexOf('nb_convives')], '80');
+assert.equal(followupRows[1][followupHeaders.indexOf('email_client')], 'nouvelle@example.com');
+assert.equal(followupRows[1][followupHeaders.indexOf('relance_a_traiter')], true);
+
+context.threadFallbackOptions = {
+  match: { email_client: 'cliente@example.com' },
+  create_if_not_found: true,
+  fallback_row: { id_demande: 'GMAIL-THREAD-SANS-FICHE' }
+};
+context.fallbackFields = { gmail_message_id: 'MESSAGE-SANS-FICHE' };
+const delegatedThreadFollowup = evaluate(`(() => {
+  const originals = {
+    getSheet,
+    ensureSchemaHeaders,
+    findMakeOperationByMessageId,
+    findRowByCanonicalValue,
+    updateExistingDemandFollowup
+  };
+  try {
+    getSheet = () => ({
+      getLastColumn: () => 1,
+      getRange: () => ({ getValues: () => [['gmail_thread_id']] })
+    });
+    ensureSchemaHeaders = () => {};
+    findMakeOperationByMessageId = () => null;
+    findRowByCanonicalValue = () => null;
+    updateExistingDemandFollowup = (match, fields, options) => ok({
+      updated: true,
+      delegated: true,
+      match,
+      fallback_id: options.fallback_row.id_demande
+    });
+    return JSON.parse(updateThreadFollowup('THREAD-SANS-FICHE', fallbackFields, threadFallbackOptions).getContent()).data;
+  } finally {
+    Object.assign(globalThis, originals);
+  }
+})()`);
+assert.equal(delegatedThreadFollowup.updated, true);
+assert.equal(delegatedThreadFollowup.delegated, true);
+assert.equal(delegatedThreadFollowup.match.email_client, 'cliente@example.com');
+assert.equal(delegatedThreadFollowup.fallback_id, 'GMAIL-THREAD-SANS-FICHE');
+
+context.wixFallbackOptions = {
+  create_if_not_found: true,
+  fallback_row: { id_demande: 'GMAIL-WIX-SANS-FICHE' }
+};
+const createdWixFallback = evaluate(`(() => {
+  const originals = {
+    getSheet,
+    ensureSchemaHeaders,
+    findMakeOperationByMessageId,
+    findRowByCanonicalValue,
+    findLatestRowByEmailAndIdPrefix,
+    createUnmatchedFollowupDemand
+  };
+  try {
+    getSheet = () => ({
+      getLastColumn: () => 1,
+      getRange: () => ({ getValues: () => [['gmail_thread_id']] })
+    });
+    ensureSchemaHeaders = () => {};
+    findMakeOperationByMessageId = () => null;
+    findRowByCanonicalValue = () => null;
+    findLatestRowByEmailAndIdPrefix = () => null;
+    createUnmatchedFollowupDemand = (row, fields) => ok({
+      updated: true,
+      created_from_unmatched_followup: true,
+      id_demande: row.id_demande,
+      gmail_message_id: fields.gmail_message_id
+    });
+    return JSON.parse(updateWixFollowup('THREAD-WIX', 'cliente@example.com', fallbackFields, wixFallbackOptions).getContent()).data;
+  } finally {
+    Object.assign(globalThis, originals);
+  }
+})()`);
+assert.equal(createdWixFallback.updated, true);
+assert.equal(createdWixFallback.created_from_unmatched_followup, true);
+assert.equal(createdWixFallback.id_demande, 'GMAIL-WIX-SANS-FICHE');
+assert.equal(createdWixFallback.gmail_message_id, 'MESSAGE-SANS-FICHE');
+
 const mergeHeaders = [
   'id_demande', 'nom_client', 'email_client', 'telephone', 'date_evenement',
   'lieu_prestation', 'statut', 'notes', 'message_original', 'gmail_thread_id',

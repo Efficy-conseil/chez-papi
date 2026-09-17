@@ -154,6 +154,8 @@ Contrainte critique :
 
 - Une source métier ne doit jamais être uniquement exclue d'une route sans disposer d'une route de secours.
 - Si une route source est bloquée par `count > 0`, il doit exister un comportement explicite : archiver comme déjà traité, mettre à jour une demande existante, ou signaler une anomalie.
+- Une mise à jour de suivi enrichit une fiche sans jamais remplacer une valeur existante par une chaîne vide ou une valeur absente, notamment pour `telephone` et `nb_convives`.
+- Un suivi n'est archivé comme traité qu'après confirmation backend d'un rattachement ou d'une création de secours. En cas d'ambiguïté, il reste en boîte de réception pour décision humaine.
 - Tout texte libre interpolé dans un corps JSON brut Make doit être protégé avec `escapeJSON` afin de préserver les retours à la ligne, guillemets et antislashs sans produire un JSON invalide.
 - Lorsqu'une création Make passe par le backend, elle utilise l'action `createMakeDemand`. Les écritures directes encore conservées pour Email direct restent l'exception transitoire documentée dans les décisions issues de l'audit et doivent appliquer elles-mêmes les normalisations nécessaires.
 
@@ -178,8 +180,9 @@ Comportement attendu :
 
 Contrainte anti-régression :
 
-- Les réponses clients dans un fil Wix ne doivent pas créer de nouvelle demande.
-- Les réponses clients dans un fil Wix doivent marquer une relance ou être archivées dans `Historique_Wix`.
+- Une réponse client dans un fil Wix doit enrichir la demande existante lorsqu'elle est retrouvée.
+- Si aucune demande Wix ne correspond, une fiche `GMAIL-<gmail_thread_id>` au statut `À vérifier` est créée avec le message reçu, sans accusé automatique.
+- La réponse n'est archivée dans `Historique_Wix` qu'après confirmation du rattachement ou de cette création de secours.
 
 ## Make - Voxist
 
@@ -445,7 +448,7 @@ Email direct :
 - Demande mairie cocktail 140 personnes -> demande `Entreprise`.
 - Demande mariage formules/tarifs -> demande `Mariage`.
 - Newsletter METRO -> `Hors_Scope_Make`, pas de ligne.
-- `DEVIS VALIDE` -> relance/suivi, pas de ligne, pas d'accusé, `Historique_Email`.
+- `DEVIS VALIDE` -> relance/suivi, pas de nouvelle ligne si une fiche correspond, sinon fiche de secours `À vérifier`, jamais d'accusé, puis `Historique_Email` uniquement après écriture confirmée.
 - `Re: Devis` avec “c'est parfait pour le nouveau devis” -> relance, pas de ligne.
 - Ancien fil avec nouvelle prestation/date -> nouvelle ligne.
 
@@ -529,7 +532,7 @@ Contraintes de prévention :
 - `is_followup=true` doit empêcher création et accusé.
 - Une nouvelle prestation avec nouvelle date dans un ancien fil doit rester `is_followup=false`.
 - Les suivis peuvent être rattachés par email+date ou nom+date.
-- `DEVIS VALIDE` est un suivi sans accusé.
+- `DEVIS VALIDE` est un suivi sans accusé. Le fil connu est mis à jour en priorité, puis une unique demande active portant l'email de l'expéditeur. Sans candidate, une fiche `GMAIL-<gmail_thread_id>` au statut `À vérifier` est créée ; en cas de plusieurs candidates, le message reste en boîte de réception.
 - Les fournisseurs et newsletters doivent rester hors scope avec résumé court, pas corps brut.
 
 ### Réseaux sociaux / Tally

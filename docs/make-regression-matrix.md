@@ -21,6 +21,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | C13 | Plusieurs demandes distinctes échouent successivement | Chaque demande est conservée avec ses données et son point de reprise ; les demandes valides suivantes continuent et les alertes natives Make restent actives | Automatique + essai Make |
 | C14 | Reprise après correction d'une écriture backend déjà appliquée dont la réponse a été perdue | La reprise termine le flux sans seconde création ni répétition d'une mise à jour métier | Backend + automatique + essai Make |
 | C15 | Un appel Apps Script signé Make, dont le suivi Email du module 81, est en erreur ou sa redirection POST est transformée en GET | Le backend dépasse volontairement les 15 secondes du module HTTP concerné ; celui-ci déclenche trois reprises à cinq minutes puis conserve une exécution incomplète | Backend + automatique + essai Make |
+| C16 | Un suivi ne contient pas le téléphone ou le nombre de convives déjà renseignés sur la fiche | Les valeurs existantes sont conservées ; seules les valeurs non vides du suivi enrichissent la fiche | Backend + automatique + essai Make |
 
 ## Wix
 
@@ -35,6 +36,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | W07 | Formulaire Wix avec texte multiligne, guillemets ou antislashs | JSON valide envoyé au backend, une ligne créée et aucun `Bad control character` | Automatique + essai Make |
 | W08 | Deux formulaires Wix distincts regroupés dans le même fil Gmail | Le second `gmail_message_id` reste nouveau ; création ou fusion décidée ensuite par `upsertWixDemand` | Backend + essai Make |
 | W09 | Vocal Voxist puis formulaire Wix de Catherine, même téléphone normalisé et même date d'anniversaire | Une seule ligne : identifiant, date de réception et canal Voxist conservés ; données formulaire et lien Gmail Wix remplacent les données moins fiables ; aucun second accusé | Backend + essai Make |
+| W10 | Réponse à un formulaire Wix sans dossier correspondant | Création unique `GMAIL-<threadId>` au statut `À vérifier`, `relance_a_traiter = TRUE`, aucun accusé, puis archivage dans `Historique_Wix` seulement après confirmation backend | Backend + automatique + essai Make |
 
 ## Voxist
 
@@ -81,7 +83,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | E02 | Mariage demandant formules ou tarifs | Une ligne Email, type `Mariage` | Essai Make |
 | E03 | Demande sans mot-clé historique mais contexte client clair | Analyse par l'IA, puis création si qualifiée | Statique + essai Make |
 | E04 | Newsletter, fournisseur, facture ou spam arrivé dans Make | Aucune ligne, `Hors_Scope_Make` | Statique + essai Make |
-| E05 | `DEVIS VALIDE` | Mise à jour d'un suivi, aucune ligne, aucun accusé, `Historique_Email` | Statique + essai Make |
+| E05 | `DEVIS VALIDE` | Mise à jour du fil connu ou de l'unique demande active portant l'email ; sans candidate, création unique `GMAIL-<threadId>` au statut `À vérifier` ; aucun accusé, puis `Historique_Email` seulement après écriture confirmée | Backend + automatique + essai Make |
 | E06 | `Re: Devis` avec modification du devis existant | Mise à jour de la demande, aucune ligne, aucun accusé | Statique + essai Make |
 | E07 | Ancien fil contenant une nouvelle prestation/date | Nouvelle ligne et accusé | Essai Make |
 | E08 | Message rattaché à une demande existante (`count > 0`) | Mise à jour technique puis archivage dans `Historique_Email` | Statique |
@@ -107,6 +109,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | E28 | Réponse réelle de `jmorel@guinot.com` confirmant 12 personnes, ou réponse de `c.cadet@salondeprovence.fr`, citant éventuellement Mailinblack ou un lien d'invitation dans son texte | Le garde-fou laisse passer l'expéditeur réel ; le parcours commercial existant reste inchangé et le texte cité n'entraîne pas d'exclusion | Statique + essai Gmail/Make |
 | E29 | Invitation Mailinblack dont le corps contient `newsletter`, `unsubscribe` ou `voir dans le navigateur` | Le filtre newsletters l'exclut ; seul le libellé d'authentification est ajouté, sans suppression, archivage ou marquage comme lu ; vérifier que l'ancien filtre newsletters a bien été remplacé | XML automatique + essai Gmail |
 | E30 | Confirmation ou notification de `noreply@planity.com` | Le filtre Gmail dédié archive le message et applique `Hors_Scope_Gmail`, sans le transmettre à Make ni modifier une conversation existante | XML automatique + essai Gmail |
+| E31 | Relance Email déjà connue mais introuvable par `gmail_thread_id` | Recherche de l'unique demande active par email ; sans candidate, création unique `GMAIL-<threadId>` au statut `À vérifier` ; en cas d'ambiguïté, aucune création et message conservé dans l'Inbox | Backend + automatique + essai Make |
 
 ## Tally
 
