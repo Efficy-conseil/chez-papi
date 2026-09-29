@@ -186,8 +186,10 @@ function doGet(e) {
 function doPost(e) {
   const rawBody = String(e && e.postData && e.postData.contents || '');
   DELAY_MAKE_ERRORS_FOR_HTTP_TIMEOUT = rawBody.indexOf(MAKE_FOLLOWUP_TOKEN) >= 0;
+  let action = 'requete_invalide';
   try {
     const body = JSON.parse(rawBody);
+    action = String(body.action || 'action_inconnue');
     const auth = body.auth || { user: body.user, pass: body.pass };
     const isMakeFollowup = (
       (body.action === 'updateThreadFollowup' || body.action === 'updateWixFollowup' || body.action === 'updateExistingDemandFollowup' || body.action === 'checkDuplicate' || body.action === 'upsertWixDemand' || body.action === 'createMakeDemand' || body.action === 'mergeWixDuplicateDemand' || body.action === 'mergeVoxistDuplicateDemand') &&
@@ -212,7 +214,12 @@ function doPost(e) {
     if (body.action === 'delete') return withDocumentLock(function() { return deleteRowById(body.id_demande); });
     return ko('Action inconnue : ' + body.action);
   } catch (err) {
-    return ko(err.message);
+    const message = String(err && err.message || err || 'Erreur backend inconnue');
+    // Les erreurs Make sont volontairement retardées pour déclencher la reprise
+    // HTTP. Sans cette trace, Make ne conserve que son propre timeout et masque
+    // la cause initiale dans Apps Script.
+    Logger.log('Erreur Make [' + action + '] : ' + message);
+    return ko(message);
   } finally {
     DELAY_MAKE_ERRORS_FOR_HTTP_TIMEOUT = false;
   }
@@ -875,7 +882,6 @@ function syncCalendarForRow(sheet, headers, rowIndex, context) {
 
 function checkDuplicate(match) {
   const sheet = getSheet();
-  ensureSchemaHeaders(sheet);
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
   const ids = [];
   const sourceEmail = String(match.source_email || '').trim().toLowerCase();
@@ -1927,11 +1933,17 @@ function findDuplicateDemand(sheet, headers, demandIds, gmailThreadId) {
   });
   const targetThread = String(gmailThreadId || '').trim();
 
-  const idValues = sheet.getRange(2, idCol, lastRow - 1, 1).getValues();
-  const threadValues = threadCol > 0 ? sheet.getRange(2, threadCol, lastRow - 1, 1).getValues() : [];
-  for (var i = idValues.length - 1; i >= 0; i--) {
-    const rowId = String(idValues[i][0] || '').trim();
-    const rowThread = threadCol > 0 ? String(threadValues[i][0] || '').trim() : "";
+  // L'anti-doublon est exécuté pour chaque email. Une seule lecture contiguë
+  // réduit nettement la latence Apps Script par rapport aux deux lectures de
+  // colonnes séparées, tout en gardant exactement les mêmes critères.
+  const firstCol = threadCol > 0 ? Math.min(idCol, threadCol) : idCol;
+  const lastCol = threadCol > 0 ? Math.max(idCol, threadCol) : idCol;
+  const values = sheet.getRange(2, firstCol, lastRow - 1, lastCol - firstCol + 1).getValues();
+  const idOffset = idCol - firstCol;
+  const threadOffset = threadCol - firstCol;
+  for (var i = values.length - 1; i >= 0; i--) {
+    const rowId = String(values[i][idOffset] || '').trim();
+    const rowThread = threadCol > 0 ? String(values[i][threadOffset] || '').trim() : "";
     if ((rowId && targetIds[rowId]) || (targetThread && rowId === targetThread) || (targetThread && rowThread === targetThread)) {
       return { rowIndex: i + 2, id_demande: rowId };
     }

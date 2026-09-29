@@ -4,7 +4,9 @@ import vm from 'node:vm';
 
 const context = vm.createContext({
   console,
-  Logger: { log() {} },
+  Logger: {
+    log(message) { context.loggedMessages.push(String(message)); }
+  },
   Utilities: {
     sleep(duration) { context.sleepDurations.push(duration); }
   },
@@ -20,6 +22,7 @@ const context = vm.createContext({
   }
 });
 context.sleepDurations = [];
+context.loggedMessages = [];
 vm.runInContext(readFileSync('apps-script/code.gs', 'utf8'), context);
 
 function evaluate(expression) {
@@ -52,7 +55,7 @@ context.validMakeRequest = {
 const validMakeError = evaluate(`(() => {
     const original = checkDuplicate;
     try {
-      checkDuplicate = function() { return ko('Erreur backend Make'); };
+      checkDuplicate = function() { throw new Error('Erreur backend Make'); };
       return doPost(validMakeRequest);
     } finally {
       checkDuplicate = original;
@@ -62,6 +65,7 @@ assert.deepEqual(JSON.parse(validMakeError.getContent()), { ok: false, error: 'E
 assert.equal(validMakeError.getMimeType(), 'application/json');
 assert.deepEqual(context.sleepDurations, [20000, 20000, 20000]);
 assert.equal(evaluate('DELAY_MAKE_ERRORS_FOR_HTTP_TIMEOUT'), false);
+assert.equal(context.loggedMessages.at(-1), 'Erreur Make [checkDuplicate] : Erreur backend Make');
 assert.deepEqual(
   JSON.parse(evaluate('ko("Erreur dashboard").getContent()')),
   { ok: false, error: 'Erreur dashboard' }
