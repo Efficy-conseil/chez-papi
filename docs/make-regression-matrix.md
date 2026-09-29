@@ -75,6 +75,21 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | V31 | Nouvelle demande Voxist avec numéro appelant `609170840`, tandis que l’IA renvoie un téléphone absent ou incohérent | Les parcours transcription et audio utilisent le numéro appelant ; la ligne contient `06 09 17 08 40` | Backend + automatique + essai Make |
 | V32 | La première extraction structurée d'un vocal audio renvoie un JSON invalide ou tronqué, par exemple `"date_evenement=null` avec `finish_reason=length` | Une seule seconde extraction est exécutée depuis la transcription originale avec une sortie bornée ; si elle est valide, le traitement normal reprend sans doublon ; si elle échoue, l'exécution reste incomplète, sans écriture ni archivage | Automatique + essai Make |
 
+## OVH Répondeur
+
+| ID | Entrée | Résultat attendu | Validation |
+|---|---|---|---|
+| O01 | E-mail `no-reply@ovh.fr`, objet `Message vocal du 336...`, avec transcription de demande traiteur | Qualification identique à Voxist, canal `Téléphone`, source IA `OVH`, création unique et archivage dans le libellé téléphonique historique | Automatique + essai Make |
+| O02 | E-mail OVH avec numéro appelant `33670921031` | Numéro prioritaire normalisé en `06 70 92 10 31`, même si la transcription contient un autre numéro | Automatique + essai Make |
+| O03 | E-mail OVH sans transcription mais avec pièce jointe audio | Téléchargement de l'audio, transcription OpenAI, extraction structurée et traitement identiques au fallback Voxist | Automatique + essai Make |
+| O04 | Même message OVH rejoué | `checkDuplicate` porte sur `VOXIST-<gmail_message_id>` sans thread ; aucune seconde écriture et archivage explicite | Automatique + essai Make |
+| O05 | Deux messages OVH distincts regroupés dans un même fil Gmail | Chaque `gmail_message_id` reste indépendant ; le second message atteint la qualification et le rapprochement métier | Automatique + essai Make |
+| O06 | Vocal OVH correspondant au téléphone d'une unique demande active | Enrichissement de la fiche existante, statut conservé, transcription enregistrée, `relance_a_traiter = TRUE`, aucune création | Backend existant + automatique + essai Make |
+| O07 | Vocal OVH ambigu entre plusieurs demandes actives | Aucune modification ni création ; le message reste disponible pour résolution humaine | Backend existant + essai Make |
+| O08 | E-mail OVH de 0 seconde ou message personnel hors périmètre | Aucun dossier créé ; aucune transcription audio pour 0 seconde ; archivage dans `Hors_Scope_Make` | Automatique + essai Make |
+| O09 | Notification commerciale ou administrative envoyée par `no-reply@ovh.fr`, sans objet ni corps de message vocal | Aucune route OVH, Voxist, Email direct ou relance commerciale | Automatique + essai Make |
+| O10 | Rejeu des scénarios Wix, Voxist, Email direct et Tally après ajout d'OVH | Résultats inchangés ; OVH est explicitement exclu des routes Email génériques et le backend n'est pas modifié | Automatique + essai Make |
+
 ## Email direct
 
 | ID | Entrée | Résultat attendu | Validation |

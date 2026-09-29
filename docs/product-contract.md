@@ -29,6 +29,7 @@ Canaux autorisés dans la base et le dashboard :
 Mapping attendu :
 
 - Voxist -> `Téléphone`
+- OVH Répondeur -> `Téléphone`
 - Email direct -> `Email`
 - Wix -> `Site Internet`
 - Tally -> `Réseaux sociaux`
@@ -148,7 +149,7 @@ Déclencheur : Gmail nouveaux emails.
 - Le backend répond avec `count`.
 - `count = 0` signifie nouveau message non connu.
 - `count > 0` signifie message, thread ou ligne déjà connu.
-- Exception importante : pour Wix et Voxist, `checkDuplicate` ne doit vérifier que l'identifiant préfixé construit avec `gmail_message_id`, jamais `gmail_thread_id`. Gmail peut regrouper plusieurs formulaires Wix distincts ou plusieurs messages vocaux dans un même fil.
+- Exception importante : pour Wix, Voxist et OVH Répondeur, `checkDuplicate` ne doit vérifier que l'identifiant préfixé construit avec `gmail_message_id`, jamais `gmail_thread_id`. Gmail peut regrouper plusieurs formulaires Wix distincts ou plusieurs messages vocaux dans un même fil.
 
 Contrainte critique :
 
@@ -231,6 +232,35 @@ Contrainte anti-régression :
 - Voxist ne doit jamais être classé `Hors_Scope_Make` s'il contient des indices traiteur ou événementiels.
 - Si `checkDuplicate` renvoie `count > 0` pour un message Voxist, cela doit signifier que le même `VOXIST-<gmail_message_id>` existe déjà. Cela ne doit pas arriver seulement parce que le `gmail_thread_id` existe déjà.
 - Une erreur JSON Voxist ne doit jamais être corrigée heuristiquement ni relancée en boucle sur la même sortie tronquée.
+
+## Make - OVH Répondeur
+
+Source :
+
+- `fromEmail = no-reply@ovh.fr` ;
+- l'objet contient `Message vocal du` ou le corps contient `Vous avez reçu un message vocal provenant du numéro` ;
+- les autres notifications OVH ne sont jamais considérées comme des messages vocaux.
+- OVH doit envoyer la notification au compte surveillé par le module Gmail Make, actuellement `demande.chezpapimaisongourmande@gmail.com`.
+
+Comportement attendu :
+
+- La route OVH est isolée derrière son propre appel `checkDuplicate` et ne dépend pas du résultat anti-doublon général basé sur le fil Gmail.
+- L'identifiant technique reste volontairement `VOXIST-<gmail_message_id>`. Ce préfixe historique désigne le pipeline téléphonique et permet de réutiliser, sans modifier le backend, l'idempotence par message ainsi que la fusion téléphone + date déjà éprouvée. La source extraite par l'IA reste `OVH` et le canal reste `Téléphone`.
+- Le numéro appelant est extrait de la formule `provenant du numéro`, avec prise en charge de `33`, `+33`, `0033` et des numéros français commençant par `0`.
+- Lorsque le corps contient une transcription OVH exploitable, elle suit le même préfiltre, la même extraction structurée et les mêmes règles de qualification métier que Voxist.
+- Lorsque la transcription est absente ou vide, la pièce jointe audio est téléchargée et transcrite par le même module OpenAI que le fallback Voxist, puis suit la même extraction structurée.
+- Les rattachements existants priorisent le numéro appelant, puis les indices nom, date, lieu, convives et type d'événement, avec refus explicite des rapprochements ambigus.
+- Une création OVH utilise `Téléphone`, n'envoie aucun accusé et conserve les mêmes règles de statut, de date, de nom inconnu, de relance et de reprise JSON que Voxist.
+- Les messages traités sont déplacés vers le libellé Make historique `Historique_Voxist`, afin de réutiliser l'identifiant Gmail déjà configuré. Le filtre Gmail `OVH Répondeur` permet de distinguer l'origine OVH sans masquer le message de l'Inbox avant Make.
+- Un message personnel, vide, silencieux ou hors périmètre est envoyé vers `Hors_Scope_Make` sans création de demande.
+- Un message déjà traité est archivé explicitement sans seconde écriture.
+
+Contraintes anti-régression :
+
+- `no-reply@ovh.fr` est exclu des routes Email direct et relance email.
+- Les routes Voxist, Wix, Email direct et Tally restent structurellement inchangées, à l'exception des exclusions explicites nécessaires pour empêcher OVH d'entrer dans Email direct.
+- Le backend Apps Script n'est pas modifié pour prendre en charge OVH ; la compatibilité est assurée dans le blueprint.
+- Le scénario OVH ne doit être importé et activé qu'après un `Run once` concluant avec un vrai e-mail OVH et sa pièce jointe.
 
 ## Make - Email direct
 
@@ -340,7 +370,7 @@ Contraintes backend :
 - `mergeDemandRecords` rattache manuellement une fiche source à une cible sans supprimer la source et rejoue sans dupliquer les notes.
 - `updateExistingDemandFollowup` rattache par email+date, puis nom+date si l'email manque. Sans date de prestation, il accepte uniquement une correspondance exacte et unique sur l’email parmi les demandes actives.
 - Si ces critères exacts échouent, `updateExistingDemandFollowup` peut utiliser le même rapprochement prudent que la saisie manuelle : téléphone ou email exact, ou combinaison forte et unique entre nom, date, convives, type, lieu et statut. Une correspondance absente ou ambiguë ne crée aucune ligne.
-- L'option Make `allow_unique_active_event_date` est réservée au parcours Voxist : après les rapprochements habituels, elle autorise seulement une demande active unique partageant la même date de prestation.
+- L'option Make `allow_unique_active_event_date` est réservée aux parcours de messagerie vocale Voxist et OVH : après les rapprochements habituels, elle autorise seulement une demande active unique partageant la même date de prestation.
 - La nouvelle interface appelle l'action dashboard `add` avec l'option `check_duplicates`. Le backend recherche alors les demandes actives similaires sous le même verrou que l'écriture ; sans décision explicite, il retourne les candidates et ne crée rien. Il accepte ensuite soit l'enrichissement d'un `id_demande` choisi, soit une création forcée confirmée par l'utilisatrice. Un ancien frontend qui n'envoie pas cette option conserve temporairement le comportement historique de création, afin que le déploiement backend reste compatible pendant la publication GitHub Pages.
 - L'enrichissement manuel conserve l'identifiant, la date de réception, le canal et tous les champs techniques de la fiche choisie. Les champs non vides de la saisie complètent la fiche ; le statut `Nouvelle demande` par défaut ne rétrograde pas un dossier déjà avancé.
 - Le backend normalise les canaux autorisés.
@@ -384,9 +414,10 @@ Contraintes :
 
 - Les filtres Gmail ne doivent pas faire `Skip Inbox` sur :
   - `message@voxist.com`
+  - les messages vocaux `no-reply@ovh.fr` dont l'objet commence par `Message vocal du`
   - `notifications@wix-forms.com`
   - emails clients directs probables
-- Les filtres newsletter doivent exclure explicitement Voxist et Wix si leurs templates contiennent `ouvrir dans le navigateur` ou équivalent.
+- Les filtres newsletter doivent exclure explicitement Voxist, OVH Répondeur et Wix si leurs templates contiennent `ouvrir dans le navigateur` ou équivalent.
 - Les filtres newsletter excluent également `from:invitations.mailinblack.com` pour préserver les invitations nécessitant une authentification. Le filtre dédié leur applique uniquement `Authentification_À_traiter` ; ne pas appliquer rétroactivement ces filtres aux conversations existantes.
 - `Hors_Scope_Gmail` doit rester séparé de `Hors_Scope_Make` pour identifier qui a classé l'email.
 
@@ -394,6 +425,7 @@ Contraintes :
 
 - Wix traité -> `Historique_Wix`
 - Voxist traité -> `Historique_Voxist`
+- OVH traité -> `Historique_Voxist` et libellé d'origine `OVH Répondeur`
 - Email direct traité -> `Historique_Email`
 - Hors scope Make -> `Hors_Scope_Make`
 - Hors scope Gmail -> `Hors_Scope_Gmail`
@@ -443,6 +475,14 @@ Voxist :
 - Message vocal “prendre des renseignements / prestations / formules à la carte / quarantaine / 18 ans / 12 septembre” -> demande `Téléphone`, `Nouvelle demande`, `Historique_Voxist`.
 - Message Voxist personnel sans indice traiteur ou événement -> `Hors_Scope_Make`.
 - Message Voxist déjà connu par anti-doublon -> doit avoir une route explicite de traitement ou d'archivage.
+
+OVH Répondeur :
+
+- E-mail `no-reply@ovh.fr` avec transcription exploitable -> même qualification métier et même rattachement prudent que Voxist.
+- E-mail OVH sans transcription mais avec audio -> transcription OpenAI, puis traitement identique.
+- Nouveau vocal OVH dans un fil Gmail déjà utilisé -> anti-doublon limité au `gmail_message_id`.
+- Notification OVH sans objet ni contenu de message vocal -> aucune route commerciale.
+- Vocal OVH déjà traité -> aucun doublon, archivage explicite.
 
 Email direct :
 

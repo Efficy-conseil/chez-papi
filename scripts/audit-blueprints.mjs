@@ -266,7 +266,12 @@ const retryModules = new Map([
   [94, 'updateExistingDemandFollowup'],
   [102, 'updateExistingDemandFollowup'],
   [62, 'createMakeDemand'],
-  [15, 'createMakeDemand']
+  [15, 'createMakeDemand'],
+  [115, 'checkDuplicate'],
+  [124, 'updateExistingDemandFollowup'],
+  [127, 'createMakeDemand'],
+  [140, 'updateExistingDemandFollowup'],
+  [143, 'createMakeDemand']
 ]);
 const appsScriptModuleIds = [...retryModules.keys()].sort((a, b) => a - b);
 const appsScriptModules = mainModules
@@ -323,6 +328,7 @@ const routeIds = topRoutes.map(route => route.flow.map(module => module.id));
 assert(routeIds.some(ids => ids.length === 1 && ids[0] === 88), 'route doublon Wix absente');
 assert(routeIds.some(ids => ids.length === 1 && ids[0] === 89), 'route doublon Voxist absente');
 assert(routeIds.some(ids => ids.includes(80) && ids.includes(87)), 'archivage après relance Email absent');
+assert(routeIds.some(ids => ids.length === 2 && ids[0] === 115 && ids[1] === 117), 'route OVH isolée absente');
 
 assert(moduleById(mainModules, 88).mapper?.to === 'Label_39174335232504636', 'doublon Wix vers le mauvais libellé');
 assert(moduleById(mainModules, 89).mapper?.to === 'Label_5869457419717567046', 'doublon Voxist vers le mauvais libellé');
@@ -574,12 +580,19 @@ assert(
   assert(value.includes('Inconnu / à compléter'), `date inconnue non normalisée sur le module ${id}`);
 });
 
+[37, 39, 40, 80].forEach(id => {
+  assert(
+    JSON.stringify(moduleById(mainModules, id).filter || {}).includes('no-reply@ovh.fr'),
+    `source OVH non exclue de la route Email existante du module ${id}`
+  );
+});
+
 const emailAi = moduleById(mainModules, 37);
 assert(emailAi.filter?.name?.includes('analyse complète'), 'route Email direct encore limitée aux mots-clés historiques');
 const emailAiConditions = (emailAi.filter?.conditions || []).flat(Infinity);
 assert(!emailAiConditions.some(condition => condition?.o === 'number:greater'), 'route Email direct encore ouverte aux fils déjà connus');
 
-[41, 21, 13, 37].forEach(id => {
+[41, 21, 13, 37, 121, 134].forEach(id => {
   const datePrompt = moduleById(mainModules, id).mapper?.messages?.find(message => message.role === 'system')?.content || '';
   assert(
     datePrompt.includes('2007') && datePrompt.includes('année suivante') && datePrompt.includes('strictement future') && datePrompt.includes('une année seule'),
@@ -587,7 +600,7 @@ assert(!emailAiConditions.some(condition => condition?.o === 'number:greater'), 
   );
 });
 
-[21, 13].forEach(id => {
+[21, 13, 121, 134].forEach(id => {
   const messages = moduleById(mainModules, id).mapper?.messages || [];
   const prompt = messages.map(message => message.content || '').join('\n');
   assert(
@@ -595,6 +608,94 @@ assert(!emailAiConditions.some(condition => condition?.o === 'number:greater'), 
     `règle de repli du nom client Voxist absente du module ${id}`
   );
 });
+
+const ovhDuplicateCheck = moduleById(mainModules, 115);
+const ovhDuplicateBody = JSON.parse(ovhDuplicateCheck.mapper?.data || '{}');
+assert(ovhDuplicateBody.action === 'checkDuplicate', 'anti-doublon OVH non relié à checkDuplicate');
+assert(ovhDuplicateBody.match?.id_demande === 'VOXIST-{{1.id}}', 'identifiant technique OVH incompatible avec les protections backend existantes');
+assert(ovhDuplicateBody.match?.gmail_thread_id === '' && ovhDuplicateBody.match?.legacy_id === '', 'anti-doublon OVH encore dépendant du fil Gmail');
+assert(
+  (ovhDuplicateCheck.filter?.conditions || []).every(group =>
+    group.some(condition => condition?.a === '{{1.fromEmail}}' && condition?.b === 'no-reply@ovh.fr') &&
+    group.some(condition =>
+      (condition?.a === '{{1.subject}}' && condition?.b === 'Message vocal du') ||
+      (condition?.a === '{{1.fullTextBody}}' && condition?.b === 'Vous avez reçu un message vocal provenant du numéro')
+    )
+  ),
+  'route OVH insuffisamment limitée aux messages vocaux'
+);
+
+const ovhPhoneParser = moduleById(mainModules, 118);
+assert(
+  ovhPhoneParser.parameters?.pattern === 'provenant du numéro\\s+(?:\\+|00)?(?<telephone_e164>33\\d{9}|0\\d{9})',
+  'extraction du numéro appelant OVH inattendue'
+);
+assert(
+  (ovhPhoneParser.filter?.conditions || []).every(group =>
+    group.some(condition => condition?.a === '{{115.data.data.count}}' && condition?.b === '0')
+  ),
+  'route OVH nouvelle non protégée par son anti-doublon dédié'
+);
+assert(
+  moduleById(mainModules, 119).parameters?.pattern.includes('Voici la transcription de ce dernier') &&
+  moduleById(mainModules, 119).parameters?.pattern.includes('Attention'),
+  'extraction de la transcription OVH absente'
+);
+const ovhReferenceEmail = `Bonjour,
+Vous avez reçu un message vocal provenant du numéro  33670921031 vers votre numéro 0033465011521.
+Vous trouverez, ci-joint, le message de 8 secondes que votre correspondant vous a laissé.
+Voici la transcription de ce dernier :
+00:01.660 -> 00:08.980
+Je voudrais simuler une demande de traiteur pour trente personnes.
+Attention : Cette transcription a été générée automatiquement par une intelligence artificielle et peut contenir des erreurs.
+Service messagerie`;
+const ovhPhoneMatch = ovhReferenceEmail.match(new RegExp(ovhPhoneParser.parameters.pattern, 'i'));
+const ovhTranscriptMatch = ovhReferenceEmail.match(new RegExp(moduleById(mainModules, 119).parameters.pattern, 'i'));
+assert(ovhPhoneMatch?.groups?.telephone_e164 === '33670921031', 'numéro absent du message OVH de référence');
+assert(ovhTranscriptMatch?.[1]?.includes('demande de traiteur pour trente personnes'), 'transcription absente du message OVH de référence');
+
+const ovhAudioAttachment = moduleById(mainModules, 132);
+const ovhAudioConditions = (ovhAudioAttachment.filter?.conditions || []).flat();
+assert(
+  ovhAudioConditions.some(condition => condition?.a === '{{ifempty(119.`$1`; "")}}' && condition?.o === 'text:equal'),
+  'fallback audio OVH non déclenché lorsque la transcription est absente'
+);
+assert(
+  ovhAudioConditions.some(condition => condition?.b === 'message de 0 seconde' && condition?.o === 'text:notcontain'),
+  'vocal OVH de 0 seconde encore envoyé à la transcription audio'
+);
+
+const ovhAudioTranscription = moduleById(mainModules, 133);
+assert(ovhAudioTranscription.module === 'openai-gpt-3:CreateTranscription', 'module de retranscription OVH inattendu');
+assert(ovhAudioTranscription.mapper?.model === 'whisper-1', 'retranscription OVH non alignée sur le fallback Voxist');
+assert(ovhAudioTranscription.mapper?.fileData === '{{132.data}}', 'pièce jointe OVH absente de la retranscription');
+assert(ovhAudioTranscription.mapper?.fileName === '{{132.filename}}', 'nom de pièce jointe OVH absent de la retranscription');
+
+[
+  [124, 122],
+  [140, 135]
+].forEach(([moduleId, extractionModuleId]) => {
+  const body = moduleById(mainModules, moduleId).mapper?.data || '';
+  assert(body.includes(`ifempty(118.telephone_e164; ${extractionModuleId}.telephone)`), `numéro appelant OVH absent du module ${moduleId}`);
+  assert(body.includes('"allow_unique_active_event_date":true') && body.includes('"prefer_unique_phone":true'), `rattachement métier OVH incomplet dans le module ${moduleId}`);
+});
+[
+  [127, 122],
+  [143, 135]
+].forEach(([moduleId, extractionModuleId]) => {
+  const body = JSON.parse(moduleById(mainModules, moduleId).mapper?.data || '{}');
+  assert(body.row?.id_demande === 'VOXIST-{{1.id}}', `création OVH du module ${moduleId} privée des protections backend téléphoniques`);
+  assert(body.row?.canal === 'Téléphone', `canal OVH inattendu dans le module ${moduleId}`);
+  assert(body.row?.telephone?.includes(`ifempty(118.telephone_e164; ${extractionModuleId}.telephone)`), `téléphone OVH non priorisé dans le module ${moduleId}`);
+});
+
+const ovhRoute = topRoutes.find(route => route.flow?.[0]?.id === 115);
+const ovhRouteSerialized = JSON.stringify(ovhRoute);
+const oldVoxistReferences = [7, 11, 13, 14, 15, 16, 19, 21, 28, 61, 62, 63, 64, 69, 70, 71, 90, 91, 94, 100, 102, 103, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114];
+oldVoxistReferences.forEach(id => {
+  assert(!new RegExp(`(?<![0-9])${id}\\.`).test(ovhRouteSerialized), `la route OVH référence encore le module Voxist ${id}`);
+});
+assert(moduleById(mainModules, 150).mapper?.to === 'Label_5869457419717567046', 'doublon OVH vers le mauvais libellé historique');
 
 const voxistTranscriptionAi = moduleById(mainModules, 21);
 const voxistPrefilterTerms = (voxistTranscriptionAi.filter?.conditions || [])

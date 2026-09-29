@@ -69,6 +69,18 @@ Les appels backend critiques conservent trois reprises automatiques espacées de
 
 Pour Tally, le déclencheur est instantané : le seuil global d'erreurs ne suffit pas à le protéger. L'anti-doublon et la création backend possèdent donc chacun un gestionnaire de reprise explicite. L'échec éventuel de l'accusé intervient après la création de la demande et ne peut pas supprimer la ligne déjà enregistrée.
 
+## Préparation de la route OVH Répondeur — 29/09/2026
+
+- Ajout d'une route OVH isolée, limitée à `no-reply@ovh.fr` et aux messages dont l'objet ou le corps identifie explicitement un message vocal.
+- Ajout d'un anti-doublon OVH dédié avant toute analyse. Il utilise le `gmail_message_id`, ignore le fil Gmail et conserve le préfixe technique historique `VOXIST-` pour bénéficier des protections backend existantes sans modifier Apps Script.
+- Duplication complète du parcours Voxist : extraction du numéro appelant, préfiltre métier, extraction structurée, rapprochement prudent, création, archivage, fallback audio Whisper et reprise JSON unique.
+- Adaptation des expressions et des références de modules à des identifiants OVH indépendants. L'audit automatique vérifie qu'aucune référence interne de la nouvelle route ne pointe encore vers les modules Voxist.
+- Exclusion explicite de `no-reply@ovh.fr` des routes Email direct et relance email, afin qu'un message vocal ne puisse jamais être traité deux fois.
+- Ajout du filtre Gmail ciblé `OVH Répondeur`, sans archivage ni marquage comme lu. La route Make continue à récupérer le message dans l'Inbox.
+- Aucun changement du backend, du frontend ou du blueprint Tally.
+
+La route n'est pas active : le blueprint doit être importé dans un scénario Make distinct et désactivé, puis testé en `Run once` avec un vrai e-mail OVH avant bascule.
+
 ## Limites nécessitant un essai Make
 
 - Les identifiants de connexions et de labels ne peuvent être validés complètement qu'après import dans le compte Make cible.
