@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%233f4d34'/%3E%3Cpath d='M18 32l9 9 19-20' fill='none' stroke='white' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <title>Checklist OVH — Chez Papi</title>
+  <style>
+    :root {
+      --ink: #20251d;
+      --green: #3f4d34;
+      --cream: #fbfaf7;
+      --sand: #f1ede5;
+      --line: #d9d4ca;
+      --warning: #9c3c32;
+      --warning-bg: #f8eae7;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #ece9e1;
+      color: var(--ink);
+      font: 16px/1.45 Arial, Helvetica, sans-serif;
+    }
+    main {
+      width: min(760px, calc(100% - 28px));
+      margin: 24px auto 48px;
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 8px 30px rgba(31, 37, 29, .08);
+      overflow: hidden;
+    }
+    header {
+      padding: 28px 28px 22px;
+      background: var(--green);
+      color: white;
+    }
+    .eyebrow {
+      margin: 0 0 6px;
+      font-size: .76rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      opacity: .8;
+    }
+    h1 { margin: 0; font-size: clamp(1.7rem, 5vw, 2.35rem); line-height: 1.12; }
+    header p { margin: 10px 0 0; opacity: .9; }
+    .content { padding: 18px; }
+    .alert {
+      margin: 0 0 16px;
+      padding: 13px 14px;
+      border-left: 5px solid var(--warning);
+      background: var(--warning-bg);
+      border-radius: 6px;
+    }
+    .alert strong { color: #792d25; }
+    .progress {
+      margin: 0 0 16px;
+      color: #51574d;
+      font-size: .9rem;
+    }
+    .progress strong { color: var(--green); }
+    details {
+      margin: 10px 0;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: white;
+      overflow: hidden;
+    }
+    summary {
+      display: grid;
+      grid-template-columns: 26px 1fr auto 20px;
+      gap: 10px;
+      align-items: center;
+      padding: 14px;
+      cursor: pointer;
+      list-style: none;
+      font-weight: 700;
+    }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: "＋"; color: var(--green); font-size: 1.2rem; }
+    details[open] summary { border-bottom: 1px solid var(--line); }
+    details[open] summary::after { content: "−"; }
+    input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--green);
+      cursor: pointer;
+    }
+    .tag {
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: var(--sand);
+      color: #5a5042;
+      font-size: .72rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .detail { padding: 14px 16px 16px 50px; }
+    .detail p { margin: 0 0 10px; }
+    .detail ol, .detail ul { margin: 8px 0 0; padding-left: 20px; }
+    .detail li { margin: 6px 0; }
+    .code-row {
+      display: flex;
+      gap: 8px;
+      align-items: stretch;
+      margin: 10px 0;
+    }
+    code {
+      flex: 1;
+      overflow-wrap: anywhere;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #f6f5f1;
+      color: #111;
+      font: 700 .93rem/1.2 Menlo, Monaco, Consolas, monospace;
+    }
+    button {
+      border: 1px solid var(--green);
+      border-radius: 7px;
+      background: white;
+      color: var(--green);
+      padding: 0 10px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .small { color: #596053; font-size: .9rem; }
+    .final {
+      margin: 18px 0 0;
+      padding: 16px;
+      border-radius: 10px;
+      background: #e8eee4;
+    }
+    .final h2 { margin: 0 0 7px; font-size: 1.05rem; }
+    footer { padding: 0 18px 20px; color: #656b60; font-size: .8rem; }
+    @media (max-width: 520px) {
+      main { width: 100%; margin: 0; border: 0; border-radius: 0; min-height: 100vh; }
+      header { padding: 24px 20px 20px; }
+      .content { padding: 14px; }
+      .detail { padding-left: 16px; }
+      summary { grid-template-columns: 25px 1fr 18px; }
+      summary .tag { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">Chez Papi Maison Gourmande</p>
+      <h1>Checklist express OVH</h1>
+      <p>Objectif : remplacer le répondeur Voxist sans changer le numéro mobile de Manon.</p>
+    </header>
+
+    <section class="content">
+      <p class="alert"><strong>Règle absolue</strong> — ne configure pas le renvoi de l’iPhone avant d’avoir validé l’appel direct vers le nouveau numéro OVH, l’e-mail et le test Make.</p>
+      <p class="progress"><strong>Ordre :</strong> acheter → configurer OVH → tester → Gmail → Make → iPhone → recette.</p>
+
+      <details open>
+        <summary><input type="checkbox" aria-label="Étape 1 terminée"><span>1. Acheter la bonne ligne OVH</span><span class="tag">2 min</span></summary>
+        <div class="detail">
+          <p>Dans <a href="https://www.ovhcloud.com/fr/phone/voip/" target="_blank" rel="noreferrer">OVHcloud</a>, choisir <strong>VoIP Découverte</strong> : 0,99 € HT / 1,19 € TTC par mois, sans engagement.</p>
+          <ul>
+            <li>Prendre une <strong>ligne VoIP</strong> avec un numéro français en 09.</li>
+            <li>Ne pas ajouter de téléphone ou de matériel.</li>
+            <li>Noter le numéro au format <strong>+339…</strong> sans espace.</li>
+          </ul>
+        </div>
+      </details>
+
+      <details>
+        <summary><input type="checkbox" aria-label="Étape 2 terminée"><span>2. Configurer le répondeur OVH</span><span class="tag">5 min</span></summary>
+        <div class="detail">
+          <p>OVHcloud → <strong>Télécom → VoIP et Fax → ligne 09 → Répondeur</strong>.</p>
+          <ul>
+            <li>Activer l’enregistrement des messages.</li>
+            <li>Dans les notifications, choisir <strong>Message joint en attachement</strong> et format MP3.</li>
+            <li>Ajouter impérativement : <strong>demande.chezpapimaisongourmande@gmail.com</strong>.</li>
+          </ul>
+          <p class="small">Annonce à lire si nécessaire : « Bonjour, vous êtes bien chez Papi Maison Gourmande. Laissez votre nom, votre numéro, la date de votre événement, le nombre de personnes et votre demande. Nous vous rappellerons rapidement. »</p>
+        </div>
+      </details>
+
+      <details>
+        <summary><input type="checkbox" aria-label="Étape 3 terminée"><span>3. Tester le 09 avant toute bascule</span><span class="tag">5 min</span></summary>
+        <div class="detail">
+          <ol>
+            <li>Appeler le nouveau 09 depuis un autre téléphone.</li>
+            <li>Laisser un message avec nom, date, lieu, convives et numéro de rappel.</li>
+            <li>Vérifier l’e-mail <strong>no-reply@ovh.fr</strong> dans <strong>demande.chezpapimaisongourmande@gmail.com</strong>.</li>
+            <li>Vérifier qu’il contient un audio joint. Une transcription OVH est facultative : Make sait transcrire l’audio.</li>
+          </ol>
+        </div>
+      </details>
+
+      <details>
+        <summary><input type="checkbox" aria-label="Étape 4 terminée"><span>4. Importer le filtre Gmail</span><span class="tag">2 min</span></summary>
+        <div class="detail">
+          <p>Gmail → <strong>Paramètres → Voir tous les paramètres → Filtres et adresses bloquées → Importer des filtres</strong>.</p>
+          <div class="code-row"><code>/Users/floriancourtois/Codex/Client - Chez Papi/gmail_filters/chez-papi-ovh-update.xml</code><button data-copy="/Users/floriancourtois/Codex/Client - Chez Papi/gmail_filters/chez-papi-ovh-update.xml">Copier</button></div>
+          <p class="small">Ne pas appliquer le filtre aux conversations existantes. Le message OVH doit rester dans la boîte de réception avec le libellé « OVH Répondeur ».</p>
+        </div>
+      </details>
+
+      <details>
+        <summary><input type="checkbox" aria-label="Étape 5 terminée"><span>5. Tester et basculer Make</span><span class="tag">10 min</span></summary>
+        <div class="detail">
+          <ol>
+            <li>Exporter le scénario Make actuel comme sauvegarde.</li>
+            <li>Créer un scénario de test, importer ce blueprint et reconnecter Gmail/OpenAI si nécessaire :</li>
+          </ol>
+          <div class="code-row"><code>/Users/floriancourtois/Codex/Client - Chez Papi/make/Integration Email - Wix - Voxist.blueprint.json</code><button data-copy="/Users/floriancourtois/Codex/Client - Chez Papi/make/Integration Email - Wix - Voxist.blueprint.json">Copier</button></div>
+          <ol start="3">
+            <li><strong>Mettre en pause l’ancien scénario</strong>, puis lancer « Run once » dans le nouveau.</li>
+            <li>Refaire un appel direct au 09 et vérifier une seule demande « Téléphone » dans Chez Papi.</li>
+            <li>Si le test est bon, activer le nouveau scénario. Sinon, réactiver l’ancien.</li>
+          </ol>
+          <p class="alert"><strong>Jamais deux scénarios actifs</strong> — ils surveilleraient la même boîte Gmail et pourraient créer des doublons.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary><input type="checkbox" aria-label="Étape 6 terminée"><span>6. Mettre le renvoi sur l’iPhone</span><span class="tag">3 min</span></summary>
+        <div class="detail">
+          <p>D’abord : Réglages → Apps → Téléphone → désactiver <strong>Messagerie en direct</strong>.</p>
+          <p>Photographier l’état actuel :</p>
+          <div class="code-row"><code>*#61#</code><button data-copy="*#61#">Copier</button></div>
+          <p>Remplacer <strong>+339XXXXXXXX</strong> par le nouveau numéro OVH, puis appeler :</p>
+          <div class="code-row"><code>**61*+339XXXXXXXX**25#</code><button data-copy="**61*+339XXXXXXXX**25#">Copier</button></div>
+          <p class="small">Si refusé par l’opérateur, essayer <code>**61*+339XXXXXXXX#</code>. Vérifier ensuite avec <code>*#61#</code>.</p>
+          <p class="alert"><strong>Ne jamais utiliser **21*</strong> : cela renverrait tous les appels immédiatement.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary><input type="checkbox" aria-label="Étape 7 terminée"><span>7. Valider et repartir serein</span><span class="tag">5 min</span></summary>
+        <div class="detail">
+          <ul>
+            <li>Appeler le mobile de Manon et ne pas répondre.</li>
+            <li>Vérifier l’annonce OVH, le dépôt du message, l’e-mail, Make et la fiche Chez Papi.</li>
+            <li>Vérifier qu’une seule demande est créée ou enrichie.</li>
+            <li>Faire un second essai depuis un autre numéro.</li>
+          </ul>
+          <p>Retour arrière si nécessaire :</p>
+          <div class="code-row"><code>##61#</code><button data-copy="##61#">Copier</button></div>
+          <p class="small">Cette commande désactive uniquement le renvoi « sans réponse ». Vérifier ensuite avec <code>*#61#</code>.</p>
+        </div>
+      </details>
+
+      <section class="final">
+        <h2>Terminé quand</h2>
+        <p>Un appel non répondu au mobile de Manon diffuse l’annonce OVH, arrive par e-mail avec l’audio, est traité par Make et produit une seule demande exploitable dans Chez Papi.</p>
+      </section>
+    </section>
+    <footer>Checklist mise à jour le 2 octobre 2026. Les commandes de renvoi peuvent dépendre de l’opérateur mobile.</footer>
+  </main>
+
+  <script>
+    document.querySelectorAll('[data-copy]').forEach((button) => {
+      button.addEventListener('click', async (event) => {
+        event.preventDefault();
+        try {
+          await navigator.clipboard.writeText(button.dataset.copy);
+          const initial = button.textContent;
+          button.textContent = 'Copié';
+          setTimeout(() => { button.textContent = initial; }, 1400);
+        } catch {
+          button.textContent = 'À sélectionner';
+        }
+      });
+    });
+    document.querySelectorAll('summary input[type="checkbox"]').forEach((checkbox) => {
+      checkbox.addEventListener('click', (event) => event.stopPropagation());
+    });
+  </script>
+</body>
+</html>
