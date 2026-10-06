@@ -79,9 +79,10 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 
 | ID | Entrée | Résultat attendu | Validation |
 |---|---|---|---|
-| O01 | E-mail `no-reply@ovh.fr`, objet `Message vocal du 336...`, avec transcription de demande traiteur | Qualification identique à Voxist, canal `Téléphone`, source IA `OVH`, création unique et archivage dans le libellé téléphonique historique | Automatique + essai Make |
+| O01 | E-mail `no-reply@ovh.fr`, objet `Message vocal du 336...`, avec pièce jointe MP3 et transcription OVH de demande traiteur | Le MP3 est transcrit par OpenAI en priorité ; qualification identique à Voxist, canal `Téléphone`, source IA `OVH`, création unique et archivage dans le libellé téléphonique historique | Automatique + essai Make |
 | O02 | E-mail OVH avec numéro appelant `33670921031` | Numéro prioritaire normalisé en `06 70 92 10 31`, même si la transcription contient un autre numéro | Automatique + essai Make |
-| O03 | E-mail OVH sans transcription mais avec pièce jointe audio | Téléchargement de l'audio, transcription OpenAI, extraction structurée et traitement identiques au fallback Voxist | Automatique + essai Make |
+| O03 | E-mail OVH avec pièce jointe audio et transcription native erronée ou contradictoire | Seule la transcription OpenAI de l'audio atteint l'IA de qualification ; le texte natif OVH ne l'influence pas | Automatique + essai Make |
+| O11 | E-mail OVH sans pièce jointe audio mais avec transcription native exploitable | La transcription du corps sert de secours, puis suit l'extraction structurée et le traitement Voxist | Automatique + essai Make |
 | O04 | Même message OVH rejoué | `checkDuplicate` porte sur `VOXIST-<gmail_message_id>` sans thread ; aucune seconde écriture et archivage explicite | Automatique + essai Make |
 | O05 | Deux messages OVH distincts regroupés dans un même fil Gmail | Chaque `gmail_message_id` reste indépendant ; le second message atteint la qualification et le rapprochement métier | Automatique + essai Make |
 | O06 | Vocal OVH correspondant au téléphone d'une unique demande active | Enrichissement de la fiche existante, statut conservé, transcription enregistrée, `relance_a_traiter = TRUE`, aucune création | Backend existant + automatique + essai Make |

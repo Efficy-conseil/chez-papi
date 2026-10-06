@@ -247,8 +247,8 @@ Comportement attendu :
 - La route OVH est isolée derrière son propre appel `checkDuplicate` et ne dépend pas du résultat anti-doublon général basé sur le fil Gmail.
 - L'identifiant technique reste volontairement `VOXIST-<gmail_message_id>`. Ce préfixe historique désigne le pipeline téléphonique et permet de réutiliser, sans modifier le backend, l'idempotence par message ainsi que la fusion téléphone + date déjà éprouvée. La source extraite par l'IA reste `OVH` et le canal reste `Téléphone`.
 - Le numéro appelant est extrait de la formule `provenant du numéro`, avec prise en charge de `33`, `+33`, `0033` et des numéros français commençant par `0`.
-- Lorsque le corps contient une transcription OVH exploitable, elle suit le même préfiltre, la même extraction structurée et les mêmes règles de qualification métier que Voxist.
-- Lorsque la transcription est absente ou vide, la pièce jointe audio est téléchargée et transcrite par le même module OpenAI que le fallback Voxist, puis suit la même extraction structurée.
+- Lorsqu'une pièce jointe audio est présente, elle est systématiquement téléchargée et transcrite par OpenAI : la transcription native d'OVH n'est jamais utilisée pour qualifier le message, même si elle paraît exploitable.
+- Sans pièce jointe audio, la transcription OVH du corps sert uniquement de solution de secours et suit la même extraction structurée et les mêmes règles de qualification métier que Voxist.
 - Les rattachements existants priorisent le numéro appelant, puis les indices nom, date, lieu, convives et type d'événement, avec refus explicite des rapprochements ambigus.
 - Une création OVH utilise `Téléphone`, n'envoie aucun accusé et conserve les mêmes règles de statut, de date, de nom inconnu, de relance et de reprise JSON que Voxist.
 - Les messages traités sont déplacés vers le libellé Make historique `Historique_Voxist`, afin de réutiliser l'identifiant Gmail déjà configuré. Le filtre Gmail `OVH Répondeur` permet de distinguer l'origine OVH sans masquer le message de l'Inbox avant Make.

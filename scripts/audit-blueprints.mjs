@@ -657,12 +657,17 @@ assert(ovhTranscriptMatch?.[1]?.includes('demande de traiteur pour trente person
 const ovhAudioAttachment = moduleById(mainModules, 132);
 const ovhAudioConditions = (ovhAudioAttachment.filter?.conditions || []).flat();
 assert(
-  ovhAudioConditions.some(condition => condition?.a === '{{ifempty(119.`$1`; "")}}' && condition?.o === 'text:equal'),
-  'fallback audio OVH non déclenché lorsque la transcription est absente'
+  ovhAudioConditions.some(condition => condition?.a === '{{1.hasAttachment}}' && condition?.b === 'true' && condition?.o === 'boolean:equal'),
+  'audio OVH non prioritaire lorsqu’une pièce jointe est présente'
 );
 assert(
   ovhAudioConditions.some(condition => condition?.b === 'message de 0 seconde' && condition?.o === 'text:notcontain'),
   'vocal OVH de 0 seconde encore envoyé à la transcription audio'
+);
+const ovhTranscriptFallbackConditions = (moduleById(mainModules, 121).filter?.conditions || []).flat();
+assert(
+  ovhTranscriptFallbackConditions.some(condition => condition?.a === '{{1.hasAttachment}}' && condition?.b === 'false' && condition?.o === 'boolean:equal'),
+  'transcription native OVH encore utilisée alors qu’un audio est disponible'
 );
 
 const ovhAudioTranscription = moduleById(mainModules, 133);
@@ -670,6 +675,8 @@ assert(ovhAudioTranscription.module === 'openai-gpt-3:CreateTranscription', 'mod
 assert(ovhAudioTranscription.mapper?.model === 'whisper-1', 'retranscription OVH non alignée sur le fallback Voxist');
 assert(ovhAudioTranscription.mapper?.fileData === '{{132.data}}', 'pièce jointe OVH absente de la retranscription');
 assert(ovhAudioTranscription.mapper?.fileName === '{{132.filename}}', 'nom de pièce jointe OVH absent de la retranscription');
+const ovhAudioQualificationPrompt = JSON.stringify(moduleById(mainModules, 134).mapper?.messages || []);
+assert(!ovhAudioQualificationPrompt.includes('1.fullTextBody'), 'transcription native OVH transmise à la qualification audio');
 
 [
   [124, 122],

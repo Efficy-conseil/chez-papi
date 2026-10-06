@@ -18663,7 +18663,7 @@
                                                 "designer": {
                                                     "x": 1500,
                                                     "y": 3450,
-                                                    "name": "Router préfiltrage OVH"
+                                                    "name": "Router OVH — audio prioritaire"
                                                 }
                                             },
                                             "routes": [
@@ -18677,363 +18677,23 @@
                                                                 "__IMTCONN__": 8294927
                                                             },
                                                             "filter": {
-                                                                "name": "Préfiltre OVH — transcription qualifiée traiteur",
+                                                                "name": "OVH — transcription de secours sans audio",
                                                                 "conditions": [
                                                                     [
                                                                         {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "devis",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
+                                                                            "a": "{{1.hasAttachment}}",
+                                                                            "b": "false",
+                                                                            "o": "boolean:equal"
+                                                                        },
                                                                         {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "traiteur",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
+                                                                            "a": "{{ifempty(119.`$1`; \"\")}}",
+                                                                            "b": "",
+                                                                            "o": "text:notequal"
+                                                                        },
                                                                         {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "prestation",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "mariage",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "baptême",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "bapteme",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "anniversaire",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "buffet",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "cocktail",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "brunch",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "repas",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "convives",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "événement",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "evenement",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "réception",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "reception",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "apéritif",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "aperitif",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "apéro",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "apero",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "dînatoire",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "dinatoire",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "personnes",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "disponible",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": " ans",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "entreprise",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "séminaire",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "seminaire",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "déjeuner",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "dejeuner",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "dîner",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "diner",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "petit déjeuner",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "petit dejeuner",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "plateau repas",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "communion",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "baby shower",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "lendemain de mariage",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "renseignements",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "renseignement",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "formules",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "formule",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "à la carte",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "a la carte",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "quarantaine",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "18 ans",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "dix-huit ans",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "prestations",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "besoins",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "livraison",
-                                                                            "o": "text:contain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{119.`$1`}}",
-                                                                            "b": "adresse",
-                                                                            "o": "text:contain"
+                                                                            "a": "{{1.fullTextBody}}",
+                                                                            "b": "message de 0 seconde",
+                                                                            "o": "text:notcontain"
                                                                         }
                                                                     ]
                                                                 ]
@@ -21053,25 +20713,13 @@
                                                                 "__IMTCONN__": 7978131
                                                             },
                                                             "filter": {
-                                                                "name": "OVH sans transcription exploitable",
+                                                                "name": "OVH — audio prioritaire",
                                                                 "conditions": [
                                                                     [
                                                                         {
-                                                                            "a": "{{ifempty(119.`$1`; \"\")}}",
-                                                                            "b": "",
-                                                                            "o": "text:equal"
-                                                                        },
-                                                                        {
-                                                                            "a": "{{1.fullTextBody}}",
-                                                                            "b": "message de 0 seconde",
-                                                                            "o": "text:notcontain"
-                                                                        }
-                                                                    ],
-                                                                    [
-                                                                        {
-                                                                            "a": "{{1.fullTextBody}}",
-                                                                            "b": "Voici la transcription de ce dernier",
-                                                                            "o": "text:notcontain"
+                                                                            "a": "{{1.hasAttachment}}",
+                                                                            "b": "true",
+                                                                            "o": "boolean:equal"
                                                                         },
                                                                         {
                                                                             "a": "{{1.fullTextBody}}",
@@ -21458,7 +21106,7 @@
                                                                 "designer": {
                                                                     "x": 3300,
                                                                     "y": 3300,
-                                                                    "name": "IA OVH fallback audio"
+                                                                    "name": "IA OVH audio prioritaire"
                                                                 },
                                                                 "restore": {
                                                                     "expect": {
@@ -22873,7 +22521,7 @@
                                                                             },
                                                                             {
                                                                                 "role": "user",
-                                                                                "content": "Date de réception : {{1.internalDate}}\nTéléphone appelant : {{118.telephone_e164}}\nTranscription audio : {{133.text.text}}\nEmail OVH limité : {{substring(1.fullTextBody; 0; 1000)}}\n\nDécide uniquement selon le contenu métier. is_demande=true pour une demande ou relance liée à une prestation traiteur, un devis, un événement, un repas, une livraison ou un échange client antérieur. is_demande=false pour silence, bruit, message personnel, spam ou message sans contexte métier.\nSi aucun nom n’est prononcé : nom_client=\"Inconnu / à compléter\". Le téléphone doit être celui de l’appelant. canal=\"Téléphone\", source=\"OVH\", send_ack=false et ack_mode=\"\".\nSi is_demande=true : archive_label=\"Historique_Voxist\", statut=\"À vérifier\" pour une relance, sinon \"À rappeler\", et resume_court non vide.\nSi is_demande=false : statut=\"\", resume_court=\"\", archive_label=\"Hors_Scope_Make\".\nDates : JJ/MM/AAAA, plage JJ/MM/AAAA au JJ/MM/AAAA, année seule AAAA, sinon null. Pour une demande reçue en 2026, corrige 2016 vers 2026 ou 2007 vers 2027 seulement si la date complète obtenue est future ; ne corrige jamais une année seule. Heure : HH:MM ou chaîne vide. Ferme le JSON immédiatement après la dernière valeur."
+                                                                                "content": "Date de réception : {{1.internalDate}}\nTéléphone appelant : {{118.telephone_e164}}\nTranscription audio : {{133.text.text}}\n\nLa transcription native présente dans l'e-mail OVH est volontairement exclue : décide exclusivement à partir de la transcription audio ci-dessus.\n\nDécide uniquement selon le contenu métier. is_demande=true pour une demande ou relance liée à une prestation traiteur, un devis, un événement, un repas, une livraison ou un échange client antérieur. is_demande=false pour silence, bruit, message personnel, spam ou message sans contexte métier.\nSi aucun nom n’est prononcé : nom_client=\"Inconnu / à compléter\". Le téléphone doit être celui de l’appelant. canal=\"Téléphone\", source=\"OVH\", send_ack=false et ack_mode=\"\".\nSi is_demande=true : archive_label=\"Historique_Voxist\", statut=\"À vérifier\" pour une relance, sinon \"À rappeler\", et resume_court non vide.\nSi is_demande=false : statut=\"\", resume_court=\"\", archive_label=\"Hors_Scope_Make\".\nDates : JJ/MM/AAAA, plage JJ/MM/AAAA au JJ/MM/AAAA, année seule AAAA, sinon null. Pour une demande reçue en 2026, corrige 2016 vers 2026 ou 2007 vers 2027 seulement si la date complète obtenue est future ; ne corrige jamais une année seule. Heure : HH:MM ou chaîne vide. Ferme le JSON immédiatement après la dernière valeur."
                                                                             }
                                                                         ],
                                                                         "max_tokens": "900",
