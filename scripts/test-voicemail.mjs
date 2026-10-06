@@ -19,6 +19,8 @@ const cacheValues = new Map();
 const modified = [];
 const listQueries = [];
 let profileEmail = 'demande.chezpapimaisongourmande@gmail.com';
+let gmailAppPlainBody = '';
+let gmailAppHtmlBody = '';
 let currentMessage = {
   id: messageId,
   threadId: 'thread-1',
@@ -129,6 +131,8 @@ const context = vm.createContext({
     getMessageById(id) {
       assert.equal(id, messageId);
       return {
+        getPlainBody: () => gmailAppPlainBody,
+        getBody: () => gmailAppHtmlBody,
         getAttachments(options) {
           assert.equal(options.includeInlineImages, false);
           assert.equal(options.includeAttachments, true);
@@ -202,6 +206,29 @@ assert.equal(
   htmlTranscription.messages[0].transcription,
   'Oui, bonjour, la transcription complète est uniquement dans le HTML.'
 );
+currentMessage = { ...currentMessage, payload: originalPayload };
+
+// Si le service avancé Gmail ne fournit que l'aperçu tronqué, le corps complet
+// exposé par GmailApp reste la source de repli pour l'affichage du dashboard.
+gmailAppPlainBody = plainPreview;
+gmailAppHtmlBody = htmlBody;
+currentMessage = {
+  ...currentMessage,
+  payload: {
+    ...originalPayload,
+    parts: [
+      { mimeType: 'text/plain', filename: '', body: { data: base64Url(plainPreview) } },
+      originalPayload.parts[1]
+    ]
+  }
+};
+const gmailAppTranscription = context.listUnreadVoicemails();
+assert.equal(
+  gmailAppTranscription.messages[0].transcription,
+  'Oui, bonjour, la transcription complète est uniquement dans le HTML.'
+);
+gmailAppPlainBody = '';
+gmailAppHtmlBody = '';
 currentMessage = { ...currentMessage, payload: originalPayload };
 
 // Un message simplement archivé dans Historique_OVH ne doit pas être présenté

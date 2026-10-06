@@ -348,7 +348,7 @@ function listUnreadVoicemails() {
 
   refs.forEach(function(ref) {
     const message = Gmail.Users.Messages.get('me', ref.id, { format: 'full' });
-    const bodyText = extractGmailMessageText(message.payload || {});
+    const bodyText = extractGmailMessageText(message.payload || {}, message.id);
     if (!isManagedOvhVoicemail(message, bodyText, voicemailLabelId)) return;
 
     const labels = (message.labelIds || []).map(function(id) {
@@ -550,7 +550,17 @@ function decodeGmailBody(data) {
   }
 }
 
-function extractGmailMessageText(payload) {
+function bestOvhMessageText(candidates) {
+  const usable = candidates.map(cleanVoicemailText).filter(Boolean);
+  const transcribed = usable
+    .filter(function(value) { return !!findOvhTranscriptionMarker(value); })
+    .sort(function(a, b) {
+      return extractOvhTranscription(b).length - extractOvhTranscription(a).length;
+    });
+  return transcribed[0] || usable[0] || '';
+}
+
+function extractGmailMessageText(payload, messageId) {
   const plain = [];
   const html = [];
 
@@ -568,15 +578,20 @@ function extractGmailMessageText(payload) {
 
   collect(payload || {});
   const candidates = plain
-    .map(cleanVoicemailText)
-    .concat(html.map(function(value) { return cleanVoicemailText(htmlToPlainText(value)); }))
-    .filter(Boolean);
-  const transcribed = candidates
-    .filter(function(value) { return !!findOvhTranscriptionMarker(value); })
-    .sort(function(a, b) {
-      return extractOvhTranscription(b).length - extractOvhTranscription(a).length;
-    });
-  return transcribed[0] || candidates[0] || '';
+    .concat(html.map(htmlToPlainText));
+  const apiText = bestOvhMessageText(candidates);
+  if (findOvhTranscriptionMarker(apiText) || !messageId) return apiText;
+
+  try {
+    const gmailMessage = GmailApp.getMessageById(String(messageId));
+    if (gmailMessage) {
+      candidates.push(gmailMessage.getPlainBody());
+      candidates.push(htmlToPlainText(gmailMessage.getBody()));
+    }
+  } catch (err) {
+    Logger.log('Corps GmailApp illisible : ' + err.message);
+  }
+  return bestOvhMessageText(candidates);
 }
 
 function htmlToPlainText(html) {
