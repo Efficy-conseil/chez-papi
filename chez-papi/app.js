@@ -822,8 +822,10 @@ const SheetsAPI = {
 
 let appData = [];
 let voicemailMessages = [];
-const voicemailAudioUrls = new Map();
+const voicemailAudioSources = new Map();
 let voicemailToLinkId = '';
+
+const VOICEMAIL_GMAIL_ROOT = 'https://mail.google.com/mail/u/0/';
 
 function voicemailBadge(message) {
   if (message?.classification === 'professionnel') {
@@ -838,8 +840,8 @@ function voicemailBadge(message) {
 function voicemailGmailUrl(message) {
   const gmailId = String(message?.thread_id || message?.id || '').trim();
   return gmailId
-    ? `https://mail.google.com/mail/u/demande.chezpapimaisongourmande@gmail.com/#all/${encodeURIComponent(gmailId)}`
-    : 'https://mail.google.com/mail/u/demande.chezpapimaisongourmande@gmail.com/#label/OVH%20R%C3%A9pondeur';
+    ? `${VOICEMAIL_GMAIL_ROOT}#all/${encodeURIComponent(gmailId)}`
+    : `${VOICEMAIL_GMAIL_ROOT}#label/Historique_OVH`;
 }
 
 function voicemailStateMarkup(title, detail, variant = 'empty') {
@@ -923,10 +925,10 @@ async function loadVoicemails(options = {}) {
     const result = await SheetsAPI.listVoicemails();
     if (!result?.success) throw new Error(result?.error || 'Impossible de charger les messages vocaux');
     const previousIds = new Set((result.messages || []).map(message => String(message.id || '')));
-    voicemailAudioUrls.forEach((url, id) => {
+    voicemailAudioSources.forEach((source, id) => {
       if (!previousIds.has(id)) {
-        URL.revokeObjectURL(url);
-        voicemailAudioUrls.delete(id);
+        releaseVoicemailAudioSource(source);
+        voicemailAudioSources.delete(id);
       }
     });
     voicemailMessages = Array.isArray(result.messages) ? result.messages : [];
@@ -977,18 +979,17 @@ function normalizeAudioBase64(dataBase64) {
   return encoded;
 }
 
-function base64AudioUrl(dataBase64, mimeType) {
-  const encoded = normalizeAudioBase64(dataBase64);
-  const binary = atob(encoded);
-  const chunks = [];
-  const chunkSize = 512 * 1024;
-  for (let offset = 0; offset < binary.length; offset += chunkSize) {
-    const slice = binary.slice(offset, offset + chunkSize);
-    const bytes = new Uint8Array(slice.length);
-    for (let i = 0; i < slice.length; i++) bytes[i] = slice.charCodeAt(i);
-    chunks.push(bytes);
-  }
-  return URL.createObjectURL(new Blob(chunks, { type: mimeType || 'audio/mpeg' }));
+function normalizeAudioMimeType(mimeType) {
+  const normalized = String(mimeType || '').trim().toLowerCase();
+  return /^audio\/[a-z0-9.+-]+$/.test(normalized) ? normalized : 'audio/mpeg';
+}
+
+function base64AudioSource(dataBase64, mimeType) {
+  return `data:${normalizeAudioMimeType(mimeType)};base64,${normalizeAudioBase64(dataBase64)}`;
+}
+
+function releaseVoicemailAudioSource(source) {
+  if (String(source || '').startsWith('blob:')) URL.revokeObjectURL(source);
 }
 
 function waitForVoicemailAudio(audio, timeoutMs = 12000) {
@@ -1036,14 +1037,14 @@ async function loadVoicemailAudio(messageId, button) {
   wrap.innerHTML = '<div class="voicemail-audio-status" role="status">Téléchargement du message vocal…</div><audio class="voicemail-audio" controls preload="metadata" hidden>Votre navigateur ne peut pas lire ce message vocal.</audio>';
   const audio = wrap.querySelector('audio');
   try {
-    let audioUrl = voicemailAudioUrls.get(id);
-    if (!audioUrl) {
+    let audioSource = voicemailAudioSources.get(id);
+    if (!audioSource) {
       const result = await SheetsAPI.getVoicemailAudio(id);
       if (!result?.success || !result.data_base64) throw new Error(result?.error || 'Audio indisponible');
-      audioUrl = base64AudioUrl(result.data_base64, result.mime_type);
-      voicemailAudioUrls.set(id, audioUrl);
+      audioSource = base64AudioSource(result.data_base64, result.mime_type);
+      voicemailAudioSources.set(id, audioSource);
     }
-    audio.src = audioUrl;
+    audio.src = audioSource;
     audio.hidden = false;
     audio.load();
     await waitForVoicemailAudio(audio);
@@ -1051,9 +1052,9 @@ async function loadVoicemailAudio(messageId, button) {
     button.textContent = 'Réécouter';
     audio.play().catch(() => {});
   } catch (err) {
-    const audioUrl = voicemailAudioUrls.get(id);
-    if (audioUrl) URL.revokeObjectURL(audioUrl);
-    voicemailAudioUrls.delete(id);
+    const audioSource = voicemailAudioSources.get(id);
+    releaseVoicemailAudioSource(audioSource);
+    voicemailAudioSources.delete(id);
     wrap.innerHTML = `<div class="voicemail-audio-error" role="alert">${safeText(err.message || 'Lecture audio impossible')}</div>`;
     showNotification(err.message || 'Impossible de lire ce message vocal', 'error');
     button.textContent = '▶ Écouter';
@@ -1161,9 +1162,9 @@ async function markVoicemailRead(messageId, button) {
   try {
     const result = await SheetsAPI.markVoicemailRead(id);
     if (!result?.success || !result.read) throw new Error(result?.error || 'Le message n’a pas été marqué comme lu');
-    const audioUrl = voicemailAudioUrls.get(id);
-    if (audioUrl) URL.revokeObjectURL(audioUrl);
-    voicemailAudioUrls.delete(id);
+    const audioSource = voicemailAudioSources.get(id);
+    releaseVoicemailAudioSource(audioSource);
+    voicemailAudioSources.delete(id);
     voicemailMessages = voicemailMessages.filter(message => String(message.id || '') !== id);
     renderVoicemails();
     broadcastSync();
@@ -3436,8 +3437,8 @@ function handleCalendarAuthError(err) {
 // ── AUTHENTICATION HANDLERS ──
 
 function logout() {
-  voicemailAudioUrls.forEach(url => URL.revokeObjectURL(url));
-  voicemailAudioUrls.clear();
+  voicemailAudioSources.forEach(releaseVoicemailAudioSource);
+  voicemailAudioSources.clear();
   voicemailMessages = [];
   renderVoicemails();
   localStorage.removeItem('cp_user');

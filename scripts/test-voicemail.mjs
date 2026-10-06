@@ -175,8 +175,8 @@ assert.equal(Buffer.from(audio.data_base64, 'base64').toString(), 'MP3!');
 
 const frontendSource = readFileSync('chez-papi/app.js', 'utf8');
 const normalizeStart = frontendSource.indexOf('function normalizeAudioBase64');
-const normalizeEnd = frontendSource.indexOf('\nfunction base64AudioUrl', normalizeStart);
-assert.ok(normalizeStart >= 0 && normalizeEnd > normalizeStart, 'normalisation Base64 audio introuvable');
+const normalizeEnd = frontendSource.indexOf('\nfunction waitForVoicemailAudio', normalizeStart);
+assert.ok(normalizeStart >= 0 && normalizeEnd > normalizeStart, 'source audio native introuvable');
 const frontendContext = vm.createContext({});
 vm.runInContext(frontendSource.slice(normalizeStart, normalizeEnd), frontendContext);
 const standardAudio = Buffer.from([251, 255, 239, 1]).toString('base64');
@@ -188,6 +188,39 @@ assert.equal(
   standardAudio
 );
 assert.throws(() => frontendContext.normalizeAudioBase64('abcde'), /corrompu/);
+assert.equal(frontendContext.normalizeAudioMimeType('audio/MP4'), 'audio/mp4');
+assert.equal(frontendContext.normalizeAudioMimeType('text/html'), 'audio/mpeg');
+assert.equal(
+  frontendContext.base64AudioSource(urlSafeAudio, 'audio/mpeg'),
+  `data:audio/mpeg;base64,${standardAudio}`
+);
+assert.equal(
+  frontendSource.slice(normalizeStart, normalizeEnd).includes('atob('),
+  false,
+  'le frontend ne doit plus décoder manuellement la chaîne Base64'
+);
+
+const gmailRootStart = frontendSource.indexOf("const VOICEMAIL_GMAIL_ROOT");
+const gmailUrlEnd = frontendSource.indexOf('\nfunction voicemailStateMarkup', gmailRootStart);
+assert.ok(gmailRootStart >= 0 && gmailUrlEnd > gmailRootStart, 'liens Gmail des vocaux introuvables');
+const gmailContext = vm.createContext({});
+vm.runInContext(frontendSource.slice(gmailRootStart, gmailUrlEnd), gmailContext);
+assert.equal(
+  gmailContext.voicemailGmailUrl({ thread_id: 'thread-1', id: 'message-1' }),
+  'https://mail.google.com/mail/u/0/#all/thread-1'
+);
+assert.equal(
+  gmailContext.voicemailGmailUrl({ id: 'message-1' }),
+  'https://mail.google.com/mail/u/0/#all/message-1'
+);
+assert.equal(
+  gmailContext.voicemailGmailUrl({}),
+  'https://mail.google.com/mail/u/0/#label/Historique_OVH'
+);
+
+const frontendHtml = readFileSync('chez-papi/index.html', 'utf8');
+assert.match(frontendHtml, /https:\/\/mail\.google\.com\/mail\/u\/0\/#label\/Historique_OVH/);
+assert.doesNotMatch(frontendHtml, /#label\/OVH%20R%C3%A9pondeur/);
 
 const read = context.markVoicemailRead(messageId);
 assert.equal(read.message_id, messageId);

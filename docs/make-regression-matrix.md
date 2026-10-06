@@ -174,9 +174,10 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | F16 | Accueil connecté avec des messages OVH non lus | Compteur, numéro, date, transcription et classification apparaissent sans bloquer les autres données |
 | F17 | Clic sur `Écouter` | Le MP3 est chargé à la demande et lisible dans le lecteur natif |
 | F18 | Vocal rattaché exactement à une demande | Le bouton ouvre la bonne fiche ; un vocal sans association n'affiche aucun lien de demande |
-| F19 | Clic sur `Écouter` avec audio Base64 standard, Base64URL sans remplissage, invalide ou lent | Les variantes valides sont normalisées et le lecteur devient utilisable ; un contenu corrompu ou un délai anormal produit une erreur explicite et permet de réessayer |
+| F19 | Clic sur `Écouter` avec audio Base64 standard, Base64URL sans remplissage, invalide ou lent | Les variantes valides deviennent directement une source `data:` du lecteur natif, sans `atob` ni Blob JavaScript ; un contenu corrompu ou un délai anormal produit une erreur explicite et permet de réessayer |
 | F20 | Vocal non associé puis choix manuel d'une fiche | La recherche permet de sélectionner la fiche, le rattachement est conservé et la fiche s'ouvre immédiatement |
 | F21 | Clic sur `Marquer comme lu` | Le message disparaît de la carte après succès et reste consultable dans Gmail |
+| F22 | Commandes de la fenêtre des vocaux : fermer, actualiser, rattacher, ouvrir le fil, tout voir dans Gmail et marquer comme lu | Chaque commande cible la bonne action ; les liens Gmail utilisent `/mail/u/0/#all/<identifiant>` et `/mail/u/0/#label/Historique_OVH`, sans erreur 404 liée au compte ou à l'ancien libellé |
 
 ## Procédure d'exécution
 
