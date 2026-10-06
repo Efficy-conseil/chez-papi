@@ -258,6 +258,32 @@ assert.equal(evaluate('sanitizeFields({ statut: "À vérifier" }, false).statut'
 assert.equal(evaluate('appendUniqueLine("Note existante", "Note existante")'), 'Note existante');
 assert.equal(evaluate('appendUniqueLine("Note existante", "Nouvelle note")'), 'Note existante\nNouvelle note');
 
+// Un fil Gmail partagé ne suffit jamais à dédupliquer deux expéditeurs directs.
+const duplicateHeaders = ['id_demande', 'gmail_thread_id', 'email_client'];
+const duplicateRows = [
+  ['GMAIL-MANON', 'THREAD-MANON', 'contact@pantaiaevents.com']
+];
+context.duplicateHeaders = duplicateHeaders;
+context.duplicateSheet = {
+  getLastRow() { return duplicateRows.length + 1; },
+  getRange(row, column, rowCount, columnCount) {
+    assert.equal(row, 2);
+    assert.equal(rowCount, duplicateRows.length);
+    const selected = duplicateRows.map(values => values.slice(column - 1, column - 1 + columnCount));
+    return { getValues() { return selected; } };
+  }
+};
+assert.equal(
+  evaluate('findDuplicateDemand(duplicateSheet, duplicateHeaders, ["GMAIL-THREAD-MANON"], "THREAD-MANON", "contact@6817076.brevosend.com")'),
+  null
+);
+assert.equal(
+  evaluate('findDuplicateDemand(duplicateSheet, duplicateHeaders, ["GMAIL-THREAD-MANON"], "THREAD-MANON", "contact@pantaiaevents.com").id_demande'),
+  'GMAIL-MANON'
+);
+assert.equal(evaluate('isTechnicalTransactionalEmail("contact@6817076.brevosend.com")'), true);
+assert.equal(evaluate('isTechnicalTransactionalEmail("contact@pantaiaevents.com")'), false);
+
 context.createMakeDemand = row => ({
   getContent() {
     return JSON.stringify({ data: { id_demande: row.id_demande, created: true } });

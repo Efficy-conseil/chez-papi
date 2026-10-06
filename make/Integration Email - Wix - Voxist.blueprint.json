@@ -623,6 +623,42 @@
                 {
                     "flow": [
                         {
+                            "id": 151,
+                            "module": "google-email:moveAnEmail",
+                            "version": 4,
+                            "parameters": {
+                                "__IMTCONN__": 7978131
+                            },
+                            "filter": {
+                                "name": "Email transactionnel Brevo — hors périmètre",
+                                "conditions": [
+                                    [
+                                        {
+                                            "a": "{{lower(trim(last(split(ifempty(1.fromEmail; \"\"); \"@\"))))}}",
+                                            "b": "brevosend.com",
+                                            "o": "text:contain"
+                                        }
+                                    ]
+                                ]
+                            },
+                            "mapper": {
+                                "to": "Label_2633677580427542522",
+                                "from": "INBOX",
+                                "messageId": "{{1.id}}"
+                            },
+                            "metadata": {
+                                "designer": {
+                                    "x": 900,
+                                    "y": -300,
+                                    "name": "Classer Brevo hors périmètre"
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "flow": [
+                        {
                             "id": 84,
                             "module": "http:ActionSendData",
                             "version": 3,

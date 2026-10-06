@@ -932,12 +932,27 @@ function updateRowById(idDemande, fields) {
 
 function updateThreadFollowup(gmailThreadId, fields, options) {
   if (!gmailThreadId) throw new Error("gmail_thread_id manquant");
+  const sourceEmail = String(options && options.match && options.match.email_client || '').trim().toLowerCase();
+  if (isTechnicalTransactionalEmail(sourceEmail)) {
+    return ok({ updated: false, reason: "technical_transactional_sender", email_client: sourceEmail });
+  }
   const sheet = getSheet();
   ensureSchemaHeaders(sheet);
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
   const replay = findMakeOperationByMessageId(sheet, headers, getMakeMessageId(fields));
   if (replay) return ok(replayFollowupResult(replay));
   const found = findRowByCanonicalValue(sheet, headers, "gmail_thread_id", gmailThreadId);
+  if (found && sourceEmail) {
+    const foundEmail = String(readRowData(sheet, headers, found.rowIndex).email_client || '').trim().toLowerCase();
+    if (foundEmail !== sourceEmail) {
+      return ok({
+        updated: false,
+        reason: "source_email_mismatch",
+        id_demande: found.id_demande || "",
+        email_client: sourceEmail
+      });
+    }
+  }
   if (!found) {
     if (options && options.match) {
       return updateExistingDemandFollowup(options.match, fields || {}, options);
@@ -969,6 +984,9 @@ function updateWixFollowup(gmailThreadId, emailClient, fields, options) {
   if (!gmailThreadId) throw new Error("gmail_thread_id manquant");
   const email = String(emailClient || '').trim().toLowerCase();
   if (!email) throw new Error("email_client manquant");
+  if (isTechnicalTransactionalEmail(email)) {
+    return ok({ updated: false, reason: "technical_transactional_sender", email_client: email });
+  }
 
   const sheet = getSheet();
   ensureSchemaHeaders(sheet);
@@ -976,7 +994,13 @@ function updateWixFollowup(gmailThreadId, emailClient, fields, options) {
   const replay = findMakeOperationByMessageId(sheet, headers, getMakeMessageId(fields));
   if (replay) return ok(replayFollowupResult(replay));
   const foundByThread = findRowByCanonicalValue(sheet, headers, "gmail_thread_id", gmailThreadId);
-  const found = foundByThread || findLatestRowByEmailAndIdPrefix(sheet, headers, email, "WIX-");
+  const threadEmail = foundByThread
+    ? String(readRowData(sheet, headers, foundByThread.rowIndex).email_client || '').trim().toLowerCase()
+    : "";
+  const threadMatchesSender = !!foundByThread && threadEmail === email;
+  const found = threadMatchesSender
+    ? foundByThread
+    : findLatestRowByEmailAndIdPrefix(sheet, headers, email, "WIX-");
   if (!found) {
     if (options && options.create_if_not_found) {
       return createUnmatchedFollowupDemand(options.fallback_row || {}, fields || {});
@@ -1001,7 +1025,7 @@ function updateWixFollowup(gmailThreadId, emailClient, fields, options) {
 
   return ok({
     updated: true,
-    matched_by: foundByThread ? "gmail_thread_id" : "email_client",
+    matched_by: threadMatchesSender ? "gmail_thread_id_and_email_client" : "email_client",
     id_demande: found.id_demande || "",
     row: found.rowIndex
   });
@@ -1215,6 +1239,16 @@ function checkDuplicate(match) {
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
   const ids = [];
   const sourceEmail = String(match.source_email || '').trim().toLowerCase();
+  if (isTechnicalTransactionalEmail(sourceEmail)) {
+    return ok({
+      count: 1,
+      duplicate: false,
+      excluded: true,
+      reason: "technical_transactional_sender",
+      id_demande: "",
+      row: ""
+    });
+  }
   const gmailMessageId = String(match.gmail_message_id || '').trim();
   const requestedThreadId = String(match.gmail_thread_id || '').trim();
   let idDemande = String(match.id_demande || '').trim();
@@ -1234,7 +1268,13 @@ function checkDuplicate(match) {
     if (value && ids.indexOf(value) === -1) ids.push(value);
   });
 
-  const found = findDuplicateDemand(sheet, headers, ids, gmailThreadId);
+  const found = findDuplicateDemand(
+    sheet,
+    headers,
+    ids,
+    gmailThreadId,
+    isMessageScopedSource ? "" : sourceEmail
+  );
   return ok({
     count: found ? 1 : 0,
     duplicate: !!found,
@@ -2248,10 +2288,12 @@ function mergeWixDemandRow(sheet, headers, rowIndex, incoming, operationResult) 
   sheet.getRange(rowIndex, 1, 1, nextValues.length).setValues([nextValues]);
 }
 
-function findDuplicateDemand(sheet, headers, demandIds, gmailThreadId) {
+function findDuplicateDemand(sheet, headers, demandIds, gmailThreadId, requiredSourceEmail) {
   const idCol = headers.findIndex(function(h) { return canonicalKey(h) === "id_demande"; }) + 1;
   const threadCol = headers.findIndex(function(h) { return canonicalKey(h) === "gmail_thread_id"; }) + 1;
+  const emailCol = headers.findIndex(function(h) { return canonicalKey(h) === "email_client"; }) + 1;
   if (idCol <= 0) throw new Error("Colonne id_demande introuvable");
+  if (requiredSourceEmail && emailCol <= 0) throw new Error("Colonne email_client introuvable");
 
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return null;
@@ -2262,23 +2304,34 @@ function findDuplicateDemand(sheet, headers, demandIds, gmailThreadId) {
     if (s) targetIds[s] = true;
   });
   const targetThread = String(gmailThreadId || '').trim();
+  const targetSourceEmail = String(requiredSourceEmail || '').trim().toLowerCase();
 
   // L'anti-doublon est exécuté pour chaque email. Une seule lecture contiguë
   // réduit nettement la latence Apps Script par rapport aux deux lectures de
   // colonnes séparées, tout en gardant exactement les mêmes critères.
-  const firstCol = threadCol > 0 ? Math.min(idCol, threadCol) : idCol;
-  const lastCol = threadCol > 0 ? Math.max(idCol, threadCol) : idCol;
+  const readColumns = [idCol];
+  if (threadCol > 0) readColumns.push(threadCol);
+  if (targetSourceEmail) readColumns.push(emailCol);
+  const firstCol = Math.min.apply(null, readColumns);
+  const lastCol = Math.max.apply(null, readColumns);
   const values = sheet.getRange(2, firstCol, lastRow - 1, lastCol - firstCol + 1).getValues();
   const idOffset = idCol - firstCol;
   const threadOffset = threadCol - firstCol;
+  const emailOffset = emailCol - firstCol;
   for (var i = values.length - 1; i >= 0; i--) {
     const rowId = String(values[i][idOffset] || '').trim();
     const rowThread = threadCol > 0 ? String(values[i][threadOffset] || '').trim() : "";
-    if ((rowId && targetIds[rowId]) || (targetThread && rowId === targetThread) || (targetThread && rowThread === targetThread)) {
+    const rowEmail = targetSourceEmail ? String(values[i][emailOffset] || '').trim().toLowerCase() : "";
+    const matchesIdentity = (rowId && targetIds[rowId]) || (targetThread && rowId === targetThread) || (targetThread && rowThread === targetThread);
+    if (matchesIdentity && (!targetSourceEmail || rowEmail === targetSourceEmail)) {
       return { rowIndex: i + 2, id_demande: rowId };
     }
   }
   return null;
+}
+
+function isTechnicalTransactionalEmail(email) {
+  return /@(?:[^@.]+\.)*brevosend\.com$/i.test(String(email || '').trim());
 }
 
 function serialise(val) {

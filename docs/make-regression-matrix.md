@@ -130,6 +130,8 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | E29 | Invitation Mailinblack dont le corps contient `newsletter`, `unsubscribe` ou `voir dans le navigateur` | Le filtre newsletters l'exclut ; seul le libellé d'authentification est ajouté, sans suppression, archivage ou marquage comme lu ; vérifier que l'ancien filtre newsletters a bien été remplacé | XML automatique + essai Gmail |
 | E30 | Confirmation ou notification de `noreply@planity.com` | Le filtre Gmail dédié archive le message et applique `Hors_Scope_Gmail`, sans le transmettre à Make ni modifier une conversation existante | XML automatique + essai Gmail |
 | E31 | Relance Email déjà connue mais introuvable par `gmail_thread_id` | Recherche de l'unique demande active par email ; sans candidate, création unique `GMAIL-<threadId>` au statut `À vérifier` ; en cas d'ambiguïté, aucune création et message conservé dans l'Inbox | Backend + automatique + essai Make |
+| E32 | Confirmation Bajoah envoyée par `contact@6817076.brevosend.com` dans le fil Gmail de Manon QUADRATUS | Aucune modification de Manon ; aucune demande créée ; message archivé dans `Hors_Scope_Make` | Backend + statique + essai Make |
+| E33 | Nouvelle demande traiteur d'une adresse différente dans un fil Gmail existant | Le fil ne déclenche aucun rattachement ; le message suit l'analyse Email et crée une nouvelle demande seulement s'il est qualifié | Backend + automatique + essai Make |
 
 ## Tally
 

@@ -148,7 +148,8 @@ Déclencheur : Gmail nouveaux emails.
 - Module `60` appelle le backend `checkDuplicate` avec `source_email`, `gmail_message_id` et `gmail_thread_id` ; le backend construit l'identifiant métier préfixé.
 - Le backend répond avec `count`.
 - `count = 0` signifie nouveau message non connu.
-- `count > 0` signifie message, thread ou ligne déjà connu.
+- Pour les e-mails directs, un fil Gmail déjà connu ne compte comme doublon que si l'adresse expéditeur correspond exactement à l'adresse de la demande. Un fil seul n'est jamais une identité client.
+- Les expéditeurs transactionnels `@…brevosend.com` sont exclus avant toute création ou mise à jour et classés dans `Hors_Scope_Make`.
 - Exception importante : pour Wix, Voxist et OVH Répondeur, `checkDuplicate` ne doit vérifier que l'identifiant préfixé construit avec `gmail_message_id`, jamais `gmail_thread_id`. Gmail peut regrouper plusieurs formulaires Wix distincts ou plusieurs messages vocaux dans un même fil.
 
 Contrainte critique :
@@ -285,7 +286,7 @@ Comportement attendu :
 - Canal -> `Email`.
 - Label Gmail -> `Historique_Email`.
 - Accusé de réception envoyé en réponse au client pour une vraie nouvelle demande.
-- Newsletter, fournisseur, facture, spam -> `Hors_Scope_Make`. Mais normalement ça doit être filtré avant par Gmail.
+- Newsletter, fournisseur, facture, spam et e-mail transactionnel -> `Hors_Scope_Make`. Mais normalement ça doit être filtré avant par Gmail.
 
 Vraies demandes :
 
@@ -378,8 +379,8 @@ Contraintes backend :
 - `upsertWixDemand` doit créer ou fusionner les doublons Wix rapprochés.
 - Les écritures Make doivent être idempotentes par `gmail_message_id` : après une écriture réussie dont la réponse HTTP est perdue, la reprise doit renvoyer le résultat initial sans ré-incrémenter `nb_relances_client`.
 - `upsertWixDemand` doit mémoriser le résultat d'un message Wix déjà appliqué afin qu'une reprise poursuive l'archivage et l'accusé attendus sans créer de seconde ligne.
-- `updateThreadFollowup` rattache par `gmail_thread_id`.
-- `updateWixFollowup` rattache par `gmail_thread_id`, puis fallback dernier `WIX-` par email.
+- `updateThreadFollowup` exige l'adresse expéditeur exacte avant d'utiliser `gmail_thread_id` ; le fil est un indice technique, jamais une identité client.
+- `updateWixFollowup` exige également cette adresse exacte pour un rattachement par fil, puis recherche le dernier `WIX-` par email exact.
 - `updateExistingDemandFollowup` peut créer une fiche de secours uniquement avec l'option explicite `create_if_not_found`, et seulement lorsque le nombre de candidates est nul.
 - `mergeDemandRecords` rattache manuellement une fiche source à une cible sans supprimer la source et rejoue sans dupliquer les notes.
 - `updateExistingDemandFollowup` rattache par email+date, puis nom+date si l'email manque. Sans date de prestation, il accepte uniquement une correspondance exacte et unique sur l’email parmi les demandes actives.

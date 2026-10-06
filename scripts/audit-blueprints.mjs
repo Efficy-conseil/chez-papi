@@ -246,6 +246,18 @@ assert(!duplicateBody.includes('toJSON('), 'fonction Make toJSON non prise en ch
 assert(!duplicateBody.includes('\\) +'), 'expression Make corrompue dans le module 60');
 assert(!mainRaw.includes('60.data.count'), 'anti-doublon du module 60 lu sans l’enveloppe data');
 
+const brevoArchive = moduleById(mainModules, 151);
+assert(brevoArchive, 'route explicite des emails transactionnels Brevo absente');
+assert(
+  brevoArchive.mapper?.to === 'Label_2633677580427542522' &&
+  (brevoArchive.filter?.conditions || []).flat().some(condition =>
+    condition?.a === '{{lower(trim(last(split(ifempty(1.fromEmail; ""); "@"))))}}' &&
+    condition?.b === 'brevosend.com' &&
+    condition?.o === 'text:contain'
+  ),
+  'les emails Brevo doivent être classés dans Hors_Scope_Make avant toute écriture métier'
+);
+
 [
   [main, 'Email/Wix/Voxist'],
   [tally, 'Tally']
