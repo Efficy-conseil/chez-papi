@@ -258,6 +258,9 @@ assert.equal(audio.data_base64, Buffer.from([251, 255, 239, 1]).toString('base64
 assert.deepEqual([...Buffer.from(audio.data_base64, 'base64')], [251, 255, 239, 1]);
 
 const frontendSource = readFileSync('chez-papi/app.js', 'utf8');
+const frontendMarkup = readFileSync('chez-papi/index.html', 'utf8');
+assert.doesNotMatch(frontendMarkup, />[^<]*OVH[^<]*</i, 'la popup ne doit pas exposer le fournisseur OVH');
+assert.doesNotMatch(frontendSource, /messages OVH|message OVH/i, 'les états de la popup doivent parler de messages vocaux');
 const normalizeStart = frontendSource.indexOf('function normalizeAudioBase64');
 const normalizeEnd = frontendSource.indexOf('\nfunction waitForVoicemailAudio', normalizeStart);
 assert.ok(normalizeStart >= 0 && normalizeEnd > normalizeStart, 'source audio native introuvable');

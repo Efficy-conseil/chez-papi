@@ -890,7 +890,7 @@ function renderVoicemails() {
   if (!voicemailMessages.length) {
     list.innerHTML = voicemailStateMarkup(
       'Aucun vocal à écouter',
-      'Les nouveaux messages OVH apparaîtront automatiquement ici.'
+      'Les nouveaux messages vocaux apparaîtront automatiquement ici.'
     );
     return;
   }
@@ -944,7 +944,7 @@ async function loadVoicemails(options = {}) {
     list.classList.remove('is-filled');
     list.innerHTML = voicemailStateMarkup(
       'Actualisation en cours',
-      'Recherche des nouveaux messages OVH…',
+      'Recherche des nouveaux messages vocaux…',
       'loading'
     );
   }
