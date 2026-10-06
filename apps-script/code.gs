@@ -396,24 +396,36 @@ function getVoicemailAudio(messageId) {
   const expectedSize = Number(audioPart.body && audioPart.body.size || 0);
   if (expectedSize > VOICEMAIL_MAX_AUDIO_BYTES) throw new Error('Le fichier audio est trop volumineux');
 
-  let encoded = String(audioPart.body && audioPart.body.data || '');
-  if (!encoded && audioPart.body && audioPart.body.attachmentId) {
-    const attachment = Gmail.Users.Messages.Attachments.get('me', id, audioPart.body.attachmentId) || {};
-    if (Number(attachment.size || expectedSize || 0) > VOICEMAIL_MAX_AUDIO_BYTES) {
-      throw new Error('Le fichier audio est trop volumineux');
-    }
-    encoded = String(attachment.data || '');
+  const gmailMessage = GmailApp.getMessageById(id);
+  if (!gmailMessage) throw new Error('Message vocal Gmail introuvable');
+  const attachments = gmailMessage.getAttachments({
+    includeInlineImages: false,
+    includeAttachments: true
+  }) || [];
+  const expectedName = String(audioPart.filename || '').trim().toLowerCase();
+  const attachment = attachments.find(function(item) {
+    return expectedName && String(item.getName() || '').trim().toLowerCase() === expectedName;
+  }) || attachments.find(function(item) {
+    const mime = String(item.getContentType() || '').toLowerCase();
+    const name = String(item.getName() || '').toLowerCase();
+    return mime.indexOf('audio/') === 0 || /\.(mp3|wav|m4a|aac|ogg|oga|amr)$/i.test(name);
+  });
+  if (!attachment) throw new Error('Aucun fichier audio disponible pour ce message');
+  if (typeof attachment.getSize === 'function' && attachment.getSize() > VOICEMAIL_MAX_AUDIO_BYTES) {
+    throw new Error('Le fichier audio est trop volumineux');
   }
-  if (!encoded) throw new Error('Le fichier audio est vide');
+  const audioBytes = attachment.getBytes();
+  if (!audioBytes || !audioBytes.length) throw new Error('Le fichier audio est vide');
+  if (audioBytes.length > VOICEMAIL_MAX_AUDIO_BYTES) throw new Error('Le fichier audio est trop volumineux');
 
   return ok({
     message_id: id,
-    filename: String(audioPart.filename || 'message-vocal'),
-    mime_type: voicemailAudioMimeType(audioPart),
-    // Gmail fournit déjà la pièce jointe en Base64URL. La transmettre sans la
-    // décoder évite une conversion serveur fragile ; le lecteur la normalise.
-    data_base64: encoded,
-    data_encoding: 'base64url'
+    filename: String(attachment.getName() || audioPart.filename || 'message-vocal'),
+    mime_type: String(attachment.getContentType() || voicemailAudioMimeType(audioPart)),
+    // GmailApp fournit directement les octets du fichier : aucun décodage de
+    // chaîne Base64URL n'est nécessaire avant de produire un Base64 standard.
+    data_base64: Utilities.base64Encode(audioBytes),
+    data_encoding: 'base64'
   });
 }
 

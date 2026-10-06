@@ -96,7 +96,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | O15 | Action `Marquer comme lu` depuis le dashboard | Seul `UNREAD` est retiré ; l'e-mail, l'audio et le libellé `Historique_OVH` sont conservés | Backend automatique + essai Gmail |
 | O16 | Vocal `Historique_OVH` sans fiche associée, notamment un appel d'essai ou technique | Badge `Personnel / hors activité`, jamais `Demande traiteur` sur le seul libellé Gmail | Backend automatique + dashboard |
 | O17 | Rattachement manuel d'un vocal non associé à une fiche existante | Association persistée dans le journal idempotent sans écraser `gmail_message_id`, puis accès immédiat à la fiche | Backend automatique + dashboard |
-| O18 | Chargement d'une pièce jointe vocale Gmail encodée en Base64URL sans remplissage | Le backend transmet la chaîne telle quelle, sans décodage ni réencodage susceptible de produire `Impossible de décoder la chaîne` | Backend automatique + dashboard |
+| O18 | Chargement d'une pièce jointe vocale dont la représentation REST Gmail n'est pas directement exploitable | Le backend ne décode pas cette chaîne : il lit les octets de la pièce jointe via GmailApp et produit un Base64 standard valide pour le lecteur | Backend automatique + dashboard |
 
 ## Email direct
 

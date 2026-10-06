@@ -114,7 +114,7 @@ const context = vm.createContext({
         get: () => currentMessage,
         modify: (resource, userId, id) => modified.push({ resource, userId, id }),
         Attachments: {
-          get: () => ({ data: Buffer.from([251, 255, 239, 1]).toString('base64url'), size: 4 })
+          get: () => { throw new Error('le téléchargement audio ne doit plus décoder la chaîne REST Gmail'); }
         }
       },
       Labels: {
@@ -123,6 +123,23 @@ const context = vm.createContext({
           { id: 'Label_hors_scope', name: 'Hors_Scope_Make' }
         ] })
       }
+    }
+  },
+  GmailApp: {
+    getMessageById(id) {
+      assert.equal(id, messageId);
+      return {
+        getAttachments(options) {
+          assert.equal(options.includeInlineImages, false);
+          assert.equal(options.includeAttachments, true);
+          return [{
+            getName: () => 'message.mp3',
+            getContentType: () => 'audio/mpeg',
+            getSize: () => 4,
+            getBytes: () => Buffer.from([251, 255, 239, 1])
+          }];
+        }
+      };
     }
   }
 });
@@ -171,9 +188,9 @@ assert.equal(relisted.messages[0].demand.id_demande, 'DEMANDE-1');
 
 const audio = context.getVoicemailAudio(messageId);
 assert.equal(audio.mime_type, 'audio/mpeg');
-assert.equal(audio.data_encoding, 'base64url');
-assert.equal(audio.data_base64, Buffer.from([251, 255, 239, 1]).toString('base64url'));
-assert.deepEqual([...Buffer.from(audio.data_base64, 'base64url')], [251, 255, 239, 1]);
+assert.equal(audio.data_encoding, 'base64');
+assert.equal(audio.data_base64, Buffer.from([251, 255, 239, 1]).toString('base64'));
+assert.deepEqual([...Buffer.from(audio.data_base64, 'base64')], [251, 255, 239, 1]);
 
 const frontendSource = readFileSync('chez-papi/app.js', 'utf8');
 const normalizeStart = frontendSource.indexOf('function normalizeAudioBase64');
