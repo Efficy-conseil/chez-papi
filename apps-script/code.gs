@@ -207,6 +207,7 @@ function doPost(e) {
     if (body.action === 'list' || body.action === 'getAll') return listRows();
     if (body.action === 'listVoicemails') return listUnreadVoicemails();
     if (body.action === 'getVoicemailAudio') return getVoicemailAudio(body.message_id);
+    if (body.action === 'linkVoicemailToDemand') return withDocumentLock(function() { return linkVoicemailToDemand(body.message_id, body.id_demande); });
     if (body.action === 'markVoicemailRead') return markVoicemailRead(body.message_id);
     if (body.action === 'archiveOvhVoicemail') return archiveOvhVoicemail(body.message_id);
     if (body.action === 'add')    return withDocumentLock(function() { return addRow(body.row || {}, body.options || {}); });
@@ -355,9 +356,10 @@ function listUnreadVoicemails() {
     });
     const association = demandAssociations[String(message.id || '')] || null;
     const audioPart = findVoicemailAudioPart(message.payload || {});
-    const classification = association || labels.indexOf(VOICEMAIL_HISTORY_LABEL) !== -1
-      ? 'professionnel'
-      : (labels.indexOf('Hors_Scope_Make') !== -1 ? 'personnel' : 'analyse');
+    // Le libellé Historique_OVH prouve que Make a traité le message, pas qu'une
+    // demande commerciale existe réellement. Seul un rattachement exact à la
+    // base permet donc d'afficher « Demande traiteur ».
+    const classification = association ? 'professionnel' : 'personnel';
     const internalDate = Number(message.internalDate || 0);
 
     messages.push({
@@ -410,6 +412,47 @@ function getVoicemailAudio(messageId) {
     filename: String(audioPart.filename || 'message-vocal'),
     mime_type: voicemailAudioMimeType(audioPart),
     data_base64: standardBase64
+  });
+}
+
+function linkVoicemailToDemand(messageId, idDemande) {
+  ensureVoicemailMailbox();
+  const voicemailLabelId = getGmailLabelIdByName(VOICEMAIL_HISTORY_LABEL);
+  const id = validateGmailMessageId(messageId);
+  const message = Gmail.Users.Messages.get('me', id, { format: 'full' });
+  const bodyText = extractGmailMessageText(message.payload || {});
+  if (!isManagedOvhVoicemail(message, bodyText, voicemailLabelId)) throw new Error('Message vocal OVH introuvable');
+
+  const sheet = getSheet();
+  ensureSchemaHeaders(sheet);
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
+  const found = findRowByDemandId(sheet, headers, idDemande);
+  if (!found) throw new Error('Demande introuvable : ' + String(idDemande || ''));
+
+  // Le journal idempotent sait déjà associer plusieurs messages Gmail à une
+  // même fiche. On l'utilise pour ne jamais écraser gmail_message_id, qui peut
+  // référencer un autre échange utile de la demande.
+  const logCol = headers.findIndex(function(header) {
+    return canonicalKey(header) === 'make_operation_log';
+  }) + 1;
+  if (logCol <= 0) throw new Error('Colonne make_operation_log introuvable');
+  const logCell = sheet.getRange(found.rowIndex, logCol);
+  logCell.setValue(appendMakeOperationLog(logCell.getValue(), id, {
+    updated: true,
+    linked_manually: true
+  }));
+
+  const row = readRowData(sheet, headers, found.rowIndex);
+  return ok({
+    message_id: id,
+    linked: true,
+    demand: {
+      id_demande: String(row.id_demande || ''),
+      nom_client: String(row.nom_client || '').trim(),
+      statut: String(row.statut || '').trim(),
+      date_evenement: String(row.date_evenement || '').trim(),
+      row: found.rowIndex
+    }
   });
 }
 

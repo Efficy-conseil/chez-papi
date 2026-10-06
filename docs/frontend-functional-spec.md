@@ -161,8 +161,9 @@ Une demande `Événement confirmé` dont la date de fin est passée est automati
 - Cette fenêtre reprend l'en-tête et les contrôles des autres fenêtres KPI. Son état vide est compact ; les messages présents sont affichés sous forme de lignes séparées, adaptées à l'ordinateur comme au mobile.
 - Le compteur et la liste sont chargés après la connexion, actualisés avec les données principales et rafraîchissables indépendamment.
 - Chaque message présente le numéro appelant français, la date, la transcription disponible et un badge `Demande traiteur`, `Personnel / hors activité` ou `Analyse en cours`.
-- Une association exacte avec la base affiche la demande liée et permet d'ouvrir sa fiche. L'interface ne rapproche jamais un vocal par simple ressemblance.
-- Le bouton `Écouter` charge le MP3 seulement à la demande et affiche un lecteur audio natif. Les URL audio temporaires sont libérées après lecture de la page, disparition du message ou déconnexion.
+- Seule une association exacte avec la base affiche `Demande traiteur`, montre la demande liée et permet d'ouvrir sa fiche. Un message archivé sans association est présenté comme `Personnel / hors activité`.
+- Un vocal sans association propose `Rattacher à une fiche`. L'utilisatrice recherche et choisit explicitement une demande existante ; le rattachement conserve les références Gmail déjà présentes sur la fiche, puis ouvre immédiatement cette fiche.
+- Le bouton `Écouter` charge le MP3 seulement à la demande et affiche un lecteur audio natif. L'interface distingue le téléchargement de la préparation par Chrome, détecte les formats illisibles ou les délais anormaux et permet de relancer immédiatement un audio déjà chargé. Les URL audio temporaires sont libérées après lecture de la page, disparition du message ou déconnexion.
 - `Ouvrir dans Gmail` ouvre le message dans le compte métier. `Tout voir dans Gmail` ouvre le libellé `Historique_OVH`, qui conserve l'historique complet.
 - `Marquer comme lu` retire uniquement le message de la fenêtre et actualise le compteur après confirmation du backend. Le courriel et ses libellés restent dans Gmail.
 - Une erreur Gmail n'empêche pas le chargement ni l'utilisation des autres fonctions du dashboard.

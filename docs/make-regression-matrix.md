@@ -94,6 +94,8 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | O13 | Backend Apps Script autorisé avec un compte Gmail personnel | La liste et toute action audio/lecture sont refusées ; aucun message personnel n'est exposé | Backend automatique |
 | O14 | E-mail OVH réel contenant `Voici la transcription de ce dernier :` et un horodatage | Le dashboard affiche seulement la transcription utile, sans avertissement automatique ni horodatage | Backend automatique |
 | O15 | Action `Marquer comme lu` depuis le dashboard | Seul `UNREAD` est retiré ; l'e-mail, l'audio et le libellé `Historique_OVH` sont conservés | Backend automatique + essai Gmail |
+| O16 | Vocal `Historique_OVH` sans fiche associée, notamment un appel d'essai ou technique | Badge `Personnel / hors activité`, jamais `Demande traiteur` sur le seul libellé Gmail | Backend automatique + dashboard |
+| O17 | Rattachement manuel d'un vocal non associé à une fiche existante | Association persistée dans le journal idempotent sans écraser `gmail_message_id`, puis accès immédiat à la fiche | Backend automatique + dashboard |
 
 ## Email direct
 
@@ -172,7 +174,9 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | F16 | Accueil connecté avec des messages OVH non lus | Compteur, numéro, date, transcription et classification apparaissent sans bloquer les autres données |
 | F17 | Clic sur `Écouter` | Le MP3 est chargé à la demande et lisible dans le lecteur natif |
 | F18 | Vocal rattaché exactement à une demande | Le bouton ouvre la bonne fiche ; un vocal sans association n'affiche aucun lien de demande |
-| F19 | Clic sur `Marquer comme lu` | Le message disparaît de la carte après succès et reste consultable dans Gmail |
+| F19 | Clic sur `Écouter` avec audio valide, invalide ou lent | Le lecteur devient utilisable après décodage ; un format invalide ou un délai anormal produit une erreur explicite et permet de réessayer |
+| F20 | Vocal non associé puis choix manuel d'une fiche | La recherche permet de sélectionner la fiche, le rattachement est conservé et la fiche s'ouvre immédiatement |
+| F21 | Clic sur `Marquer comme lu` | Le message disparaît de la carte après succès et reste consultable dans Gmail |
 
 ## Procédure d'exécution
 

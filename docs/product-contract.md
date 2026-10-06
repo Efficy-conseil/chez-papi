@@ -270,8 +270,9 @@ Consultation depuis le dashboard :
 - Gmail reste l'historique complet. Le dashboard ne supprime, ne déplace et ne modifie aucun libellé Make ; l'action explicite `Marquer comme lu` retire seulement le libellé système `UNREAD`.
 - L'audio joint est chargé à la demande et n'est jamais stocké dans le navigateur au-delà de la session de page.
 - La transcription native visible dans Gmail peut être affichée dans le dashboard. Elle n'est pas utilisée pour la qualification métier Make lorsque l'audio est disponible.
-- `Historique_OVH` ou le rattachement exact à une ligne identifient une demande traiteur ; `Hors_Scope_Make` identifie un message personnel ou hors activité ; les autres messages restent en `Analyse en cours`.
+- Seul le rattachement exact à une ligne identifie une `Demande traiteur` dans le dashboard. Un message simplement archivé dans `Historique_OVH` sans fiche associée est présenté comme `Personnel / hors activité`, ce qui évite de transformer les appels d'essai ou techniques en demandes commerciales.
 - Le rattachement à une demande utilise `gmail_message_id`, `VOXIST-<gmail_message_id>` ou le journal idempotent Make. Un rapprochement approximatif n'est jamais effectué par l'interface.
+- Pour un vocal professionnel non rapproché automatiquement, l'utilisatrice peut choisir explicitement une fiche existante depuis la fenêtre des vocaux. Le backend inscrit cette association dans le journal idempotent sans remplacer le `gmail_message_id` déjà conservé sur la fiche, puis l'interface ouvre immédiatement la demande rattachée.
 - Make archive les messages en retirant `INBOX`, mais doit conserver leur état non lu afin qu'ils restent visibles dans cette interface jusqu'à l'action de l'utilisatrice.
 
 ## Make - Email direct

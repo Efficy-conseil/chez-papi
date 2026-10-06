@@ -808,6 +808,10 @@ const SheetsAPI = {
     if (!CONFIG.SHEETS_URL) return { error: 'Non configuré' };
     return this.request({ action: 'getVoicemailAudio', message_id });
   },
+  async linkVoicemailToDemand(message_id, id_demande) {
+    if (!CONFIG.SHEETS_URL) return { error: 'Non configuré' };
+    return this.request({ action: 'linkVoicemailToDemand', message_id, id_demande });
+  },
   async markVoicemailRead(message_id) {
     if (!CONFIG.SHEETS_URL) return { error: 'Non configuré' };
     return this.request({ action: 'markVoicemailRead', message_id });
@@ -819,6 +823,7 @@ const SheetsAPI = {
 let appData = [];
 let voicemailMessages = [];
 const voicemailAudioUrls = new Map();
+let voicemailToLinkId = '';
 
 function voicemailBadge(message) {
   if (message?.classification === 'professionnel') {
@@ -875,7 +880,7 @@ function renderVoicemails() {
       : '';
     const demandButton = demand?.id_demande
       ? `<button type="button" class="btn-secondary" data-demand-id="${escAttr(demand.id_demande)}" onclick="openVoicemailDemand(this.dataset.demandId)">Ouvrir la demande</button>`
-      : '';
+      : `<button type="button" class="btn-secondary" data-voicemail-id="${escAttr(id)}" onclick="openVoicemailLinkModal(this.dataset.voicemailId)">Rattacher à une fiche</button>`;
     const listenButton = message.has_audio
       ? `<button type="button" class="btn-primary" data-voicemail-id="${escAttr(id)}" onclick="loadVoicemailAudio(this.dataset.voicemailId, this)">▶ Écouter</button>`
       : '<span class="voicemail-date">Audio indisponible</span>';
@@ -958,18 +963,64 @@ function closeVoicemailModal() {
 }
 
 function base64AudioUrl(dataBase64, mimeType) {
-  const binary = atob(String(dataBase64 || ''));
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return URL.createObjectURL(new Blob([bytes], { type: mimeType || 'audio/mpeg' }));
+  const encoded = String(dataBase64 || '').replace(/\s/g, '');
+  if (!encoded) throw new Error('Le fichier audio reçu est vide');
+  const binary = atob(encoded);
+  const chunks = [];
+  const chunkSize = 512 * 1024;
+  for (let offset = 0; offset < binary.length; offset += chunkSize) {
+    const slice = binary.slice(offset, offset + chunkSize);
+    const bytes = new Uint8Array(slice.length);
+    for (let i = 0; i < slice.length; i++) bytes[i] = slice.charCodeAt(i);
+    chunks.push(bytes);
+  }
+  return URL.createObjectURL(new Blob(chunks, { type: mimeType || 'audio/mpeg' }));
+}
+
+function waitForVoicemailAudio(audio, timeoutMs = 12000) {
+  return new Promise((resolve, reject) => {
+    if (audio.readyState >= HTMLMediaElement.HAVE_METADATA) {
+      resolve();
+      return;
+    }
+    const cleanup = () => {
+      clearTimeout(timer);
+      audio.removeEventListener('loadedmetadata', onReady);
+      audio.removeEventListener('canplay', onReady);
+      audio.removeEventListener('error', onError);
+    };
+    const onReady = () => {
+      cleanup();
+      resolve();
+    };
+    const onError = () => {
+      cleanup();
+      reject(new Error('Chrome ne reconnaît pas le format de ce fichier audio'));
+    };
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error('Le fichier audio a été reçu mais Chrome tarde à le préparer'));
+    }, timeoutMs);
+    audio.addEventListener('loadedmetadata', onReady, { once: true });
+    audio.addEventListener('canplay', onReady, { once: true });
+    audio.addEventListener('error', onError, { once: true });
+  });
 }
 
 async function loadVoicemailAudio(messageId, button) {
   const id = String(messageId || '').trim();
   const wrap = document.getElementById('voicemail-audio-' + id);
   if (!id || !wrap || !button) return;
+  const existingAudio = wrap.querySelector('audio');
+  if (existingAudio?.src) {
+    existingAudio.currentTime = 0;
+    existingAudio.play().catch(() => {});
+    return;
+  }
   button.disabled = true;
   button.textContent = 'Chargement…';
+  wrap.innerHTML = '<div class="voicemail-audio-status" role="status">Téléchargement du message vocal…</div><audio class="voicemail-audio" controls preload="metadata" hidden>Votre navigateur ne peut pas lire ce message vocal.</audio>';
+  const audio = wrap.querySelector('audio');
   try {
     let audioUrl = voicemailAudioUrls.get(id);
     if (!audioUrl) {
@@ -978,13 +1029,113 @@ async function loadVoicemailAudio(messageId, button) {
       audioUrl = base64AudioUrl(result.data_base64, result.mime_type);
       voicemailAudioUrls.set(id, audioUrl);
     }
-    wrap.innerHTML = `<audio class="voicemail-audio" controls autoplay preload="metadata" src="${escAttr(audioUrl)}">Votre navigateur ne peut pas lire ce message vocal.</audio>`;
+    audio.src = audioUrl;
+    audio.hidden = false;
+    audio.load();
+    await waitForVoicemailAudio(audio);
+    wrap.querySelector('.voicemail-audio-status')?.remove();
     button.textContent = 'Réécouter';
+    audio.play().catch(() => {});
   } catch (err) {
+    const audioUrl = voicemailAudioUrls.get(id);
+    if (audioUrl) URL.revokeObjectURL(audioUrl);
+    voicemailAudioUrls.delete(id);
+    wrap.innerHTML = `<div class="voicemail-audio-error" role="alert">${safeText(err.message || 'Lecture audio impossible')}</div>`;
     showNotification(err.message || 'Impossible de lire ce message vocal', 'error');
     button.textContent = '▶ Écouter';
   } finally {
     button.disabled = false;
+  }
+}
+
+function normalizedVoicemailLinkText(value) {
+  return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
+function voicemailLinkCandidates(query = '') {
+  const needle = normalizedVoicemailLinkText(query).trim();
+  return appData
+    .filter(demand => eventId(demand))
+    .filter(demand => !needle || normalizedVoicemailLinkText([
+      demand.nom_client,
+      demand.id_demande,
+      demand.date_evenement,
+      demand.telephone,
+      demand.lieu_prestation,
+      demand.statut
+    ].join(' ')).includes(needle))
+    .sort((a, b) => String(a.nom_client || '').localeCompare(String(b.nom_client || ''), 'fr'));
+}
+
+function renderVoicemailLinkCandidates() {
+  const search = document.getElementById('voicemail-link-search');
+  const select = document.getElementById('voicemail-link-select');
+  const empty = document.getElementById('voicemail-link-empty');
+  if (!select) return;
+  const candidates = voicemailLinkCandidates(search?.value || '');
+  select.replaceChildren();
+  candidates.forEach((candidate, index) => {
+    const option = document.createElement('option');
+    option.value = eventId(candidate);
+    option.selected = index === 0;
+    option.textContent = [
+      candidate.nom_client || 'Sans nom',
+      formatDateFR(candidate.date_evenement) || 'Date inconnue',
+      candidate.statut || 'Statut inconnu'
+    ].join(' — ');
+    select.appendChild(option);
+  });
+  if (empty) empty.hidden = candidates.length > 0;
+  const confirmButton = document.getElementById('voicemail-link-confirm');
+  if (confirmButton) confirmButton.disabled = candidates.length === 0;
+}
+
+function openVoicemailLinkModal(messageId) {
+  voicemailToLinkId = String(messageId || '').trim();
+  if (!voicemailToLinkId) return;
+  const modal = document.getElementById('voicemail-link-modal');
+  const search = document.getElementById('voicemail-link-search');
+  if (!modal || !search) return;
+  search.value = '';
+  renderVoicemailLinkCandidates();
+  modal.style.display = 'flex';
+  search.focus();
+}
+
+function closeVoicemailLinkModal() {
+  const modal = document.getElementById('voicemail-link-modal');
+  if (modal) modal.style.display = 'none';
+  voicemailToLinkId = '';
+}
+
+async function confirmVoicemailLink() {
+  const select = document.getElementById('voicemail-link-select');
+  const idDemande = String(select?.value || '').trim();
+  const button = document.getElementById('voicemail-link-confirm');
+  if (!voicemailToLinkId || !idDemande || !button) return;
+  button.disabled = true;
+  button.textContent = 'Rattachement…';
+  try {
+    const result = await SheetsAPI.linkVoicemailToDemand(voicemailToLinkId, idDemande);
+    if (!result?.success || !result.linked || !result.demand) {
+      throw new Error(result?.error || 'Le rattachement a échoué');
+    }
+    const message = voicemailMessages.find(item => String(item.id || '') === voicemailToLinkId);
+    if (message) {
+      message.demand = result.demand;
+      message.classification = 'professionnel';
+    }
+    const linkedDemandId = result.demand.id_demande;
+    renderVoicemails();
+    closeVoicemailLinkModal();
+    closeVoicemailModal();
+    openVoicemailDemand(linkedDemandId);
+    showNotification('Vocal rattaché à la fiche', 'success');
+  } catch (err) {
+    showNotification(err.message || 'Impossible de rattacher ce vocal', 'error');
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Rattacher et ouvrir';
   }
 }
 
@@ -2440,6 +2591,11 @@ document.getElementById('event-form').addEventListener('input', e => {
 });
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
+  const voicemailLinkModal = document.getElementById('voicemail-link-modal');
+  if (voicemailLinkModal?.style.display !== 'none') {
+    closeVoicemailLinkModal();
+    return;
+  }
   const voicemailModal = document.getElementById('voicemail-modal');
   if (voicemailModal?.style.display !== 'none') {
     closeVoicemailModal();
@@ -3385,6 +3541,7 @@ if (savedUser && savedPass) {
 window.ChezPapi = {
   SheetsAPI, showPanel, toggleSidebar, showNotification, loadData, openEventModal, closeEventModal, deleteCurrentEvent, showKpiModal,
   loadVoicemails, openVoicemailModal, closeVoicemailModal, loadVoicemailAudio, markVoicemailRead, openVoicemailDemand,
+  openVoicemailLinkModal, closeVoicemailLinkModal, renderVoicemailLinkCandidates, confirmVoicemailLink,
   renderHistorique, setHistoriqueFilter, applyHistoriqueDateRange, exportHistoriqueCSV,
   switchHistTab,
   renderAgenda, agendaPrevMonth, agendaNextMonth, agendaGoToday,

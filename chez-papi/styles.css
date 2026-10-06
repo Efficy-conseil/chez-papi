@@ -829,6 +829,24 @@ body {
   margin-top: 10px;
 }
 
+.voicemail-audio-status,
+.voicemail-audio-error {
+  margin-top: 10px;
+  border-radius: 6px;
+  padding: 9px 11px;
+  font-size: 12px;
+}
+
+.voicemail-audio-status {
+  background: var(--warm);
+  color: var(--muted);
+}
+
+.voicemail-audio-error {
+  background: rgba(192, 69, 58, .08);
+  color: var(--red-soft);
+}
+
 .voicemail-state {
   display: flex;
   flex-direction: column;
@@ -2006,6 +2024,32 @@ body.is-saving-event::after {
   font-size: 13px;
   padding: 9px 10px;
   width: 100%;
+}
+
+.voicemail-link-modal-box {
+  max-width: 640px;
+}
+
+#voicemail-link-search,
+#voicemail-link-select {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  padding: 9px 10px;
+  width: 100%;
+}
+
+#voicemail-link-search {
+  margin-bottom: 14px;
+}
+
+#voicemail-link-search:focus,
+#voicemail-link-select:focus {
+  border-color: var(--gold);
+  outline: 3px solid rgba(184, 137, 42, .16);
 }
 
 .duplicate-candidate-summary {

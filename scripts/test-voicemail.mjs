@@ -50,11 +50,36 @@ const rows = [[
   messageId, ''
 ]];
 const sheet = {
+  getLastRow() { return rows.length + 1; },
+  getLastColumn() { return headers.length; },
   getDataRange() {
     const values = [headers, ...rows];
     return {
       getValues: () => values,
       getDisplayValues: () => values.map(row => row.map(String))
+    };
+  },
+  getRange(startRow, startColumn, rowCount = 1, columnCount = 1) {
+    const table = [headers, ...rows];
+    const values = () => Array.from({ length: rowCount }, (_, rowOffset) => (
+      Array.from({ length: columnCount }, (_, columnOffset) => (
+        table[startRow - 1 + rowOffset]?.[startColumn - 1 + columnOffset] ?? ''
+      ))
+    ));
+    return {
+      getValue: () => values()[0][0],
+      getValues: values,
+      getDisplayValues: () => values().map(row => row.map(String)),
+      setValue(value) {
+        table[startRow - 1][startColumn - 1] = value;
+        return this;
+      },
+      setValues(nextValues) {
+        nextValues.forEach((row, rowOffset) => row.forEach((value, columnOffset) => {
+          table[startRow - 1 + rowOffset][startColumn - 1 + columnOffset] = value;
+        }));
+        return this;
+      }
     };
   }
 };
@@ -104,6 +129,7 @@ const context = vm.createContext({
 
 vm.runInContext(readFileSync('apps-script/code.gs', 'utf8'), context);
 context.getSheet = () => sheet;
+context.ensureSchemaHeaders = () => {};
 context.ok = value => value;
 
 const archived = context.archiveOvhVoicemail(messageId);
@@ -124,6 +150,24 @@ assert.equal(
   "Oui, bonjour, c'est le frigoriste, je vous appelais pour savoir si ça avait fonctionné."
 );
 assert.equal(listed.messages[0].has_audio, true);
+
+// Un message simplement archivé dans Historique_OVH ne doit pas être présenté
+// comme une demande traiteur sans rattachement exact à une fiche.
+rows[0][0] = 'DEMANDE-1';
+rows[0][4] = 'autre-message';
+rows[0][5] = '';
+const unlinked = context.listUnreadVoicemails();
+assert.equal(unlinked.messages[0].classification, 'personnel');
+assert.equal(unlinked.messages[0].demand, null);
+
+const linked = context.linkVoicemailToDemand(messageId, 'DEMANDE-1');
+assert.equal(linked.linked, true);
+assert.equal(linked.demand.id_demande, 'DEMANDE-1');
+assert.equal(rows[0][4], 'autre-message', 'le rattachement manuel ne doit pas écraser gmail_message_id');
+assert.equal(JSON.parse(rows[0][5])[messageId].linked_manually, true);
+const relisted = context.listUnreadVoicemails();
+assert.equal(relisted.messages[0].classification, 'professionnel');
+assert.equal(relisted.messages[0].demand.id_demande, 'DEMANDE-1');
 
 const audio = context.getVoicemailAudio(messageId);
 assert.equal(audio.mime_type, 'audio/mpeg');
@@ -159,4 +203,4 @@ currentMessage = {
 };
 assert.throws(() => context.getVoicemailAudio(messageId), /Message vocal OVH introuvable/);
 
-console.log('Tests des messages vocaux réussis (boîte dédiée, transcription, audio, rapprochement et lecture).');
+console.log('Tests des messages vocaux réussis (boîte dédiée, classification, rattachement, audio et lecture).');
