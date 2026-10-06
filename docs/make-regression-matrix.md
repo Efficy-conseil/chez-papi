@@ -179,6 +179,8 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | F20 | Vocal non associé puis choix manuel d'une fiche | La recherche permet de sélectionner la fiche, le rattachement est conservé et la fiche s'ouvre immédiatement |
 | F21 | Clic sur `Marquer comme lu` | Le message disparaît de la carte après succès et reste consultable dans Gmail |
 | F22 | Commandes de la fenêtre des vocaux : fermer, actualiser, rattacher, ouvrir le fil, tout voir dans Gmail et marquer comme lu | Chaque commande cible la bonne action ; les liens Gmail utilisent `/mail/u/0/#all/<identifiant>` et `/mail/u/0/#label/Historique_OVH`, sans erreur 404 liée au compte ou à l'ancien libellé |
+| F23 | Fenêtre des vocaux sur ordinateur et mobile | Jusqu'à 980 px sur ordinateur, les quatre actions d'un message tiennent sur une ligne ; sur mobile, elles restent lisibles sur deux colonnes |
+| F24 | Connexion, actualisation, retour sur l'application et passage d'une minute | La liste est rafraîchie sans doublon d'appel ; les cinq audios les plus récents sont préchargés successivement, partagés avec le clic `Écouter` et ne sont jamais marqués comme lus |
 
 ## Procédure d'exécution
 

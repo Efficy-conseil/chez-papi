@@ -678,8 +678,9 @@ body {
 }
 
 /* ── MESSAGES VOCAUX ── */
-.voicemail-modal-box {
-  width: min(680px, calc(100vw - 32px));
+.modal-box.voicemail-modal-box {
+  width: min(980px, calc(100vw - 32px));
+  max-width: min(980px, calc(100vw - 32px));
   max-height: min(82vh, 760px);
   overflow: hidden;
 }
@@ -729,7 +730,23 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.voicemail-head-actions {
   flex-wrap: wrap;
+}
+
+.voicemail-actions {
+  align-items: stretch;
+  flex-wrap: nowrap;
+}
+
+.voicemail-actions > * {
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: center;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .voicemail-head-actions .btn-secondary {
@@ -898,8 +915,9 @@ body {
 }
 
 @media (max-width: 640px) {
-  .voicemail-modal-box {
+  .modal-box.voicemail-modal-box {
     width: 100%;
+    max-width: 100%;
     max-height: 88dvh;
   }
 

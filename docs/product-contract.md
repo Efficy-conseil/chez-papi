@@ -268,7 +268,7 @@ Consultation depuis le dashboard :
 - La boîte source est exclusivement `demande.chezpapimaisongourmande@gmail.com`. Le backend vérifie le profil Gmail effectif et refuse une autre boîte, notamment un compte personnel.
 - Le dashboard affiche uniquement les messages `Historique_OVH` encore marqués `UNREAD`, puis vérifie à nouveau leur expéditeur et leur objet ou corps avant de les exposer.
 - Gmail reste l'historique complet. Le dashboard ne supprime, ne déplace et ne modifie aucun libellé Make ; l'action explicite `Marquer comme lu` retire seulement le libellé système `UNREAD`.
-- L'audio joint est chargé à la demande. Le backend récupère directement les octets de la pièce jointe avec GmailApp puis produit un Base64 standard, sans décoder la chaîne Base64URL de l'API Gmail ; le frontend le confie directement au lecteur natif sous forme de source `data:`. L'audio n'est jamais conservé au-delà de la session de page.
+- L'audio joint est préparé à l'avance pour les cinq vocaux non lus les plus récents, successivement et sans les marquer comme lus ; les suivants sont chargés à la demande. Le backend récupère directement les octets de la pièce jointe avec GmailApp puis produit un Base64 standard, sans décoder la chaîne Base64URL de l'API Gmail ; le frontend le confie directement au lecteur natif sous forme de source `data:`. L'audio n'est jamais conservé au-delà de la session de page.
 - La transcription native visible dans Gmail peut être affichée dans le dashboard. Elle n'est pas utilisée pour la qualification métier Make lorsque l'audio est disponible.
 - Seul le rattachement exact à une ligne identifie une `Demande traiteur` dans le dashboard. Un message simplement archivé dans `Historique_OVH` sans fiche associée est présenté comme `Personnel / hors activité`, ce qui évite de transformer les appels d'essai ou techniques en demandes commerciales.
 - Le rattachement à une demande utilise `gmail_message_id`, `VOXIST-<gmail_message_id>` ou le journal idempotent Make. Un rapprochement approximatif n'est jamais effectué par l'interface.
@@ -406,7 +406,7 @@ Comportement attendu :
 
 - Afficher les demandes actives dans le dashboard et le pipeline.
 - Afficher les sept indicateurs de l'accueil dans une rangée fluide, sans regroupement ni étirement : les cartes conservent une largeur stable et reviennent automatiquement à la ligne lorsque l'espace manque.
-- Afficher le nombre de messages vocaux OVH non lus dans l'indicateur `Vocaux à écouter`. Son activation ouvre une fenêtre dédiée permettant l'écoute différée dans le lecteur natif, le rattachement puis l'ouverture de la demande exacte, l'ouverture du fil Gmail par `/mail/u/0/#all/<identifiant>` ou du libellé `Historique_OVH`, et le marquage explicite comme lu.
+- Afficher et actualiser automatiquement toutes les minutes, à la connexion et au retour sur l'application, le nombre de messages vocaux OVH non lus dans l'indicateur `Vocaux à écouter`. Son activation ouvre une fenêtre dédiée élargie sur ordinateur, permettant l'écoute préchargée dans le lecteur natif, le rattachement puis l'ouverture de la demande exacte, l'ouverture du fil Gmail par `/mail/u/0/#all/<identifiant>` ou du libellé `Historique_OVH`, et le marquage explicite comme lu.
 - Afficher toutes les demandes dans `Historique`, avec filtres par date/année/trimestre.
 - Afficher les dates au format français.
 - Une synchronisation frontend doit s'arrêter après 30 secondes et afficher une erreur exploitable au lieu de bloquer indéfiniment l'interface.

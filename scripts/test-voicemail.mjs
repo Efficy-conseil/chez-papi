@@ -220,6 +220,15 @@ assert.equal(
 );
 assert.match(frontendSource, /<audio class="voicemail-audio" controls playsinline/);
 assert.doesNotMatch(frontendSource, /Chrome ne reconnaît|Chrome tarde/);
+assert.match(frontendSource, /const VOICEMAIL_PREFETCH_LIMIT = 5/);
+assert.match(frontendSource, /setInterval\(refreshVoicemailsInBackground, 60 \* 1000\)/);
+assert.match(frontendSource, /window\.addEventListener\('focus', refreshVoicemailsInBackground\)/);
+assert.match(frontendSource, /document\.addEventListener\('visibilitychange'/);
+
+const frontendStyles = readFileSync('chez-papi/styles.css', 'utf8');
+assert.match(frontendStyles, /\.modal-box\.voicemail-modal-box\s*\{[\s\S]*?width: min\(980px, calc\(100vw - 32px\)\)[\s\S]*?max-width: min\(980px, calc\(100vw - 32px\)\)/);
+assert.match(frontendStyles, /\.voicemail-actions\s*\{\s*align-items: stretch;\s*flex-wrap: nowrap;/);
+assert.match(frontendStyles, /@media \(max-width: 640px\)[\s\S]*?\.modal-box\.voicemail-modal-box\s*\{[\s\S]*?max-width: 100%/);
 
 const gmailRootStart = frontendSource.indexOf("const VOICEMAIL_GMAIL_ROOT");
 const gmailUrlEnd = frontendSource.indexOf('\nfunction voicemailStateMarkup', gmailRootStart);
