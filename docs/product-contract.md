@@ -150,7 +150,7 @@ Déclencheur : Gmail nouveaux emails.
 - `count = 0` signifie nouveau message non connu.
 - Pour les e-mails directs, un fil Gmail déjà connu ne compte comme doublon que si l'adresse expéditeur correspond exactement à l'adresse de la demande. Un fil seul n'est jamais une identité client.
 - Les expéditeurs transactionnels `@…brevosend.com` sont exclus avant toute création ou mise à jour et classés dans `Hors_Scope_Make`.
-- Exception importante : pour Wix, Voxist et OVH Répondeur, `checkDuplicate` ne doit vérifier que l'identifiant préfixé construit avec `gmail_message_id`, jamais `gmail_thread_id`. Gmail peut regrouper plusieurs formulaires Wix distincts ou plusieurs messages vocaux dans un même fil.
+- Exception importante : pour Wix, Voxist et OVH, `checkDuplicate` ne doit vérifier que l'identifiant préfixé construit avec `gmail_message_id`, jamais `gmail_thread_id`. Gmail peut regrouper plusieurs formulaires Wix distincts ou plusieurs messages vocaux dans un même fil.
 
 Contrainte critique :
 
@@ -252,7 +252,7 @@ Comportement attendu :
 - Sans pièce jointe audio, la transcription OVH du corps sert uniquement de solution de secours et suit la même extraction structurée et les mêmes règles de qualification métier que Voxist.
 - Les rattachements existants priorisent le numéro appelant, puis les indices nom, date, lieu, convives et type d'événement, avec refus explicite des rapprochements ambigus.
 - Une création OVH utilise `Téléphone`, n'envoie aucun accusé et conserve les mêmes règles de statut, de date, de nom inconnu, de relance et de reprise JSON que Voxist.
-- Les messages traités sont déplacés vers le libellé Make historique `Historique_Voxist`, afin de réutiliser l'identifiant Gmail déjà configuré. Le filtre Gmail `OVH Répondeur` permet de distinguer l'origine OVH sans masquer le message de l'Inbox avant Make.
+- Les messages OVH traités ou déjà connus sont classés dans le libellé unique `Historique_OVH`. Make appelle l'action backend `archiveOvhVoicemail`, qui ajoute ce libellé, retire `INBOX` et conserve `UNREAD`.
 - Un message personnel, vide, silencieux ou hors périmètre est envoyé vers `Hors_Scope_Make` sans création de demande.
 - Un message déjà traité est archivé explicitement sans seconde écriture.
 
@@ -260,17 +260,17 @@ Contraintes anti-régression :
 
 - `no-reply@ovh.fr` est exclu des routes Email direct et relance email.
 - Les routes Voxist, Wix, Email direct et Tally restent structurellement inchangées, à l'exception des exclusions explicites nécessaires pour empêcher OVH d'entrer dans Email direct.
-- La qualification OVH reste assurée dans le blueprint Make. Le backend Apps Script accède à Gmail uniquement pour la consultation authentifiée depuis le dashboard, la lecture de l'audio et le marquage comme lu.
+- La qualification OVH reste assurée dans le blueprint Make. Le backend Apps Script ajoute `Historique_OVH` à la demande de Make, puis l'utilise pour la consultation authentifiée depuis le dashboard, la lecture de l'audio et le marquage comme lu.
 - Le scénario OVH ne doit être importé et activé qu'après un `Run once` concluant avec un vrai e-mail OVH et sa pièce jointe.
 
 Consultation depuis le dashboard :
 
 - La boîte source est exclusivement `demande.chezpapimaisongourmande@gmail.com`. Le backend vérifie le profil Gmail effectif et refuse une autre boîte, notamment un compte personnel.
-- Le dashboard affiche uniquement les messages `no-reply@ovh.fr` encore marqués `UNREAD` et vérifie à nouveau l'objet ou le corps avant de les exposer.
+- Le dashboard affiche uniquement les messages `Historique_OVH` encore marqués `UNREAD`, puis vérifie à nouveau leur expéditeur et leur objet ou corps avant de les exposer.
 - Gmail reste l'historique complet. Le dashboard ne supprime, ne déplace et ne modifie aucun libellé Make ; l'action explicite `Marquer comme lu` retire seulement le libellé système `UNREAD`.
 - L'audio joint est chargé à la demande et n'est jamais stocké dans le navigateur au-delà de la session de page.
 - La transcription native visible dans Gmail peut être affichée dans le dashboard. Elle n'est pas utilisée pour la qualification métier Make lorsque l'audio est disponible.
-- `Historique_Voxist` ou le rattachement exact à une ligne identifient une demande traiteur ; `Hors_Scope_Make` identifie un message personnel ou hors activité ; les autres messages restent en `Analyse en cours`.
+- `Historique_OVH` ou le rattachement exact à une ligne identifient une demande traiteur ; `Hors_Scope_Make` identifie un message personnel ou hors activité ; les autres messages restent en `Analyse en cours`.
 - Le rattachement à une demande utilise `gmail_message_id`, `VOXIST-<gmail_message_id>` ou le journal idempotent Make. Un rapprochement approximatif n'est jamais effectué par l'interface.
 - Make archive les messages en retirant `INBOX`, mais doit conserver leur état non lu afin qu'ils restent visibles dans cette interface jusqu'à l'action de l'utilisatrice.
 
@@ -435,7 +435,7 @@ Contraintes :
   - les messages vocaux `no-reply@ovh.fr` dont l'objet commence par `Message vocal du`
   - `notifications@wix-forms.com`
   - emails clients directs probables
-- Les filtres newsletter doivent exclure explicitement Voxist, OVH Répondeur et Wix si leurs templates contiennent `ouvrir dans le navigateur` ou équivalent.
+- Les filtres newsletter doivent exclure explicitement Voxist, OVH et Wix si leurs templates contiennent `ouvrir dans le navigateur` ou équivalent.
 - Les filtres newsletter excluent également `from:invitations.mailinblack.com` pour préserver les invitations nécessitant une authentification. Le filtre dédié leur applique uniquement `Authentification_À_traiter` ; ne pas appliquer rétroactivement ces filtres aux conversations existantes.
 - `Hors_Scope_Gmail` doit rester séparé de `Hors_Scope_Make` pour identifier qui a classé l'email.
 
@@ -443,7 +443,7 @@ Contraintes :
 
 - Wix traité -> `Historique_Wix`
 - Voxist traité -> `Historique_Voxist`
-- OVH traité -> `Historique_Voxist` et libellé d'origine `OVH Répondeur`
+- OVH traité -> `Historique_OVH`
 - Email direct traité -> `Historique_Email`
 - Hors scope Make -> `Hors_Scope_Make`
 - Hors scope Gmail -> `Hors_Scope_Gmail`

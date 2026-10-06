@@ -30,7 +30,8 @@ const MAKE_FOLLOWUP_TOKEN = "cp_make_followup_2026_06";
 const MAKE_ERROR_DELAY_MS = 20000;
 const DEFAULT_ROW_HEIGHT_PX = 20;
 const VOICEMAIL_MAX_RESULTS = 30;
-const VOICEMAIL_QUERY = 'from:no-reply@ovh.fr is:unread {subject:"Message vocal du" "Vous avez reçu un message vocal provenant du numéro"}';
+const VOICEMAIL_HISTORY_LABEL = 'Historique_OVH';
+const VOICEMAIL_QUERY = 'label:Historique_OVH is:unread';
 const VOICEMAIL_MAX_AUDIO_BYTES = 12 * 1024 * 1024;
 const VOICEMAIL_GMAIL_ACCOUNT = 'demande.chezpapimaisongourmande@gmail.com';
 let DELAY_MAKE_ERRORS_FOR_HTTP_TIMEOUT = false;
@@ -196,7 +197,7 @@ function doPost(e) {
     action = String(body.action || 'action_inconnue');
     const auth = body.auth || { user: body.user, pass: body.pass };
     const isMakeFollowup = (
-      (body.action === 'updateThreadFollowup' || body.action === 'updateWixFollowup' || body.action === 'updateExistingDemandFollowup' || body.action === 'checkDuplicate' || body.action === 'upsertWixDemand' || body.action === 'createMakeDemand' || body.action === 'mergeWixDuplicateDemand' || body.action === 'mergeVoxistDuplicateDemand') &&
+      (body.action === 'updateThreadFollowup' || body.action === 'updateWixFollowup' || body.action === 'updateExistingDemandFollowup' || body.action === 'checkDuplicate' || body.action === 'upsertWixDemand' || body.action === 'createMakeDemand' || body.action === 'mergeWixDuplicateDemand' || body.action === 'mergeVoxistDuplicateDemand' || body.action === 'archiveOvhVoicemail') &&
       body.make_token === MAKE_FOLLOWUP_TOKEN
     );
     if (!isMakeFollowup && !checkAuth(auth.user, auth.pass)) {
@@ -207,6 +208,7 @@ function doPost(e) {
     if (body.action === 'listVoicemails') return listUnreadVoicemails();
     if (body.action === 'getVoicemailAudio') return getVoicemailAudio(body.message_id);
     if (body.action === 'markVoicemailRead') return markVoicemailRead(body.message_id);
+    if (body.action === 'archiveOvhVoicemail') return archiveOvhVoicemail(body.message_id);
     if (body.action === 'add')    return withDocumentLock(function() { return addRow(body.row || {}, body.options || {}); });
     if (body.action === 'update') return withDocumentLock(function() { return updateRowById(body.id_demande, body.fields || {}); });
     if (body.action === 'updateThreadFollowup') return withDocumentLock(function() { return updateThreadFollowup(body.gmail_thread_id, body.fields || {}, body.options || {}); });
@@ -331,6 +333,7 @@ function listRows() {
 
 function listUnreadVoicemails() {
   ensureVoicemailMailbox();
+  const voicemailLabelId = getGmailLabelIdByName(VOICEMAIL_HISTORY_LABEL);
   const response = Gmail.Users.Messages.list('me', {
     q: VOICEMAIL_QUERY,
     maxResults: VOICEMAIL_MAX_RESULTS,
@@ -345,14 +348,14 @@ function listUnreadVoicemails() {
   refs.forEach(function(ref) {
     const message = Gmail.Users.Messages.get('me', ref.id, { format: 'full' });
     const bodyText = extractGmailMessageText(message.payload || {});
-    if (!isOvhVoicemailMessage(message, bodyText)) return;
+    if (!isManagedOvhVoicemail(message, bodyText, voicemailLabelId)) return;
 
     const labels = (message.labelIds || []).map(function(id) {
       return labelNamesById[id] || id;
     });
     const association = demandAssociations[String(message.id || '')] || null;
     const audioPart = findVoicemailAudioPart(message.payload || {});
-    const classification = association || labels.indexOf('Historique_Voxist') !== -1
+    const classification = association || labels.indexOf(VOICEMAIL_HISTORY_LABEL) !== -1
       ? 'professionnel'
       : (labels.indexOf('Hors_Scope_Make') !== -1 ? 'personnel' : 'analyse');
     const internalDate = Number(message.internalDate || 0);
@@ -380,10 +383,11 @@ function listUnreadVoicemails() {
 
 function getVoicemailAudio(messageId) {
   ensureVoicemailMailbox();
+  const voicemailLabelId = getGmailLabelIdByName(VOICEMAIL_HISTORY_LABEL);
   const id = validateGmailMessageId(messageId);
   const message = Gmail.Users.Messages.get('me', id, { format: 'full' });
   const bodyText = extractGmailMessageText(message.payload || {});
-  if (!isOvhVoicemailMessage(message, bodyText)) throw new Error('Message vocal OVH introuvable');
+  if (!isManagedOvhVoicemail(message, bodyText, voicemailLabelId)) throw new Error('Message vocal OVH introuvable');
 
   const audioPart = findVoicemailAudioPart(message.payload || {});
   if (!audioPart) throw new Error('Aucun fichier audio disponible pour ce message');
@@ -411,13 +415,26 @@ function getVoicemailAudio(messageId) {
 
 function markVoicemailRead(messageId) {
   ensureVoicemailMailbox();
+  const voicemailLabelId = getGmailLabelIdByName(VOICEMAIL_HISTORY_LABEL);
+  const id = validateGmailMessageId(messageId);
+  const message = Gmail.Users.Messages.get('me', id, { format: 'full' });
+  const bodyText = extractGmailMessageText(message.payload || {});
+  if (!isManagedOvhVoicemail(message, bodyText, voicemailLabelId)) throw new Error('Message vocal OVH introuvable');
+
+  Gmail.Users.Messages.modify({ removeLabelIds: ['UNREAD'] }, 'me', id);
+  return ok({ message_id: id, read: true });
+}
+
+function archiveOvhVoicemail(messageId) {
+  ensureVoicemailMailbox();
   const id = validateGmailMessageId(messageId);
   const message = Gmail.Users.Messages.get('me', id, { format: 'full' });
   const bodyText = extractGmailMessageText(message.payload || {});
   if (!isOvhVoicemailMessage(message, bodyText)) throw new Error('Message vocal OVH introuvable');
 
-  Gmail.Users.Messages.modify({ removeLabelIds: ['UNREAD'] }, 'me', id);
-  return ok({ message_id: id, read: true });
+  const voicemailLabelId = getGmailLabelIdByName(VOICEMAIL_HISTORY_LABEL);
+  Gmail.Users.Messages.modify({ addLabelIds: [voicemailLabelId], removeLabelIds: ['INBOX'] }, 'me', id);
+  return ok({ message_id: id, archived: true, label: VOICEMAIL_HISTORY_LABEL });
 }
 
 function ensureGmailService() {
@@ -533,6 +550,11 @@ function isOvhVoicemailMessage(message, bodyText) {
   );
 }
 
+function isManagedOvhVoicemail(message, bodyText, voicemailLabelId) {
+  return isOvhVoicemailMessage(message, bodyText) &&
+    (message.labelIds || []).indexOf(voicemailLabelId) !== -1;
+}
+
 function extractOvhCaller(subject, bodyText) {
   const combined = String(subject || '') + '\n' + String(bodyText || '');
   const contextual = combined.match(/(?:message vocal du|provenant du num(?:é|e)ro)\s*[:\-]?\s*((?:\+|00)?33[\s.()\-]*\d(?:[\s.()\-]*\d){8}|0\d(?:[\s.()\-]*\d){8})/i);
@@ -597,9 +619,9 @@ function voicemailAudioMimeType(part) {
   return 'audio/mpeg';
 }
 
-function getGmailLabelNamesById() {
+function getGmailLabelNamesById(refresh) {
   const cache = CacheService.getScriptCache();
-  const cached = cache.get('gmail-label-names-v1');
+  const cached = !refresh && cache.get('gmail-label-names-v1');
   if (cached) {
     try { return JSON.parse(cached); } catch (err) {}
   }
@@ -610,6 +632,22 @@ function getGmailLabelNamesById() {
   });
   cache.put('gmail-label-names-v1', JSON.stringify(names), 300);
   return names;
+}
+
+function getGmailLabelIdByName(labelName) {
+  const wanted = String(labelName || '');
+  let labelsById = getGmailLabelNamesById();
+  let labelId = Object.keys(labelsById).find(function(id) {
+    return labelsById[id] === wanted;
+  });
+  if (!labelId) {
+    labelsById = getGmailLabelNamesById(true);
+    labelId = Object.keys(labelsById).find(function(id) {
+      return labelsById[id] === wanted;
+    });
+  }
+  if (!labelId) throw new Error('Libellé Gmail introuvable : ' + wanted);
+  return labelId;
 }
 
 function findVoicemailDemandAssociations(messageIds) {

@@ -21,19 +21,14 @@ def read_filters(filename):
 
 full = read_filters("chez-papi-filters.xml")
 update = read_filters("chez-papi-mailinblack-update.xml")
-ovh_update = read_filters("chez-papi-ovh-update.xml")
 prefix = "tag:mail.google.com,2008:filter:chez-papi-"
 invitation_id = prefix + "authentification-mailinblack"
 newsletter_id = prefix + "newsletters"
 planity_id = prefix + "notifications-planity"
-ovh_id = prefix + "repondeur-ovh"
-assert len(full) == 9, "La configuration complète doit contenir neuf filtres"
+assert len(full) == 8, "La configuration complète doit contenir huit filtres"
 assert set(update) == {invitation_id, newsletter_id, planity_id}, "L'import ciblé doit contenir les trois filtres concernés"
 for key, values in update.items():
     assert values == full[key], f"Import ciblé désynchronisé : {key}"
-assert set(ovh_update) == {newsletter_id, ovh_id}, "L'import OVH ciblé doit contenir le filtre du répondeur et la protection newsletters"
-assert ovh_update[newsletter_id] == full[newsletter_id], "Protection newsletters OVH désynchronisée"
-assert ovh_update[ovh_id] == full[ovh_id], "Import OVH ciblé désynchronisé"
 
 # Aucune action d'archivage, de suppression, de lecture ou de transfert.
 assert full[invitation_id] == {
@@ -46,12 +41,6 @@ assert full[planity_id] == {
     "shouldArchive": "true",
     "label": "Hors_Scope_Gmail",
 }, "Les notifications Planity doivent être archivées hors périmètre"
-
-assert full[ovh_id] == {
-    "from": "no-reply@ovh.fr",
-    "subject": "Message vocal du",
-    "label": "OVH Répondeur",
-}, "Le filtre OVH doit uniquement libeller les messages vocaux"
 
 # Un second filtre peut archiver un message même si le premier le conserve.
 newsletter_query = full[newsletter_id]["hasTheWord"].split()

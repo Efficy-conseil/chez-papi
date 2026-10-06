@@ -98,14 +98,4 @@
     <apps:property name="label" value="Authentification_À_traiter"/>
   </entry>
 
-  <entry>
-    <category term="filter"/>
-    <title>Mail Filter</title>
-    <id>tag:mail.google.com,2008:filter:chez-papi-repondeur-ovh</id>
-    <updated>2026-09-29T21:00:00Z</updated>
-    <content/>
-    <apps:property name="from" value="no-reply@ovh.fr"/>
-    <apps:property name="subject" value="Message vocal du"/>
-    <apps:property name="label" value="OVH Répondeur"/>
-  </entry>
 </feed>

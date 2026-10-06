@@ -17,12 +17,13 @@ function base64Url(value) {
 
 const cacheValues = new Map();
 const modified = [];
+const listQueries = [];
 let profileEmail = 'demande.chezpapimaisongourmande@gmail.com';
 let currentMessage = {
   id: messageId,
   threadId: 'thread-1',
   internalDate: String(Date.UTC(2026, 9, 6, 15, 12)),
-  labelIds: ['UNREAD', 'Label_hors_scope'],
+  labelIds: ['INBOX', 'UNREAD'],
   payload: {
     mimeType: 'multipart/mixed',
     headers: [
@@ -81,7 +82,10 @@ const context = vm.createContext({
     Users: {
       getProfile: () => ({ emailAddress: profileEmail }),
       Messages: {
-        list: () => ({ messages: [{ id: messageId }] }),
+        list: (userId, request) => {
+          listQueries.push({ userId, ...request });
+          return { messages: [{ id: messageId }] };
+        },
         get: () => currentMessage,
         modify: (resource, userId, id) => modified.push({ resource, userId, id }),
         Attachments: {
@@ -89,7 +93,10 @@ const context = vm.createContext({
         }
       },
       Labels: {
-        list: () => ({ labels: [{ id: 'Label_hors_scope', name: 'Hors_Scope_Make' }] })
+        list: () => ({ labels: [
+          { id: 'Label_historique_ovh', name: 'Historique_OVH' },
+          { id: 'Label_hors_scope', name: 'Hors_Scope_Make' }
+        ] })
       }
     }
   }
@@ -99,8 +106,16 @@ vm.runInContext(readFileSync('apps-script/code.gs', 'utf8'), context);
 context.getSheet = () => sheet;
 context.ok = value => value;
 
+const archived = context.archiveOvhVoicemail(messageId);
+assert.equal(archived.label, 'Historique_OVH');
+assert.deepEqual(JSON.parse(JSON.stringify(modified)), [{
+  resource: { addLabelIds: ['Label_historique_ovh'], removeLabelIds: ['INBOX'] }, userId: 'me', id: messageId
+}]);
+currentMessage = { ...currentMessage, labelIds: ['UNREAD', 'Label_historique_ovh'] };
+
 const listed = context.listUnreadVoicemails();
 assert.equal(listed.count, 1);
+assert.equal(listQueries[0].q, 'label:Historique_OVH is:unread');
 assert.equal(listed.messages[0].caller, '06 64 88 67 08');
 assert.equal(listed.messages[0].classification, 'professionnel');
 assert.equal(listed.messages[0].demand.id_demande, 'VOXIST-' + messageId);
@@ -117,7 +132,10 @@ assert.equal(Buffer.from(audio.data_base64, 'base64').toString(), 'MP3!');
 const read = context.markVoicemailRead(messageId);
 assert.equal(read.message_id, messageId);
 assert.equal(read.read, true);
-assert.deepEqual(JSON.parse(JSON.stringify(modified)), [{ resource: { removeLabelIds: ['UNREAD'] }, userId: 'me', id: messageId }]);
+assert.deepEqual(JSON.parse(JSON.stringify(modified)), [
+  { resource: { addLabelIds: ['Label_historique_ovh'], removeLabelIds: ['INBOX'] }, userId: 'me', id: messageId },
+  { resource: { removeLabelIds: ['UNREAD'] }, userId: 'me', id: messageId }
+]);
 
 cacheValues.clear();
 profileEmail = 'compte.personnel@example.com';
@@ -130,6 +148,7 @@ cacheValues.clear();
 profileEmail = 'demande.chezpapimaisongourmande@gmail.com';
 currentMessage = {
   ...currentMessage,
+  labelIds: ['UNREAD', 'Label_historique_ovh'],
   payload: {
     ...currentMessage.payload,
     headers: [

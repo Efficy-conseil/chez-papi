@@ -163,7 +163,7 @@ Une demande `Événement confirmé` dont la date de fin est passée est automati
 - Chaque message présente le numéro appelant français, la date, la transcription disponible et un badge `Demande traiteur`, `Personnel / hors activité` ou `Analyse en cours`.
 - Une association exacte avec la base affiche la demande liée et permet d'ouvrir sa fiche. L'interface ne rapproche jamais un vocal par simple ressemblance.
 - Le bouton `Écouter` charge le MP3 seulement à la demande et affiche un lecteur audio natif. Les URL audio temporaires sont libérées après lecture de la page, disparition du message ou déconnexion.
-- `Ouvrir dans Gmail` ouvre le message dans le compte métier. `Tout voir dans Gmail` ouvre le libellé `OVH Répondeur`, qui conserve l'historique complet.
+- `Ouvrir dans Gmail` ouvre le message dans le compte métier. `Tout voir dans Gmail` ouvre le libellé `Historique_OVH`, qui conserve l'historique complet.
 - `Marquer comme lu` retire uniquement le message de la fenêtre et actualise le compteur après confirmation du backend. Le courriel et ses libellés restent dans Gmail.
 - Une erreur Gmail n'empêche pas le chargement ni l'utilisation des autres fonctions du dashboard.
 

@@ -79,7 +79,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 
 | ID | Entrée | Résultat attendu | Validation |
 |---|---|---|---|
-| O01 | E-mail `no-reply@ovh.fr`, objet `Message vocal du 336...`, avec pièce jointe MP3 et transcription OVH de demande traiteur | Le MP3 est transcrit par OpenAI en priorité ; qualification identique à Voxist, canal `Téléphone`, source IA `OVH`, création unique et archivage dans le libellé téléphonique historique | Automatique + essai Make |
+| O01 | E-mail `no-reply@ovh.fr`, objet `Message vocal du 336...`, avec pièce jointe MP3 et transcription OVH de demande traiteur | Le MP3 est transcrit par OpenAI en priorité ; qualification identique à Voxist, canal `Téléphone`, source IA `OVH`, création unique et archivage dans `Historique_OVH` | Automatique + essai Make |
 | O02 | E-mail OVH avec numéro appelant `33670921031` | Numéro prioritaire normalisé en `06 70 92 10 31`, même si la transcription contient un autre numéro | Automatique + essai Make |
 | O03 | E-mail OVH avec pièce jointe audio et transcription native erronée ou contradictoire | Seule la transcription OpenAI de l'audio atteint l'IA de qualification ; le texte natif OVH ne l'influence pas | Automatique + essai Make |
 | O11 | E-mail OVH sans pièce jointe audio mais avec transcription native exploitable | La transcription du corps sert de secours, puis suit l'extraction structurée et le traitement Voxist | Automatique + essai Make |
@@ -89,11 +89,11 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | O07 | Vocal OVH ambigu entre plusieurs demandes actives | Aucune modification ni création ; le message reste disponible pour résolution humaine | Backend existant + essai Make |
 | O08 | E-mail OVH de 0 seconde ou message personnel hors périmètre | Aucun dossier créé ; aucune transcription audio pour 0 seconde ; archivage dans `Hors_Scope_Make` | Automatique + essai Make |
 | O09 | Notification commerciale ou administrative envoyée par `no-reply@ovh.fr`, sans objet ni corps de message vocal | Aucune route OVH, Voxist, Email direct ou relance commerciale | Automatique + essai Make |
-| O10 | Rejeu des scénarios Wix, Voxist, Email direct et Tally après ajout d'OVH | Résultats inchangés ; OVH est explicitement exclu des routes Email génériques et les nouvelles actions Gmail du backend restent réservées au dashboard authentifié | Automatique + essai Make |
-| O12 | Message OVH traité par Make mais pas encore écouté dans le dashboard | `INBOX` est retiré, le libellé `Historique_Voxist` ou `Hors_Scope_Make` est appliqué, mais `UNREAD` reste présent | Essai Make + dashboard |
+| O10 | Rejeu des scénarios Wix, Voxist, Email direct et Tally après ajout d'OVH | Résultats inchangés ; OVH est explicitement exclu des routes Email génériques et l'action `archiveOvhVoicemail` reste réservée à Make avec son jeton dédié | Automatique + essai Make |
+| O12 | Message OVH traité par Make mais pas encore écouté dans le dashboard | `INBOX` est retiré, le libellé `Historique_OVH` est appliqué, mais `UNREAD` reste présent ; le backend le liste alors pour l'écoute | Essai Make + dashboard |
 | O13 | Backend Apps Script autorisé avec un compte Gmail personnel | La liste et toute action audio/lecture sont refusées ; aucun message personnel n'est exposé | Backend automatique |
 | O14 | E-mail OVH réel contenant `Voici la transcription de ce dernier :` et un horodatage | Le dashboard affiche seulement la transcription utile, sans avertissement automatique ni horodatage | Backend automatique |
-| O15 | Action `Marquer comme lu` depuis le dashboard | Seul `UNREAD` est retiré ; l'e-mail, l'audio et les libellés `OVH Répondeur`, `Historique_Voxist` ou `Hors_Scope_Make` sont conservés | Backend automatique + essai Gmail |
+| O15 | Action `Marquer comme lu` depuis le dashboard | Seul `UNREAD` est retiré ; l'e-mail, l'audio et le libellé `Historique_OVH` sont conservés | Backend automatique + essai Gmail |
 
 ## Email direct
 

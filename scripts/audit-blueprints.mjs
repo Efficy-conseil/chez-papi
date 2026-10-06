@@ -282,8 +282,13 @@ const retryModules = new Map([
   [115, 'checkDuplicate'],
   [124, 'updateExistingDemandFollowup'],
   [127, 'createMakeDemand'],
+  [129, 'archiveOvhVoicemail'],
+  [130, 'archiveOvhVoicemail'],
   [140, 'updateExistingDemandFollowup'],
-  [143, 'createMakeDemand']
+  [143, 'createMakeDemand'],
+  [145, 'archiveOvhVoicemail'],
+  [147, 'archiveOvhVoicemail'],
+  [150, 'archiveOvhVoicemail']
 ]);
 const appsScriptModuleIds = [...retryModules.keys()].sort((a, b) => a - b);
 const appsScriptModules = mainModules
@@ -714,7 +719,17 @@ const oldVoxistReferences = [7, 11, 13, 14, 15, 16, 19, 21, 28, 61, 62, 63, 64, 
 oldVoxistReferences.forEach(id => {
   assert(!new RegExp(`(?<![0-9])${id}\\.`).test(ovhRouteSerialized), `la route OVH référence encore le module Voxist ${id}`);
 });
-assert(moduleById(mainModules, 150).mapper?.to === 'Label_5869457419717567046', 'doublon OVH vers le mauvais libellé historique');
+[
+  129, 130, 145, 147, 150
+].forEach(id => {
+  const archiveModule = moduleById(mainModules, id);
+  const body = JSON.parse(archiveModule.mapper?.data || '{}');
+  assert(archiveModule.module === 'http:ActionSendData', `archivage OVH ${id} non confié au backend`);
+  assert(body.action === 'archiveOvhVoicemail', `archivage OVH ${id} hors de Historique_OVH`);
+  assert(body.message_id === '{{1.id}}', `message Gmail absent de l’archivage OVH ${id}`);
+});
+assert(ovhRouteSerialized.includes('Historique_OVH'), 'la route OVH ne cible pas Historique_OVH');
+assert(!ovhRouteSerialized.includes('Historique_Voxist'), 'la route OVH cible encore Historique_Voxist');
 
 const voxistTranscriptionAi = moduleById(mainModules, 21);
 const voxistPrefilterTerms = (voxistTranscriptionAi.filter?.conditions || [])

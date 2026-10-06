@@ -76,6 +76,8 @@ requireText('chez-papi/app.js', 'function openVoicemailModal(');
 requireText('chez-papi/app.js', "'Aucun vocal à écouter'");
 requireText('chez-papi/app.js', 'function markVoicemailRead(');
 requireText('apps-script/code.gs', "const VOICEMAIL_GMAIL_ACCOUNT = 'demande.chezpapimaisongourmande@gmail.com';");
+requireText('apps-script/code.gs', "const VOICEMAIL_HISTORY_LABEL = 'Historique_OVH';");
+requireText('apps-script/code.gs', 'function archiveOvhVoicemail(');
 requireText('apps-script/code.gs', 'function authorizeVoicemailGmailAccess()');
 requireText('apps-script/appsscript.json', 'https://www.googleapis.com/auth/gmail.modify');
 requireText('chez-papi/app.js', 'function hasClientMessage(e)');

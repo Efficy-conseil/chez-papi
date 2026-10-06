@@ -79,6 +79,13 @@ Pour Tally, le déclencheur est instantané : le seuil global d'erreurs ne suffi
 - Ajout du filtre Gmail ciblé `OVH Répondeur`, sans archivage ni marquage comme lu. La route Make continue à récupérer le message dans l'Inbox.
 - Aucun changement du backend, du frontend ou du blueprint Tally.
 
+## Libellé unique OVH — 06/10/2026
+
+- Le filtre Gmail `OVH Répondeur` est retiré : la détection de la source reste assurée par Make, sur l'expéditeur et le contenu du message vocal.
+- Les archives OVH passent par l'action backend `archiveOvhVoicemail`, qui applique `Historique_OVH`, retire `INBOX` et conserve `UNREAD`.
+- Le dashboard interroge exclusivement les vocaux `Historique_OVH` non lus ; aucun second libellé de source n'est conservé.
+- Le nouveau libellé est résolu par son nom par le backend, afin que le blueprint reste importable sans identifiant Gmail figé.
+
 La route n'est pas active : le blueprint doit être importé dans un scénario Make distinct et désactivé, puis testé en `Run once` avec un vrai e-mail OVH avant bascule.
 
 ## Limites nécessitant un essai Make

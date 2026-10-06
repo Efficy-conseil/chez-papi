@@ -1,24 +1,18 @@
 # Filtres Gmail
 
-Dernière mise à jour : 29/09/2026.
+Dernière mise à jour : 06/10/2026.
 
 Ce fichier contient la configuration cible à appliquer manuellement dans Gmail. Gmail permet de tester le critère avant de créer le filtre ; cette vérification est obligatoire pour les filtres 4, 5, 6 et 9.
 
-Le fichier complet prêt à importer est `gmail_filters/chez-papi-filters.xml` (neuf filtres). Pour ajouter les protections Mailinblack et Planity à une configuration existante, utiliser uniquement `gmail_filters/chez-papi-mailinblack-update.xml` (trois filtres). Pour ajouter le répondeur OVH, utiliser `gmail_filters/chez-papi-ovh-update.xml` (le filtre OVH et la version protégée du filtre newsletters).
+Le fichier complet prêt à importer est `gmail_filters/chez-papi-filters.xml` (huit filtres). Pour ajouter les protections Mailinblack et Planity à une configuration existante, utiliser uniquement `gmail_filters/chez-papi-mailinblack-update.xml` (trois filtres).
 
-## Ajout ciblé du répondeur OVH
+## Passage au libellé unique OVH
 
-Le filtre OVH reconnaît uniquement `from:no-reply@ovh.fr subject:"Message vocal du"`. Il applique le libellé `OVH Répondeur` sans archiver le message, sans le marquer comme lu et sans le transférer. Le message reste donc dans l'Inbox du compte surveillé par Make, actuellement `demande.chezpapimaisongourmande@gmail.com`.
+Les vocaux OVH ne reçoivent plus de libellé à leur arrivée. Make les reconnaît directement avec `from:no-reply@ovh.fr` et l'objet ou le corps de message vocal. Une fois traités, il appelle le backend pour appliquer `Historique_OVH`, retirer `INBOX` et conserver `UNREAD`.
 
-Pour préparer une boîte Gmail déjà configurée :
+Pour une boîte déjà configurée, créer le libellé `Historique_OVH`, puis supprimer manuellement le filtre Gmail qui applique `OVH Répondeur`. Ne pas créer de filtre de remplacement. Conserver l'exclusion `-from:no-reply@ovh.fr` dans le filtre newsletters : elle laisse les vocaux OVH disponibles pour Make.
 
-1. Tester le critère dans la recherche Gmail et vérifier qu'il retourne uniquement des messages vocaux OVH.
-2. Importer `gmail_filters/chez-papi-ovh-update.xml` depuis `Paramètres` > `Filtres et adresses bloquées`.
-3. Créer les deux filtres sans les appliquer aux conversations existantes.
-4. Supprimer uniquement l'ancienne version du filtre « Newsletters hors sources métier », celle qui ne contient pas `-from:no-reply@ovh.fr` ; l'import ne la remplace pas automatiquement.
-5. Vérifier que le libellé `OVH Répondeur` existe et qu'un prochain message test reste dans la boîte de réception.
-
-L'import du filtre et du blueprint Make reste manuel. Aucun changement n'est actif tant que ces imports et le `Run once` n'ont pas été confirmés.
+Les anciens vocaux OVH classés dans `Historique_Voxist` doivent être reclassés vers `Historique_OVH` après vérification de leur expéditeur. L'import et l'activation du blueprint Make restent manuels ; aucun changement de scénario n'est actif avant un `Run once` concluant.
 
 ## Mise à jour Mailinblack et Planity sur une configuration existante
 
@@ -48,11 +42,11 @@ La correction cible les invitations émises depuis `invitations.mailinblack.com`
 
 1. Ouvrir Gmail sur ordinateur, puis `Paramètres` > `Voir tous les paramètres` > `Filtres et adresses bloquées`.
 2. En bas de la page, cliquer sur `Importer des filtres`.
-3. Sélectionner `gmail_filters/chez-papi-filters.xml`, puis créer les neuf filtres proposés (installation complète seulement ; pour une boîte déjà configurée, suivre la mise à jour ciblée ci-dessus).
+3. Sélectionner `gmail_filters/chez-papi-filters.xml`, puis créer les huit filtres proposés (installation complète seulement ; pour une boîte déjà configurée, suivre la mise à jour ciblée ci-dessus).
 4. Vérifier que `support@efficy-conseil.fr` est toujours une adresse de transfert validée dans Gmail.
 5. Supprimer ensuite les anciens filtres indiqués dans la section « Filtres à supprimer ou remplacer » : l'import ne les remplace pas automatiquement.
 
-Ne pas cocher l'application aux conversations existantes lors de l'import. Les libellés `0 - Récap_Quotidien`, `Alerte_Make`, `Hors_Scope_Gmail` et `Authentification_À_traiter` doivent exister dans le compte.
+Ne pas cocher l'application aux conversations existantes lors de l'import. Les libellés `0 - Récap_Quotidien`, `Alerte_Make`, `Hors_Scope_Gmail`, `Authentification_À_traiter` et `Historique_OVH` doivent exister dans le compte.
 
 ## Configuration cible
 
@@ -122,7 +116,7 @@ Critère :
 
 Actions : ignorer la boîte de réception ; appliquer `Hors_Scope_Gmail`.
 
-Les termes trop génériques `promotion`, `offre spéciale` et `publicité` sont supprimés : ils peuvent apparaître dans une demande client légitime. Les sources métier, dont Voxist et OVH Répondeur, ainsi que les invitations Mailinblack sont exclues explicitement. `noreply@planity.com` est également exclu de ce filtre de contenu afin d'être traité par le filtre dédié 5.
+Les termes trop génériques `promotion`, `offre spéciale` et `publicité` sont supprimés : ils peuvent apparaître dans une demande client légitime. Les sources métier, dont Voxist et OVH, ainsi que les invitations Mailinblack sont exclues explicitement. `noreply@planity.com` est également exclu de ce filtre de contenu afin d'être traité par le filtre dédié 5.
 
 ### 7. Newsletter METRO
 
@@ -144,16 +138,6 @@ from:invitations.mailinblack.com
 
 Action : appliquer uniquement `Authentification_À_traiter`. Ne pas archiver, supprimer, transférer ni marquer comme lu. Ces invitations peuvent signaler qu'un email envoyé attend l'authentification de son expéditeur avant sa délivrance. La validation reste manuelle ; aucune réponse automatique ni ouverture automatique du lien n'est prévue.
 
-### 9. Messages vocaux OVH
-
-Critère :
-
-```text
-from:no-reply@ovh.fr subject:"Message vocal du"
-```
-
-Action : appliquer uniquement `OVH Répondeur`. Ne pas archiver et ne pas marquer comme lu afin que Make puisse récupérer le message.
-
 ## Filtres à supprimer ou remplacer
 
 - Remplacer les deux anciens filtres Make « erreurs » et « crédits » par le filtre 2.
@@ -162,10 +146,11 @@ Action : appliquer uniquement `OVH Répondeur`. Ne pas archiver et ne pas marque
 - Ajouter le filtre 5 pour les messages Planity ; il ne remplace ni ne modifie les conversations existantes.
 - Supprimer le filtre général basé sur `facture`, `reçu`, `paiement`, `prélèvement`, `échéance` ou `invoice`. Ces mots appartiennent aussi à de vraies conversations commerciales. Créer ensuite des filtres par expéditeur connu pour les factures réellement hors périmètre.
 - Conserver le filtre METRO sous la forme du filtre 7.
+- Supprimer le filtre OVH qui applique `OVH Répondeur` ; Make détecte directement les vocaux, puis le backend leur applique `Historique_OVH` après traitement.
 
 ## Ordre d'application
 
-1. Pour une installation complète, créer les neuf filtres sans appliquer les actions aux conversations existantes. Pour les mises à jour ciblées Mailinblack, Planity ou OVH sur une configuration existante, suivre les procédures en début de document.
+1. Pour une installation complète, créer les huit filtres sans appliquer les actions aux conversations existantes. Pour les mises à jour ciblées Mailinblack et Planity sur une configuration existante, suivre les procédures en début de document.
 2. Tester les critères 4, 5 et 6 dans la barre de recherche Gmail et vérifier qu'aucune demande Wix, Voxist ou client n'apparaît.
 3. Supprimer les anciens filtres remplacés.
 4. Envoyer un email de test pour chaque source métier et vérifier qu'il reste visible pour Make.
