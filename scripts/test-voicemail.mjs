@@ -199,6 +199,8 @@ assert.equal(
   false,
   'le frontend ne doit plus décoder manuellement la chaîne Base64'
 );
+assert.match(frontendSource, /<audio class="voicemail-audio" controls playsinline/);
+assert.doesNotMatch(frontendSource, /Chrome ne reconnaît|Chrome tarde/);
 
 const gmailRootStart = frontendSource.indexOf("const VOICEMAIL_GMAIL_ROOT");
 const gmailUrlEnd = frontendSource.indexOf('\nfunction voicemailStateMarkup', gmailRootStart);

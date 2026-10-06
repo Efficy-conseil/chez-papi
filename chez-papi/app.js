@@ -1010,11 +1010,11 @@ function waitForVoicemailAudio(audio, timeoutMs = 12000) {
     };
     const onError = () => {
       cleanup();
-      reject(new Error('Chrome ne reconnaît pas le format de ce fichier audio'));
+      reject(new Error('Le navigateur ne reconnaît pas le format de ce fichier audio'));
     };
     const timer = setTimeout(() => {
       cleanup();
-      reject(new Error('Le fichier audio a été reçu mais Chrome tarde à le préparer'));
+      reject(new Error('Le fichier audio a été reçu mais le navigateur tarde à le préparer'));
     }, timeoutMs);
     audio.addEventListener('loadedmetadata', onReady, { once: true });
     audio.addEventListener('canplay', onReady, { once: true });
@@ -1034,7 +1034,7 @@ async function loadVoicemailAudio(messageId, button) {
   }
   button.disabled = true;
   button.textContent = 'Chargement…';
-  wrap.innerHTML = '<div class="voicemail-audio-status" role="status">Téléchargement du message vocal…</div><audio class="voicemail-audio" controls preload="metadata" hidden>Votre navigateur ne peut pas lire ce message vocal.</audio>';
+  wrap.innerHTML = '<div class="voicemail-audio-status" role="status">Téléchargement du message vocal…</div><audio class="voicemail-audio" controls playsinline preload="metadata" hidden>Votre navigateur ne peut pas lire ce message vocal.</audio>';
   const audio = wrap.querySelector('audio');
   try {
     let audioSource = voicemailAudioSources.get(id);
