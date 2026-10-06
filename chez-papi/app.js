@@ -840,8 +840,11 @@ function voicemailGmailUrl(message) {
 function renderVoicemails() {
   const list = document.getElementById('voicemail-list');
   const count = document.getElementById('voicemail-count');
-  if (!list || !count) return;
-  count.textContent = String(voicemailMessages.length);
+  const kpiCount = document.getElementById('kpi-voicemails-val');
+  const messageCount = String(voicemailMessages.length);
+  if (count) count.textContent = messageCount;
+  if (kpiCount) kpiCount.textContent = messageCount;
+  if (!list) return;
   if (!voicemailMessages.length) {
     list.innerHTML = '<div class="voicemail-empty">Aucun nouveau message vocal.</div>';
     return;
@@ -906,9 +909,25 @@ async function loadVoicemails(options = {}) {
     if (!options.silent || !voicemailMessages.length) {
       list.innerHTML = `<div class="voicemail-error">${safeText(err.message || 'Messages vocaux indisponibles')}</div>`;
       const count = document.getElementById('voicemail-count');
+      const kpiCount = document.getElementById('kpi-voicemails-val');
       if (count) count.textContent = '—';
+      if (kpiCount) kpiCount.textContent = '—';
     }
   }
+}
+
+function openVoicemailModal() {
+  const modal = document.getElementById('voicemail-modal');
+  if (!modal) return;
+  renderVoicemails();
+  modal.style.display = 'flex';
+  modal.querySelector('.modal-close')?.focus();
+  if (!voicemailMessages.length) loadVoicemails();
+}
+
+function closeVoicemailModal() {
+  const modal = document.getElementById('voicemail-modal');
+  if (modal) modal.style.display = 'none';
 }
 
 function base64AudioUrl(dataBase64, mimeType) {
@@ -970,6 +989,7 @@ function openVoicemailDemand(demandId) {
     showNotification('Cette demande n’est pas disponible dans le dashboard', 'error');
     return;
   }
+  closeVoicemailModal();
   openEventModal(demand._row);
 }
 
@@ -2393,6 +2413,11 @@ document.getElementById('event-form').addEventListener('input', e => {
 });
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
+  const voicemailModal = document.getElementById('voicemail-modal');
+  if (voicemailModal?.style.display !== 'none') {
+    closeVoicemailModal();
+    return;
+  }
   const duplicateModal = document.getElementById('duplicate-modal');
   if (duplicateModal?.style.display !== 'none') {
     closeDuplicateModal();
@@ -3332,7 +3357,7 @@ if (savedUser && savedPass) {
 
 window.ChezPapi = {
   SheetsAPI, showPanel, toggleSidebar, showNotification, loadData, openEventModal, closeEventModal, deleteCurrentEvent, showKpiModal,
-  loadVoicemails, loadVoicemailAudio, markVoicemailRead, openVoicemailDemand,
+  loadVoicemails, openVoicemailModal, closeVoicemailModal, loadVoicemailAudio, markVoicemailRead, openVoicemailDemand,
   renderHistorique, setHistoriqueFilter, applyHistoriqueDateRange, exportHistoriqueCSV,
   switchHistTab,
   renderAgenda, agendaPrevMonth, agendaNextMonth, agendaGoToday,

@@ -404,7 +404,8 @@ La description fonctionnelle détaillée du frontend se trouve dans `docs/fronte
 Comportement attendu :
 
 - Afficher les demandes actives dans le dashboard et le pipeline.
-- Afficher sur l'accueil les messages vocaux OVH non lus, permettre l'écoute différée, l'ouverture de la demande exacte ou de Gmail, et le marquage explicite comme lu.
+- Regrouper les sept indicateurs de l'accueil par intention : `Nouveaux` (nouvelles demandes, messages reçus, vocaux à écouter), `À faire` (à rappeler, devis à préparer) et `En attente` (réponses et événements confirmés).
+- Afficher le nombre de messages vocaux OVH non lus dans l'indicateur `Vocaux à écouter`. Son activation ouvre une fenêtre dédiée permettant l'écoute différée, l'ouverture de la demande exacte ou de Gmail, et le marquage explicite comme lu.
 - Afficher toutes les demandes dans `Historique`, avec filtres par date/année/trimestre.
 - Afficher les dates au format français.
 - Une synchronisation frontend doit s'arrêter après 30 secondes et afficher une erreur exploitable au lieu de bloquer indéfiniment l'interface.

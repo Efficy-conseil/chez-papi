@@ -156,27 +156,25 @@ Une demande `Événement confirmé` dont la date de fin est passée est automati
 
 ### 5.1.2 Messages vocaux OVH
 
-- Une carte placée sous la recherche globale affiche uniquement les messages OVH non lus de `demande.chezpapimaisongourmande@gmail.com`.
+- L'indicateur `Vocaux à écouter`, dans le groupe `Nouveaux`, affiche le nombre de messages OVH non lus de `demande.chezpapimaisongourmande@gmail.com`.
+- Un clic ouvre une fenêtre dédiée contenant la liste des vocaux. La fermeture de cette fenêtre ramène à l'accueil sans modifier les autres indicateurs.
 - Le compteur et la liste sont chargés après la connexion, actualisés avec les données principales et rafraîchissables indépendamment.
 - Chaque message présente le numéro appelant français, la date, la transcription disponible et un badge `Demande traiteur`, `Personnel / hors activité` ou `Analyse en cours`.
 - Une association exacte avec la base affiche la demande liée et permet d'ouvrir sa fiche. L'interface ne rapproche jamais un vocal par simple ressemblance.
 - Le bouton `Écouter` charge le MP3 seulement à la demande et affiche un lecteur audio natif. Les URL audio temporaires sont libérées après lecture de la page, disparition du message ou déconnexion.
 - `Ouvrir dans Gmail` ouvre le message dans le compte métier. `Tout voir dans Gmail` ouvre le libellé `OVH Répondeur`, qui conserve l'historique complet.
-- `Marquer comme lu` retire uniquement le message de cette carte après confirmation du backend. Le courriel et ses libellés restent dans Gmail.
+- `Marquer comme lu` retire uniquement le message de la fenêtre et actualise le compteur après confirmation du backend. Le courriel et ses libellés restent dans Gmail.
 - Une erreur Gmail n'empêche pas le chargement ni l'utilisation des autres fonctions du dashboard.
 
 ### 5.2 Indicateurs cliquables
 
-Six indicateurs affichent le nombre de dossiers actifs :
+Sept indicateurs sont organisés selon le type d'action :
 
-- nouvelles demandes ;
-- demandes à rappeler ;
-- demandes en attente de réponse ;
-- messages reçus à traiter ;
-- devis à préparer ;
-- événements confirmés.
+- `Nouveaux` : nouvelles demandes, messages reçus à traiter et vocaux à écouter ;
+- `À faire` : demandes à rappeler et devis à préparer ;
+- `En attente` : demandes en attente de réponse et événements confirmés.
 
-Chaque indicateur ouvre une fenêtre détaillée. Les lignes de cette fenêtre ouvrent la fiche, et le statut peut y être modifié directement. Le détail `À rappeler` affiche également le téléphone ; le détail `En attente de réponse` affiche la colonne `Depuis` avec le nombre de jours écoulés depuis la proposition d'appel ; le nombre est mis en évidence à partir de sept jours. Le détail `Messages reçus` regroupe les demandes dont `relance_a_traiter` est vrai, les trie par date de dernier message décroissante et affiche le dernier message enregistré en entier, sans remplacer leur statut commercial. Le détail `Devis à préparer` affiche le budget.
+Chaque indicateur ouvre une fenêtre détaillée. Les six indicateurs de demandes conservent la même fenêtre, dont les lignes ouvrent la fiche et permettent de modifier directement le statut. `Vocaux à écouter` ouvre sa fenêtre dédiée. Le détail `À rappeler` affiche également le téléphone ; le détail `En attente de réponse` affiche la colonne `Depuis` avec le nombre de jours écoulés depuis la proposition d'appel ; le nombre est mis en évidence à partir de sept jours. Le détail `Messages reçus` regroupe les demandes dont `relance_a_traiter` est vrai, les trie par date de dernier message décroissante et affiche le dernier message enregistré en entier, sans remplacer leur statut commercial. Le détail `Devis à préparer` affiche le budget.
 
 Dans `Messages reçus`, le texte conserve ses retours à la ligne et défile verticalement dans une zone de hauteur limitée, accessible au clavier. Une colonne `Marquer comme traité` propose un bouton par ligne. Lire, sélectionner ou faire défiler le texte, changer le statut ou cliquer sur ce bouton n'ouvre pas la fiche ; le clic sur la date ou le client conserve l'accès à la fiche. Sur mobile, chaque ligne se présente en bloc avec ses libellés, le message occupant toute la largeur.
 
@@ -508,10 +506,10 @@ La fiche en cours d'édition est exclue de cette comparaison.
 - [ ] Déduplication par identifiant.
 - [ ] Dates françaises, plages, années seules et heures.
 - [ ] Cinq sections de navigation sur ordinateur et mobile.
-- [ ] Quatre indicateurs et leurs fenêtres détaillées.
+- [ ] Sept indicateurs regroupés sous `Nouveaux`, `À faire` et `En attente`, avec leurs fenêtres détaillées.
 - [ ] Dernières demandes, demandes en cours et événements confirmés de l'accueil.
 - [ ] Recherche globale : dossiers clos, indices combinés, accents, dates et téléphones, extraits, ouverture de fiche au clavier, affichage mobile, effacement, pagination et actualisation.
-- [ ] Messages vocaux : boîte Gmail métier uniquement, liste des non-lus, transcription OVH, lecture MP3 à la demande et affichage mobile.
+- [ ] Messages vocaux : compteur dans `Nouveaux`, fenêtre dédiée, boîte Gmail métier uniquement, liste des non-lus, transcription OVH, lecture MP3 à la demande et affichage mobile.
 - [ ] Classification des vocaux par libellé Make, ouverture d'une demande liée exacte et absence de rapprochement approximatif.
 - [ ] Marquage d'un vocal comme lu : retrait de la carte sans suppression de l'e-mail ni modification des libellés métier.
 - [ ] Pipeline Entreprise, moins de 7 jours, moins de 30 jours et Autres.
