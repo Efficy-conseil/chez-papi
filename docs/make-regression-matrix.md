@@ -89,7 +89,11 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | O07 | Vocal OVH ambigu entre plusieurs demandes actives | Aucune modification ni création ; le message reste disponible pour résolution humaine | Backend existant + essai Make |
 | O08 | E-mail OVH de 0 seconde ou message personnel hors périmètre | Aucun dossier créé ; aucune transcription audio pour 0 seconde ; archivage dans `Hors_Scope_Make` | Automatique + essai Make |
 | O09 | Notification commerciale ou administrative envoyée par `no-reply@ovh.fr`, sans objet ni corps de message vocal | Aucune route OVH, Voxist, Email direct ou relance commerciale | Automatique + essai Make |
-| O10 | Rejeu des scénarios Wix, Voxist, Email direct et Tally après ajout d'OVH | Résultats inchangés ; OVH est explicitement exclu des routes Email génériques et le backend n'est pas modifié | Automatique + essai Make |
+| O10 | Rejeu des scénarios Wix, Voxist, Email direct et Tally après ajout d'OVH | Résultats inchangés ; OVH est explicitement exclu des routes Email génériques et les nouvelles actions Gmail du backend restent réservées au dashboard authentifié | Automatique + essai Make |
+| O12 | Message OVH traité par Make mais pas encore écouté dans le dashboard | `INBOX` est retiré, le libellé `Historique_Voxist` ou `Hors_Scope_Make` est appliqué, mais `UNREAD` reste présent | Essai Make + dashboard |
+| O13 | Backend Apps Script autorisé avec un compte Gmail personnel | La liste et toute action audio/lecture sont refusées ; aucun message personnel n'est exposé | Backend automatique |
+| O14 | E-mail OVH réel contenant `Voici la transcription de ce dernier :` et un horodatage | Le dashboard affiche seulement la transcription utile, sans avertissement automatique ni horodatage | Backend automatique |
+| O15 | Action `Marquer comme lu` depuis le dashboard | Seul `UNREAD` est retiré ; l'e-mail, l'audio et les libellés `OVH Répondeur`, `Historique_Voxist` ou `Hors_Scope_Make` sont conservés | Backend automatique + essai Gmail |
 
 ## Email direct
 
@@ -163,6 +167,10 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | F13 | Fiche automatique au statut `À vérifier` | Icône `❓` visible dans la fiche, le pipeline et les menus de statut |
 | F14 | Rattachement manuel d'une fiche automatique à une demande existante | Comparaison et conflits visibles, confirmation obligatoire, cible enrichie sans écrasement, messages conservés, source annotée et non supprimée |
 | F15 | Même rattachement manuel rejoué | Aucun doublon de note ou de message ; résultat idempotent |
+| F16 | Accueil connecté avec des messages OVH non lus | Compteur, numéro, date, transcription et classification apparaissent sans bloquer les autres données |
+| F17 | Clic sur `Écouter` | Le MP3 est chargé à la demande et lisible dans le lecteur natif |
+| F18 | Vocal rattaché exactement à une demande | Le bouton ouvre la bonne fiche ; un vocal sans association n'affiche aucun lien de demande |
+| F19 | Clic sur `Marquer comme lu` | Le message disparaît de la carte après succès et reste consultable dans Gmail |
 
 ## Procédure d'exécution
 

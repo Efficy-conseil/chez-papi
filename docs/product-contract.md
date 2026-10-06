@@ -245,7 +245,7 @@ Source :
 Comportement attendu :
 
 - La route OVH est isolée derrière son propre appel `checkDuplicate` et ne dépend pas du résultat anti-doublon général basé sur le fil Gmail.
-- L'identifiant technique reste volontairement `VOXIST-<gmail_message_id>`. Ce préfixe historique désigne le pipeline téléphonique et permet de réutiliser, sans modifier le backend, l'idempotence par message ainsi que la fusion téléphone + date déjà éprouvée. La source extraite par l'IA reste `OVH` et le canal reste `Téléphone`.
+- L'identifiant technique reste volontairement `VOXIST-<gmail_message_id>`. Ce préfixe historique désigne le pipeline téléphonique et permet de réutiliser l'idempotence par message ainsi que la fusion téléphone + date déjà éprouvée. La source extraite par l'IA reste `OVH` et le canal reste `Téléphone`.
 - Le numéro appelant est extrait de la formule `provenant du numéro`, avec prise en charge de `33`, `+33`, `0033` et des numéros français commençant par `0`.
 - Lorsqu'une pièce jointe audio est présente, elle est systématiquement téléchargée et transcrite par OpenAI : la transcription native d'OVH n'est jamais utilisée pour qualifier le message, même si elle paraît exploitable.
 - Sans pièce jointe audio, la transcription OVH du corps sert uniquement de solution de secours et suit la même extraction structurée et les mêmes règles de qualification métier que Voxist.
@@ -259,8 +259,19 @@ Contraintes anti-régression :
 
 - `no-reply@ovh.fr` est exclu des routes Email direct et relance email.
 - Les routes Voxist, Wix, Email direct et Tally restent structurellement inchangées, à l'exception des exclusions explicites nécessaires pour empêcher OVH d'entrer dans Email direct.
-- Le backend Apps Script n'est pas modifié pour prendre en charge OVH ; la compatibilité est assurée dans le blueprint.
+- La qualification OVH reste assurée dans le blueprint Make. Le backend Apps Script accède à Gmail uniquement pour la consultation authentifiée depuis le dashboard, la lecture de l'audio et le marquage comme lu.
 - Le scénario OVH ne doit être importé et activé qu'après un `Run once` concluant avec un vrai e-mail OVH et sa pièce jointe.
+
+Consultation depuis le dashboard :
+
+- La boîte source est exclusivement `demande.chezpapimaisongourmande@gmail.com`. Le backend vérifie le profil Gmail effectif et refuse une autre boîte, notamment un compte personnel.
+- Le dashboard affiche uniquement les messages `no-reply@ovh.fr` encore marqués `UNREAD` et vérifie à nouveau l'objet ou le corps avant de les exposer.
+- Gmail reste l'historique complet. Le dashboard ne supprime, ne déplace et ne modifie aucun libellé Make ; l'action explicite `Marquer comme lu` retire seulement le libellé système `UNREAD`.
+- L'audio joint est chargé à la demande et n'est jamais stocké dans le navigateur au-delà de la session de page.
+- La transcription native visible dans Gmail peut être affichée dans le dashboard. Elle n'est pas utilisée pour la qualification métier Make lorsque l'audio est disponible.
+- `Historique_Voxist` ou le rattachement exact à une ligne identifient une demande traiteur ; `Hors_Scope_Make` identifie un message personnel ou hors activité ; les autres messages restent en `Analyse en cours`.
+- Le rattachement à une demande utilise `gmail_message_id`, `VOXIST-<gmail_message_id>` ou le journal idempotent Make. Un rapprochement approximatif n'est jamais effectué par l'interface.
+- Make archive les messages en retirant `INBOX`, mais doit conserver leur état non lu afin qu'ils restent visibles dans cette interface jusqu'à l'action de l'utilisatrice.
 
 ## Make - Email direct
 
@@ -344,6 +355,9 @@ Actions dashboard avec authentification utilisateur :
 - `add`
 - `update`
 - `delete`
+- `listVoicemails`
+- `getVoicemailAudio`
+- `markVoicemailRead`
 
 Actions Make avec `make_token` :
 
@@ -378,6 +392,7 @@ Contraintes backend :
 - Le backend force `date_evenement` en texte pour éviter les conversions Google Sheets.
 - Le backend force les lignes Google Sheets à 20 px et coupe le retour à la ligne automatique pour éviter les lignes très hautes.
 - La lecture des demandes ne doit jamais reformater toute la feuille ni effectuer d'écriture hors ajout éventuel des colonnes techniques manquantes.
+- Les actions de messagerie vocale nécessitent le service avancé Gmail, le scope `gmail.modify` et une exécution sous le compte `demande.chezpapimaisongourmande@gmail.com`. `authorizeVoicemailGmailAccess` sert à déclencher et vérifier cette autorisation depuis l'éditeur Apps Script.
 
 ## Dashboard frontend
 
@@ -388,6 +403,7 @@ La description fonctionnelle détaillée du frontend se trouve dans `docs/fronte
 Comportement attendu :
 
 - Afficher les demandes actives dans le dashboard et le pipeline.
+- Afficher sur l'accueil les messages vocaux OVH non lus, permettre l'écoute différée, l'ouverture de la demande exacte ou de Gmail, et le marquage explicite comme lu.
 - Afficher toutes les demandes dans `Historique`, avec filtres par date/année/trimestre.
 - Afficher les dates au format français.
 - Une synchronisation frontend doit s'arrêter après 30 secondes et afficher une erreur exploitable au lieu de bloquer indéfiniment l'interface.

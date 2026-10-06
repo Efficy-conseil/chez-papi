@@ -677,6 +677,171 @@ body {
   }
 }
 
+/* ── MESSAGES VOCAUX ── */
+.voicemail-card {
+  border-left: 3px solid var(--gold);
+  margin-bottom: 16px;
+}
+
+.voicemail-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.voicemail-card-head .card-title {
+  justify-content: flex-start;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.voicemail-card-head p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.voicemail-count {
+  display: inline-flex;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 7px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--terracotta);
+  color: #fff;
+  font-size: 12px;
+  letter-spacing: 0;
+}
+
+.voicemail-head-actions,
+.voicemail-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.voicemail-gmail-link {
+  text-decoration: none;
+}
+
+.voicemail-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.voicemail-item {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 13px;
+  background: var(--cream, #fcfaf7);
+}
+
+.voicemail-item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.voicemail-caller {
+  color: var(--brown-dk);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.voicemail-date {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.voicemail-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.voicemail-badge-professionnel {
+  background: #e6f0e3;
+  color: var(--green);
+}
+
+.voicemail-badge-personnel {
+  background: #f3ebe5;
+  color: var(--brown);
+}
+
+.voicemail-badge-analyse {
+  background: #fff2cc;
+  color: #7a5c00;
+}
+
+.voicemail-transcription {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--gold-lt);
+  background: #fff;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.voicemail-demand {
+  margin: 10px 0;
+  color: var(--green);
+  font-size: 12px;
+}
+
+.voicemail-audio {
+  width: 100%;
+  max-width: 520px;
+  margin-top: 10px;
+}
+
+.voicemail-empty,
+.voicemail-error {
+  padding: 16px;
+  border-radius: 6px;
+  background: var(--warm);
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.voicemail-error {
+  color: var(--red-soft);
+}
+
+@media (max-width: 640px) {
+  .voicemail-card-head,
+  .voicemail-item-top {
+    flex-direction: column;
+  }
+
+  .voicemail-head-actions,
+  .voicemail-actions {
+    width: 100%;
+  }
+
+  .voicemail-head-actions .btn-secondary,
+  .voicemail-actions .btn-secondary,
+  .voicemail-actions .btn-primary {
+    flex: 1 1 auto;
+    justify-content: center;
+    text-align: center;
+  }
+}
+
 /* ── KPI STRIP ── */
 .kpi-strip {
   display: grid;

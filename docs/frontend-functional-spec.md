@@ -21,6 +21,7 @@ Le frontend est un tableau de bord de suivi des demandes et prestations d'un tra
 - rechercher, filtrer et exporter l'historique ;
 - analyser l'origine et la conversion des demandes ;
 - ouvrir les ressources Gmail et Google Drive associées ;
+- consulter et écouter les messages vocaux OVH non lus ;
 - déclencher via le backend la création ou la mise à jour d'un événement Google Calendar lorsqu'une demande passe au statut `Événement confirmé`.
 
 Les créations automatiques Wix, Voxist, Email et Tally sont réalisées en amont par Make et Apps Script. Le frontend affiche et modifie le résultat de ces traitements.
@@ -152,6 +153,17 @@ Une demande `Événement confirmé` dont la date de fin est passée est automati
 - Chaque résultat présente client, date d'événement, lieu, statut et extraits des champs correspondants. Un clic ou une activation clavier ouvre la fiche existante sur l'accueil.
 - `Effacer` ou Échap vide la recherche. Sans saisie, les résultats sont masqués et l'accueil conserve ses sections habituelles.
 - Un message explicite accompagne l'absence de résultat. Les synchronisations et modifications actualisent les résultats sans effacer la saisie.
+
+### 5.1.2 Messages vocaux OVH
+
+- Une carte placée sous la recherche globale affiche uniquement les messages OVH non lus de `demande.chezpapimaisongourmande@gmail.com`.
+- Le compteur et la liste sont chargés après la connexion, actualisés avec les données principales et rafraîchissables indépendamment.
+- Chaque message présente le numéro appelant français, la date, la transcription disponible et un badge `Demande traiteur`, `Personnel / hors activité` ou `Analyse en cours`.
+- Une association exacte avec la base affiche la demande liée et permet d'ouvrir sa fiche. L'interface ne rapproche jamais un vocal par simple ressemblance.
+- Le bouton `Écouter` charge le MP3 seulement à la demande et affiche un lecteur audio natif. Les URL audio temporaires sont libérées après lecture de la page, disparition du message ou déconnexion.
+- `Ouvrir dans Gmail` ouvre le message dans le compte métier. `Tout voir dans Gmail` ouvre le libellé `OVH Répondeur`, qui conserve l'historique complet.
+- `Marquer comme lu` retire uniquement le message de cette carte après confirmation du backend. Le courriel et ses libellés restent dans Gmail.
+- Une erreur Gmail n'empêche pas le chargement ni l'utilisation des autres fonctions du dashboard.
 
 ### 5.2 Indicateurs cliquables
 
@@ -431,6 +443,7 @@ La fiche en cours d'édition est exclue de cette comparaison.
 
 - Chargement par l'action backend `list`.
 - Création par `add`, modification par `update`, suppression par `delete`.
+- Les vocaux utilisent `listVoicemails`, `getVoicemailAudio` et `markVoicemailRead` avec la même authentification dashboard.
 - Les requêtes suivent les redirections Google.
 - Une synchronisation silencieuse est exécutée chaque minute lorsque l'application est ouverte et connectée.
 - Les mutations réussies sont diffusées aux autres onglets via `BroadcastChannel`.
@@ -474,6 +487,8 @@ La fiche en cours d'édition est exclue de cette comparaison.
 - Conservation de l'affichage existant en cas d'échec du polling silencieux.
 - Rejet des réponses backend non JSON ou explicitement non autorisées.
 - Interruption d'une synchronisation après 30 secondes avec retrait de l'overlay et affichage d'une erreur.
+- Vérification côté backend que Gmail correspond exactement à `demande.chezpapimaisongourmande@gmail.com` avant toute lecture ou modification d'un vocal.
+- Vérification de l'expéditeur et du contenu OVH avant de retourner l'audio ou de retirer le statut non lu.
 
 ## 14. Limites et points à décider
 
@@ -496,6 +511,9 @@ La fiche en cours d'édition est exclue de cette comparaison.
 - [ ] Quatre indicateurs et leurs fenêtres détaillées.
 - [ ] Dernières demandes, demandes en cours et événements confirmés de l'accueil.
 - [ ] Recherche globale : dossiers clos, indices combinés, accents, dates et téléphones, extraits, ouverture de fiche au clavier, affichage mobile, effacement, pagination et actualisation.
+- [ ] Messages vocaux : boîte Gmail métier uniquement, liste des non-lus, transcription OVH, lecture MP3 à la demande et affichage mobile.
+- [ ] Classification des vocaux par libellé Make, ouverture d'une demande liée exacte et absence de rapprochement approximatif.
+- [ ] Marquage d'un vocal comme lu : retrait de la carte sans suppression de l'e-mail ni modification des libellés métier.
 - [ ] Pipeline Entreprise, moins de 7 jours, moins de 30 jours et Autres.
 - [ ] Badges d'informations manquantes.
 - [ ] Changements rapides de statut dans toutes les vues concernées.
@@ -524,7 +542,7 @@ La fiche en cours d'édition est exclue de cette comparaison.
 - [ ] Messages reçus : texte long intégral, retours à la ligne, sélection et défilement au clavier/tactile, sans ouverture de fiche ; bouton direct, compteur et liste actualisés après succès.
 - [ ] Marquage seul sans Calendar, y compris pour un événement confirmé ; synchronisation Calendar conservée pour les autres modifications.
 
-Les scénarios de concurrence, d'erreur et de routage Calendar du traitement des messages sont automatisés dans `scripts/test-message-handling.mjs`, exécuté par `npm run check`.
+Les scénarios de concurrence, d'erreur et de routage Calendar du traitement des messages sont automatisés dans `scripts/test-message-handling.mjs`. Les contrôles de boîte Gmail dédiée, transcription, audio, rattachement exact et marquage comme lu sont automatisés dans `scripts/test-voicemail.mjs`. Les deux sont exécutés par `npm run check`.
 
 ## 16. Dossier à fournir pour une réimplémentation
 
@@ -532,7 +550,7 @@ Pour reconstruire fidèlement le frontend dans Lovable ou un autre outil, fourni
 
 1. cette spécification ;
 2. `docs/product-contract.md` ;
-3. le schéma des réponses backend `list`, `add`, `update` et `delete` ;
+3. le schéma des réponses backend `list`, `add`, `update`, `delete`, `listVoicemails`, `getVoicemailAudio` et `markVoicemailRead` ;
 4. des captures des cinq sections sur ordinateur et mobile ;
 5. la charte graphique et les icônes ;
 6. des données anonymisées couvrant tous les statuts, canaux et formats de date.
