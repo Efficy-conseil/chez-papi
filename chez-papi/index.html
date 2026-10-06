@@ -27,7 +27,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
 
-<link rel="stylesheet" href="styles.css?v=2.47">
+<link rel="stylesheet" href="styles.css?v=2.48">
 </head>
 
 <body>
@@ -106,15 +106,19 @@
   <button type="button" class="modal-close" onclick="closeVoicemailModal()" aria-label="Fermer">&times;</button>
 </div>
 <div class="modal-bd voicemail-modal-body">
-  <div class="voicemail-modal-intro">
-    <p>Seuls les messages OVH non lus sont affichés ici.</p>
+  <div class="voicemail-toolbar">
+    <p>Messages OVH non lus</p>
     <div class="voicemail-head-actions">
       <button type="button" class="btn-secondary" onclick="loadVoicemails()">Actualiser</button>
       <a class="btn-secondary voicemail-gmail-link" href="https://mail.google.com/mail/u/demande.chezpapimaisongourmande@gmail.com/#label/OVH%20R%C3%A9pondeur" target="_blank" rel="noopener">Tout voir dans Gmail</a>
     </div>
   </div>
   <div id="voicemail-list" class="voicemail-list">
-    <div class="voicemail-empty">Chargement des messages vocaux…</div>
+    <div class="voicemail-state voicemail-state-loading">
+      <span class="voicemail-state-icon" aria-hidden="true">…</span>
+      <strong>Chargement des vocaux</strong>
+      <span>Recherche des nouveaux messages OVH…</span>
+    </div>
   </div>
 </div>
 </div>
@@ -218,63 +222,35 @@
   </div>
 </section>
 
-<div class="kpi-action-groups" aria-label="Actions du tableau de bord">
-<section class="kpi-action-group kpi-action-group-new" aria-labelledby="kpi-group-new-title">
-  <div class="kpi-action-group-title-row">
-    <h3 id="kpi-group-new-title">Nouveaux</h3>
-    <span>À consulter</span>
-  </div>
-  <div class="kpi-action-group-grid">
-    <button type="button" class="kpi-card terra" onclick="showKpiModal('leads')">
-      <span class="kpi-label">Nouvelles demandes</span>
-      <span class="kpi-val" id="kpi-leads-val">—</span>
-    </button>
-    <button type="button" class="kpi-card message" onclick="showKpiModal('messages')">
-      <span class="kpi-label">Messages reçus <span class="kpi-message-star" role="img" aria-label="Demande à traiter" title="Demande à traiter">★</span></span>
-      <span class="kpi-val" id="kpi-messages-val">—</span>
-    </button>
-    <button type="button" class="kpi-card voicemail" onclick="openVoicemailModal()">
-      <span class="kpi-label">Vocaux à écouter</span>
-      <span class="kpi-val" id="kpi-voicemails-val" aria-live="polite">—</span>
-    </button>
-  </div>
-</section>
-
-<div class="kpi-action-groups-lower">
-  <section class="kpi-action-group" aria-labelledby="kpi-group-todo-title">
-    <div class="kpi-action-group-title-row">
-      <h3 id="kpi-group-todo-title">À faire</h3>
-      <span>À traiter</span>
-    </div>
-    <div class="kpi-action-group-grid">
-      <button type="button" class="kpi-card" onclick="showKpiModal('rappel')">
-        <span class="kpi-label">À rappeler</span>
-        <span class="kpi-val" id="kpi-rappel-val">—</span>
-      </button>
-      <button type="button" class="kpi-card" onclick="showKpiModal('devis')">
-        <span class="kpi-label">Devis à préparer</span>
-        <span class="kpi-val" id="kpi-devis-val">—</span>
-      </button>
-    </div>
-  </section>
-
-  <section class="kpi-action-group" aria-labelledby="kpi-group-waiting-title">
-    <div class="kpi-action-group-title-row">
-      <h3 id="kpi-group-waiting-title">En attente</h3>
-      <span>À suivre</span>
-    </div>
-    <div class="kpi-action-group-grid">
-      <button type="button" class="kpi-card blue" onclick="showKpiModal('attente')">
-        <span class="kpi-label">En attente de réponse</span>
-        <span class="kpi-val" id="kpi-attente-val">—</span>
-      </button>
-      <button type="button" class="kpi-card green" onclick="showKpiModal('confirmes')">
-        <span class="kpi-label">Événements confirmés</span>
-        <span class="kpi-val" id="kpi-confirmes-val">—</span>
-      </button>
-    </div>
-  </section>
-</div>
+<div class="kpi-strip" aria-label="Indicateurs du tableau de bord">
+  <button type="button" class="kpi-card terra" onclick="showKpiModal('leads')">
+    <span class="kpi-label">Nouvelles demandes</span>
+    <span class="kpi-val" id="kpi-leads-val">—</span>
+  </button>
+  <button type="button" class="kpi-card message" onclick="showKpiModal('messages')">
+    <span class="kpi-label">Messages reçus <span class="kpi-message-star" role="img" aria-label="Demande à traiter" title="Demande à traiter">★</span></span>
+    <span class="kpi-val" id="kpi-messages-val">—</span>
+  </button>
+  <button type="button" class="kpi-card voicemail" onclick="openVoicemailModal()">
+    <span class="kpi-label">Vocaux à écouter</span>
+    <span class="kpi-val" id="kpi-voicemails-val" aria-live="polite">—</span>
+  </button>
+  <button type="button" class="kpi-card" onclick="showKpiModal('rappel')">
+    <span class="kpi-label">À rappeler</span>
+    <span class="kpi-val" id="kpi-rappel-val">—</span>
+  </button>
+  <button type="button" class="kpi-card" onclick="showKpiModal('devis')">
+    <span class="kpi-label">Devis à préparer</span>
+    <span class="kpi-val" id="kpi-devis-val">—</span>
+  </button>
+  <button type="button" class="kpi-card blue" onclick="showKpiModal('attente')">
+    <span class="kpi-label">En attente de réponse</span>
+    <span class="kpi-val" id="kpi-attente-val">—</span>
+  </button>
+  <button type="button" class="kpi-card green" onclick="showKpiModal('confirmes')">
+    <span class="kpi-label">Événements confirmés</span>
+    <span class="kpi-val" id="kpi-confirmes-val">—</span>
+  </button>
 </div>
 
 <div class="ornement">· · ·</div>
@@ -746,7 +722,7 @@
 
 <script src="statistics.js?v=1.0"></script>
 <script src="search.js?v=1.0"></script>
-<script src="app.js?v=2.47"></script>
+<script src="app.js?v=2.48"></script>
 
 <!-- ── BOTTOM NAVIGATION (mobile uniquement) ── -->
 <nav class="bottom-nav" id="bottom-nav">

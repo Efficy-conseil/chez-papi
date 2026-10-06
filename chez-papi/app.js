@@ -837,6 +837,15 @@ function voicemailGmailUrl(message) {
     : 'https://mail.google.com/mail/u/demande.chezpapimaisongourmande@gmail.com/#label/OVH%20R%C3%A9pondeur';
 }
 
+function voicemailStateMarkup(title, detail, variant = 'empty') {
+  const icon = variant === 'loading' ? '…' : variant === 'error' ? '!' : '✓';
+  return `<div class="voicemail-state voicemail-state-${escAttr(variant)}">
+    <span class="voicemail-state-icon" aria-hidden="true">${icon}</span>
+    <strong>${safeText(title)}</strong>
+    <span>${safeText(detail)}</span>
+  </div>`;
+}
+
 function renderVoicemails() {
   const list = document.getElementById('voicemail-list');
   const count = document.getElementById('voicemail-count');
@@ -845,8 +854,12 @@ function renderVoicemails() {
   if (count) count.textContent = messageCount;
   if (kpiCount) kpiCount.textContent = messageCount;
   if (!list) return;
+  list.classList.toggle('is-filled', voicemailMessages.length > 0);
   if (!voicemailMessages.length) {
-    list.innerHTML = '<div class="voicemail-empty">Aucun nouveau message vocal.</div>';
+    list.innerHTML = voicemailStateMarkup(
+      'Aucun vocal à écouter',
+      'Les nouveaux messages OVH apparaîtront automatiquement ici.'
+    );
     return;
   }
 
@@ -875,14 +888,16 @@ function renderVoicemails() {
         </div>
         <span class="voicemail-badge voicemail-badge-${escAttr(badge.css)}">${safeText(badge.label)}</span>
       </div>
-      ${demandText ? `<div class="voicemail-demand">Rattaché à : ${safeText(demandText)}</div>` : ''}
-      <div class="voicemail-transcription">${safeText(transcription)}</div>
-      <div class="voicemail-audio-wrap" id="voicemail-audio-${escAttr(id)}"></div>
-      <div class="voicemail-actions">
-        ${listenButton}
-        ${demandButton}
-        <a class="btn-secondary voicemail-gmail-link" href="${escAttr(voicemailGmailUrl(message))}" target="_blank" rel="noopener">Ouvrir dans Gmail</a>
-        <button type="button" class="btn-secondary" data-voicemail-id="${escAttr(id)}" onclick="markVoicemailRead(this.dataset.voicemailId, this)">Marquer comme lu</button>
+      <div class="voicemail-item-body">
+        ${demandText ? `<div class="voicemail-demand">Rattaché à : ${safeText(demandText)}</div>` : ''}
+        <div class="voicemail-transcription">${safeText(transcription)}</div>
+        <div class="voicemail-audio-wrap" id="voicemail-audio-${escAttr(id)}"></div>
+        <div class="voicemail-actions">
+          ${listenButton}
+          ${demandButton}
+          <a class="btn-secondary voicemail-gmail-link" href="${escAttr(voicemailGmailUrl(message))}" target="_blank" rel="noopener">Ouvrir dans Gmail</a>
+          <button type="button" class="btn-secondary" data-voicemail-id="${escAttr(id)}" onclick="markVoicemailRead(this.dataset.voicemailId, this)">Marquer comme lu</button>
+        </div>
       </div>
     </article>`;
   }).join('');
@@ -891,7 +906,14 @@ function renderVoicemails() {
 async function loadVoicemails(options = {}) {
   const list = document.getElementById('voicemail-list');
   if (!list || !localStorage.getItem('cp_user')) return;
-  if (!options.silent) list.innerHTML = '<div class="voicemail-empty">Actualisation des messages vocaux…</div>';
+  if (!options.silent) {
+    list.classList.remove('is-filled');
+    list.innerHTML = voicemailStateMarkup(
+      'Actualisation en cours',
+      'Recherche des nouveaux messages OVH…',
+      'loading'
+    );
+  }
   try {
     const result = await SheetsAPI.listVoicemails();
     if (!result?.success) throw new Error(result?.error || 'Impossible de charger les messages vocaux');
@@ -907,7 +929,12 @@ async function loadVoicemails(options = {}) {
   } catch (err) {
     console.error('loadVoicemails:', err);
     if (!options.silent || !voicemailMessages.length) {
-      list.innerHTML = `<div class="voicemail-error">${safeText(err.message || 'Messages vocaux indisponibles')}</div>`;
+      list.classList.remove('is-filled');
+      list.innerHTML = voicemailStateMarkup(
+        'Vocaux momentanément indisponibles',
+        err.message || 'Réessayez dans quelques instants.',
+        'error'
+      );
       const count = document.getElementById('voicemail-count');
       const kpiCount = document.getElementById('kpi-voicemails-val');
       if (count) count.textContent = '—';
