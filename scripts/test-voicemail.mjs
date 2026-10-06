@@ -212,12 +212,14 @@ currentMessage = { ...currentMessage, payload: originalPayload };
 // exposé par GmailApp reste la source de repli pour l'affichage du dashboard.
 gmailAppPlainBody = plainPreview;
 gmailAppHtmlBody = htmlBody;
+const truncatedTranscriptionPreview = `${plainPreview}
+Voici la transcription de ce dernier :`;
 currentMessage = {
   ...currentMessage,
   payload: {
     ...originalPayload,
     parts: [
-      { mimeType: 'text/plain', filename: '', body: { data: base64Url(plainPreview) } },
+      { mimeType: 'text/plain', filename: '', body: { data: base64Url(truncatedTranscriptionPreview) } },
       originalPayload.parts[1]
     ]
   }

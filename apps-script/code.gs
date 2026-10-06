@@ -553,7 +553,7 @@ function decodeGmailBody(data) {
 function bestOvhMessageText(candidates) {
   const usable = candidates.map(cleanVoicemailText).filter(Boolean);
   const transcribed = usable
-    .filter(function(value) { return !!findOvhTranscriptionMarker(value); })
+    .filter(hasUsefulOvhTranscription)
     .sort(function(a, b) {
       return extractOvhTranscription(b).length - extractOvhTranscription(a).length;
     });
@@ -580,7 +580,7 @@ function extractGmailMessageText(payload, messageId) {
   const candidates = plain
     .concat(html.map(htmlToPlainText));
   const apiText = bestOvhMessageText(candidates);
-  if (findOvhTranscriptionMarker(apiText) || !messageId) return apiText;
+  if (hasUsefulOvhTranscription(apiText) || !messageId) return apiText;
 
   try {
     const gmailMessage = GmailApp.getMessageById(String(messageId));
@@ -644,7 +644,7 @@ function extractOvhCaller(subject, bodyText) {
 function findOvhTranscriptionMarker(text) {
   const markers = [
     /voici la transcription de ce dernier\s*[:\-]?\s*/i,
-    /transcription(?: automatique)?(?: du message vocal)?\s*[:\-]?\s*/i,
+    /transcription(?: automatique)?(?: du message vocal)?\s*[:\-]\s*/i,
     /message retranscrit\s*[:\-]?\s*/i
   ];
   for (var i = 0; i < markers.length; i++) {
@@ -652,6 +652,10 @@ function findOvhTranscriptionMarker(text) {
     if (match) return match;
   }
   return null;
+}
+
+function hasUsefulOvhTranscription(text) {
+  return !!findOvhTranscriptionMarker(text) && !!extractOvhTranscription(text);
 }
 
 function extractOvhTranscription(bodyText) {
@@ -662,7 +666,7 @@ function extractOvhTranscription(bodyText) {
   if (marker) {
     transcription = text.substring(marker.index + marker[0].length);
   }
-  if (!transcription) {
+  if (!marker) {
     transcription = text
       .replace(/vous avez reçu un message vocal provenant du num(?:é|e)ro[^\n.]*(?:[.\n]|$)/i, '')
       .replace(/message vocal du[^\n.]*(?:[.\n]|$)/i, '')
