@@ -168,6 +168,42 @@ assert.equal(
 );
 assert.equal(listed.messages[0].has_audio, true);
 
+// Les e-mails OVH réels peuvent fournir un aperçu text/plain tronqué avant la
+// transcription, alors que leur variante HTML contient le texte complet.
+const originalPayload = currentMessage.payload;
+const plainPreview = `Bonjour,
+Vous avez reçu un message vocal provenant du numéro 33664886708 vers votre numéro 0033465011525.
+Vous trouverez, ci-joint, le message de 16 secondes que votre correspondant vous a laissé.`;
+const htmlBody = `<html><body>
+  <p>Bonjour,</p>
+  <p>Vous avez reçu un message vocal provenant du numéro 33664886708 vers votre numéro 0033465011525.</p>
+  <p>Voici la transcription de ce dernier :</p>
+  <div>00:10.740 -&gt; 00:15.840</div>
+  <div>Oui, bonjour, la transcription complète est uniquement dans le HTML.</div>
+  <p>Attention : Cette transcription a été générée automatiquement par une intelligence artificielle.</p>
+</body></html>`;
+currentMessage = {
+  ...currentMessage,
+  payload: {
+    ...originalPayload,
+    parts: [{
+      mimeType: 'multipart/alternative',
+      filename: '',
+      body: {},
+      parts: [
+        { mimeType: 'text/plain', filename: '', body: { data: base64Url(plainPreview) } },
+        { mimeType: 'text/html', filename: '', body: { data: base64Url(htmlBody) } }
+      ]
+    }, originalPayload.parts[1]]
+  }
+};
+const htmlTranscription = context.listUnreadVoicemails();
+assert.equal(
+  htmlTranscription.messages[0].transcription,
+  'Oui, bonjour, la transcription complète est uniquement dans le HTML.'
+);
+currentMessage = { ...currentMessage, payload: originalPayload };
+
 // Un message simplement archivé dans Historique_OVH ne doit pas être présenté
 // comme une demande traiteur sans rattachement exact à une fiche.
 rows[0][0] = 'DEMANDE-1';

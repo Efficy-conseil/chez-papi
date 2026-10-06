@@ -97,6 +97,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | O16 | Vocal `Historique_OVH` sans fiche associée, notamment un appel d'essai ou technique | Badge `Personnel / hors activité`, jamais `Demande traiteur` sur le seul libellé Gmail | Backend automatique + dashboard |
 | O17 | Rattachement manuel d'un vocal non associé à une fiche existante | Association persistée dans le journal idempotent sans écraser `gmail_message_id`, puis accès immédiat à la fiche | Backend automatique + dashboard |
 | O18 | Chargement d'une pièce jointe vocale dont la représentation REST Gmail n'est pas directement exploitable | Le backend ne décode pas cette chaîne : il lit les octets de la pièce jointe via GmailApp et produit un Base64 standard valide pour le lecteur | Backend automatique + dashboard |
+| O19 | E-mail OVH dont la variante texte s'arrête avant la transcription mais dont la variante HTML contient `Voici la transcription de ce dernier :` | Le dashboard sélectionne la variante HTML et affiche uniquement la transcription utile, sans horodatage ni avertissement OVH | Backend automatique + dashboard |
 
 ## Email direct
 

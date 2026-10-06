@@ -567,9 +567,16 @@ function extractGmailMessageText(payload) {
   }
 
   collect(payload || {});
-  if (plain.length) return cleanVoicemailText(plain.join('\n'));
-  if (html.length) return cleanVoicemailText(htmlToPlainText(html.join('\n')));
-  return '';
+  const candidates = plain
+    .map(cleanVoicemailText)
+    .concat(html.map(function(value) { return cleanVoicemailText(htmlToPlainText(value)); }))
+    .filter(Boolean);
+  const transcribed = candidates
+    .filter(function(value) { return !!findOvhTranscriptionMarker(value); })
+    .sort(function(a, b) {
+      return extractOvhTranscription(b).length - extractOvhTranscription(a).length;
+    });
+  return transcribed[0] || candidates[0] || '';
 }
 
 function htmlToPlainText(html) {
@@ -619,21 +626,26 @@ function extractOvhCaller(subject, bodyText) {
   return formatFrenchPhone(contextual[1]);
 }
 
-function extractOvhTranscription(bodyText) {
-  const text = cleanVoicemailText(bodyText);
-  if (!text) return '';
+function findOvhTranscriptionMarker(text) {
   const markers = [
     /voici la transcription de ce dernier\s*[:\-]?\s*/i,
     /transcription(?: automatique)?(?: du message vocal)?\s*[:\-]?\s*/i,
     /message retranscrit\s*[:\-]?\s*/i
   ];
-  let transcription = '';
   for (var i = 0; i < markers.length; i++) {
-    const match = markers[i].exec(text);
-    if (match) {
-      transcription = text.substring(match.index + match[0].length);
-      break;
-    }
+    const match = markers[i].exec(String(text || ''));
+    if (match) return match;
+  }
+  return null;
+}
+
+function extractOvhTranscription(bodyText) {
+  const text = cleanVoicemailText(bodyText);
+  if (!text) return '';
+  let transcription = '';
+  const marker = findOvhTranscriptionMarker(text);
+  if (marker) {
+    transcription = text.substring(marker.index + marker[0].length);
   }
   if (!transcription) {
     transcription = text
@@ -642,8 +654,8 @@ function extractOvhTranscription(bodyText) {
       .replace(/dur(?:é|e)e\s*[:\-]?\s*\d+[^\n]*(?:\n|$)/i, '');
   }
   transcription = transcription
-    .replace(/^(?:\d{1,2}:)?\d{2}(?:[.,]\d{1,3})?\s*-+>\s*(?:\d{1,2}:)?\d{2}(?:[.,]\d{1,3})?\s*/gm, '')
-    .split(/\n(?:attention\s*:|pour écouter|accédez à|cordialement|l'équipe ovh|ovhcloud|nouveau message vocal chez papi)/i)[0]
+    .replace(/^[ \t]*(?:\d{1,2}:)?\d{2}(?:[.,]\d{1,3})?\s*-+>\s*(?:\d{1,2}:)?\d{2}(?:[.,]\d{1,3})?\s*/gm, '')
+    .split(/\n[ \t]*(?:attention\s*:|pour écouter|accédez à|cordialement|l'équipe ovh|ovhcloud|nouveau message vocal chez papi)/i)[0]
     .trim();
   return transcription.substring(0, 4000);
 }
