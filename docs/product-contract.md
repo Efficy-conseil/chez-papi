@@ -268,7 +268,7 @@ Consultation depuis le dashboard :
 - La boîte source est exclusivement `demande.chezpapimaisongourmande@gmail.com`. Le backend vérifie le profil Gmail effectif et refuse une autre boîte, notamment un compte personnel.
 - Le dashboard affiche uniquement les messages `Historique_OVH` encore marqués `UNREAD`, puis vérifie à nouveau leur expéditeur et leur objet ou corps avant de les exposer.
 - Gmail reste l'historique complet. Le dashboard ne supprime, ne déplace et ne modifie aucun libellé Make ; l'action explicite `Marquer comme lu` retire seulement le libellé système `UNREAD`.
-- L'audio joint est chargé à la demande, transmis directement au lecteur natif de Chrome sous forme de source `data:` sans décodage JavaScript intermédiaire, et n'est jamais conservé au-delà de la session de page.
+- L'audio joint est chargé à la demande. Le backend transmet l'encodage Base64URL fourni par Gmail sans le décoder ni le réencoder ; le frontend le normalise puis le confie directement au lecteur natif sous forme de source `data:`. L'audio n'est jamais conservé au-delà de la session de page.
 - La transcription native visible dans Gmail peut être affichée dans le dashboard. Elle n'est pas utilisée pour la qualification métier Make lorsque l'audio est disponible.
 - Seul le rattachement exact à une ligne identifie une `Demande traiteur` dans le dashboard. Un message simplement archivé dans `Historique_OVH` sans fiche associée est présenté comme `Personnel / hors activité`, ce qui évite de transformer les appels d'essai ou techniques en demandes commerciales.
 - Le rattachement à une demande utilise `gmail_message_id`, `VOXIST-<gmail_message_id>` ou le journal idempotent Make. Un rapprochement approximatif n'est jamais effectué par l'interface.

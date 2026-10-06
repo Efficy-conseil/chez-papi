@@ -406,12 +406,14 @@ function getVoicemailAudio(messageId) {
   }
   if (!encoded) throw new Error('Le fichier audio est vide');
 
-  const standardBase64 = Utilities.base64Encode(Utilities.base64DecodeWebSafe(encoded));
   return ok({
     message_id: id,
     filename: String(audioPart.filename || 'message-vocal'),
     mime_type: voicemailAudioMimeType(audioPart),
-    data_base64: standardBase64
+    // Gmail fournit déjà la pièce jointe en Base64URL. La transmettre sans la
+    // décoder évite une conversion serveur fragile ; le lecteur la normalise.
+    data_base64: encoded,
+    data_encoding: 'base64url'
   });
 }
 

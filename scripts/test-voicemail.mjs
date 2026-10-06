@@ -114,7 +114,7 @@ const context = vm.createContext({
         get: () => currentMessage,
         modify: (resource, userId, id) => modified.push({ resource, userId, id }),
         Attachments: {
-          get: () => ({ data: Buffer.from('MP3!').toString('base64url'), size: 4 })
+          get: () => ({ data: Buffer.from([251, 255, 239, 1]).toString('base64url'), size: 4 })
         }
       },
       Labels: {
@@ -171,7 +171,9 @@ assert.equal(relisted.messages[0].demand.id_demande, 'DEMANDE-1');
 
 const audio = context.getVoicemailAudio(messageId);
 assert.equal(audio.mime_type, 'audio/mpeg');
-assert.equal(Buffer.from(audio.data_base64, 'base64').toString(), 'MP3!');
+assert.equal(audio.data_encoding, 'base64url');
+assert.equal(audio.data_base64, Buffer.from([251, 255, 239, 1]).toString('base64url'));
+assert.deepEqual([...Buffer.from(audio.data_base64, 'base64url')], [251, 255, 239, 1]);
 
 const frontendSource = readFileSync('chez-papi/app.js', 'utf8');
 const normalizeStart = frontendSource.indexOf('function normalizeAudioBase64');
