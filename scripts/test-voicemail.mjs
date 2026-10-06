@@ -173,6 +173,22 @@ const audio = context.getVoicemailAudio(messageId);
 assert.equal(audio.mime_type, 'audio/mpeg');
 assert.equal(Buffer.from(audio.data_base64, 'base64').toString(), 'MP3!');
 
+const frontendSource = readFileSync('chez-papi/app.js', 'utf8');
+const normalizeStart = frontendSource.indexOf('function normalizeAudioBase64');
+const normalizeEnd = frontendSource.indexOf('\nfunction base64AudioUrl', normalizeStart);
+assert.ok(normalizeStart >= 0 && normalizeEnd > normalizeStart, 'normalisation Base64 audio introuvable');
+const frontendContext = vm.createContext({});
+vm.runInContext(frontendSource.slice(normalizeStart, normalizeEnd), frontendContext);
+const standardAudio = Buffer.from([251, 255, 239, 1]).toString('base64');
+const urlSafeAudio = Buffer.from([251, 255, 239, 1]).toString('base64url');
+assert.equal(frontendContext.normalizeAudioBase64(standardAudio), standardAudio);
+assert.equal(frontendContext.normalizeAudioBase64(urlSafeAudio), standardAudio);
+assert.equal(
+  frontendContext.normalizeAudioBase64(`data:audio/mpeg;base64,\n${urlSafeAudio}`),
+  standardAudio
+);
+assert.throws(() => frontendContext.normalizeAudioBase64('abcde'), /corrompu/);
+
 const read = context.markVoicemailRead(messageId);
 assert.equal(read.message_id, messageId);
 assert.equal(read.read, true);

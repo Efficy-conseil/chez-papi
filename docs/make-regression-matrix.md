@@ -174,7 +174,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | F16 | Accueil connecté avec des messages OVH non lus | Compteur, numéro, date, transcription et classification apparaissent sans bloquer les autres données |
 | F17 | Clic sur `Écouter` | Le MP3 est chargé à la demande et lisible dans le lecteur natif |
 | F18 | Vocal rattaché exactement à une demande | Le bouton ouvre la bonne fiche ; un vocal sans association n'affiche aucun lien de demande |
-| F19 | Clic sur `Écouter` avec audio valide, invalide ou lent | Le lecteur devient utilisable après décodage ; un format invalide ou un délai anormal produit une erreur explicite et permet de réessayer |
+| F19 | Clic sur `Écouter` avec audio Base64 standard, Base64URL sans remplissage, invalide ou lent | Les variantes valides sont normalisées et le lecteur devient utilisable ; un contenu corrompu ou un délai anormal produit une erreur explicite et permet de réessayer |
 | F20 | Vocal non associé puis choix manuel d'une fiche | La recherche permet de sélectionner la fiche, le rattachement est conservé et la fiche s'ouvre immédiatement |
 | F21 | Clic sur `Marquer comme lu` | Le message disparaît de la carte après succès et reste consultable dans Gmail |
 

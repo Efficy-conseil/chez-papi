@@ -962,9 +962,23 @@ function closeVoicemailModal() {
   if (modal) modal.style.display = 'none';
 }
 
-function base64AudioUrl(dataBase64, mimeType) {
-  const encoded = String(dataBase64 || '').replace(/\s/g, '');
+function normalizeAudioBase64(dataBase64) {
+  let encoded = String(dataBase64 || '')
+    .replace(/^data:[^,]*;base64,/i, '')
+    .replace(/[\s\u200B-\u200D\uFEFF]/g, '')
+    .replace(/-/g, '+')
+    .replace(/_/g, '/');
   if (!encoded) throw new Error('Le fichier audio reçu est vide');
+  if (!/^[A-Za-z0-9+/]*={0,2}$/.test(encoded) || encoded.length % 4 === 1) {
+    throw new Error('Le fichier audio reçu est corrompu');
+  }
+  const missingPadding = encoded.length % 4;
+  if (missingPadding) encoded += '='.repeat(4 - missingPadding);
+  return encoded;
+}
+
+function base64AudioUrl(dataBase64, mimeType) {
+  const encoded = normalizeAudioBase64(dataBase64);
   const binary = atob(encoded);
   const chunks = [];
   const chunkSize = 512 * 1024;
