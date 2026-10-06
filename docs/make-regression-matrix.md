@@ -181,6 +181,9 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | F22 | Commandes de la fenêtre des vocaux : fermer, actualiser, rattacher, ouvrir le fil, tout voir dans Gmail et marquer comme lu | Chaque commande cible la bonne action ; les liens Gmail utilisent `/mail/u/0/#all/<identifiant>` et `/mail/u/0/#label/Historique_OVH`, sans erreur 404 liée au compte ou à l'ancien libellé |
 | F23 | Fenêtre des vocaux sur ordinateur et mobile | Jusqu'à 980 px sur ordinateur, les quatre actions d'un message tiennent sur une ligne ; sur mobile, elles restent lisibles sur deux colonnes |
 | F24 | Connexion, actualisation, retour sur l'application et passage d'une minute | La liste est rafraîchie sans doublon d'appel ; les cinq audios les plus récents sont préchargés successivement, partagés avec le clic `Écouter` et ne sont jamais marqués comme lus |
+| F25 | Plusieurs lecteurs ouverts puis lancement d'un autre vocal | Le dernier vocal lancé joue seul ; les autres sont mis en pause à leur position courante, que le lancement provienne du bouton applicatif ou du lecteur natif |
+| F26 | Plusieurs lecteurs ouverts, défilement jusqu'au dernier message puis actualisation silencieuse pendant une écoute | Le dernier bouton reste entièrement accessible ; la pastille et les données sont actualisées sans remplacer les lecteurs, sans perdre leur position et sans interrompre le vocal actif |
+| F27 | Ouverture d'une session avec chargement principal lent | La pastille vocale affiche immédiatement un état de chargement puis son nombre, sans attendre la fin du chargement des demandes |
 
 ## Procédure d'exécution
 

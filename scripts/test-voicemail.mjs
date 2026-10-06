@@ -224,11 +224,21 @@ assert.match(frontendSource, /const VOICEMAIL_PREFETCH_LIMIT = 5/);
 assert.match(frontendSource, /setInterval\(refreshVoicemailsInBackground, 60 \* 1000\)/);
 assert.match(frontendSource, /window\.addEventListener\('focus', refreshVoicemailsInBackground\)/);
 assert.match(frontendSource, /document\.addEventListener\('visibilitychange'/);
+assert.match(frontendSource, /document\.addEventListener\('play',[\s\S]*?pauseOtherVoicemailAudios\(audio\)[\s\S]*?}, true\)/);
+assert.match(frontendSource, /const preserveOpenView = options\.silent && isVoicemailModalOpen\(\)/);
+
+const loadDataStart = frontendSource.indexOf('async function loadData()');
+const initialVoicemailLoad = frontendSource.indexOf("loadVoicemails({ silent: true, initial: !voicemailMessages.length })", loadDataStart);
+const mainDataLoad = frontendSource.indexOf('const result = await SheetsAPI.load()', loadDataStart);
+assert.ok(loadDataStart >= 0 && initialVoicemailLoad > loadDataStart && initialVoicemailLoad < mainDataLoad, 'le compteur vocal doit commencer à charger avant les demandes');
 
 const frontendStyles = readFileSync('chez-papi/styles.css', 'utf8');
 assert.match(frontendStyles, /\.modal-box\.voicemail-modal-box\s*\{[\s\S]*?width: min\(980px, calc\(100vw - 32px\)\)[\s\S]*?max-width: min\(980px, calc\(100vw - 32px\)\)/);
 assert.match(frontendStyles, /\.voicemail-actions\s*\{\s*align-items: stretch;\s*flex-wrap: nowrap;/);
 assert.match(frontendStyles, /@media \(max-width: 640px\)[\s\S]*?\.modal-box\.voicemail-modal-box\s*\{[\s\S]*?max-width: 100%/);
+assert.match(frontendStyles, /\.modal-box\.voicemail-modal-box\s*\{[\s\S]*?display: flex;[\s\S]*?flex-direction: column;/);
+assert.match(frontendStyles, /\.voicemail-modal-body\s*\{[\s\S]*?flex: 1 1 auto;[\s\S]*?min-height: 0;[\s\S]*?overflow-y: auto;/);
+assert.match(frontendStyles, /\.voicemail-toolbar\s*\{[\s\S]*?position: sticky;[\s\S]*?top: 0;/);
 
 const gmailRootStart = frontendSource.indexOf("const VOICEMAIL_GMAIL_ROOT");
 const gmailUrlEnd = frontendSource.indexOf('\nfunction voicemailStateMarkup', gmailRootStart);

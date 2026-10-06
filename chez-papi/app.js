@@ -870,13 +870,21 @@ function voicemailStateMarkup(title, detail, variant = 'empty') {
   </div>`;
 }
 
-function renderVoicemails() {
-  const list = document.getElementById('voicemail-list');
+function updateVoicemailCounters(value = voicemailMessages.length) {
+  const messageCount = String(value);
   const count = document.getElementById('voicemail-count');
   const kpiCount = document.getElementById('kpi-voicemails-val');
-  const messageCount = String(voicemailMessages.length);
   if (count) count.textContent = messageCount;
   if (kpiCount) kpiCount.textContent = messageCount;
+}
+
+function isVoicemailModalOpen() {
+  return document.getElementById('voicemail-modal')?.style.display === 'flex';
+}
+
+function renderVoicemails() {
+  const list = document.getElementById('voicemail-list');
+  updateVoicemailCounters();
   if (!list) return;
   list.classList.toggle('is-filled', voicemailMessages.length > 0);
   if (!voicemailMessages.length) {
@@ -931,6 +939,7 @@ async function loadVoicemails(options = {}) {
   const list = document.getElementById('voicemail-list');
   if (!list || !localStorage.getItem('cp_user')) return;
   if (voicemailLoadPromise) return voicemailLoadPromise;
+  if (options.initial && !voicemailMessages.length) updateVoicemailCounters('…');
   if (!options.silent) {
     list.classList.remove('is-filled');
     list.innerHTML = voicemailStateMarkup(
@@ -950,7 +959,9 @@ async function loadVoicemails(options = {}) {
       }
     });
     voicemailMessages = Array.isArray(result.messages) ? result.messages : [];
-    renderVoicemails();
+    const preserveOpenView = options.silent && isVoicemailModalOpen();
+    if (preserveOpenView) updateVoicemailCounters();
+    else renderVoicemails();
     scheduleVoicemailPrefetch();
     return voicemailMessages;
   })();
@@ -989,6 +1000,19 @@ function closeVoicemailModal() {
   const modal = document.getElementById('voicemail-modal');
   if (modal) modal.style.display = 'none';
 }
+
+function pauseOtherVoicemailAudios(activeAudio) {
+  document.querySelectorAll('#voicemail-modal audio').forEach(audio => {
+    if (audio !== activeAudio && !audio.paused) audio.pause();
+  });
+}
+
+document.addEventListener('play', event => {
+  const audio = event.target;
+  if (audio instanceof HTMLMediaElement && audio.matches('#voicemail-modal audio')) {
+    pauseOtherVoicemailAudios(audio);
+  }
+}, true);
 
 function normalizeAudioBase64(dataBase64) {
   let encoded = String(dataBase64 || '')
@@ -1099,6 +1123,7 @@ async function loadVoicemailAudio(messageId, button) {
   if (!id || !wrap || !button) return;
   const existingAudio = wrap.querySelector('audio');
   if (existingAudio?.src) {
+    pauseOtherVoicemailAudios(existingAudio);
     existingAudio.currentTime = 0;
     existingAudio.play().catch(() => {});
     return;
@@ -1387,6 +1412,7 @@ function waitingResponseSinceColor(event) {
 
 async function loadData() {
   if (!CONFIG.SHEETS_URL) { renderAll(); return; }
+  loadVoicemails({ silent: true, initial: !voicemailMessages.length }).catch(() => {});
   setConnectionStatus('loading');
   setLoading(true);
   try {
@@ -1401,7 +1427,6 @@ async function loadData() {
       checkNewEvents(appData);
       requestNotifPermission();
       renderAll();
-      loadVoicemails({ silent: true }).catch(() => {});
 
       // Démarrer le polling en arrière-plan + synchroniser les credentials avec le SW
       syncCredentialsToSW();

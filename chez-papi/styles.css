@@ -679,6 +679,8 @@ body {
 
 /* ── MESSAGES VOCAUX ── */
 .modal-box.voicemail-modal-box {
+  display: flex;
+  flex-direction: column;
   width: min(980px, calc(100vw - 32px));
   max-width: min(980px, calc(100vw - 32px));
   max-height: min(82vh, 760px);
@@ -686,9 +688,12 @@ body {
 }
 
 .voicemail-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
   padding: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .voicemail-toolbar {
@@ -699,6 +704,9 @@ body {
   padding: 12px 20px;
   border-bottom: 1px solid var(--warm);
   background: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 
 .voicemail-toolbar p {
