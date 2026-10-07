@@ -268,13 +268,15 @@ Contraintes anti-régression :
 Consultation depuis le dashboard :
 
 - La boîte source est exclusivement `demande.chezpapimaisongourmande@gmail.com`. Le backend vérifie le profil Gmail effectif et refuse une autre boîte, notamment un compte personnel.
-- Le dashboard affiche uniquement les messages `Historique_OVH` encore marqués `UNREAD`, puis vérifie à nouveau leur expéditeur et leur objet ou corps avant de les exposer.
-- Gmail reste l'historique complet. Le dashboard ne supprime, ne déplace et ne modifie aucun libellé Make ; l'action explicite `Marquer comme lu` retire seulement le libellé système `UNREAD`.
+- Le dashboard affiche les messages `Historique_OVH` encore marqués `UNREAD`, ainsi que les vocaux OVH non lus encore dans la boîte de réception et en attente d’analyse automatique. Il vérifie à nouveau leur expéditeur et leur objet ou corps avant de les exposer.
+- Un vocal en attente affiche la prochaine heure d’analyse automatique, calculée selon les passages planifiés à 6 h, 12 h, 16 h et 21 h, heure de Paris. L’interface ne cite jamais l’outil d’automatisation.
+- Gmail reste l'historique complet. Hormis l’action confirmée `Supprimer` qui place un vocal en attente dans la corbeille, le dashboard ne supprime, ne déplace et ne modifie aucun libellé métier ; l'action explicite `Marquer comme lu` retire seulement le libellé système `UNREAD`.
 - L'audio joint est préparé à l'avance pour les cinq vocaux non lus les plus récents, successivement et sans les marquer comme lus ; les suivants sont chargés à la demande. Un seul vocal joue à la fois : le dernier lancé met les autres en pause en conservant leur position. Le backend récupère directement les octets de la pièce jointe avec GmailApp puis produit un Base64 standard, sans décoder la chaîne Base64URL de l'API Gmail ; le frontend le confie directement au lecteur natif sous forme de source `data:`. L'audio n'est jamais conservé au-delà de la session de page.
 - La transcription native visible dans Gmail est affichée dans le dashboard lorsqu'elle est exploitable. Le backend compare les variantes MIME texte et HTML et, si le service avancé ne fournit que l'aperçu tronqué, relit le corps complet via GmailApp afin de ne pas perdre la transcription. Il retire ensuite les horodatages et l'avertissement OVH. Cette transcription n'est pas utilisée pour la qualification métier Make lorsque l'audio est disponible.
 - Seul le rattachement exact à une ligne identifie une `Demande traiteur` dans le dashboard. Un message simplement archivé dans `Historique_OVH` sans fiche associée est présenté comme `Personnel / hors activité`, ce qui évite de transformer les appels d'essai ou techniques en demandes commerciales.
 - Le rattachement à une demande utilise `gmail_message_id`, `VOXIST-<gmail_message_id>` ou le journal idempotent Make. Un rapprochement approximatif n'est jamais effectué par l'interface.
-- Pour un vocal professionnel non rapproché automatiquement, l'utilisatrice peut choisir explicitement une fiche existante depuis la fenêtre des vocaux. Le backend inscrit cette association dans le journal idempotent sans remplacer le `gmail_message_id` déjà conservé sur la fiche, puis l'interface ouvre immédiatement la demande rattachée.
+- Un vocal encore en attente d’analyse automatique est seulement consultable, écoutable, ouvrable dans Gmail, marquable comme lu ou supprimable ; il ne peut pas être rattaché manuellement. Après son traitement, un vocal professionnel non rapproché automatiquement peut être rattaché explicitement à une fiche existante. Le backend inscrit cette association dans le journal idempotent sans remplacer le `gmail_message_id` déjà conservé sur la fiche, puis l'interface ouvre immédiatement la demande rattachée.
+- L’action explicite `Supprimer` est réservée aux vocaux encore en attente : elle les place dans la corbeille Gmail, les retire immédiatement du dashboard et les exclut de l’analyse automatique. Cette exclusion est conservée 35 jours, afin qu’une restauration manuelle depuis la corbeille ne relance pas l’analyse. Une confirmation est obligatoire avant l’action.
 - Make archive les messages en retirant `INBOX`, mais doit conserver leur état non lu afin qu'ils restent visibles dans cette interface jusqu'à l'action de l'utilisatrice.
 
 ## Make - Email direct
@@ -366,6 +368,7 @@ Actions dashboard avec authentification utilisateur :
 - `listVoicemails`
 - `getVoicemailAudio`
 - `markVoicemailRead`
+- `trashVoicemail`
 
 Actions Make avec `make_token` :
 
@@ -412,7 +415,7 @@ Comportement attendu :
 
 - Afficher les demandes actives dans le dashboard et le pipeline.
 - Afficher les sept indicateurs de l'accueil dans une rangée fluide, sans regroupement ni étirement : les cartes conservent une largeur stable et reviennent automatiquement à la ligne lorsque l'espace manque.
-- Commencer immédiatement le chargement du nombre de messages vocaux OVH non lus dès l'ouverture d'une session, en parallèle du reste du dashboard, puis l'actualiser automatiquement toutes les minutes et au retour sur l'application. Une actualisation silencieuse ne doit jamais reconstruire une fenêtre vocale ouverte ni interrompre un lecteur. Son activation ouvre une fenêtre dédiée élargie sur ordinateur, dont la liste est entièrement défilable, permettant l'écoute préchargée dans le lecteur natif, le rattachement puis l'ouverture de la demande exacte, l'ouverture du fil Gmail par `/mail/u/0/#all/<identifiant>` ou du libellé `Historique_OVH`, et le marquage explicite comme lu.
+- Commencer immédiatement le chargement du nombre de messages vocaux OVH non lus dès l'ouverture d'une session, en parallèle du reste du dashboard, puis l'actualiser automatiquement toutes les minutes et au retour sur l'application. Une actualisation silencieuse ne doit jamais reconstruire une fenêtre vocale ouverte ni interrompre un lecteur. Son activation ouvre une fenêtre dédiée élargie sur ordinateur, dont la liste est entièrement défilable, permettant l'écoute préchargée dans le lecteur natif, le rattachement puis l'ouverture de la demande exacte une fois l’analyse terminée, l’ouverture du fil Gmail par `/mail/u/0/#all/<identifiant>`, le marquage explicite comme lu et la suppression confirmée des vocaux encore en attente.
 - Afficher toutes les demandes dans `Historique`, avec filtres par date/année/trimestre.
 - Afficher les dates au format français.
 - Une synchronisation frontend doit s'arrêter après 30 secondes et afficher une erreur exploitable au lieu de bloquer indéfiniment l'interface.

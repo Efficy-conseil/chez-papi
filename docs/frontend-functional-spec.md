@@ -21,7 +21,7 @@ Le frontend est un tableau de bord de suivi des demandes et prestations d'un tra
 - rechercher, filtrer et exporter l'historique ;
 - analyser l'origine et la conversion des demandes ;
 - ouvrir les ressources Gmail et Google Drive associées ;
-- consulter et écouter les messages vocaux OVH non lus ;
+- consulter, écouter et écarter les messages vocaux non lus ;
 - déclencher via le backend la création ou la mise à jour d'un événement Google Calendar lorsqu'une demande passe au statut `Événement confirmé`.
 
 Les créations automatiques Wix, Voxist, Email et Tally sont réalisées en amont par Make et Apps Script. Le frontend affiche et modifie le résultat de ces traitements.
@@ -156,16 +156,17 @@ Une demande `Événement confirmé` dont la date de fin est passée est automati
 
 ### 5.1.2 Messages vocaux OVH
 
-- L'indicateur `Vocaux à écouter` affiche le nombre de messages OVH non lus de `demande.chezpapimaisongourmande@gmail.com`.
+- L'indicateur `Vocaux à écouter` affiche le nombre de messages vocaux non lus de `demande.chezpapimaisongourmande@gmail.com`, qu’ils aient déjà été analysés ou qu’ils soient encore en attente.
 - Un clic ouvre une fenêtre dédiée contenant la liste des vocaux. La fermeture de cette fenêtre ramène à l'accueil sans modifier les autres indicateurs.
 - Cette fenêtre reprend l'en-tête et les contrôles des autres fenêtres KPI. Sur ordinateur, elle peut atteindre 980 px afin que les quatre actions d'un message restent sur une ligne ; sur mobile, ces actions restent réparties sur deux colonnes. Son en-tête et sa barre d'outils restent fixes tandis que la liste défile dans l'espace restant jusqu'au dernier bouton, quel que soit le nombre de lecteurs ouverts.
 - Le compteur vocal commence à se charger dès que la session est disponible, en parallèle des autres données, puis la liste est actualisée indépendamment toutes les minutes, au retour sur l'onglet ou la fenêtre, et manuellement. Une actualisation silencieuse met à jour les données et la pastille sans reconstruire une fenêtre ouverte ; la liste actualisée est rendue à sa prochaine ouverture. Le bouton `Actualiser` reste l'action explicite pour remplacer immédiatement la liste affichée.
-- Chaque message présente le numéro appelant français, la date, la transcription native disponible et un badge `Demande traiteur`, `Personnel / hors activité` ou `Analyse en cours`. Le backend compare les variantes texte et HTML de l'e-mail OVH ; si le service avancé Gmail ne fournit que l'aperçu tronqué, il relit le corps complet exposé par GmailApp. Il retient la variante qui contient la transcription, puis retire les horodatages et l'avertissement automatique OVH. Le texte générique n'est utilisé que lorsqu'aucune transcription exploitable n'existe.
+- Chaque message présente le numéro appelant français, la date, la transcription native disponible et un badge `Demande traiteur`, `Personnel / hors activité` ou `Analyse automatique à HH:00 aujourd’hui/demain`. Les créneaux d’analyse sont 6 h, 12 h, 16 h et 21 h, heure de Paris. Le backend compare les variantes texte et HTML de l'e-mail OVH ; si le service avancé Gmail ne fournit que l'aperçu tronqué, il relit le corps complet exposé par GmailApp. Il retient la variante qui contient la transcription, puis retire les horodatages et l'avertissement automatique OVH. Le texte générique n'est utilisé que lorsqu'aucune transcription exploitable n'existe.
 - Seule une association exacte avec la base affiche `Demande traiteur`, montre la demande liée et permet d'ouvrir sa fiche. Un message archivé sans association est présenté comme `Personnel / hors activité`.
-- Un vocal sans association propose `Rattacher à une fiche`. L'utilisatrice recherche et choisit explicitement une demande existante ; le rattachement conserve les références Gmail déjà présentes sur la fiche, puis ouvre immédiatement cette fiche.
+- Un vocal déjà analysé sans association propose `Rattacher à une fiche`. L'utilisatrice recherche et choisit explicitement une demande existante ; le rattachement conserve les références Gmail déjà présentes sur la fiche, puis ouvre immédiatement cette fiche. Un vocal en attente est seulement consultable et écoutable : son rattachement est réservé à l’analyse automatique.
 - Le bouton `Écouter` affecte le MP3 directement au lecteur audio natif sous forme de source `data:`. Après chaque actualisation, les cinq vocaux non lus les plus récents sont préchargés silencieusement et successivement dans la mémoire de la session ; un clic partage le téléchargement éventuellement déjà en cours, tandis que les suivants restent chargés à la demande. Ce préchargement ne marque aucun message comme lu. Un seul lecteur peut jouer : toute nouvelle lecture met les autres en pause sans modifier leur position, y compris lorsqu'elle est lancée depuis les commandes natives. Le backend lit les octets de la pièce jointe avec GmailApp et produit un Base64 standard, sans décoder la représentation Base64URL de l'API Gmail ; l'interface normalise la chaîne sans la décoder. Chrome sur ordinateur comme Safari sur iPhone préparent et lisent eux-mêmes le média. Le lecteur reste intégré à la fenêtre sur mobile ; si Safari refuse le démarrage automatique, ses commandes natives permettent de lancer la lecture d'un appui. Un contenu corrompu ou un délai anormal produit une erreur explicite et permet de réessayer ; une source déjà chargée est immédiatement réutilisée.
 - `Ouvrir dans Gmail` ouvre le fil exact depuis son identifiant Gmail avec la route multi-compte stable `/mail/u/0/#all/...`. `Tout voir dans Gmail` ouvre `/mail/u/0/#label/Historique_OVH`, qui conserve l'historique complet.
 - `Marquer comme lu` retire uniquement le message de la fenêtre et actualise le compteur après confirmation du backend. Le courriel et ses libellés restent dans Gmail.
+- Pour un vocal en attente, `Supprimer` demande une confirmation puis l’envoie dans la corbeille Gmail. Il disparaît immédiatement de Chez Papi et reste exclu de l’analyse automatique, même s’il est restauré manuellement depuis la corbeille pendant 35 jours. Cette action n’est pas disponible après analyse.
 - Une erreur Gmail n'empêche pas le chargement ni l'utilisation des autres fonctions du dashboard.
 
 ### 5.2 Indicateurs cliquables
@@ -450,7 +451,7 @@ La fiche en cours d'édition est exclue de cette comparaison.
 
 - Chargement par l'action backend `list`.
 - Création par `add`, modification par `update`, suppression par `delete`.
-- Les vocaux utilisent `listVoicemails`, `getVoicemailAudio` et `markVoicemailRead` avec la même authentification dashboard.
+- Les vocaux utilisent `listVoicemails`, `getVoicemailAudio`, `markVoicemailRead` et `trashVoicemail` avec la même authentification dashboard.
 - Les requêtes suivent les redirections Google.
 - Une synchronisation silencieuse est exécutée chaque minute lorsque l'application est ouverte, connectée et visible. Un onglet masqué suspend cette lecture et se resynchronise lorsqu'il redevient visible.
 - Les demandes de lecture `list` simultanées dans un même onglet partagent la même requête réseau afin qu'une actualisation manuelle, un retour au premier plan et le polling périodique ne surchargent pas le backend.
@@ -558,7 +559,7 @@ Pour reconstruire fidèlement le frontend dans Lovable ou un autre outil, fourni
 
 1. cette spécification ;
 2. `docs/product-contract.md` ;
-3. le schéma des réponses backend `list`, `add`, `update`, `delete`, `listVoicemails`, `getVoicemailAudio` et `markVoicemailRead` ;
+3. le schéma des réponses backend `list`, `add`, `update`, `delete`, `listVoicemails`, `getVoicemailAudio`, `markVoicemailRead` et `trashVoicemail` ;
 4. des captures des cinq sections sur ordinateur et mobile ;
 5. la charte graphique et les icônes ;
 6. des données anonymisées couvrant tous les statuts, canaux et formats de date.

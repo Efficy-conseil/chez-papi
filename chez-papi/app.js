@@ -839,6 +839,10 @@ const SheetsAPI = {
   async markVoicemailRead(message_id) {
     if (!CONFIG.SHEETS_URL) return { error: 'Non configuré' };
     return this.request({ action: 'markVoicemailRead', message_id });
+  },
+  async trashVoicemail(message_id) {
+    if (!CONFIG.SHEETS_URL) return { error: 'Non configuré' };
+    return this.request({ action: 'trashVoicemail', message_id });
   }
 };
 
@@ -856,13 +860,18 @@ let voicemailToLinkId = '';
 const VOICEMAIL_GMAIL_ROOT = 'https://mail.google.com/mail/u/0/';
 
 function voicemailBadge(message) {
+  if (message?.processing_status === 'pending') {
+    const time = String(message.next_analysis_time || '').trim();
+    const day = String(message.next_analysis_day || '').trim();
+    return { label: time ? `Analyse automatique à ${time}${day ? ` ${day}` : ''}` : 'Analyse automatique prévue', css: 'analyse' };
+  }
   if (message?.classification === 'professionnel') {
     return { label: 'Demande traiteur', css: 'professionnel' };
   }
   if (message?.classification === 'personnel') {
     return { label: 'Personnel / hors activité', css: 'personnel' };
   }
-  return { label: 'Analyse en cours', css: 'analyse' };
+  return { label: 'Vocal à vérifier', css: 'analyse' };
 }
 
 function voicemailGmailUrl(message) {
@@ -916,7 +925,10 @@ function renderVoicemails() {
     const demandText = demand
       ? `${demand.nom_client || 'Demande'}${demand.date_evenement ? ` · ${demand.date_evenement}` : ''}${demand.statut ? ` · ${demand.statut}` : ''}`
       : '';
-    const demandButton = demand?.id_demande
+    const isPending = message.processing_status === 'pending';
+    const demandButton = isPending
+      ? ''
+      : demand?.id_demande
       ? `<button type="button" class="btn-secondary" data-demand-id="${escAttr(demand.id_demande)}" onclick="openVoicemailDemand(this.dataset.demandId)">Ouvrir la demande</button>`
       : `<button type="button" class="btn-secondary" data-voicemail-id="${escAttr(id)}" onclick="openVoicemailLinkModal(this.dataset.voicemailId)">Rattacher à une fiche</button>`;
     const listenButton = message.has_audio
@@ -940,6 +952,7 @@ function renderVoicemails() {
           ${demandButton}
           <a class="btn-secondary voicemail-gmail-link" href="${escAttr(voicemailGmailUrl(message))}" target="_blank" rel="noopener">Ouvrir dans Gmail</a>
           <button type="button" class="btn-secondary" data-voicemail-id="${escAttr(id)}" onclick="markVoicemailRead(this.dataset.voicemailId, this)">Marquer comme lu</button>
+          ${isPending ? `<button type="button" class="btn-danger" data-voicemail-id="${escAttr(id)}" onclick="trashVoicemail(this.dataset.voicemailId, this)">Supprimer</button>` : ''}
         </div>
       </div>
     </article>`;
@@ -1274,6 +1287,29 @@ async function markVoicemailRead(messageId, button) {
     button.disabled = false;
     button.textContent = 'Marquer comme lu';
     showNotification(err.message || 'Impossible de marquer ce message comme lu', 'error');
+  }
+}
+
+async function trashVoicemail(messageId, button) {
+  const id = String(messageId || '').trim();
+  if (!id || !button) return;
+  if (!confirm('Supprimer ce message vocal ? Il sera envoyé dans la corbeille Gmail et ne sera pas analysé automatiquement.')) return;
+  button.disabled = true;
+  button.textContent = 'Suppression…';
+  try {
+    const result = await SheetsAPI.trashVoicemail(id);
+    if (!result?.success || !result.trashed) throw new Error(result?.error || 'Le message n’a pas été supprimé');
+    const audioSource = voicemailAudioSources.get(id);
+    releaseVoicemailAudioSource(audioSource);
+    voicemailAudioSources.delete(id);
+    voicemailMessages = voicemailMessages.filter(message => String(message.id || '') !== id);
+    renderVoicemails();
+    broadcastSync();
+    showNotification('Message vocal supprimé', 'success');
+  } catch (err) {
+    button.disabled = false;
+    button.textContent = 'Supprimer';
+    showNotification(err.message || 'Impossible de supprimer ce message vocal', 'error');
   }
 }
 
@@ -3680,7 +3716,7 @@ if (savedUser && savedPass) {
 
 window.ChezPapi = {
   SheetsAPI, showPanel, toggleSidebar, showNotification, loadData, openEventModal, closeEventModal, deleteCurrentEvent, showKpiModal,
-  loadVoicemails, openVoicemailModal, closeVoicemailModal, loadVoicemailAudio, markVoicemailRead, openVoicemailDemand,
+  loadVoicemails, openVoicemailModal, closeVoicemailModal, loadVoicemailAudio, markVoicemailRead, trashVoicemail, openVoicemailDemand,
   openVoicemailLinkModal, closeVoicemailLinkModal, renderVoicemailLinkCandidates, confirmVoicemailLink,
   renderHistorique, setHistoriqueFilter, applyHistoriqueDateRange, exportHistoriqueCSV,
   switchHistTab,

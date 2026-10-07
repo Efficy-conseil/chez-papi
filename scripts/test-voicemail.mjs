@@ -16,7 +16,9 @@ function base64Url(value) {
 }
 
 const cacheValues = new Map();
+const scriptProperties = new Map();
 const modified = [];
+const trashed = [];
 const listQueries = [];
 let profileEmail = 'demande.chezpapimaisongourmande@gmail.com';
 let gmailAppPlainBody = '';
@@ -101,8 +103,26 @@ const context = vm.createContext({
   Utilities: {
     base64DecodeWebSafe(value) { return Buffer.from(String(value), 'base64url'); },
     base64Encode(value) { return Buffer.from(value).toString('base64'); },
+    formatDate(date, timeZone, pattern) {
+      const parts = new Intl.DateTimeFormat('en-GB', {
+        timeZone,
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23'
+      }).formatToParts(date);
+      const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+      return pattern === 'H' ? String(Number(values.hour)) : values.minute;
+    },
     newBlob(value) {
       return { getDataAsString: () => Buffer.from(value).toString('utf8') };
+    }
+  },
+  PropertiesService: {
+    getScriptProperties() {
+      return {
+        getProperty: key => scriptProperties.get(key) || null,
+        setProperty: (key, value) => scriptProperties.set(key, String(value))
+      };
     }
   },
   Gmail: {
@@ -111,10 +131,16 @@ const context = vm.createContext({
       Messages: {
         list: (userId, request) => {
           listQueries.push({ userId, ...request });
-          return { messages: [{ id: messageId }] };
+          const labels = currentMessage.labelIds || [];
+          const isHistoricalQuery = String(request.q || '').includes('label:Historique_OVH');
+          const matches = isHistoricalQuery
+            ? labels.includes('Label_historique_ovh')
+            : labels.includes('INBOX');
+          return { messages: matches ? [{ id: messageId }] : [] };
         },
         get: () => currentMessage,
         modify: (resource, userId, id) => modified.push({ resource, userId, id }),
+        trash: (userId, id) => trashed.push({ userId, id }),
         Attachments: {
           get: () => { throw new Error('le téléchargement audio ne doit plus décoder la chaîne REST Gmail'); }
         }
@@ -153,6 +179,27 @@ context.getSheet = () => sheet;
 context.ensureSchemaHeaders = () => {};
 context.ok = value => value;
 
+const pending = context.listUnreadVoicemails();
+assert.equal(pending.count, 1);
+assert.equal(pending.messages[0].processing_status, 'pending');
+assert.equal(pending.messages[0].classification, 'analyse');
+assert.equal(pending.messages[0].demand, null);
+const parisAfternoon = vm.runInContext("new Date('2026-10-06T12:30:00+02:00')", context);
+const parisNight = vm.runInContext("new Date('2026-10-06T22:30:00+02:00')", context);
+assert.deepEqual(JSON.parse(JSON.stringify(context.nextVoicemailAnalysis(parisAfternoon))), { time: '16:00', day: "aujourd’hui" });
+assert.deepEqual(JSON.parse(JSON.stringify(context.nextVoicemailAnalysis(parisNight))), { time: '06:00', day: 'demain' });
+
+const deleted = context.trashVoicemail(messageId);
+assert.equal(deleted.trashed, true);
+assert.deepEqual(trashed, [{ userId: 'me', id: messageId }]);
+assert.equal(context.listUnreadVoicemails().count, 0, 'un vocal supprimé ne doit plus réapparaître dans Chez Papi');
+assert.equal(
+  context.checkDuplicate({ source_email: 'no-reply@ovh.fr', gmail_message_id: messageId }).discarded,
+  true,
+  'un vocal supprimé ne doit plus atteindre l’analyse automatique, même s’il est restauré dans Gmail'
+);
+scriptProperties.clear();
+
 const archived = context.archiveOvhVoicemail(messageId);
 assert.equal(archived.label, 'Historique_OVH');
 assert.deepEqual(JSON.parse(JSON.stringify(modified)), [{
@@ -163,6 +210,8 @@ currentMessage = { ...currentMessage, labelIds: ['UNREAD', 'Label_historique_ovh
 const listed = context.listUnreadVoicemails();
 assert.equal(listed.count, 1);
 assert.equal(listQueries[0].q, 'label:Historique_OVH is:unread');
+assert.equal(listQueries[1].q, 'in:inbox is:unread from:no-reply@ovh.fr');
+assert.equal(listed.messages[0].processing_status, 'processed');
 assert.equal(listed.messages[0].caller, '06 64 88 67 08');
 assert.equal(listed.messages[0].classification, 'professionnel');
 assert.equal(listed.messages[0].demand.id_demande, 'VOXIST-' + messageId);
@@ -261,6 +310,10 @@ const frontendSource = readFileSync('chez-papi/app.js', 'utf8');
 const frontendMarkup = readFileSync('chez-papi/index.html', 'utf8');
 assert.doesNotMatch(frontendMarkup, />[^<]*OVH[^<]*</i, 'la popup ne doit pas exposer le fournisseur OVH');
 assert.doesNotMatch(frontendSource, /messages OVH|message OVH/i, 'les états de la popup doivent parler de messages vocaux');
+assert.doesNotMatch(frontendSource, /Analyse en cours/, 'l’interface doit annoncer l’heure de l’analyse automatique plutôt qu’un état vague');
+assert.match(frontendSource, /Analyse automatique à \$\{time\}/);
+assert.match(frontendSource, /async trashVoicemail\(/);
+assert.match(frontendSource, /Supprimer ce message vocal/);
 const normalizeStart = frontendSource.indexOf('function normalizeAudioBase64');
 const normalizeEnd = frontendSource.indexOf('\nfunction waitForVoicemailAudio', normalizeStart);
 assert.ok(normalizeStart >= 0 && normalizeEnd > normalizeStart, 'source audio native introuvable');
@@ -358,6 +411,6 @@ currentMessage = {
     ]
   }
 };
-assert.throws(() => context.getVoicemailAudio(messageId), /Message vocal OVH introuvable/);
+assert.throws(() => context.getVoicemailAudio(messageId), /Message vocal introuvable/);
 
 console.log('Tests des messages vocaux réussis (boîte dédiée, classification, rattachement, audio et lecture).');

@@ -97,7 +97,9 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | O16 | Vocal `Historique_OVH` sans fiche associée, notamment un appel d'essai ou technique | Badge `Personnel / hors activité`, jamais `Demande traiteur` sur le seul libellé Gmail | Backend automatique + dashboard |
 | O17 | Rattachement manuel d'un vocal non associé à une fiche existante | Association persistée dans le journal idempotent sans écraser `gmail_message_id`, puis accès immédiat à la fiche | Backend automatique + dashboard |
 | O18 | Chargement d'une pièce jointe vocale dont la représentation REST Gmail n'est pas directement exploitable | Le backend ne décode pas cette chaîne : il lit les octets de la pièce jointe via GmailApp et produit un Base64 standard valide pour le lecteur | Backend automatique + dashboard |
-| O19 | E-mail OVH dont le service avancé ne renvoie qu'un aperçu texte arrêté avant la transcription, alors que le corps complet Gmail contient `Voici la transcription de ce dernier :` | Le backend relit le corps complet via GmailApp et le dashboard affiche uniquement la transcription utile, sans horodatage ni avertissement OVH | Backend automatique + dashboard |
+| O19 | E-mail OVH dont le service avancé ne renvoie qu’un aperçu texte arrêté avant la transcription, alors que le corps complet Gmail contient `Voici la transcription de ce dernier :` | Le backend relit le corps complet via GmailApp et le dashboard affiche uniquement la transcription utile, sans horodatage ni avertissement OVH | Backend automatique + dashboard |
+| O20 | Vocal OVH non lu encore en boîte de réception, avant un créneau d’analyse | Il apparaît dans `Vocaux à écouter` avec l’heure suivante parmi 6 h, 12 h, 16 h et 21 h (heure de Paris), sans action de rattachement | Backend automatique + dashboard |
+| O21 | Suppression confirmée d’un vocal OVH en attente | Le message est placé dans la corbeille Gmail, disparaît du dashboard et une restauration manuelle dans Gmail reste exclue de l’analyse automatique pendant 35 jours | Backend automatique + essai Gmail |
 
 ## Email direct
 
