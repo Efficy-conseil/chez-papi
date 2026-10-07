@@ -382,6 +382,10 @@ assert.equal(
 const frontendHtml = readFileSync('chez-papi/index.html', 'utf8');
 assert.match(frontendHtml, /https:\/\/mail\.google\.com\/mail\/u\/0\/#label\/Historique_OVH/);
 assert.doesNotMatch(frontendHtml, /#label\/OVH%20R%C3%A9pondeur/);
+assert.match(frontendHtml, /id="voicemail-refresh-btn"/);
+assert.match(frontendSource, /refreshButton\.textContent = 'Actualisation…'/);
+assert.match(frontendSource, /refreshButton\.disabled = true/);
+assert.match(frontendSource, /refreshButton\.disabled = false/);
 
 const read = context.markVoicemailRead(messageId);
 assert.equal(read.message_id, messageId);

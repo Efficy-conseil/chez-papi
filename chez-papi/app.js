@@ -963,6 +963,11 @@ async function loadVoicemails(options = {}) {
   const list = document.getElementById('voicemail-list');
   if (!list || !localStorage.getItem('cp_user')) return;
   if (voicemailLoadPromise) return voicemailLoadPromise;
+  const refreshButton = document.getElementById('voicemail-refresh-btn');
+  if (!options.silent && refreshButton) {
+    refreshButton.disabled = true;
+    refreshButton.textContent = 'Actualisation…';
+  }
   if (options.initial && !voicemailMessages.length) updateVoicemailCounters('…');
   if (!options.silent) {
     list.classList.remove('is-filled');
@@ -1008,6 +1013,10 @@ async function loadVoicemails(options = {}) {
     return null;
   } finally {
     voicemailLoadPromise = null;
+    if (!options.silent && refreshButton) {
+      refreshButton.disabled = false;
+      refreshButton.textContent = 'Actualiser';
+    }
   }
 }
 
