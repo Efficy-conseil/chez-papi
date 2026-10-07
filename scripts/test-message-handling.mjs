@@ -163,7 +163,8 @@ for (const networkError of [false, true]) {
   f.context.showKpiModal('messages');
   assert(f.elements['kpi-tbody'].innerHTML.includes('Texte long\n'.repeat(100)));
   assert(f.elements['kpi-tbody'].innerHTML.includes('&lt;script&gt;FIN&lt;/script&gt;'));
-  assert(f.elements['kpi-thead'].innerHTML.includes('Marquer comme traité'));
+  assert(f.elements['kpi-thead'].innerHTML.includes('Actions'));
+  assert(f.elements['kpi-tbody'].innerHTML.includes('Marquer comme traité'));
   const pending = f.context.markClientMessageHandled('TEST-A');
   f.context.showKpiModal('messages');
   assert(f.elements['kpi-tbody'].innerHTML.includes('Traitement…'));
@@ -171,6 +172,18 @@ for (const networkError of [false, true]) {
   await pending;
   assert(f.elements['kpi-tbody'].innerHTML.includes('Aucun message client à traiter'));
   assert.equal(f.context.appData[0].statut, 'Perdu / Sans suite');
+}
+
+// Une fiche à vérifier propose le rattachement direct, sans l'afficher sur un suivi déjà rattaché.
+{
+  const f = fixture();
+  f.context.appData[0].statut = 'À vérifier';
+  f.context.showKpiModal('messages');
+  assert(f.elements['kpi-tbody'].innerHTML.includes('Rattacher à une demande'));
+  assert(f.elements['kpi-tbody'].innerHTML.includes('data-demand-link-id="TEST-A"'));
+  f.context.appData[0].statut = 'Devis envoyé';
+  f.context.showKpiModal('messages');
+  assert(!f.elements['kpi-tbody'].innerHTML.includes('Rattacher à une demande'));
 }
 
 // Backend réel : marquage seul sans Calendar, autres synchronisations conservées.

@@ -1297,6 +1297,10 @@ function hasClientMessage(e) {
   return !!e && isTruthy(e.relance_a_traiter);
 }
 
+function canLinkClientMessage(e) {
+  return hasClientMessage(e) && String(e.statut || '').trim() === 'À vérifier';
+}
+
 function clientMessageStar(e) {
   if (!hasClientMessage(e)) return '';
   return '<span class="new-message-star" role="img" aria-label="Nouveau message client" title="Nouveau message client">★</span>';
@@ -2875,7 +2879,21 @@ let mergeSourceDemand = null;
 
 function openDemandMergeModal() {
   if (!editingRow) return;
-  mergeSourceDemand = appData.find(row => row._row === editingRow) || null;
+  const source = appData.find(row => row._row === editingRow) || null;
+  openDemandMergeModalForSource(source);
+}
+
+function openMessageDemandMerge(idDemande) {
+  const source = appData.find(row => eventId(row) === String(idDemande || '').trim()) || null;
+  if (!canLinkClientMessage(source)) {
+    showNotification('Ce message ne nécessite plus de rattachement', 'error');
+    return;
+  }
+  openDemandMergeModalForSource(source);
+}
+
+function openDemandMergeModalForSource(source) {
+  mergeSourceDemand = source;
   if (!mergeSourceDemand) {
     showNotification('Demande source introuvable', 'error');
     return;
@@ -2951,6 +2969,7 @@ async function confirmDemandMerge() {
     }
     closeDemandMergeModal();
     closeEventModal(true);
+    document.getElementById('kpi-modal').style.display = 'none';
     await loadData();
     const merged = appData.find(row => eventId(row) === targetId);
     if (merged) openEventModal(merged._row);
@@ -3415,16 +3434,19 @@ function showKpiModal(type) {
     const evts = appData.filter(hasClientMessage);
     evts.sort((a, b) => dateTimeSortValue(b.dernier_email_recu_le) - dateTimeSortValue(a.dernier_email_recu_le));
 
-    thead.innerHTML = '<tr><th style="width:15%">Reçu</th><th style="width:18%">Client</th><th style="width:34%">Message</th><th style="width:16%">Statut</th><th style="width:17%">Marquer comme traité</th></tr>';
+    thead.innerHTML = '<tr><th style="width:14%">Reçu</th><th style="width:17%">Client</th><th style="width:32%">Message</th><th style="width:15%">Statut</th><th style="width:22%">Actions</th></tr>';
     tbody.innerHTML = evts.length ? evts.map(e => {
       const message = String(e.dernier_message_client || '').trim();
       const pending = followupUpdatesInFlight.has(eventId(e));
+      const attachButton = canLinkClientMessage(e)
+        ? `<button type="button" class="btn-secondary" data-demand-link-id="${escAttr(eventId(e))}" onclick="openMessageDemandMerge(this.dataset.demandLinkId)">Rattacher à une demande</button>`
+        : '';
       return `<tr style="cursor:pointer" onclick="document.getElementById('kpi-modal').style.display='none'; openEventModal(${e._row})">
         <td data-label="Reçu">${safeText(formatDateTimeFR(e.dernier_email_recu_le) || 'À déterminer')}</td>
         <td data-label="Client">${clientMessageStar(e)}<strong>${safeText(e.nom_client || '—')}</strong></td>
         <td class="received-message-cell" data-label="Message" onclick="event.stopPropagation()"><div class="received-message-text" tabindex="0" role="region" aria-label="${escAttr('Message de ' + (e.nom_client || 'client'))}">${safeText(message || 'Nouveau message client')}</div></td>
         <td data-label="Statut" style="overflow:visible; max-width:none;" onclick="event.stopPropagation()">${generateStatusSelectHtml(e)}</td>
-        <td class="received-message-action" onclick="event.stopPropagation()"><button type="button" class="btn-secondary" data-followup-id="${escAttr(eventId(e))}" aria-busy="${pending}" ${pending ? 'disabled' : ''} onclick="markClientMessageHandled(this.dataset.followupId)">${pending ? 'Traitement…' : 'Marquer comme traité'}</button></td>
+        <td class="received-message-action" onclick="event.stopPropagation()">${attachButton}<button type="button" class="btn-secondary" data-followup-id="${escAttr(eventId(e))}" aria-busy="${pending}" ${pending ? 'disabled' : ''} onclick="markClientMessageHandled(this.dataset.followupId)">${pending ? 'Traitement…' : 'Marquer comme traité'}</button></td>
       </tr>`;
     }).join('') : '<tr><td colspan="5" class="tbl-empty">Aucun message client à traiter</td></tr>';
   }

@@ -1914,6 +1914,12 @@ body.is-saving-event::after {
   outline-offset: -2px;
 }
 
+.received-message-action {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .received-message-action button {
   width: 100%;
   white-space: normal;

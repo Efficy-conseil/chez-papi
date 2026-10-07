@@ -83,6 +83,8 @@ requireText('apps-script/appsscript.json', 'https://www.googleapis.com/auth/gmai
 requireText('chez-papi/app.js', 'function hasClientMessage(e)');
 requireText('chez-papi/app.js', 'function markFollowupHandled()');
 requireText('chez-papi/app.js', 'function openDemandMergeModal()');
+requireText('chez-papi/app.js', 'function openMessageDemandMerge(idDemande)');
+requireText('chez-papi/app.js', 'Rattacher à une demande');
 requireText('chez-papi/app.js', 'data = changedFormFields(initialFormValuesStr, data);');
 requireText('chez-papi/index.html', 'id="demand-merge-modal"');
 requireText('chez-papi/app.js', 'const gmailId = String(e?.gmail_thread_id || e?.gmail_message_id || \'\').trim();');
@@ -113,6 +115,8 @@ requireText('apps-script/code.gs', "clean.id_demande.indexOf('VOXIST-') === 0");
 requireText('apps-script/code.gs', 'allow_unique_active_event_date');
 requireText('apps-script/code.gs', 'const hasSpecificEventDate = !!dateEvenement && dateEvenement !== "Inconnu / à compléter";');
 requireText('apps-script/code.gs', 'reason: matches.length === 0 ? "existing_demand_not_found" : "existing_demand_ambiguous"');
+requireText('apps-script/code.gs', 'const FOLLOWUP_PROTECTED_FIELDS');
+requireText('apps-script/code.gs', 'options.force_review_card');
 requireText('apps-script/code.gs', 'function findDemandMatchCandidates');
 requireText('apps-script/code.gs', 'function normalizePhoneKey');
 requireText('apps-script/code.gs', 'requires_resolution: true');

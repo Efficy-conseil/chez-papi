@@ -291,7 +291,7 @@ context.createMakeDemand = row => ({
 });
 context.unmatchedRow = {
   id_demande: 'GMAIL-THREAD-81',
-  statut: 'Statut inventé',
+  statut: 'Devis envoyé',
   notes: 'Information IA',
   message_original: 'Message reçu sans demande correspondante'
 };
@@ -349,15 +349,48 @@ context.followupSheet = {
 };
 evaluate(`writeMakeFollowup(followupSheet, ${JSON.stringify(followupHeaders)}, 2, {
   telephone: '',
-  nb_convives: '   ',
+  nb_convives: '90',
   email_client: 'nouvelle@example.com',
   gmail_message_id: 'MESSAGE-SUIVI',
   relance_a_traiter: true
 }, { updated: true })`);
 assert.equal(followupRows[1][followupHeaders.indexOf('telephone')], '06 12 34 56 78');
 assert.equal(followupRows[1][followupHeaders.indexOf('nb_convives')], '80');
-assert.equal(followupRows[1][followupHeaders.indexOf('email_client')], 'nouvelle@example.com');
+assert.equal(followupRows[1][followupHeaders.indexOf('email_client')], 'ancienne@example.com');
 assert.equal(followupRows[1][followupHeaders.indexOf('relance_a_traiter')], true);
+const protectedWriteLog = JSON.parse(followupRows[1][followupHeaders.indexOf('make_operation_log')]);
+assert.deepEqual(
+  Array.from(protectedWriteLog['MESSAGE-SUIVI'].skipped_non_explicit_fields).sort(),
+  ['email_client', 'nb_convives']
+);
+assert.deepEqual(
+  JSON.parse(JSON.stringify(protectedWriteLog['MESSAGE-SUIVI'].skipped_non_explicit_changes.nb_convives)),
+  { current: '80', proposed: '90' }
+);
+
+evaluate(`writeMakeFollowup(followupSheet, ${JSON.stringify(followupHeaders)}, 2, {
+  nb_convives: '90',
+  email_client: 'nouvelle@example.com',
+  gmail_message_id: 'MESSAGE-CORRECTION'
+}, { updated: true }, {
+  explicit_changes: { nb_convives: true, email_client: false }
+})`);
+assert.equal(followupRows[1][followupHeaders.indexOf('nb_convives')], '90');
+assert.equal(followupRows[1][followupHeaders.indexOf('email_client')], 'ancienne@example.com');
+const explicitWriteLog = JSON.parse(followupRows[1][followupHeaders.indexOf('make_operation_log')]);
+assert.deepEqual(
+  JSON.parse(JSON.stringify(explicitWriteLog['MESSAGE-CORRECTION'].applied_business_changes.nb_convives)),
+  { previous: '80', next: '90', reason: 'explicit_change' }
+);
+
+followupRows[1][followupHeaders.indexOf('telephone')] = '';
+evaluate(`writeMakeFollowup(followupSheet, ${JSON.stringify(followupHeaders)}, 2, {
+  telephone: '06 98 76 54 32',
+  gmail_message_id: 'MESSAGE-ENRICHISSEMENT'
+}, { updated: true })`);
+assert.equal(followupRows[1][followupHeaders.indexOf('telephone')], '06 98 76 54 32');
+assert.equal(evaluate('followupRequiresCalendarSync({ applied_business_fields: ["email_client"] })'), false);
+assert.equal(evaluate('followupRequiresCalendarSync({ applied_business_fields: ["date_evenement"] })'), true);
 
 context.threadFallbackOptions = {
   match: { email_client: 'cliente@example.com' },
@@ -435,6 +468,38 @@ assert.equal(createdWixFallback.created_from_unmatched_followup, true);
 assert.equal(createdWixFallback.id_demande, 'GMAIL-WIX-SANS-FICHE');
 assert.equal(createdWixFallback.gmail_message_id, 'MESSAGE-SANS-FICHE');
 
+const forcedReview = evaluate(`(() => {
+  const originals = {
+    getSheet,
+    ensureSchemaHeaders,
+    findMakeOperationByMessageId,
+    createUnmatchedFollowupDemand
+  };
+  try {
+    getSheet = () => ({
+      getLastColumn: () => 1,
+      getRange: () => ({ getValues: () => [['id_demande']] })
+    });
+    ensureSchemaHeaders = () => {};
+    findMakeOperationByMessageId = () => null;
+    createUnmatchedFollowupDemand = (row, fields) => ok({
+      updated: true,
+      forced_review: true,
+      id_demande: row.id_demande,
+      gmail_message_id: fields.gmail_message_id
+    });
+    return JSON.parse(updateExistingDemandFollowup(
+      { email_client: 'incertain@example.com' },
+      { gmail_message_id: 'MESSAGE-INCERTAIN' },
+      { force_review_card: true, fallback_row: { id_demande: 'GMAIL-INCERTAIN' } }
+    ).getContent()).data;
+  } finally {
+    Object.assign(globalThis, originals);
+  }
+})()`);
+assert.equal(forcedReview.forced_review, true);
+assert.equal(forcedReview.id_demande, 'GMAIL-INCERTAIN');
+
 const mergeHeaders = [
   'id_demande', 'nom_client', 'email_client', 'telephone', 'date_evenement',
   'lieu_prestation', 'statut', 'notes', 'message_original', 'gmail_thread_id',
@@ -477,6 +542,7 @@ assert.equal(targetAfterMerge[mergeHeaders.indexOf('statut')], 'Devis envoyé');
 assert.equal(targetAfterMerge[mergeHeaders.indexOf('lieu_prestation')], 'Salon');
 assert.equal(targetAfterMerge[mergeHeaders.indexOf('dernier_message_client')], 'Pouvez-vous confirmer ?');
 assert.equal(targetAfterMerge[mergeHeaders.indexOf('relance_a_traiter')], true);
+assert.equal(mergeRows[1][mergeHeaders.indexOf('relance_a_traiter')], false);
 assert.match(targetAfterMerge[mergeHeaders.indexOf('notes')], /Rattachement manuel depuis GMAIL-SOURCE/);
 assert.match(mergeRows[1][mergeHeaders.indexOf('notes')], /Rattachée manuellement à MANUAL-TARGET/);
 

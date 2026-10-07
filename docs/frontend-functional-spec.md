@@ -184,7 +184,7 @@ Les cartes conservent une largeur stable, ne s'étirent pas pour remplir l'espac
 
 Chaque indicateur ouvre une fenêtre détaillée. Les six indicateurs de demandes conservent la même fenêtre, dont les lignes ouvrent la fiche et permettent de modifier directement le statut. `Vocaux à écouter` ouvre sa fenêtre dédiée. Le détail `À rappeler` affiche également le téléphone ; le détail `En attente de réponse` affiche la colonne `Depuis` avec le nombre de jours écoulés depuis la proposition d'appel ; le nombre est mis en évidence à partir de sept jours. Le détail `Messages reçus` regroupe les demandes dont `relance_a_traiter` est vrai, les trie par date de dernier message décroissante et affiche le dernier message enregistré en entier, sans remplacer leur statut commercial. Le détail `Devis à préparer` affiche le budget.
 
-Dans `Messages reçus`, le texte conserve ses retours à la ligne et défile verticalement dans une zone de hauteur limitée, accessible au clavier. Une colonne `Marquer comme traité` propose un bouton par ligne. Lire, sélectionner ou faire défiler le texte, changer le statut ou cliquer sur ce bouton n'ouvre pas la fiche ; le clic sur la date ou le client conserve l'accès à la fiche. Sur mobile, chaque ligne se présente en bloc avec ses libellés, le message occupant toute la largeur.
+Dans `Messages reçus`, le texte conserve ses retours à la ligne et défile verticalement dans une zone de hauteur limitée, accessible au clavier. Une colonne `Actions` propose `Marquer comme traité` pour chaque ligne. Pour une fiche au statut `À vérifier`, elle propose également `Rattacher à une demande`, qui ouvre directement la comparaison et la sélection de destination existantes sans imposer l'ouverture préalable de la fiche. Lire, sélectionner ou faire défiler le texte, changer le statut ou cliquer sur une action n'ouvre pas la fiche ; le clic sur la date ou le client conserve l'accès à la fiche. Sur mobile, chaque ligne se présente en bloc avec ses libellés, le message occupant toute la largeur.
 
 Lorsqu'un dossier passe au statut `En attente de réponse`, le backend renseigne `en_attente_reponse_depuis`. La carte d'accueil affiche uniquement le nombre total de dossiers dans cet état ; la colonne `Depuis` de la fenêtre détaillée signale les attentes de sept jours ou plus.
 
@@ -397,12 +397,13 @@ Le regroupement `Messages reçus` est transversal à tous les statuts : une fich
 
 ### 10.5 Rattachement manuel d'une demande
 
-Depuis une fiche existante, l'action `Rattacher à une demande` ouvre une fenêtre qui permet de choisir la destination et de comparer les informations principales. Les valeurs différentes sont mises en évidence. Après confirmation :
+Depuis une fiche existante ou directement depuis une ligne `À vérifier` de `Messages reçus`, l'action `Rattacher à une demande` ouvre une fenêtre qui permet de choisir la destination et de comparer les informations principales. Les valeurs différentes sont mises en évidence. Après confirmation :
 
 - les champs déjà renseignés sur la destination restent prioritaires ;
 - les champs manquants, messages et notes utiles de la source sont transférés ;
 - une répétition de la même opération ne duplique pas les notes ;
 - la source est annotée et conservée ;
+- le message à traiter est transféré sur la destination et la source quitte `Messages reçus` sans être supprimée ;
 - sa suppression reste une action séparée qui utilise la confirmation irréversible existante.
 
 ### 10.6 Conflits de date
@@ -545,7 +546,7 @@ La fiche en cours d'édition est exclue de cette comparaison.
 - [ ] Marquage avec réponse lente puis Enregistrer sans modification : aucune fenêtre vide ne s'ouvre.
 - [ ] Marquage pendant une saisie, un enregistrement modifié, une fermeture ou un changement de fiche : aucune saisie perdue et seule la demande ciblée est traitée.
 - [ ] Doubles clics ignorés, erreurs serveur/réseau visibles et nouvelle tentative possible.
-- [ ] Messages reçus : texte long intégral, retours à la ligne, sélection et défilement au clavier/tactile, sans ouverture de fiche ; bouton direct, compteur et liste actualisés après succès.
+- [ ] Messages reçus : texte long intégral, retours à la ligne, sélection et défilement au clavier/tactile, sans ouverture de fiche ; bouton de traitement, bouton direct de rattachement pour `À vérifier`, compteur et liste actualisés après succès.
 - [ ] Marquage seul sans Calendar, y compris pour un événement confirmé ; synchronisation Calendar conservée pour les autres modifications.
 
 Les scénarios de concurrence, d'erreur et de routage Calendar du traitement des messages sont automatisés dans `scripts/test-message-handling.mjs`. Les contrôles de boîte Gmail dédiée, transcription, audio, rattachement exact et marquage comme lu sont automatisés dans `scripts/test-voicemail.mjs`. Les deux sont exécutés par `npm run check`.

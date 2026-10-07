@@ -119,6 +119,7 @@ Contraintes :
 - La création initiale d'une demande avec un autre statut ne doit pas créer d'événement calendrier.
 - Un changement de statut entre deux états non confirmés ne doit pas consulter Google Calendar.
 - Une écriture limitée à `relance_a_traiter` ne doit ni consulter ni modifier Google Calendar, quel que soit le statut de la demande.
+- Lorsqu'un suivi applique un enrichissement autorisé sur un champ utilisé par Calendar (nom, type, date, heure, convives, lieu ou statut), le backend resynchronise la fiche ; une simple relance technique ne le fait pas.
 
 ## Types d'événement
 
@@ -134,6 +135,7 @@ Règles :
 
 - `Entreprise` couvre les entreprises, mairies, collectivités, associations, institutions, événements professionnels, cocktails avant concert, cafés d'accueil, séminaires, repas internes.
 - Une demande de particuliers pour les 18 ans, anniversaire enfant/adulte ou événement familial doit être `Anniversaire` si le contexte est clair.
+- Si le type n'est pas identifiable avec certitude, `type_evenement` reste vide. `Autres` n'est jamais utilisé comme valeur par défaut.
 
 ## Make - contrat de routage global
 
@@ -156,8 +158,8 @@ Contrainte critique :
 
 - Une source métier ne doit jamais être uniquement exclue d'une route sans disposer d'une route de secours.
 - Si une route source est bloquée par `count > 0`, il doit exister un comportement explicite : archiver comme déjà traité, mettre à jour une demande existante, ou signaler une anomalie.
-- Une mise à jour de suivi enrichit une fiche sans jamais remplacer une valeur existante par une chaîne vide ou une valeur absente, notamment pour `telephone` et `nb_convives`.
-- Un suivi n'est archivé comme traité qu'après confirmation backend d'un rattachement ou d'une création de secours. En cas d'ambiguïté, il reste en boîte de réception pour décision humaine.
+- Une mise à jour de suivi peut compléter un champ métier vide. Elle ne remplace jamais une valeur métier existante, notamment le nom, les coordonnées, le type, la date, l'heure, les convives, le lieu, le budget, le statut, le message initial ou les notes, sauf si le message récent formule explicitement la modification de ce champ. Le backend applique cette protection même si l'analyse IA transmet une autre valeur et journalise, avec leurs valeurs avant/après ou proposée, les champs appliqués ou refusés. Les routes vocales conservent leur exception documentée pour le numéro appelant fiable.
+- Un suivi n'est archivé comme traité qu'après confirmation backend d'un rattachement ou d'une création de secours. Pour Email direct, une ambiguïté crée une fiche de contrôle dans `Messages reçus` avant l'archivage ; les routes vocales conservent leurs règles spécifiques de résolution humaine.
 - Tout texte libre interpolé dans un corps JSON brut Make doit être protégé avec `escapeJSON` afin de préserver les retours à la ligne, guillemets et antislashs sans produire un JSON invalide.
 - Lorsqu'une création Make passe par le backend, elle utilise l'action `createMakeDemand`. Les écritures directes encore conservées pour Email direct restent l'exception transitoire documentée dans les décisions issues de l'audit et doivent appliquer elles-mêmes les normalisations nécessaires.
 
@@ -288,6 +290,10 @@ Comportement attendu :
 - Label Gmail -> `Historique_Email`.
 - Accusé de réception envoyé en réponse au client pour une vraie nouvelle demande.
 - Newsletter, fournisseur, facture, spam et e-mail transactionnel -> `Hors_Scope_Make`. Mais normalement ça doit être filtré avant par Gmail.
+- Tous les emails directs, y compris ceux d'un fil déjà connu, passent par une analyse de rôle avant toute écriture métier. Les anciennes routes déterministes de fil connu et de sujet `DEVIS VALIDE` restent dans le blueprint comme retour arrière, mais sont désactivées.
+- L'analyse distingue `nouvelle_demande`, `suivi_client`, `fournisseur_sous_traitant`, `administratif_bancaire`, `notification_automatique` et `incertain`. Elle décide sur le message récent ; les signatures, transferts et historiques cités ne peuvent pas déclencher seuls une création, un suivi ou une modification.
+- Une notification de réaction Outlook ou Exchange est `notification_automatique`, même si elle recopie un ancien échange client. Elle ne crée ni demande ni relance et ne remplace jamais le dernier message client.
+- Un résultat `incertain` crée une fiche de contrôle au statut `À vérifier`, visible dans `Messages reçus`, sans modifier une demande existante et sans accusé automatique.
 
 Vraies demandes :
 
@@ -300,11 +306,11 @@ Relances et suivis :
 - Les réponses clientes conservent souvent l'objet de l'accusé automatique. Le déclencheur Gmail ne doit donc jamais exclure les objets `Votre demande chez Chez Papi Maison Gourmande` ou `Chez Papi Maison Gourmande - Accusé` ; la prévention des boucles repose sur l'exclusion des expéditeurs internes.
 - Une modification de devis existant ne crée pas une nouvelle ligne et ne déclenche pas d'accusé automatique.
 - Une validation de devis ne crée pas une nouvelle ligne et ne déclenche pas d'accusé automatique.
-- Un bon de commande, une commande validée ou un document confirmant un devis est un suivi, même lorsqu'il vient d'un portail ou d'un expéditeur technique dans un nouveau fil Gmail. Il doit être rattaché uniquement s'il existe une seule demande correspondant exactement au contact identifié et à la date de prestation ; sinon, aucune ligne ne doit être créée et le message reste à vérifier dans la boîte de réception.
+- Un bon de commande, une commande validée ou un document confirmant un devis est un suivi seulement lorsque le message récent permet d'identifier clairement le client et la prestation. Il est rattaché automatiquement uniquement s'il existe une seule demande correspondante. Sinon, une fiche de contrôle `À vérifier` est créée dans `Messages reçus`, sans modifier les candidates.
 - Une réponse à un sujet `Re: Devis`, `TR: Devis`, `Fwd: Devis` n'est une relance que si le dernier message parle du devis existant : nouveau devis, devis actualisé, budget par personne, modification, validation, nouvelle version.
 - Une nouvelle demande dans un ancien fil reste une nouvelle demande si elle concerne une nouvelle date, un nouveau lieu, un nouveau type de prestation ou un nouvel événement.
-- Une réponse courte qui accepte ou précise un créneau de rappel, sans redonner la date de prestation, est un suivi. Elle est rattachée lorsqu’une seule demande active possède exactement la même adresse email. Si aucune candidate n'existe, le filet de sécurité décrit ci-dessous crée une fiche à vérifier ; si plusieurs candidates existent, aucune ligne n’est créée et le message reste en boîte de réception.
-- Un message indiquant explicitement qu'il relance un précédent email resté sans réponse est un suivi, même sans date ni rappel du besoin. Il doit emprunter la route de rapprochement malgré une qualification IA hors périmètre et être rattaché à une demande active unique par email exact ou nom complet normalisé. Une absence totale de candidate déclenche le filet de sécurité ; une ambiguïté laisse le message en boîte de réception.
+- Une réponse courte qui accepte ou précise un créneau de rappel, sans redonner la date de prestation, est un suivi. Elle est rattachée lorsqu’une seule demande active possède exactement la même adresse email. Si aucune candidate unique n'existe, le filet de sécurité décrit ci-dessous crée une fiche de contrôle à vérifier.
+- Un message indiquant explicitement qu'il relance un précédent email resté sans réponse est un suivi, même sans date ni rappel du besoin. Il doit emprunter la route de rapprochement et être rattaché à une demande active unique par email exact ou nom complet normalisé. Une absence ou une ambiguïté déclenche la fiche de contrôle, sans modification partielle.
 - Les formulations `Merci pour vos propositions` et `modifier certaines pièces` sont des indices déterministes de suivi commercial. Elles doivent emprunter la route de rattachement même si l’IA retourne à tort `is_followup=false`, et elles sont interdites dans la route de création Email.
 - Une réponse indiquant avoir choisi un autre prestataire après réception d’un devis est un suivi commercial, y compris si l’IA la classe à tort hors périmètre. Elle est rattachée seulement à une unique demande active identifiée par l’adresse email ou par le nom normalisé, indépendant de l’ordre prénom/nom ; un nom complet exact suffit pour un suivi si la candidate est unique. L’adresse de l’expéditeur complète une fiche sans email mais ne remplace jamais une adresse déjà enregistrée.
 - Une réponse rattachée à une demande existante renseigne `dernier_email_recu_le`, `dernier_message_client`, incrémente `nb_relances_client`, positionne `relance_a_traiter = TRUE` et conserve une `url_email_origine` ouvrant le fil Gmail.
@@ -314,11 +320,11 @@ Relances et suivis :
 
 Filet de sécurité des suivis Email sans dossier :
 
-- lorsque `updateExistingDemandFollowup` ne trouve aucune candidate (`existing_demand_not_found`), le module 81 demande au backend de créer une fiche `GMAIL-<gmail_thread_id>` ;
+- lorsque `updateExistingDemandFollowup` ne trouve aucune candidate, trouve plusieurs candidates ou reçoit un rôle `incertain`, le module 81 demande au backend de créer une fiche de contrôle `GMAIL-<gmail_message_id>` ; cet identifiant par message évite toute collision avec une demande déjà liée au fil ;
 - la création est idempotente, reprend les informations extraites par l'IA, ajoute dans les notes qu'elle est automatique, conserve le message comme `dernier_message_client` et positionne `relance_a_traiter = TRUE` ;
-- le statut proposé par l'IA est conservé uniquement s'il appartient aux statuts autorisés ; sinon `À vérifier` est appliqué ;
+- le statut est toujours `À vérifier` ;
 - le message est ensuite archivé dans `Historique_Email` et la fiche apparaît dans `Messages reçus`, même si son statut la place par ailleurs dans l'historique ;
-- aucune création de secours n'est autorisée lorsque plusieurs candidates existent (`existing_demand_ambiguous`) ;
+- aucune candidate existante n'est modifiée lorsque le rôle ou le rapprochement n'est pas certain ;
 - aucun accusé automatique n'est envoyé pour cette création de secours.
 
 Le frontend permet de rattacher manuellement une fiche source à une demande de destination. La comparaison des champs et les conflits sont montrés avant confirmation. Les champs déjà renseignés sur la destination sont prioritaires ; les messages, notes et champs manquants de la source sont transférés sans duplication. La fiche source est conservée et annotée ; sa suppression éventuelle reste une action séparée avec confirmation explicite.
@@ -382,10 +388,10 @@ Contraintes backend :
 - `upsertWixDemand` doit mémoriser le résultat d'un message Wix déjà appliqué afin qu'une reprise poursuive l'archivage et l'accusé attendus sans créer de seconde ligne.
 - `updateThreadFollowup` exige l'adresse expéditeur exacte avant d'utiliser `gmail_thread_id` ; le fil est un indice technique, jamais une identité client.
 - `updateWixFollowup` exige également cette adresse exacte pour un rattachement par fil, puis recherche le dernier `WIX-` par email exact.
-- `updateExistingDemandFollowup` peut créer une fiche de secours uniquement avec l'option explicite `create_if_not_found`, et seulement lorsque le nombre de candidates est nul.
+- `updateExistingDemandFollowup` crée une fiche de contrôle uniquement avec les options explicites `create_if_not_found`, `create_if_ambiguous` ou `force_review_card`. La dernière interdit tout rapprochement automatique pour un rôle `incertain`.
 - `mergeDemandRecords` rattache manuellement une fiche source à une cible sans supprimer la source et rejoue sans dupliquer les notes.
 - `updateExistingDemandFollowup` rattache par email+date, puis nom+date si l'email manque. Sans date de prestation, il accepte uniquement une correspondance exacte et unique sur l’email parmi les demandes actives.
-- Si ces critères exacts échouent, `updateExistingDemandFollowup` peut utiliser le même rapprochement prudent que la saisie manuelle : téléphone ou email exact, ou combinaison forte et unique entre nom, date, convives, type, lieu et statut. Une correspondance absente ou ambiguë ne crée aucune ligne.
+- Si ces critères exacts échouent, `updateExistingDemandFollowup` peut utiliser le même rapprochement prudent que la saisie manuelle : téléphone ou email exact, ou combinaison forte et unique entre nom, date, convives, type, lieu et statut. Pour Email direct, une correspondance absente ou ambiguë produit une fiche de contrôle distincte ; pour les routes vocales, les règles spécifiques restent inchangées.
 - L'option Make `allow_unique_active_event_date` est réservée aux parcours de messagerie vocale Voxist et OVH : après les rapprochements habituels, elle autorise seulement une demande active unique partageant la même date de prestation.
 - La nouvelle interface appelle l'action dashboard `add` avec l'option `check_duplicates`. Le backend recherche alors les demandes actives similaires sous le même verrou que l'écriture ; sans décision explicite, il retourne les candidates et ne crée rien. Il accepte ensuite soit l'enrichissement d'un `id_demande` choisi, soit une création forcée confirmée par l'utilisatrice. Un ancien frontend qui n'envoie pas cette option conserve temporairement le comportement historique de création, afin que le déploiement backend reste compatible pendant la publication GitHub Pages.
 - L'enrichissement manuel conserve l'identifiant, la date de réception, le canal et tous les champs techniques de la fiche choisie. Les champs non vides de la saisie complètent la fiche ; le statut `Nouvelle demande` par défaut ne rétrograde pas un dossier déjà avancé.
@@ -592,7 +598,7 @@ Contraintes de prévention :
 - `is_followup=true` doit empêcher création et accusé.
 - Une nouvelle prestation avec nouvelle date dans un ancien fil doit rester `is_followup=false`.
 - Les suivis peuvent être rattachés par email+date ou nom+date.
-- `DEVIS VALIDE` est un suivi sans accusé. Le fil connu est mis à jour en priorité, puis une unique demande active portant l'email de l'expéditeur. Sans candidate, une fiche `GMAIL-<gmail_thread_id>` au statut `À vérifier` est créée ; en cas de plusieurs candidates, le message reste en boîte de réception.
+- `DEVIS VALIDE` est analysé comme tout Email direct et reste un suivi sans accusé lorsqu'il confirme bien un échange client. Une unique candidate certaine est enrichie ; sans candidate unique, une fiche `GMAIL-<gmail_message_id>` au statut `À vérifier` est créée dans `Messages reçus`.
 - Les fournisseurs et newsletters doivent rester hors scope avec résumé court, pas corps brut.
 
 ### Réseaux sociaux / Tally

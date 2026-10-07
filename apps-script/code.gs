@@ -57,6 +57,24 @@ const ALLOWED_CHANNELS = [
   "Saisie manuelle"
 ];
 
+// Ces champs décrivent la demande elle-même. Lors d'un suivi, Make peut
+// compléter une valeur absente, mais ne peut remplacer une valeur existante
+// que si le message récent indique explicitement cette modification.
+const FOLLOWUP_PROTECTED_FIELDS = [
+  "nom_client",
+  "telephone",
+  "email_client",
+  "type_evenement",
+  "date_evenement",
+  "heure_evenement",
+  "nb_convives",
+  "lieu_prestation",
+  "budget_estime",
+  "statut",
+  "message_original",
+  "notes"
+];
+
 const ALLOWED_FIELDS = [
   "date_reception",
   "canal",
@@ -1067,6 +1085,9 @@ function updateThreadFollowup(gmailThreadId, fields, options) {
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
   const replay = findMakeOperationByMessageId(sheet, headers, getMakeMessageId(fields));
   if (replay) return ok(replayFollowupResult(replay));
+  if (options && normalizeBoolean(options.force_review_card)) {
+    return createUnmatchedFollowupDemand(options.fallback_row || {}, fields || {});
+  }
   const found = findRowByCanonicalValue(sheet, headers, "gmail_thread_id", gmailThreadId);
   if (found && sourceEmail) {
     const foundEmail = String(readRowData(sheet, headers, found.rowIndex).email_client || '').trim().toLowerCase();
@@ -1100,10 +1121,12 @@ function updateThreadFollowup(gmailThreadId, fields, options) {
     clean.nb_relances_client = current + 1;
   }
 
-  writeMakeFollowup(sheet, headers, found.rowIndex, clean, { updated: true });
+  const writeResult = { updated: true };
+  writeMakeFollowup(sheet, headers, found.rowIndex, clean, writeResult, options || {});
   applyDefaultRowHeight(sheet, found.rowIndex);
+  if (followupRequiresCalendarSync(writeResult)) syncCalendarForRow(sheet, headers, found.rowIndex, 'updateThreadFollowup');
 
-  return ok({ updated: true, id_demande: found.id_demande || "", row: found.rowIndex });
+  return ok(Object.assign({ id_demande: found.id_demande || "", row: found.rowIndex }, writeResult));
 }
 
 function updateWixFollowup(gmailThreadId, emailClient, fields, options) {
@@ -1146,15 +1169,16 @@ function updateWixFollowup(gmailThreadId, emailClient, fields, options) {
     clean.nb_relances_client = current + 1;
   }
 
-  writeMakeFollowup(sheet, headers, found.rowIndex, clean, { updated: true });
+  const writeResult = { updated: true };
+  writeMakeFollowup(sheet, headers, found.rowIndex, clean, writeResult, options || {});
   applyDefaultRowHeight(sheet, found.rowIndex);
+  if (followupRequiresCalendarSync(writeResult)) syncCalendarForRow(sheet, headers, found.rowIndex, 'updateWixFollowup');
 
-  return ok({
-    updated: true,
+  return ok(Object.assign({
     matched_by: threadMatchesSender ? "gmail_thread_id_and_email_client" : "email_client",
     id_demande: found.id_demande || "",
     row: found.rowIndex
-  });
+  }, writeResult));
 }
 
 function updateExistingDemandFollowup(match, fields, options) {
@@ -1171,6 +1195,9 @@ function updateExistingDemandFollowup(match, fields, options) {
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
   const replay = findMakeOperationByMessageId(sheet, headers, getMakeMessageId(fields));
   if (replay) return ok(replayFollowupResult(replay));
+  if (options && normalizeBoolean(options.force_review_card)) {
+    return createUnmatchedFollowupDemand(options.fallback_row || {}, fields || {});
+  }
   // Voxist fournit un numéro appelant fiable : une unique demande active portant
   // ce numéro prévaut sur un nom éventuellement mal retranscrit par l'audio.
   const phoneMatches = preferUniquePhone && phone
@@ -1205,7 +1232,10 @@ function updateExistingDemandFollowup(match, fields, options) {
     matches = findActiveRowsByEventDate(sheet, headers, dateEvenement);
   }
   if (matches.length !== 1) {
-    if (matches.length === 0 && options && options.create_if_not_found) {
+    const mayCreateReviewCard = options && options.create_if_not_found && (
+      matches.length === 0 || (matches.length > 1 && options.create_if_ambiguous)
+    );
+    if (mayCreateReviewCard) {
       return createUnmatchedFollowupDemand(options.fallback_row || {}, fields || {});
     }
     return ok({
@@ -1223,7 +1253,8 @@ function updateExistingDemandFollowup(match, fields, options) {
   // Un suivi reçu depuis une adresse inconnue peut compléter la fiche. En
   // revanche, l'adresse déjà enregistrée reste la référence : un message
   // transféré ou envoyé par un proche ne doit pas la remplacer.
-  if (clean.email_client && String(found.email_client || '').trim()) {
+  const explicitEmailChange = options && options.explicit_changes && normalizeBoolean(options.explicit_changes.email_client);
+  if (clean.email_client && String(found.email_client || '').trim() && !explicitEmailChange) {
     delete clean.email_client;
   }
   clean.relance_a_traiter = clean.relance_a_traiter !== undefined ? clean.relance_a_traiter : true;
@@ -1236,20 +1267,21 @@ function updateExistingDemandFollowup(match, fields, options) {
     clean.nb_relances_client = current + 1;
   }
 
-  writeMakeFollowup(sheet, headers, found.rowIndex, clean, { updated: true });
+  const writeResult = { updated: true };
+  writeMakeFollowup(sheet, headers, found.rowIndex, clean, writeResult, options || {});
   applyDefaultRowHeight(sheet, found.rowIndex);
+  if (followupRequiresCalendarSync(writeResult)) syncCalendarForRow(sheet, headers, found.rowIndex, 'updateExistingDemandFollowup');
 
-  return ok({ updated: true, id_demande: found.id_demande || "", row: found.rowIndex });
+  return ok(Object.assign({ id_demande: found.id_demande || "", row: found.rowIndex }, writeResult));
 }
 
 function createUnmatchedFollowupDemand(rowData, followupFields) {
   const raw = normalizeRowKeys(rowData || {});
-  const incomingStatus = String(raw.statut || '').trim();
-  const automaticNote = "Demande créée automatiquement : aucun dossier existant n'a été trouvé pour ce message entrant. À vérifier et à rattacher si nécessaire.";
+  const automaticNote = "Fiche de contrôle créée automatiquement : ce message n'a pas pu être rattaché avec certitude. À vérifier et à rattacher si nécessaire.";
   const existingNotes = String(raw.notes || '').trim();
   const message = String(raw.message_original || followupFields.dernier_message_client || '').trim();
   const row = Object.assign({}, raw, followupFields || {}, {
-    statut: ALLOWED_STATUSES.indexOf(incomingStatus) !== -1 ? incomingStatus : "À vérifier",
+    statut: "À vérifier",
     notes: appendUniqueLine(existingNotes, automaticNote),
     dernier_message_client: String(followupFields.dernier_message_client || message).slice(0, 900),
     dernier_email_recu_le: followupFields.dernier_email_recu_le || raw.date_reception || new Date(),
@@ -1314,7 +1346,11 @@ function mergeDemandRecords(sourceIdDemande, targetIdDemande) {
 
   writeFieldsToRow(sheet, headers, target.rowIndex, sanitizeFields(updates, true));
   const sourceNote = appendUniqueLine(String(sourceData.notes || '').trim(), 'Rattachée manuellement à ' + targetId + '. Cette fiche source est conservée et peut être supprimée séparément après vérification.');
-  writeFieldsToRow(sheet, headers, source.rowIndex, sanitizeFields({ notes: sourceNote, derniere_modification: new Date() }, true));
+  writeFieldsToRow(sheet, headers, source.rowIndex, sanitizeFields({
+    notes: sourceNote,
+    relance_a_traiter: false,
+    derniere_modification: new Date()
+  }, true));
   applyDefaultRowHeight(sheet, target.rowIndex);
   applyDefaultRowHeight(sheet, source.rowIndex);
   syncCalendarForRow(sheet, headers, target.rowIndex, 'mergeDemandRecords');
@@ -1519,20 +1555,60 @@ function replayFollowupResult(replay) {
   });
 }
 
-function writeMakeFollowup(sheet, headers, rowIndex, fields, result) {
+function writeMakeFollowup(sheet, headers, rowIndex, fields, result, options) {
   const values = sheet.getRange(rowIndex, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const explicitChanges = options && options.explicit_changes || {};
+  const appliedBusinessFields = [];
+  const skippedBusinessFields = [];
+  const appliedBusinessChanges = {};
+  const skippedBusinessChanges = {};
   headers.forEach(function(h, i) {
     const key = canonicalKey(h);
     // Un suivi enrichit une fiche : une valeur absente de l'email ne doit
     // jamais effacer une information métier déjà connue.
-    if (fields[key] !== undefined && fields[key] !== null && String(fields[key]).trim() !== '') {
-      values[i] = fields[key];
+    if (fields[key] === undefined || fields[key] === null || String(fields[key]).trim() === '') return;
+
+    if (FOLLOWUP_PROTECTED_FIELDS.indexOf(key) !== -1) {
+      const currentValue = String(values[i] === undefined || values[i] === null ? '' : values[i]).trim();
+      const explicitChange = normalizeBoolean(explicitChanges[key]);
+      const trustedCallerPhone = key === 'telephone' && options && options.prefer_unique_phone;
+      if (currentValue && !explicitChange && !trustedCallerPhone) {
+        skippedBusinessFields.push(key);
+        skippedBusinessChanges[key] = { current: values[i], proposed: fields[key] };
+        return;
+      }
+      appliedBusinessFields.push(key);
+      appliedBusinessChanges[key] = {
+        previous: values[i],
+        next: fields[key],
+        reason: currentValue ? (trustedCallerPhone ? 'trusted_caller_phone' : 'explicit_change') : 'empty_field'
+      };
     }
+    values[i] = fields[key];
   });
+  result.applied_business_fields = appliedBusinessFields;
+  result.skipped_non_explicit_fields = skippedBusinessFields;
+  result.applied_business_changes = appliedBusinessChanges;
+  result.skipped_non_explicit_changes = skippedBusinessChanges;
   const logCol = headers.findIndex(function(h) { return canonicalKey(h) === 'make_operation_log'; }) + 1;
   if (logCol <= 0) throw new Error('Colonne make_operation_log introuvable');
   values[logCol - 1] = appendMakeOperationLog(values[logCol - 1], getMakeMessageId(fields), result);
   sheet.getRange(rowIndex, 1, 1, values.length).setValues([values]);
+}
+
+function followupRequiresCalendarSync(result) {
+  const calendarFields = [
+    'nom_client',
+    'type_evenement',
+    'date_evenement',
+    'heure_evenement',
+    'nb_convives',
+    'lieu_prestation',
+    'statut'
+  ];
+  return (result && result.applied_business_fields || []).some(function(key) {
+    return calendarFields.indexOf(key) !== -1;
+  });
 }
 
 function applyDefaultRowHeights(sheet) {

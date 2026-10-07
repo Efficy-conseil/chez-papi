@@ -351,13 +351,17 @@ assert(moduleById(mainModules, 88).mapper?.to === 'Label_39174335232504636', 'do
 assert(moduleById(mainModules, 89).mapper?.to === 'Label_5869457419717567046', 'doublon Voxist vers le mauvais libellé');
 assert(moduleById(mainModules, 87).mapper?.to === 'Label_2648810022094724776', 'relance Email vers le mauvais libellé');
 
-[84, 85, 80, 81].forEach(id => {
+[84, 85, 80].forEach(id => {
   const body = moduleById(mainModules, id).mapper?.data || '';
   assert(
     body.includes('"dernier_message_client":"{{escapeJSON(substring(1.fullTextBody; 0; 900))}}"'),
     `message client de relance non protégé par escapeJSON dans le module ${id}`
   );
 });
+assert(
+  (moduleById(mainModules, 81).mapper?.data || '').includes('"dernier_message_client":"{{escapeJSON(38.message_original)}}"'),
+  'message récent analysé absent du suivi Email du module 81'
+);
 
 [
   [84, 'Site Internet'],
@@ -392,7 +396,7 @@ assert(moduleById(mainModules, 87).mapper?.to === 'Label_2648810022094724776', '
 
 const unmatchedEmailBody = moduleById(mainModules, 81).mapper?.data || '';
 assert(unmatchedEmailBody.includes('"create_if_not_found":true'), 'création de secours absente du module 81');
-assert(unmatchedEmailBody.includes('"id_demande":"GMAIL-{{1.threadId}}"'), 'identifiant anti-doublon absent de la création de secours du module 81');
+assert(unmatchedEmailBody.includes('"id_demande":"GMAIL-{{1.id}}"'), 'identifiant par message absent de la fiche de contrôle du module 81');
 assert(unmatchedEmailBody.includes('"fallback_row"'), 'données de création de secours absentes du module 81');
 assert(unmatchedEmailBody.includes('"relance_a_traiter":true'), 'message reçu non signalé dans la création de secours du module 81');
 assert(
@@ -520,22 +524,24 @@ assert(emailNewDemandFlow.findIndex(module => module.id === 5) < emailNewDemandF
 const emailAck = moduleById(mainModules, 40);
 const emailAckConditions = (emailAck.filter?.conditions || []).flat();
 assert(
-  emailAckConditions.some(condition => condition?.a === '{{60.data.data.count}}' && condition?.b === '0' && condition?.o === 'number:equal'),
-  'accusé Email direct non protégé contre un fil déjà rattaché à une demande'
+  emailAckConditions.some(condition => condition?.a === '{{38.is_followup}}' && condition?.b === 'false' && condition?.o === 'boolean:equal') &&
+    !emailAckConditions.some(condition => String(condition?.a || '').includes('60.data.data.count')),
+  'accusé Email direct non piloté par le rôle de nouvelle demande'
 );
 const emailCreationConditions = (moduleById(mainModules, 39).filter?.conditions || []);
 assert(
   emailCreationConditions.every(conditionSet => conditionSet.some(
-    condition => condition?.a === '{{60.data.data.count}}' && condition?.b === '0' && condition?.o === 'number:equal'
+    condition => condition?.a === '{{38.message_role}}' && condition?.b === 'nouvelle_demande' && condition?.o === 'text:equal'
   )),
-  'création Email direct non protégée contre un fil déjà rattaché à une demande'
+  'création Email direct non limitée au rôle nouvelle_demande'
 );
 
 const confirmationFollowup = moduleById(mainModules, 81);
 const confirmationConditions = (confirmationFollowup.filter?.conditions || []).flat();
 assert(
-  confirmationConditions.some(condition => condition?.b === 'Bon de commande' && condition?.o === 'text:contain'),
-  'bon de commande non rattaché comme suivi dans le module 81'
+  confirmationConditions.some(condition => condition?.a === '{{38.message_role}}' && condition?.b === 'suivi_client') &&
+    confirmationConditions.some(condition => condition?.a === '{{38.message_role}}' && condition?.b === 'incertain'),
+  'confirmation Email non pilotée par le rôle analysé dans le module 81'
 );
 assert(
   (moduleById(mainModules, 82).filter?.conditions || []).every(conditionSet =>
@@ -576,8 +582,7 @@ assert(
 const followupConditionSets = confirmationFollowup.filter?.conditions || [];
 assert(
   followupConditionSets.some(conditionSet =>
-    conditionSet.some(condition => condition?.a === '{{38.is_followup}}' && condition?.b === 'true') &&
-    conditionSet.some(condition => condition?.a === '{{38.email_client}}' && condition?.o === 'exist') &&
+    conditionSet.some(condition => condition?.a === '{{38.message_role}}' && condition?.b === 'suivi_client') &&
     !conditionSet.some(condition => condition?.a === '{{38.date_evenement}}')
   ),
   'suivi Email sans date de prestation encore bloqué avant le backend'
@@ -756,22 +761,22 @@ const existingFollowup = moduleById(mainModules, 81);
 const existingFollowupFilter = JSON.stringify(existingFollowup.filter || {});
 const newEmailDemand = moduleById(mainModules, 39);
 const newEmailDemandFilter = JSON.stringify(newEmailDemand.filter || {});
+const emailAnalysisPrompt = JSON.stringify(moduleById(mainModules, 37).mapper?.messages || []);
 ['Merci pour vos propositions', 'modifier certaines pièces'].forEach(marker => {
-  assert(existingFollowupFilter.includes(marker), `indice déterministe de suivi absent du module 81 : ${marker}`);
+  assert(emailAnalysisPrompt.includes(marker), `indice déterministe de suivi absent de l'analyse IA : ${marker}`);
   assert(newEmailDemandFilter.includes(marker) && newEmailDemandFilter.includes('text:notcontain'), `indice de suivi non exclu de la création Email : ${marker}`);
 });
 const explicitReminderMarkers = ['me permets de vous relancer', 'précédent mail', 'sans réponse'];
 const followupArchiveFilter = JSON.stringify(moduleById(mainModules, 82).filter || {});
 const outOfScopeEmailFilter = JSON.stringify(moduleById(mainModules, 51).filter || {});
 explicitReminderMarkers.forEach(marker => {
-  assert(existingFollowupFilter.includes(marker), `relance explicite absente de la route déterministe du module 81 : ${marker}`);
+  assert(emailAnalysisPrompt.includes(marker), `relance explicite absente de l'analyse IA : ${marker}`);
   assert(followupArchiveFilter.includes(marker) && followupArchiveFilter.includes('{{81.data.data.updated}}'), `archivage après rattachement absent pour la relance explicite : ${marker}`);
   assert(newEmailDemandFilter.includes(marker) && newEmailDemandFilter.includes('text:notcontain'), `relance explicite non exclue de la création Email : ${marker}`);
-  assert(outOfScopeEmailFilter.includes(marker) && outOfScopeEmailFilter.includes('text:notcontain'), `relance explicite encore archivable hors périmètre : ${marker}`);
 });
 assert(
-  existingFollowupFilter.includes('choisi un autre prestataire'),
-  'réponse de refus après devis absente de la route déterministe de suivi'
+  emailAnalysisPrompt.includes('choisi un autre prestataire'),
+  'réponse de refus après devis absente de l’analyse Email direct'
 );
 assert(
   JSON.stringify(moduleById(mainModules, 82).filter || {}).includes('choisi un autre prestataire'),
@@ -790,7 +795,6 @@ assert(
   (existingFollowup.mapper?.data || '').includes('"email_client":"{{1.fromEmail}}"'),
   "adresse Gmail de l'expéditeur absente du rapprochement de suivi Email"
 );
-const emailAnalysisPrompt = JSON.stringify(moduleById(mainModules, 37).mapper?.messages || []);
 assert(
   emailAnalysisPrompt.includes('recopie ce nom dans nom_client') && emailAnalysisPrompt.includes("l'en-tête Gmail"),
   "extraction du nom d'expéditeur Gmail absente de l'analyse Email direct"
@@ -804,6 +808,102 @@ assert(
     emailAnalysisPrompt.includes('Retourne obligatoirement is_demande=true, is_followup=true'),
   'règle prioritaire des relances explicites absente de l’analyse Email direct'
 );
+[
+  'nouvelle_demande',
+  'suivi_client',
+  'fournisseur_sous_traitant',
+  'administratif_bancaire',
+  'notification_automatique',
+  'incertain'
+].forEach(role => {
+  assert(emailAnalysisPrompt.includes(role), `rôle Email direct absent de l'analyse IA : ${role}`);
+});
+assert(
+  emailAnalysisPrompt.includes('a réagi à votre message') &&
+    emailAnalysisPrompt.includes('reacted to your message') &&
+    emailAnalysisPrompt.includes("l'historique cité") &&
+    emailAnalysisPrompt.includes('ne choisis jamais Autres par défaut'),
+  'règles de notification, message récent ou type inconnu absentes de l’analyse Email direct'
+);
+[
+  'change_nom_client',
+  'change_telephone',
+  'change_email_client',
+  'change_type_evenement',
+  'change_date_evenement',
+  'change_heure_evenement',
+  'change_nb_convives',
+  'change_lieu_prestation',
+  'change_budget_estime'
+].forEach(field => {
+  assert(emailAnalysisPrompt.includes(field), `indicateur de modification explicite absent du prompt : ${field}`);
+  assert(
+    (moduleById(mainModules, 38).metadata?.interface || []).some(entry => entry.name === field),
+    `indicateur de modification explicite absent du parseur JSON : ${field}`
+  );
+});
+assert(
+  (moduleById(mainModules, 38).metadata?.interface || []).some(entry => entry.name === 'message_role'),
+  'message_role absent du parseur JSON Email direct'
+);
+const emailAnalysisFilter = moduleById(mainModules, 37).filter?.conditions || [];
+assert(
+  emailAnalysisFilter.every(group =>
+    !group.some(condition => String(condition?.a || '').includes('60.data.data.count')) &&
+    ['notifications@wix-forms.com', 'message@voxist.com', 'no-reply@ovh.fr', 'demande.chezpapimaisongourmande@gmail.com', 'chezpapimaisongourmande@gmail.com']
+      .every(sender => group.some(condition => condition?.a === '{{1.fromEmail}}' && condition?.b === sender && condition?.o === 'text:notequal'))
+  ),
+  'tous les emails directs ne passent pas par l’analyse de rôle ou une source technique peut y entrer'
+);
+[80, 85].forEach(moduleId => {
+  const legacyFilter = moduleById(mainModules, moduleId).filter?.conditions || [];
+  assert(
+    legacyFilter.every(group => group.some(condition =>
+      condition?.a === 'analyse_ia_obligatoire' &&
+      condition?.b === 'route_legacy_desactivee' &&
+      condition?.o === 'text:equal'
+    )),
+    `ancienne route Email ${moduleId} encore active avant analyse IA`
+  );
+});
+assert(
+  existingFollowupFilter.includes('{{38.message_role}}') &&
+    existingFollowupFilter.includes('suivi_client') &&
+    existingFollowupFilter.includes('incertain'),
+  'route de suivi Email non pilotée par message_role'
+);
+assert(
+  newEmailDemandFilter.includes('{{38.message_role}}') && newEmailDemandFilter.includes('nouvelle_demande'),
+  'création Email non limitée au rôle nouvelle_demande'
+);
+assert(
+  outOfScopeEmailFilter.includes('{{38.message_role}}') &&
+    outOfScopeEmailFilter.includes('nouvelle_demande') &&
+    outOfScopeEmailFilter.includes('suivi_client') &&
+    outOfScopeEmailFilter.includes('incertain'),
+  'archivage hors périmètre Email non protégé par les rôles métier'
+);
+const protectedFollowupBody = JSON.parse(existingFollowup.mapper?.data || '{}');
+assert(protectedFollowupBody.options?.create_if_ambiguous === true, 'fiche de contrôle absente en cas de rapprochement ambigu');
+assert(
+  protectedFollowupBody.options?.force_review_card === '{{if(38.message_role = "incertain"; true; false)}}',
+  'rôle incertain susceptible de modifier automatiquement une demande existante'
+);
+assert(protectedFollowupBody.options?.fallback_row?.statut === 'À vérifier', 'fiche de contrôle créée avec un autre statut');
+[
+  'nom_client',
+  'telephone',
+  'email_client',
+  'type_evenement',
+  'date_evenement',
+  'heure_evenement',
+  'nb_convives',
+  'lieu_prestation',
+  'budget_estime'
+].forEach(field => {
+  assert(protectedFollowupBody.options?.explicit_changes?.[field], `protection de remplacement absente pour ${field}`);
+  assert(protectedFollowupBody.fields?.[field]?.includes('escapeJSON'), `champ de suivi non protégé en JSON : ${field}`);
+});
 assert(
   readFileSync('apps-script/code.gs', 'utf8').includes('const exactNameFollowup'),
   'rattachement d’un suivi par nom complet exact absent du backend'
