@@ -534,8 +534,8 @@ function trashVoicemail(messageId) {
   const id = validateGmailMessageId(messageId);
   const message = Gmail.Users.Messages.get('me', id, { format: 'full' });
   const bodyText = extractGmailMessageText(message.payload || {});
-  if (!isPendingOvhVoicemail(message, bodyText, voicemailLabelId)) {
-    throw new Error('Seul un vocal en attente d’analyse automatique peut être supprimé');
+  if (!isAccessibleOvhVoicemail(message, bodyText, voicemailLabelId)) {
+    throw new Error('Message vocal introuvable');
   }
 
   rememberDiscardedVoicemail(id);

@@ -100,6 +100,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | O19 | E-mail OVH dont le service avancé ne renvoie qu’un aperçu texte arrêté avant la transcription, alors que le corps complet Gmail contient `Voici la transcription de ce dernier :` | Le backend relit le corps complet via GmailApp et le dashboard affiche uniquement la transcription utile, sans horodatage ni avertissement OVH | Backend automatique + dashboard |
 | O20 | Vocal OVH non lu encore en boîte de réception, avant un créneau d’analyse | Il apparaît dans `Vocaux à écouter` avec l’heure suivante parmi 6 h, 12 h, 16 h et 21 h (heure de Paris), sans action de rattachement | Backend automatique + dashboard |
 | O21 | Suppression confirmée d’un vocal OVH en attente | Le message est placé dans la corbeille Gmail, disparaît du dashboard et une restauration manuelle dans Gmail reste exclue de l’analyse automatique pendant 35 jours | Backend automatique + essai Gmail |
+| O22 | Suppression confirmée d’un vocal déjà analysé, notamment `Personnel / hors activité` | Le message est placé dans la corbeille Gmail et disparaît du dashboard | Backend automatique + essai Gmail |
 
 ## Email direct
 

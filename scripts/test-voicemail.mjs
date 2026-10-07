@@ -312,6 +312,7 @@ assert.doesNotMatch(frontendMarkup, />[^<]*OVH[^<]*</i, 'la popup ne doit pas ex
 assert.doesNotMatch(frontendSource, /messages OVH|message OVH/i, 'les états de la popup doivent parler de messages vocaux');
 assert.doesNotMatch(frontendSource, /Analyse en cours/, 'l’interface doit annoncer l’heure de l’analyse automatique plutôt qu’un état vague');
 assert.match(frontendSource, /Analyse automatique à \$\{time\}/);
+assert.match(frontendSource, /Analyse terminée · Personnel \/ hors activité/);
 assert.match(frontendSource, /async trashVoicemail\(/);
 assert.match(frontendSource, /Supprimer ce message vocal/);
 const normalizeStart = frontendSource.indexOf('function normalizeAudioBase64');
@@ -393,6 +394,13 @@ assert.equal(read.read, true);
 assert.deepEqual(JSON.parse(JSON.stringify(modified)), [
   { resource: { addLabelIds: ['Label_historique_ovh'], removeLabelIds: ['INBOX'] }, userId: 'me', id: messageId },
   { resource: { removeLabelIds: ['UNREAD'] }, userId: 'me', id: messageId }
+]);
+
+const deletedProcessed = context.trashVoicemail(messageId);
+assert.equal(deletedProcessed.trashed, true, 'un vocal déjà analysé doit aussi pouvoir être supprimé');
+assert.deepEqual(trashed, [
+  { userId: 'me', id: messageId },
+  { userId: 'me', id: messageId }
 ]);
 
 cacheValues.clear();

@@ -866,10 +866,10 @@ function voicemailBadge(message) {
     return { label: time ? `Analyse automatique à ${time}${day ? ` ${day}` : ''}` : 'Analyse automatique prévue', css: 'analyse' };
   }
   if (message?.classification === 'professionnel') {
-    return { label: 'Demande traiteur', css: 'professionnel' };
+    return { label: message?.processing_status === 'processed' ? 'Analyse terminée · Demande traiteur' : 'Demande traiteur', css: 'professionnel' };
   }
   if (message?.classification === 'personnel') {
-    return { label: 'Personnel / hors activité', css: 'personnel' };
+    return { label: message?.processing_status === 'processed' ? 'Analyse terminée · Personnel / hors activité' : 'Personnel / hors activité', css: 'personnel' };
   }
   return { label: 'Vocal à vérifier', css: 'analyse' };
 }
@@ -952,7 +952,7 @@ function renderVoicemails() {
           ${demandButton}
           <a class="btn-secondary voicemail-gmail-link" href="${escAttr(voicemailGmailUrl(message))}" target="_blank" rel="noopener">Ouvrir dans Gmail</a>
           <button type="button" class="btn-secondary" data-voicemail-id="${escAttr(id)}" onclick="markVoicemailRead(this.dataset.voicemailId, this)">Marquer comme lu</button>
-          ${isPending ? `<button type="button" class="btn-danger" data-voicemail-id="${escAttr(id)}" onclick="trashVoicemail(this.dataset.voicemailId, this)">Supprimer</button>` : ''}
+          <button type="button" class="btn-danger" data-voicemail-id="${escAttr(id)}" onclick="trashVoicemail(this.dataset.voicemailId, this)">Supprimer</button>
         </div>
       </div>
     </article>`;
@@ -1302,7 +1302,9 @@ async function markVoicemailRead(messageId, button) {
 async function trashVoicemail(messageId, button) {
   const id = String(messageId || '').trim();
   if (!id || !button) return;
-  if (!confirm('Supprimer ce message vocal ? Il sera envoyé dans la corbeille Gmail et ne sera pas analysé automatiquement.')) return;
+  const isPending = voicemailMessages.some(message => String(message.id || '') === id && message.processing_status === 'pending');
+  const detail = isPending ? ' Il ne sera pas analysé automatiquement.' : '';
+  if (!confirm(`Supprimer ce message vocal ? Il sera envoyé dans la corbeille Gmail.${detail}`)) return;
   button.disabled = true;
   button.textContent = 'Suppression…';
   try {
