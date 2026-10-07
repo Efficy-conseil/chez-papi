@@ -254,8 +254,8 @@ Comportement attendu :
 - Sans pièce jointe audio, la transcription OVH du corps sert uniquement de solution de secours et suit la même extraction structurée et les mêmes règles de qualification métier que Voxist.
 - Les rattachements existants priorisent le numéro appelant, puis les indices nom, date, lieu, convives et type d'événement, avec refus explicite des rapprochements ambigus.
 - Une création OVH utilise `Téléphone`, n'envoie aucun accusé et conserve les mêmes règles de statut, de date, de nom inconnu, de relance et de reprise JSON que Voxist.
-- Les messages OVH traités ou déjà connus sont classés dans le libellé unique `Historique_OVH`. Make appelle l'action backend `archiveOvhVoicemail`, qui ajoute ce libellé, retire `INBOX` et conserve `UNREAD`.
-- Un message personnel, vide, silencieux ou hors périmètre est envoyé vers `Hors_Scope_Make` sans création de demande.
+- Les messages OVH métier traités ou déjà connus sont classés dans `Historique_OVH`. Make appelle l'action backend `archiveOvhVoicemail`, qui ajoute ce libellé, retire `INBOX` et conserve `UNREAD`.
+- Un message personnel, vide, silencieux ou hors périmètre est envoyé vers `Hors_Scope_Make` sans création de demande. Tant qu'il reste non lu, le backend le retourne aussi au dashboard comme vocal personnel ; ce libellé le catégorise sans le masquer.
 - Un message déjà traité est archivé explicitement sans seconde écriture.
 
 Contraintes anti-régression :

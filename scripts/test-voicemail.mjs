@@ -133,9 +133,12 @@ const context = vm.createContext({
           listQueries.push({ userId, ...request });
           const labels = currentMessage.labelIds || [];
           const isHistoricalQuery = String(request.q || '').includes('label:Historique_OVH');
+          const isPersonalQuery = String(request.q || '').includes('label:Hors_Scope_Make');
           const matches = isHistoricalQuery
             ? labels.includes('Label_historique_ovh')
-            : labels.includes('INBOX');
+            : isPersonalQuery
+              ? labels.includes('Label_hors_scope')
+              : labels.includes('INBOX');
           return { messages: matches ? [{ id: messageId }] : [] };
         },
         get: () => currentMessage,
@@ -210,7 +213,8 @@ currentMessage = { ...currentMessage, labelIds: ['UNREAD', 'Label_historique_ovh
 const listed = context.listUnreadVoicemails();
 assert.equal(listed.count, 1);
 assert.equal(listQueries[0].q, 'label:Historique_OVH is:unread');
-assert.equal(listQueries[1].q, 'in:inbox is:unread from:no-reply@ovh.fr');
+assert.equal(listQueries[1].q, 'label:Hors_Scope_Make is:unread from:no-reply@ovh.fr');
+assert.equal(listQueries[2].q, 'in:inbox is:unread from:no-reply@ovh.fr');
 assert.equal(listed.messages[0].processing_status, 'processed');
 assert.equal(listed.messages[0].caller, '06 64 88 67 08');
 assert.equal(listed.messages[0].classification, 'professionnel');
@@ -220,6 +224,24 @@ assert.equal(
   "Oui, bonjour, c'est le frigoriste, je vous appelais pour savoir si ça avait fonctionné."
 );
 assert.equal(listed.messages[0].has_audio, true);
+
+// Un vocal personnel classé par Make hors périmètre reste consultable tant
+// qu'il est non lu : Hors_Scope_Make le catégorise, sans le masquer.
+rows[0][4] = 'autre-message';
+rows[0][0] = 'DEMANDE-1';
+currentMessage = { ...currentMessage, labelIds: ['UNREAD', 'Label_hors_scope'] };
+listQueries.length = 0;
+const personal = context.listUnreadVoicemails();
+assert.equal(personal.count, 1);
+assert.equal(personal.messages[0].processing_status, 'processed');
+assert.equal(personal.messages[0].classification, 'personnel');
+assert.equal(personal.messages[0].demand, null);
+assert.equal(listQueries[0].q, 'label:Historique_OVH is:unread');
+assert.equal(listQueries[1].q, 'label:Hors_Scope_Make is:unread from:no-reply@ovh.fr');
+assert.equal(context.getVoicemailAudio(messageId).mime_type, 'audio/mpeg');
+currentMessage = { ...currentMessage, labelIds: ['UNREAD', 'Label_historique_ovh'] };
+rows[0][0] = 'VOXIST-' + messageId;
+rows[0][4] = messageId;
 
 // Les e-mails OVH réels peuvent fournir un aperçu text/plain tronqué avant la
 // transcription, alors que leur variante HTML contient le texte complet.
