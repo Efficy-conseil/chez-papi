@@ -416,6 +416,8 @@ Comportement attendu :
 - Afficher toutes les demandes dans `Historique`, avec filtres par date/année/trimestre.
 - Afficher les dates au format français.
 - Une synchronisation frontend doit s'arrêter après 30 secondes et afficher une erreur exploitable au lieu de bloquer indéfiniment l'interface.
+- Une requête HTTP GET adressée par erreur à la Web App doit répondre immédiatement sans mobiliser une exécution Apps Script. Le délai volontaire réservé à la reprise des erreurs Make ne doit s'appliquer qu'aux appels Make explicitement identifiés.
+- Une même session navigateur ne doit pas lancer plusieurs lectures `list` simultanées. Les onglets masqués suspendent leur lecture périodique et se resynchronisent lorsqu'ils redeviennent visibles.
 - Afficher les années seules telles quelles.
 - Ne pas afficher une demande à la mauvaise date à cause d'un parsing US.
 - Ouvrir le fil Gmail avec le bon label selon le canal :

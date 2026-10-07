@@ -452,7 +452,8 @@ La fiche en cours d'édition est exclue de cette comparaison.
 - Création par `add`, modification par `update`, suppression par `delete`.
 - Les vocaux utilisent `listVoicemails`, `getVoicemailAudio` et `markVoicemailRead` avec la même authentification dashboard.
 - Les requêtes suivent les redirections Google.
-- Une synchronisation silencieuse est exécutée chaque minute lorsque l'application est ouverte et connectée.
+- Une synchronisation silencieuse est exécutée chaque minute lorsque l'application est ouverte, connectée et visible. Un onglet masqué suspend cette lecture et se resynchronise lorsqu'il redevient visible.
+- Les demandes de lecture `list` simultanées dans un même onglet partagent la même requête réseau afin qu'une actualisation manuelle, un retour au premier plan et le polling périodique ne surchargent pas le backend.
 - Les mutations réussies sont diffusées aux autres onglets via `BroadcastChannel`.
 - Les autres onglets rechargent alors les données sans interaction.
 - Les paramètres d'URL `?id=<id_demande>` et, pour compatibilité, `?row=<numéro>` ouvrent directement une fiche après chargement puis nettoient l'URL.

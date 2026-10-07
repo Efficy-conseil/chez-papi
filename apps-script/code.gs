@@ -201,7 +201,9 @@ function setupAuthSecrets() {
 // ── GET : désactivé pour ne pas exposer les identifiants en URL ─────────────
 
 function doGet(e) {
-  return makeTransportError("Utilisez POST");
+  return ContentService
+    .createTextOutput(JSON.stringify({ ok: false, error: "Utilisez POST" }))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 // ── POST : lecture / écriture ──────────────────────────────────

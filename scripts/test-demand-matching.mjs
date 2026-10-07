@@ -32,7 +32,7 @@ function evaluate(expression) {
 const getError = evaluate('doGet({})');
 assert.deepEqual(JSON.parse(getError.getContent()), { ok: false, error: 'Utilisez POST' });
 assert.equal(getError.getMimeType(), 'application/json');
-assert.deepEqual(context.sleepDurations, [20000]);
+assert.deepEqual(context.sleepDurations, []);
 context.malformedMakeRequest = {
   postData: {
     contents: `{"action":"checkDuplicate","make_token":"cp_make_followup_2026_06",`
@@ -41,7 +41,7 @@ context.malformedMakeRequest = {
 const malformedMakeError = evaluate('doPost(malformedMakeRequest)');
 assert.equal(JSON.parse(malformedMakeError.getContent()).ok, false);
 assert.equal(malformedMakeError.getMimeType(), 'application/json');
-assert.deepEqual(context.sleepDurations, [20000, 20000]);
+assert.deepEqual(context.sleepDurations, [20000]);
 assert.equal(evaluate('DELAY_MAKE_ERRORS_FOR_HTTP_TIMEOUT'), false);
 context.validMakeRequest = {
   postData: {
@@ -63,7 +63,7 @@ const validMakeError = evaluate(`(() => {
   })()`);
 assert.deepEqual(JSON.parse(validMakeError.getContent()), { ok: false, error: 'Erreur backend Make' });
 assert.equal(validMakeError.getMimeType(), 'application/json');
-assert.deepEqual(context.sleepDurations, [20000, 20000, 20000]);
+assert.deepEqual(context.sleepDurations, [20000, 20000]);
 assert.equal(evaluate('DELAY_MAKE_ERRORS_FOR_HTTP_TIMEOUT'), false);
 assert.equal(context.loggedMessages.at(-1), 'Erreur Make [checkDuplicate] : Erreur backend Make');
 assert.deepEqual(

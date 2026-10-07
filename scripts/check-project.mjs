@@ -95,6 +95,10 @@ requireText('make/Integration Email - Wix - Voxist.blueprint.json', '\\"url_emai
 requireText('chez-papi/app.js', 'Object.assign(row, result.fields || {}, { statut: newStatus });');
 requireText('apps-script/code.gs', 'const requiresCalendarSync = !isFollowupOnlyUpdate && (!isStatusOnlyUpdate || isConfirmedStatus(currentStatus) || isConfirmedStatus(clean.statut));');
 requireText('chez-papi/app.js', "controller.abort(), 30000");
+requireText('chez-papi/app.js', "if (document.hidden || !CONFIG.SHEETS_URL || !localStorage.getItem('cp_user')) return;");
+requireText('chez-papi/app.js', '_loadPromise: null');
+requireText('chez-papi/app.js', "this._loadPromise = this.request({ action: 'list' });");
+requireFunctionNotContains('apps-script/code.gs', 'doGet', 'makeTransportError');
 requireFunctionNotContains('apps-script/code.gs', 'ensureSchemaHeaders', 'applyDefaultRowHeights(sheet)');
 requireText(
   'apps-script/code.gs',

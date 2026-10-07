@@ -689,7 +689,7 @@ let _pollingTimer = null;
 let _voicemailPollingTimer = null;
 
 async function silentPoll() {
-  if (!CONFIG.SHEETS_URL || !localStorage.getItem('cp_user')) return;
+  if (document.hidden || !CONFIG.SHEETS_URL || !localStorage.getItem('cp_user')) return;
   try {
     const result = await SheetsAPI.load();
     if (result?.rows) {
@@ -722,7 +722,10 @@ function stopBackgroundPolling() {
 
 window.addEventListener('focus', refreshVoicemailsInBackground);
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) refreshVoicemailsInBackground();
+  if (!document.hidden) {
+    silentPoll();
+    refreshVoicemailsInBackground();
+  }
 });
 
 // ── Periodic Background Sync (Chrome Android, PWA installée) ─────────────────
@@ -745,6 +748,7 @@ async function registerPeriodicSync() {
 // ── SHEETS API ──
 
 const SheetsAPI = {
+  _loadPromise: null,
   auth() {
     return {
       user: localStorage.getItem('cp_user') || '',
@@ -795,7 +799,14 @@ const SheetsAPI = {
   },
   async load() {
     if (!CONFIG.SHEETS_URL) return null;
-    return this.request({ action: 'list' });
+    if (!this._loadPromise) {
+      this._loadPromise = this.request({ action: 'list' });
+    }
+    try {
+      return await this._loadPromise;
+    } finally {
+      this._loadPromise = null;
+    }
   },
   async add(row, options = {}) {
     if (!CONFIG.SHEETS_URL) return { error: 'Non configuré' };
