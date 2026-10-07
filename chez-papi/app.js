@@ -755,7 +755,7 @@ const SheetsAPI = {
       pass: localStorage.getItem('cp_pass') || ''
     };
   },
-  async request(payload) {
+  async request(payload, retryCount = 0) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30000);
     let res;
@@ -783,6 +783,7 @@ const SheetsAPI = {
     try {
       parsed = JSON.parse(text);
     } catch {
+      if (retryCount === 0) return this.request(payload, 1);
       console.error('SheetsAPI: réponse non-JSON :', text.slice(0, 300));
       throw new Error('Réponse invalide du serveur (non-JSON)');
     }

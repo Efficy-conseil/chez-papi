@@ -494,7 +494,7 @@ La fiche en cours d'édition est exclue de cette comparaison.
 - Désactivation temporaire des contrôles pendant les écritures.
 - Overlay pendant l'enregistrement ou la suppression.
 - Conservation de l'affichage existant en cas d'échec du polling silencieux.
-- Rejet des réponses backend non JSON ou explicitement non autorisées.
+- Une réponse backend intermédiaire non JSON est rejouée une fois de façon transparente ; une seconde réponse non JSON ou explicitement non autorisée est rejetée avec une erreur exploitable.
 - Interruption d'une synchronisation après 30 secondes avec retrait de l'overlay et affichage d'une erreur.
 - Vérification côté backend que Gmail correspond exactement à `demande.chezpapimaisongourmande@gmail.com` avant toute lecture ou modification d'un vocal.
 - Vérification de l'expéditeur et du contenu OVH avant de retourner l'audio ou de retirer le statut non lu.
