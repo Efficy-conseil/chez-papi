@@ -1871,6 +1871,11 @@ function sanitizeFields(rawFields, isUpdate) {
     clean.date_evenement = normalizeEventDateText(clean.date_evenement);
   }
 
+  // Même reste de formule Make (« \ ») quand l'IA ne trouve pas de budget.
+  if (clean.budget_estime !== undefined && isMakeEmptyPlaceholder(clean.budget_estime)) {
+    clean.budget_estime = '';
+  }
+
   if (clean.telephone !== undefined) {
     clean.telephone = formatFrenchPhone(clean.telephone);
   }
@@ -2065,12 +2070,18 @@ function normalizeSingleEventDateText(value) {
   return s;
 }
 
+// Make peut transmettre un reste de formule (« \ », « \"\" ») ou « null »
+// lorsqu'aucune valeur n'est extraite par l'IA.
+function isMakeEmptyPlaceholder(value) {
+  const s = String(value === null || value === undefined ? '' : value).trim();
+  return /^[\\"']+$/.test(s) || /^(?:null|undefined)$/i.test(s);
+}
+
 function normalizeEventDateText(value) {
   const s = String(value === null || value === undefined ? '' : value).trim();
   if (!s || s === '—') return '';
-  // Make peut transmettre un reste de formule (« \ », « \"\" ») ou « null »
-  // lorsqu'aucune date n'est extraite : ce n'est pas une date de prestation.
-  if (!/[0-9A-Za-zÀ-ÿ]/.test(s) || /^(?:null|undefined)$/i.test(s)) return '';
+  // Une date sans chiffre ni lettre n'est pas une date de prestation.
+  if (!/[0-9A-Za-zÀ-ÿ]/.test(s) || isMakeEmptyPlaceholder(s)) return '';
   const range = s.match(/^(?:du\s+)?(.+?)\s+au\s+(.+)$/i);
   if (range) {
     const start = normalizeSingleEventDateText(range[1]);

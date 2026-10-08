@@ -555,6 +555,9 @@ assert.equal(targetAfterMerge[mergeHeaders.indexOf('notes')], targetNotesBeforeR
 assert.equal(evaluate('normalizeEventDateText("\\\\")'), '');
 assert.equal(evaluate('normalizeEventDateText("\\\\\\"\\\\\\"")'), '');
 assert.equal(evaluate('normalizeEventDateText("null")'), '');
+assert.equal(evaluate('sanitizeFields({ budget_estime: "\\\\" }, true).budget_estime'), '');
+assert.equal(evaluate('sanitizeFields({ budget_estime: "?" }, true).budget_estime'), '?');
+assert.equal(evaluate('sanitizeFields({ budget_estime: "20€ par personne" }, true).budget_estime'), '20€ par personne');
 assert.equal(evaluate('normalizeEventDateText("25/10/2026")'), '25/10/2026');
 assert.equal(evaluate('normalizeEventDateText("Inconnu / à compléter")'), 'Inconnu / à compléter');
 
