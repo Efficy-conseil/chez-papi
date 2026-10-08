@@ -1415,6 +1415,14 @@ function updateExistingDemandFollowup(match, fields, options) {
 }
 
 const MANUAL_MERGE_SOURCE_MARKER = 'Rattachée manuellement à ';
+const MANUAL_MERGE_TARGET_MARKER = 'Rattachement manuel depuis ';
+
+// Une demande qui a reçu un rattachement reste une destination valide, même si
+// ses notes reprennent par erreur l'annotation d'une ancienne fiche source.
+function isMergedSourceNotes(notes) {
+  const text = String(notes || '');
+  return text.indexOf(MANUAL_MERGE_SOURCE_MARKER) !== -1 && text.indexOf(MANUAL_MERGE_TARGET_MARKER) === -1;
+}
 
 // Une fiche source déjà rattachée manuellement n'est plus une demande à part
 // entière. Une fiche de contrôle « À vérifier » ne doit pas non plus rendre
@@ -1430,7 +1438,7 @@ function refineFollowupMatches(sheet, headers, matches) {
       notes: String(data.notes || '')
     };
   }).filter(function(item) {
-    return item.notes.indexOf(MANUAL_MERGE_SOURCE_MARKER) === -1;
+    return !isMergedSourceNotes(item.notes);
   });
   if (usable.length > 1) {
     const confirmed = usable.filter(function(item) { return item.statut !== 'À vérifier'; });
@@ -1526,7 +1534,11 @@ function mergeDemandRecords(sourceIdDemande, targetIdDemande) {
   updates.nb_relances_client = Number(targetData.nb_relances_client || 0) + Number(sourceData.nb_relances_client || 0);
 
   const noteParts = [mergeMarker + ' (fiche source conservée).'];
-  const sourceNotes = String(sourceData.notes || '').trim();
+  // L'annotation « Rattachée manuellement à … » décrit uniquement la fiche
+  // source : la recopier ferait passer la destination pour une fiche rattachée.
+  const sourceNotes = String(sourceData.notes || '').split('\n').filter(function(line) {
+    return line.trim().indexOf(MANUAL_MERGE_SOURCE_MARKER) !== 0;
+  }).join('\n').trim();
   const sourceOriginal = String(sourceData.message_original || '').trim();
   if (sourceNotes) noteParts.push(sourceNotes);
   if (sourceOriginal && sourceOriginal !== String(targetData.message_original || '').trim()) {

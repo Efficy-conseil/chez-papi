@@ -677,6 +677,19 @@ const oummeFollowup = evaluate(`JSON.parse(updateExistingDemandFollowup(
 ).getContent()).data`);
 assert.equal(oummeFollowup.id_demande, 'WIX-OUMME');
 
+// Aurore : une destination dont les notes ont recopié l'annotation d'une source reste candidate.
+context.reviewSheetAurore = reviewSheet([
+  { id_demande: 'WIX-AURORE', email_client: 'aurore@example.com', statut: 'Devis envoyé', notes: 'Rattachement manuel depuis GMAIL-AURORE (fiche source conservée).\nRattachée manuellement à MANUAL-AUTRE. Cette fiche source est conservée.' },
+  { id_demande: 'GMAIL-AURORE', email_client: 'aurore@example.com', statut: 'À vérifier', notes: 'Rattachée manuellement à WIX-AURORE. Cette fiche source est conservée.' }
+]);
+context.getSheet = () => context.reviewSheetAurore;
+const auroreFollowup = evaluate(`JSON.parse(updateExistingDemandFollowup(
+  { email_client: 'aurore@example.com' },
+  { gmail_message_id: 'MESSAGE-AURORE-2' },
+  { create_if_not_found: true, create_if_ambiguous: true, fallback_row: { id_demande: 'GMAIL-MESSAGE-AURORE-2' } }
+).getContent()).data`);
+assert.equal(auroreFollowup.id_demande, 'WIX-AURORE');
+
 // Deux vraies demandes actives avec le même email restent ambiguës.
 context.followupSheetAmbiguous = reviewSheet([
   { id_demande: 'WIX-A', email_client: 'double@example.com', statut: 'Devis envoyé' },
@@ -706,5 +719,33 @@ const threadMismatch = evaluate(`JSON.parse(updateThreadFollowup('THREAD-RATOU',
   { match: { email_client: 'intrus@example.com' } }
 ).getContent()).data`);
 assert.equal(threadMismatch.reason, 'source_email_mismatch');
+
+// Un rattachement ne recopie pas l'annotation « Rattachée manuellement à » de la source.
+const chainRows = [
+  mergeHeaders,
+  ['GMAIL-CHAIN', 'Aurore', 'aurore@example.com', '', '03/07/2027', '', 'À vérifier', 'Fiche de contrôle\nRattachée manuellement à MANUAL-AUTRE. Cette fiche source est conservée.', 'Message', 'T1', 'M1', '', '', 'Message', 1, false, ''],
+  ['WIX-CHAIN', 'Aurore', 'aurore@example.com', '', '03/07/2027', '', 'Devis envoyé', '', 'Demande', '', '', '', '', '', 0, false, '']
+];
+context.getSheet = () => ({
+  getLastRow() { return chainRows.length; },
+  getLastColumn() { return mergeHeaders.length; },
+  getRange(row, column, rowCount = 1, columnCount = 1) {
+    const values = () => chainRows.slice(row - 1, row - 1 + rowCount).map(line => line.slice(column - 1, column - 1 + columnCount));
+    return {
+      getValues: values,
+      getDisplayValues() { return values().map(line => line.map(value => String(value ?? ''))); },
+      getValue() { return chainRows[row - 1][column - 1]; },
+      setValue(value) { chainRows[row - 1][column - 1] = value; return this; },
+      setNumberFormat() { return this; }
+    };
+  }
+});
+evaluate('mergeDemandRecords("GMAIL-CHAIN", "WIX-CHAIN")');
+const chainTargetNotes = chainRows[2][mergeHeaders.indexOf('notes')];
+assert.match(chainTargetNotes, /Rattachement manuel depuis GMAIL-CHAIN/);
+assert.match(chainTargetNotes, /Fiche de contrôle/);
+assert.doesNotMatch(chainTargetNotes, /Rattachée manuellement à MANUAL-AUTRE/);
+assert.equal(evaluate(`isMergedSourceNotes(${JSON.stringify(chainRows[1][mergeHeaders.indexOf('notes')])})`), true);
+assert.equal(evaluate(`isMergedSourceNotes(${JSON.stringify(chainTargetNotes)})`), false);
 
 console.log('Tests de rapprochement réussis.');
