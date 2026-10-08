@@ -1006,6 +1006,16 @@ body {
   transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
 }
 
+/* Grand écran : les 7 cartes se resserrent légèrement pour tenir sur une ligne. */
+@media (min-width: 1200px) {
+  .kpi-card {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 128px;
+    max-width: 155px;
+  }
+}
+
 .kpi-card:hover {
   border-color: var(--gold-lt);
   box-shadow: 0 4px 14px rgba(92, 61, 30, 0.08);

@@ -181,7 +181,7 @@ Sept indicateurs sont affichés dans une seule rangée fluide, dans cet ordre :
 - demandes en attente de réponse ;
 - événements confirmés.
 
-Les cartes conservent une largeur stable, ne s'étirent pas pour remplir l'espace restant et reviennent automatiquement à la ligne lorsque la largeur disponible est insuffisante.
+Les cartes conservent une largeur stable (155 px), ne s'étirent pas pour remplir l'espace restant et reviennent automatiquement à la ligne lorsque la largeur disponible est insuffisante. À partir de 1200 px de large, elles peuvent se resserrer jusqu'à 128 px afin que les sept tiennent sur une seule ligne, notamment sur un écran de 1280 px.
 
 Chaque indicateur ouvre une fenêtre détaillée. Les six indicateurs de demandes conservent la même fenêtre, dont les lignes ouvrent la fiche et permettent de modifier directement le statut. `Vocaux à écouter` ouvre sa fenêtre dédiée. Le détail `À rappeler` affiche également le téléphone ; le détail `En attente de réponse` affiche la colonne `Depuis` avec le nombre de jours écoulés depuis la proposition d'appel ; le nombre est mis en évidence à partir de sept jours. Le détail `Messages reçus` regroupe les demandes dont `relance_a_traiter` est vrai, les trie par date de dernier message décroissante et affiche le dernier message enregistré en entier, sans remplacer leur statut commercial. Le détail `Devis à préparer` affiche le budget.
 
