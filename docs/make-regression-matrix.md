@@ -146,6 +146,12 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | E38 | Suivi mentionnant un téléphone, une date ou des convives déjà renseignés sans annoncer de correction | Les valeurs existantes restent inchangées ; seuls les champs vides sont complétés et le refus est inscrit dans le journal Make | Backend automatique + essai Make |
 | E39 | Suivi disant explicitement « finalement 80 personnes », « date déplacée au… » ou « à 19 h » | Seuls les champs explicitement signalés sont remplacés ; tous les autres champs métier restent inchangés | Backend automatique + essai Make |
 | E40 | Email direct reçu dans un fil Gmail déjà connu | Il passe par l'analyse de rôle avant toute écriture ; les anciennes routes directes de fil connu ne s'exécutent pas | Statique + essai Make |
+| E41 | Second message d'une cliente alors qu'une fiche de contrôle `À vérifier` porte déjà son email, à côté de sa vraie demande | Rattachement à la vraie demande, aucune nouvelle fiche de contrôle | Backend automatique + essai Make |
+| E42 | Message classé `incertain` dans le même fil Gmail et avec le même email qu'une unique demande active | Rattachement à cette demande (`matched_by = gmail_thread_id_and_email_client`), aucune fiche de contrôle | Backend automatique + essai Make |
+| E43 | Message `incertain` dans un fil connu mais envoyé par une autre adresse | Fiche de contrôle `À vérifier`, aucune demande existante modifiée | Backend automatique + essai Make |
+| E44 | Suivi d'une cliente dont une fiche source a déjà été rattachée manuellement | La fiche source annotée est ignorée ; rattachement à la demande cible | Backend automatique |
+| E45 | Extraction IA sans date transmise par Make sous forme de `\` ou `null` | Date traitée comme vide ; le rapprochement par email unique s'applique | Backend automatique |
+| E46 | Notification `@notif.facture.net` ou bon de commande `ordersender-prod@ansmtp.ariba.com` | Aucun rattachement ni fiche de contrôle ; message laissé en boîte de réception | Backend automatique + essai Make |
 
 ## Tally
 

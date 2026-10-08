@@ -1206,10 +1206,10 @@ function updateThreadFollowup(gmailThreadId, fields, options) {
   if (options && normalizeBoolean(options.force_review_card)) {
     return createUnmatchedFollowupDemand(options.fallback_row || {}, fields || {});
   }
-  const found = findRowByCanonicalValue(sheet, headers, "gmail_thread_id", gmailThreadId);
+  let found = findRowByCanonicalValue(sheet, headers, "gmail_thread_id", gmailThreadId);
   if (found && sourceEmail) {
-    const foundEmail = String(readRowData(sheet, headers, found.rowIndex).email_client || '').trim().toLowerCase();
-    if (foundEmail !== sourceEmail) {
+    const sameSenderRows = findRowsByThreadAndEmail(sheet, headers, gmailThreadId, sourceEmail, false);
+    if (sameSenderRows.length === 0) {
       return ok({
         updated: false,
         reason: "source_email_mismatch",
@@ -1217,6 +1217,10 @@ function updateThreadFollowup(gmailThreadId, fields, options) {
         email_client: sourceEmail
       });
     }
+    // Le fil peut aussi porter une fiche de contrôle ou une fiche déjà
+    // rattachée manuellement : la vraie demande du même expéditeur prévaut.
+    const usableRows = refineFollowupMatches(sheet, headers, sameSenderRows);
+    found = usableRows.length > 0 ? usableRows[usableRows.length - 1] : null;
   }
   if (!found) {
     if (options && options.match) {
@@ -1307,36 +1311,49 @@ function updateExistingDemandFollowup(match, fields, options) {
   const hasSpecificEventDate = !!dateEvenement && dateEvenement !== "Inconnu / à compléter";
   const preferUniquePhone = !!(options && options.prefer_unique_phone);
   if (!email && !name && !phone) throw new Error("email_client, téléphone ou nom_client manquant");
+  if (isTechnicalTransactionalEmail(email)) {
+    return ok({ updated: false, excluded: true, reason: "technical_transactional_sender", email_client: email });
+  }
 
   const sheet = getSheet();
   ensureSchemaHeaders(sheet);
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
   const replay = findMakeOperationByMessageId(sheet, headers, getMakeMessageId(fields));
   if (replay) return ok(replayFollowupResult(replay));
-  if (options && normalizeBoolean(options.force_review_card)) {
+  const refine = function(list) { return refineFollowupMatches(sheet, headers, list); };
+  // Priorité au fil Gmail lorsque l'expéditeur est exactement l'adresse de la
+  // demande : cette double concordance vaut preuve, même si l'IA a hésité.
+  const threadId = String(match.gmail_thread_id || (fields && fields.gmail_thread_id) || '').trim();
+  const threadMatches = email && threadId
+    ? refine(findRowsByThreadAndEmail(sheet, headers, threadId, email, true))
+    : [];
+  const threadMatch = threadMatches.length === 1 ? threadMatches[0] : null;
+  if (!threadMatch && options && normalizeBoolean(options.force_review_card)) {
     return createUnmatchedFollowupDemand(options.fallback_row || {}, fields || {});
   }
   // Voxist fournit un numéro appelant fiable : une unique demande active portant
   // ce numéro prévaut sur un nom éventuellement mal retranscrit par l'audio.
-  const phoneMatches = preferUniquePhone && phone
-    ? findActiveRowsByPhone(sheet, headers, phone)
+  const phoneMatches = !threadMatch && preferUniquePhone && phone
+    ? refine(findActiveRowsByPhone(sheet, headers, phone))
     : [];
-  const emailMatches = phoneMatches.length === 0 && hasSpecificEventDate && email
-    ? findRowsByEmailAndEventDate(sheet, headers, email, dateEvenement)
+  const emailMatches = !threadMatch && phoneMatches.length === 0 && hasSpecificEventDate && email
+    ? refine(findRowsByEmailAndEventDate(sheet, headers, email, dateEvenement))
     : [];
-  const nameMatches = phoneMatches.length === 0 && hasSpecificEventDate && emailMatches.length === 0 && name
-    ? findRowsByNameAndEventDate(sheet, headers, name, dateEvenement)
+  const nameMatches = !threadMatch && phoneMatches.length === 0 && hasSpecificEventDate && emailMatches.length === 0 && name
+    ? refine(findRowsByNameAndEventDate(sheet, headers, name, dateEvenement))
     : [];
-  const activeEmailMatches = phoneMatches.length === 0 && !hasSpecificEventDate && email
-    ? findActiveRowsByEmail(sheet, headers, email)
+  const activeEmailMatches = !threadMatch && phoneMatches.length === 0 && !hasSpecificEventDate && email
+    ? refine(findActiveRowsByEmail(sheet, headers, email))
     : [];
-  let matches = phoneMatches.length > 0
+  let matches = threadMatch
+    ? [threadMatch]
+    : (phoneMatches.length > 0
     ? phoneMatches
     : (emailMatches.length > 0
     ? emailMatches
-    : (nameMatches.length > 0 ? nameMatches : activeEmailMatches));
+    : (nameMatches.length > 0 ? nameMatches : activeEmailMatches)));
   if (matches.length === 0) {
-    matches = findDemandMatchCandidates(sheet, headers, {
+    matches = refine(findDemandMatchCandidates(sheet, headers, {
       email_client: email,
       nom_client: match.nom_client,
       date_evenement: dateEvenement,
@@ -1344,10 +1361,10 @@ function updateExistingDemandFollowup(match, fields, options) {
       nb_convives: match.nb_convives || fields.nb_convives,
       lieu_prestation: match.lieu_prestation || fields.lieu_prestation,
       type_evenement: match.type_evenement || fields.type_evenement
-    }, { mode: "followup" });
+    }, { mode: "followup" }));
   }
   if (matches.length === 0 && options && options.allow_unique_active_event_date && hasSpecificEventDate) {
-    matches = findActiveRowsByEventDate(sheet, headers, dateEvenement);
+    matches = refine(findActiveRowsByEventDate(sheet, headers, dateEvenement));
   }
   if (matches.length !== 1) {
     const mayCreateReviewCard = options && options.create_if_not_found && (
@@ -1390,11 +1407,67 @@ function updateExistingDemandFollowup(match, fields, options) {
   applyDefaultRowHeight(sheet, found.rowIndex);
   if (followupRequiresCalendarSync(writeResult)) syncCalendarForRow(sheet, headers, found.rowIndex, 'updateExistingDemandFollowup');
 
-  return ok(Object.assign({ id_demande: found.id_demande || "", row: found.rowIndex }, writeResult));
+  return ok(Object.assign({
+    id_demande: found.id_demande || "",
+    row: found.rowIndex,
+    matched_by: threadMatch ? "gmail_thread_id_and_email_client" : "business_fields"
+  }, writeResult));
+}
+
+const MANUAL_MERGE_SOURCE_MARKER = 'Rattachée manuellement à ';
+
+// Une fiche source déjà rattachée manuellement n'est plus une demande à part
+// entière. Une fiche de contrôle « À vérifier » ne doit pas non plus rendre
+// ambigu le rattachement à l'unique vraie demande du même client : sans ce
+// filtre, chaque nouveau message recréerait une fiche de contrôle.
+function refineFollowupMatches(sheet, headers, matches) {
+  if (!matches || matches.length === 0) return [];
+  const usable = matches.map(function(match) {
+    const data = readRowData(sheet, headers, match.rowIndex);
+    return {
+      match: match,
+      statut: String(data.statut || '').trim(),
+      notes: String(data.notes || '')
+    };
+  }).filter(function(item) {
+    return item.notes.indexOf(MANUAL_MERGE_SOURCE_MARKER) === -1;
+  });
+  if (usable.length > 1) {
+    const confirmed = usable.filter(function(item) { return item.statut !== 'À vérifier'; });
+    if (confirmed.length === 1) return [confirmed[0].match];
+  }
+  return usable.map(function(item) { return item.match; });
+}
+
+function findRowsByThreadAndEmail(sheet, headers, gmailThreadId, emailClient, activeOnly) {
+  const threadCol = headers.findIndex(function(h) { return canonicalKey(h) === "gmail_thread_id"; }) + 1;
+  const emailCol = headers.findIndex(function(h) { return canonicalKey(h) === "email_client"; }) + 1;
+  const statusCol = headers.findIndex(function(h) { return canonicalKey(h) === "statut"; }) + 1;
+  const idCol = headers.findIndex(function(h) { return canonicalKey(h) === "id_demande"; }) + 1;
+  const targetThread = String(gmailThreadId || '').trim();
+  const targetEmail = String(emailClient || '').trim().toLowerCase();
+  const lastRow = sheet.getLastRow();
+  if (threadCol <= 0 || emailCol <= 0 || !targetThread || !targetEmail || lastRow < 2) return [];
+
+  const threads = sheet.getRange(2, threadCol, lastRow - 1, 1).getValues();
+  const emails = sheet.getRange(2, emailCol, lastRow - 1, 1).getValues();
+  const statuses = statusCol > 0 ? sheet.getRange(2, statusCol, lastRow - 1, 1).getValues() : [];
+  const ids = idCol > 0 ? sheet.getRange(2, idCol, lastRow - 1, 1).getValues() : [];
+  const matches = [];
+  for (var i = 0; i < threads.length; i++) {
+    if (String(threads[i][0] || '').trim() !== targetThread) continue;
+    if (String(emails[i][0] || '').trim().toLowerCase() !== targetEmail) continue;
+    if (activeOnly && statusCol > 0 && !isActiveDemandStatus(statuses[i][0])) continue;
+    matches.push({ rowIndex: i + 2, id_demande: idCol > 0 ? String(ids[i][0] || '').trim() : "" });
+  }
+  return matches;
 }
 
 function createUnmatchedFollowupDemand(rowData, followupFields) {
   const raw = normalizeRowKeys(rowData || {});
+  if (isTechnicalTransactionalEmail(raw.email_client)) {
+    return ok({ updated: false, excluded: true, reason: "technical_transactional_sender", email_client: String(raw.email_client || '').trim().toLowerCase() });
+  }
   const automaticNote = "Fiche de contrôle créée automatiquement : ce message n'a pas pu être rattaché avec certitude. À vérifier et à rattacher si nécessaire.";
   const existingNotes = String(raw.notes || '').trim();
   const message = String(raw.message_original || followupFields.dernier_message_client || '').trim();
@@ -1983,6 +2056,9 @@ function normalizeSingleEventDateText(value) {
 function normalizeEventDateText(value) {
   const s = String(value === null || value === undefined ? '' : value).trim();
   if (!s || s === '—') return '';
+  // Make peut transmettre un reste de formule (« \ », « \"\" ») ou « null »
+  // lorsqu'aucune date n'est extraite : ce n'est pas une date de prestation.
+  if (!/[0-9A-Za-zÀ-ÿ]/.test(s) || /^(?:null|undefined)$/i.test(s)) return '';
   const range = s.match(/^(?:du\s+)?(.+?)\s+au\s+(.+)$/i);
   if (range) {
     const start = normalizeSingleEventDateText(range[1]);
@@ -2660,8 +2736,16 @@ function findDuplicateDemand(sheet, headers, demandIds, gmailThreadId, requiredS
   return null;
 }
 
+// Expéditeurs automatiques qui ne sont jamais une demande ni un suivi client :
+// envois transactionnels Brevo, notifications de facturation et bons de
+// commande générés par la plateforme Ariba.
+const EXCLUDED_NON_CLIENT_SENDERS = ['ordersender-prod@ansmtp.ariba.com'];
+
 function isTechnicalTransactionalEmail(email) {
-  return /@(?:[^@.]+\.)*brevosend\.com$/i.test(String(email || '').trim());
+  const value = String(email || '').trim().toLowerCase();
+  return /@(?:[^@.]+\.)*brevosend\.com$/.test(value) ||
+    /@(?:[^@.]+\.)*notif\.facture\.net$/.test(value) ||
+    EXCLUDED_NON_CLIENT_SENDERS.indexOf(value) !== -1;
 }
 
 function serialise(val) {

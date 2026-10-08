@@ -152,6 +152,7 @@ Déclencheur : Gmail nouveaux emails.
 - `count = 0` signifie nouveau message non connu.
 - Pour les e-mails directs, un fil Gmail déjà connu ne compte comme doublon que si l'adresse expéditeur correspond exactement à l'adresse de la demande. Un fil seul n'est jamais une identité client.
 - Les expéditeurs transactionnels `@…brevosend.com` sont exclus avant toute création ou mise à jour et classés dans `Hors_Scope_Make`.
+- Le backend exclut aussi les notifications de facturation `@…notif.facture.net` et les bons de commande Ariba `ordersender-prod@ansmtp.ariba.com` : aucun rattachement ni fiche de contrôle. Faute de route Make dédiée, ces messages ne sont pas archivés comme traités et restent visibles dans la boîte de réception.
 - Exception importante : pour Wix, Voxist et OVH, `checkDuplicate` ne doit vérifier que l'identifiant préfixé construit avec `gmail_message_id`, jamais `gmail_thread_id`. Gmail peut regrouper plusieurs formulaires Wix distincts ou plusieurs messages vocaux dans un même fil.
 
 Contrainte critique :
@@ -296,6 +297,7 @@ Comportement attendu :
 - L'analyse distingue `nouvelle_demande`, `suivi_client`, `fournisseur_sous_traitant`, `administratif_bancaire`, `notification_automatique` et `incertain`. Elle décide sur le message récent ; les signatures, transferts et historiques cités ne peuvent pas déclencher seuls une création, un suivi ou une modification.
 - Une notification de réaction Outlook ou Exchange est `notification_automatique`, même si elle recopie un ancien échange client. Elle ne crée ni demande ni relance et ne remplace jamais le dernier message client.
 - Un résultat `incertain` crée une fiche de contrôle au statut `À vérifier`, visible dans `Messages reçus`, sans modifier une demande existante et sans accusé automatique.
+- Exception : si le message arrive dans le même fil Gmail qu'une unique demande active portant exactement l'adresse de l'expéditeur, il y est rattaché malgré le rôle `incertain`. Cette double concordance vaut preuve ; le fil seul ou l'adresse seule ne suffisent pas.
 
 Vraies demandes :
 
@@ -322,7 +324,7 @@ Relances et suivis :
 
 Filet de sécurité des suivis Email sans dossier :
 
-- lorsque `updateExistingDemandFollowup` ne trouve aucune candidate, trouve plusieurs candidates ou reçoit un rôle `incertain`, le module 81 demande au backend de créer une fiche de contrôle `GMAIL-<gmail_message_id>` ; cet identifiant par message évite toute collision avec une demande déjà liée au fil ;
+- lorsque `updateExistingDemandFollowup` ne trouve aucune candidate, trouve plusieurs candidates ou reçoit un rôle `incertain` sans concordance fil Gmail + email, le module 81 demande au backend de créer une fiche de contrôle `GMAIL-<gmail_message_id>` ; cet identifiant par message évite toute collision avec une demande déjà liée au fil ;
 - la création est idempotente, reprend les informations extraites par l'IA, ajoute dans les notes qu'elle est automatique, conserve le message comme `dernier_message_client` et positionne `relance_a_traiter = TRUE` ;
 - le statut est toujours `À vérifier` ;
 - le message est ensuite archivé dans `Historique_Email` et la fiche apparaît dans `Messages reçus`, même si son statut la place par ailleurs dans l'historique ;
@@ -391,9 +393,11 @@ Contraintes backend :
 - `upsertWixDemand` doit mémoriser le résultat d'un message Wix déjà appliqué afin qu'une reprise poursuive l'archivage et l'accusé attendus sans créer de seconde ligne.
 - `updateThreadFollowup` exige l'adresse expéditeur exacte avant d'utiliser `gmail_thread_id` ; le fil est un indice technique, jamais une identité client.
 - `updateWixFollowup` exige également cette adresse exacte pour un rattachement par fil, puis recherche le dernier `WIX-` par email exact.
-- `updateExistingDemandFollowup` crée une fiche de contrôle uniquement avec les options explicites `create_if_not_found`, `create_if_ambiguous` ou `force_review_card`. La dernière interdit tout rapprochement automatique pour un rôle `incertain`.
+- `updateExistingDemandFollowup` crée une fiche de contrôle uniquement avec les options explicites `create_if_not_found`, `create_if_ambiguous` ou `force_review_card`. La dernière interdit tout rapprochement automatique pour un rôle `incertain`, sauf concordance exacte fil Gmail + email avec une unique demande active.
 - `mergeDemandRecords` rattache manuellement une fiche source à une cible sans supprimer la source et rejoue sans dupliquer les notes.
-- `updateExistingDemandFollowup` rattache par email+date, puis nom+date si l'email manque. Sans date de prestation, il accepte uniquement une correspondance exacte et unique sur l’email parmi les demandes actives.
+- `updateExistingDemandFollowup` rattache d'abord par fil Gmail + email exact (`gmail_thread_id` transmis dans `match` ou `fields`), puis par email+date, puis nom+date si l'email manque. Sans date de prestation, il accepte uniquement une correspondance exacte et unique sur l’email parmi les demandes actives.
+- Dans tous les rapprochements de suivi, une fiche source déjà rattachée manuellement (note `Rattachée manuellement à …`) n'est plus candidate. Lorsque plusieurs candidates subsistent et qu'une seule n'est pas au statut `À vérifier`, celle-ci est retenue : une fiche de contrôle ne rend jamais ambigu le rattachement à la vraie demande. `updateThreadFollowup` applique la même règle aux fiches partageant le fil.
+- Une valeur de date sans chiffre ni lettre (reste de formule Make comme `\`) ou `null` est traitée comme une date vide.
 - Si ces critères exacts échouent, `updateExistingDemandFollowup` peut utiliser le même rapprochement prudent que la saisie manuelle : téléphone ou email exact, ou combinaison forte et unique entre nom, date, convives, type, lieu et statut. Pour Email direct, une correspondance absente ou ambiguë produit une fiche de contrôle distincte ; pour les routes vocales, les règles spécifiques restent inchangées.
 - L'option Make `allow_unique_active_event_date` est réservée aux parcours de messagerie vocale Voxist et OVH : après les rapprochements habituels, elle autorise seulement une demande active unique partageant la même date de prestation.
 - La nouvelle interface appelle l'action dashboard `add` avec l'option `check_duplicates`. Le backend recherche alors les demandes actives similaires sous le même verrou que l'écriture ; sans décision explicite, il retourne les candidates et ne crée rien. Il accepte ensuite soit l'enrichissement d'un `id_demande` choisi, soit une création forcée confirmée par l'utilisatrice. Un ancien frontend qui n'envoie pas cette option conserve temporairement le comportement historique de création, afin que le déploiement backend reste compatible pendant la publication GitHub Pages.
