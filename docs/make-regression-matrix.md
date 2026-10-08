@@ -151,7 +151,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | E43 | Message `incertain` dans un fil connu mais envoyé par une autre adresse | Fiche de contrôle `À vérifier`, aucune demande existante modifiée | Backend automatique + essai Make |
 | E44 | Suivi d'une cliente dont une fiche source a déjà été rattachée manuellement | La fiche source annotée est ignorée ; rattachement à la demande cible | Backend automatique |
 | E45 | Extraction IA sans date transmise par Make sous forme de `\` ou `null` | Date traitée comme vide ; le rapprochement par email unique s'applique | Backend automatique |
-| E46 | Notification `@notif.facture.net` ou bon de commande `ordersender-prod@ansmtp.ariba.com` | Aucun rattachement ni fiche de contrôle ; message laissé en boîte de réception | Backend automatique + essai Make |
+| E46 | Notification `@notif.facture.net` ou bon de commande `ordersender-prod@ansmtp.ariba.com` | Filtres Gmail 9 et 10 : archivage dans `Hors_Scope_Gmail` avant Make. Si le message atteint malgré tout Make : aucun rattachement ni fiche de contrôle, message laissé en boîte de réception | Backend automatique + XML automatique + essai Gmail |
 
 ## Tally
 

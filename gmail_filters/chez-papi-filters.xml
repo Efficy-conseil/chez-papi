@@ -98,4 +98,26 @@
     <apps:property name="label" value="Authentification_À_traiter"/>
   </entry>
 
+
+  <entry>
+    <category term="filter"/>
+    <title>Mail Filter</title>
+    <id>tag:mail.google.com,2008:filter:chez-papi-bons-commande-ariba</id>
+    <updated>2026-10-08T12:00:00Z</updated>
+    <content/>
+    <apps:property name="from" value="ordersender-prod@ansmtp.ariba.com"/>
+    <apps:property name="shouldArchive" value="true"/>
+    <apps:property name="label" value="Hors_Scope_Gmail"/>
+  </entry>
+
+  <entry>
+    <category term="filter"/>
+    <title>Mail Filter</title>
+    <id>tag:mail.google.com,2008:filter:chez-papi-notifications-facture-net</id>
+    <updated>2026-10-08T12:00:00Z</updated>
+    <content/>
+    <apps:property name="from" value="notif.facture.net"/>
+    <apps:property name="shouldArchive" value="true"/>
+    <apps:property name="label" value="Hors_Scope_Gmail"/>
+  </entry>
 </feed>

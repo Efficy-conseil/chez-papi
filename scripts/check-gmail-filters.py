@@ -21,14 +21,31 @@ def read_filters(filename):
 
 full = read_filters("chez-papi-filters.xml")
 update = read_filters("chez-papi-mailinblack-update.xml")
+hors_scope_update = read_filters("chez-papi-hors-scope-update.xml")
 prefix = "tag:mail.google.com,2008:filter:chez-papi-"
 invitation_id = prefix + "authentification-mailinblack"
 newsletter_id = prefix + "newsletters"
 planity_id = prefix + "notifications-planity"
-assert len(full) == 8, "La configuration complète doit contenir huit filtres"
+assert len(full) == 10, "La configuration complète doit contenir dix filtres"
 assert set(update) == {invitation_id, newsletter_id, planity_id}, "L'import ciblé doit contenir les trois filtres concernés"
 for key, values in update.items():
     assert values == full[key], f"Import ciblé désynchronisé : {key}"
+
+ariba_id = prefix + "bons-commande-ariba"
+facture_id = prefix + "notifications-facture-net"
+assert set(hors_scope_update) == {ariba_id, facture_id}, "L'import hors périmètre doit contenir les deux filtres concernés"
+for key, values in hors_scope_update.items():
+    assert values == full[key], f"Import hors périmètre désynchronisé : {key}"
+assert full[ariba_id] == {
+    "from": "ordersender-prod@ansmtp.ariba.com",
+    "shouldArchive": "true",
+    "label": "Hors_Scope_Gmail",
+}, "Seule l'adresse Ariba exacte doit être archivée, sans lecture ni suppression"
+assert full[facture_id] == {
+    "from": "notif.facture.net",
+    "shouldArchive": "true",
+    "label": "Hors_Scope_Gmail",
+}, "Les notifications notif.facture.net doivent être archivées hors périmètre"
 
 # Aucune action d'archivage, de suppression, de lecture ou de transfert.
 assert full[invitation_id] == {

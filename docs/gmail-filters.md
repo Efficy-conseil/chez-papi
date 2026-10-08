@@ -1,10 +1,20 @@
 # Filtres Gmail
 
-Dernière mise à jour : 06/10/2026.
+Dernière mise à jour : 08/10/2026.
 
 Ce fichier contient la configuration cible à appliquer manuellement dans Gmail. Gmail permet de tester le critère avant de créer le filtre ; cette vérification est obligatoire pour les filtres 4, 5, 6 et 9.
 
-Le fichier complet prêt à importer est `gmail_filters/chez-papi-filters.xml` (huit filtres). Pour ajouter les protections Mailinblack et Planity à une configuration existante, utiliser uniquement `gmail_filters/chez-papi-mailinblack-update.xml` (trois filtres).
+Le fichier complet prêt à importer est `gmail_filters/chez-papi-filters.xml` (dix filtres). Pour ajouter les protections Mailinblack et Planity à une configuration existante, utiliser uniquement `gmail_filters/chez-papi-mailinblack-update.xml` (trois filtres).
+
+## Mise à jour Ariba et notif.facture.net sur une configuration existante
+
+Ces deux expéditeurs ne sont jamais des demandes traiteur ; ils créaient des fiches `À vérifier`. Les filtres 9 et 10 les archivent dès leur arrivée avec `Hors_Scope_Gmail`, sans les marquer comme lus : le déclencheur Make, limité à `in:inbox`, ne les récupère plus, et aucune opération Make ni analyse IA n'est consommée. Le backend les exclut aussi en second rempart.
+
+1. Dans Gmail, rechercher `from:ordersender-prod@ansmtp.ariba.com`, puis `from:notif.facture.net`, et vérifier qu'aucun message client n'apparaît.
+2. `Paramètres` > `Voir tous les paramètres` > `Filtres et adresses bloquées` > `Importer des filtres`, choisir `gmail_filters/chez-papi-hors-scope-update.xml`. Créer les deux filtres sans cocher l'application aux conversations existantes.
+3. Retour arrière : supprimer ces deux filtres dans la même page.
+
+Les bons de commande NaTran restent consultables, non lus, dans `Hors_Scope_Gmail`.
 
 ## Passage au libellé unique OVH
 
@@ -36,13 +46,13 @@ Résultat attendu : les prochaines invitations restent dans la boîte de récept
 
 Dans Make, le déclencheur ajoute `-from:invitations.mailinblack.com`. Le filtre commun avant le module 60 compare `lower(trim(last(split(ifempty(1.fromEmail; ""); "@"))))` à `invitations.mailinblack.com` avec l'opérateur « différent de ». La comparaison porte sur le domaine exact de l'adresse de l'expéditeur, indépendamment de l'objet, du texte cité, de l'IA et du fil Gmail. Si une invitation atteint malgré tout le déclencheur, elle s'arrête avant tout appel backend, traitement commercial ou archivage. Le libellé est posé par Gmail, pas par Make.
 
-La correction cible les invitations émises depuis `invitations.mailinblack.com`. Les autres messages automatiques ne sont pas exclus globalement : les notifications Wix/Voxist et les bons de commande techniques doivent conserver leurs routes métier.
+La correction cible les invitations émises depuis `invitations.mailinblack.com`. Les autres messages automatiques ne sont pas exclus globalement : les notifications Wix/Voxist et les bons de commande techniques doivent conserver leurs routes métier, à l'exception des bons de commande Ariba `ordersender-prod@ansmtp.ariba.com` (filtre 9).
 
 ## Import direct dans Gmail
 
 1. Ouvrir Gmail sur ordinateur, puis `Paramètres` > `Voir tous les paramètres` > `Filtres et adresses bloquées`.
 2. En bas de la page, cliquer sur `Importer des filtres`.
-3. Sélectionner `gmail_filters/chez-papi-filters.xml`, puis créer les huit filtres proposés (installation complète seulement ; pour une boîte déjà configurée, suivre la mise à jour ciblée ci-dessus).
+3. Sélectionner `gmail_filters/chez-papi-filters.xml`, puis créer les dix filtres proposés (installation complète seulement ; pour une boîte déjà configurée, suivre la mise à jour ciblée ci-dessus).
 4. Vérifier que `support@efficy-conseil.fr` est toujours une adresse de transfert validée dans Gmail.
 5. Supprimer ensuite les anciens filtres indiqués dans la section « Filtres à supprimer ou remplacer » : l'import ne les remplace pas automatiquement.
 
@@ -138,6 +148,26 @@ from:invitations.mailinblack.com
 
 Action : appliquer uniquement `Authentification_À_traiter`. Ne pas archiver, supprimer, transférer ni marquer comme lu. Ces invitations peuvent signaler qu'un email envoyé attend l'authentification de son expéditeur avant sa délivrance. La validation reste manuelle ; aucune réponse automatique ni ouverture automatique du lien n'est prévue.
 
+### 9. Bons de commande Ariba (NaTran)
+
+Critère :
+
+```text
+from:ordersender-prod@ansmtp.ariba.com
+```
+
+Actions : ignorer la boîte de réception ; appliquer `Hors_Scope_Gmail`. Ne pas marquer comme lu.
+
+### 10. Notifications notif.facture.net
+
+Critère :
+
+```text
+from:notif.facture.net
+```
+
+Actions : ignorer la boîte de réception ; appliquer `Hors_Scope_Gmail`. Ne pas marquer comme lu.
+
 ## Filtres à supprimer ou remplacer
 
 - Remplacer les deux anciens filtres Make « erreurs » et « crédits » par le filtre 2.
@@ -150,7 +180,7 @@ Action : appliquer uniquement `Authentification_À_traiter`. Ne pas archiver, su
 
 ## Ordre d'application
 
-1. Pour une installation complète, créer les huit filtres sans appliquer les actions aux conversations existantes. Pour les mises à jour ciblées Mailinblack et Planity sur une configuration existante, suivre les procédures en début de document.
+1. Pour une installation complète, créer les dix filtres sans appliquer les actions aux conversations existantes. Pour les mises à jour ciblées Mailinblack et Planity sur une configuration existante, suivre les procédures en début de document.
 2. Tester les critères 4, 5 et 6 dans la barre de recherche Gmail et vérifier qu'aucune demande Wix, Voxist ou client n'apparaît.
 3. Supprimer les anciens filtres remplacés.
 4. Envoyer un email de test pour chaque source métier et vérifier qu'il reste visible pour Make.

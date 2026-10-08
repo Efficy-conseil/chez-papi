@@ -152,7 +152,7 @@ Déclencheur : Gmail nouveaux emails.
 - `count = 0` signifie nouveau message non connu.
 - Pour les e-mails directs, un fil Gmail déjà connu ne compte comme doublon que si l'adresse expéditeur correspond exactement à l'adresse de la demande. Un fil seul n'est jamais une identité client.
 - Les expéditeurs transactionnels `@…brevosend.com` sont exclus avant toute création ou mise à jour et classés dans `Hors_Scope_Make`.
-- Le backend exclut aussi les notifications de facturation `@…notif.facture.net` et les bons de commande Ariba `ordersender-prod@ansmtp.ariba.com` : aucun rattachement ni fiche de contrôle. Faute de route Make dédiée, ces messages ne sont pas archivés comme traités et restent visibles dans la boîte de réception.
+- Le backend exclut aussi les notifications de facturation `@…notif.facture.net` et les bons de commande Ariba `ordersender-prod@ansmtp.ariba.com` : aucun rattachement ni fiche de contrôle. Les filtres Gmail 9 et 10 (`docs/gmail-filters.md`) les archivent dans `Hors_Scope_Gmail` avant le déclencheur Make ; si l'un d'eux atteint malgré tout Make, il n'est pas archivé comme traité et reste visible dans la boîte de réception.
 - Exception importante : pour Wix, Voxist et OVH, `checkDuplicate` ne doit vérifier que l'identifiant préfixé construit avec `gmail_message_id`, jamais `gmail_thread_id`. Gmail peut regrouper plusieurs formulaires Wix distincts ou plusieurs messages vocaux dans un même fil.
 
 Contrainte critique :
