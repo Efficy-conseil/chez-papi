@@ -26,6 +26,7 @@
 - Ne jamais supprimer ou corriger une donnée de production sans confirmation explicite.
 - Ne pas écraser les changements locaux ou les fichiers non suivis appartenant à l'utilisateur.
 - `TODO.md` est un bloc-notes utilisateur simple : ne pas le restructurer ni traiter une ligne sans demande explicite.
+- Les appels IA restent dans Make : ne pas développer d'appel IA depuis le backend Apps Script ou le frontend (décision du 9 octobre 2026).
 
 ## Vérifications
 
