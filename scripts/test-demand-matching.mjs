@@ -649,6 +649,25 @@ assert.equal(duboisFollowup.id_demande, 'GMAIL-THREAD-DUBOIS');
 assert.equal(duboisFollowup.matched_by, 'gmail_thread_id_and_email_client');
 assert.deepEqual(context.reviewCardCalls, []);
 
+// Isatis : un remerciement après la prestation, dans le fil d'une demande
+// terminée et depuis la même adresse, complète cette demande sans doublon.
+context.followupSheetIsatis = reviewSheet([
+  { id_demande: 'GMAIL-THREAD-ISATIS', nom_client: 'Nathalie Nicolas', email_client: 'direction@example.com', date_evenement: '08/10/2026', statut: 'Événement terminé', gmail_thread_id: 'THREAD-ISATIS' }
+]);
+context.getSheet = () => context.followupSheetIsatis;
+const isatisFollowup = evaluate(`JSON.parse(updateExistingDemandFollowup(
+  { email_client: 'direction@example.com', nom_client: 'Nathalie Nicolas' },
+  { gmail_thread_id: 'THREAD-ISATIS', gmail_message_id: 'MESSAGE-ISATIS-2', dernier_message_client: 'Merci, facture transmise au siège' },
+  { force_review_card: true, create_if_not_found: true, fallback_row: { id_demande: 'GMAIL-MESSAGE-ISATIS-2' } }
+).getContent()).data`);
+assert.equal(isatisFollowup.updated, true);
+assert.equal(isatisFollowup.id_demande, 'GMAIL-THREAD-ISATIS');
+assert.equal(isatisFollowup.matched_by, 'gmail_thread_id_and_email_client');
+assert.equal(cell(context.followupSheetIsatis, 'GMAIL-THREAD-ISATIS', 'statut'), 'Événement terminé');
+assert.equal(cell(context.followupSheetIsatis, 'GMAIL-THREAD-ISATIS', 'relance_a_traiter'), true);
+assert.deepEqual(context.reviewCardCalls, []);
+context.getSheet = () => context.followupSheetDubois;
+
 // Sans fil commun, « incertain » crée toujours une fiche de contrôle.
 const uncertainWithoutThread = evaluate(`JSON.parse(updateExistingDemandFollowup(
   { email_client: 'dubois@example.com' },

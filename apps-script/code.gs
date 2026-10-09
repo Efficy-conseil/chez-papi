@@ -1324,9 +1324,15 @@ function updateExistingDemandFollowup(match, fields, options) {
   // Priorité au fil Gmail lorsque l'expéditeur est exactement l'adresse de la
   // demande : cette double concordance vaut preuve, même si l'IA a hésité.
   const threadId = String(match.gmail_thread_id || (fields && fields.gmail_thread_id) || '').trim();
-  const threadMatches = email && threadId
+  let threadMatches = email && threadId
     ? refine(findRowsByThreadAndEmail(sheet, headers, threadId, email, true))
     : [];
+  // Un message reçu après la prestation (remerciement, facture) arrive souvent
+  // dans le fil d'une demande déjà terminée : il la complète au lieu de créer
+  // une fiche de contrôle en double.
+  if (email && threadId && threadMatches.length === 0) {
+    threadMatches = refine(findRowsByThreadAndEmail(sheet, headers, threadId, email, false));
+  }
   const threadMatch = threadMatches.length === 1 ? threadMatches[0] : null;
   if (!threadMatch && options && normalizeBoolean(options.force_review_card)) {
     return createUnmatchedFollowupDemand(options.fallback_row || {}, fields || {});

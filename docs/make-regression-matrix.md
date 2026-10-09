@@ -153,6 +153,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | E45 | Extraction IA sans date transmise par Make sous forme de `\` ou `null` | Date traitée comme vide ; le rapprochement par email unique s'applique | Backend automatique |
 | E46 | Notification `@notif.facture.net` ou bon de commande `ordersender-prod@ansmtp.ariba.com` | Filtres Gmail 9 et 10 : archivage dans `Hors_Scope_Gmail` avant Make. Si le message atteint malgré tout Make : aucun rattachement ni fiche de contrôle, message laissé en boîte de réception | Backend automatique + XML automatique + essai Gmail |
 | E47 | Rattachement d'une fiche source déjà rattachée ailleurs, puis suivi de la cliente | La destination ne reçoit pas l'annotation `Rattachée manuellement à …` de la source et reste candidate au rattachement automatique | Backend automatique |
+| E48 | Message `suivi` ou `incertain` reçu après la prestation (remerciement, facture) dans le fil Gmail et depuis l'adresse d'une unique demande `Événement terminé` | Rattachement à cette demande (`matched_by = gmail_thread_id_and_email_client`), statut conservé, message visible dans `Messages reçus`, aucune fiche de contrôle | Backend automatique + essai Make |
 
 ## Tally
 
