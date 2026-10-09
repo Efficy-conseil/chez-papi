@@ -817,6 +817,10 @@ const SheetsAPI = {
     if (!CONFIG.SHEETS_URL) return { error: 'Non configuré' };
     return this.request({ action: 'update', id_demande, fields });
   },
+  async markClientMessageHandled(id_demande) {
+    if (!CONFIG.SHEETS_URL) return { error: 'Non configuré' };
+    return this.request({ action: 'markClientMessageHandled', id_demande });
+  },
   async remove(id_demande) {
     if (!CONFIG.SHEETS_URL) return { error: 'Non configuré' };
     return this.request({ action: 'delete', id_demande });
@@ -3173,7 +3177,7 @@ async function markClientMessageHandled(idDemande) {
   refreshFollowupButtons();
 
   try {
-    const result = await SheetsAPI.update(eventId(row), { relance_a_traiter: false });
+    const result = await SheetsAPI.markClientMessageHandled(eventId(row));
     if (result.success) {
       // Le polling peut avoir remplacé les objets pendant l'écriture.
       const currentRow = appData.find(r => eventId(r) === idDemande);
@@ -3183,7 +3187,11 @@ async function markClientMessageHandled(idDemande) {
       if (messagesModal.style.display === 'flex' && messagesModal.dataset.type === 'messages') {
         showKpiModal('messages');
       }
-      showNotification('Message marqué comme traité', 'success');
+      if (result.gmail?.error) {
+        showNotification('Message marqué comme traité, mais l’e-mail n’a pas pu être marqué comme lu dans Gmail.', 'error', 6000);
+      } else {
+        showNotification('Message marqué comme traité', 'success');
+      }
       broadcastSync();
     } else {
       showNotification('Erreur : ' + (result.error || 'inconnue'), 'error');

@@ -31,7 +31,7 @@ Après l'ajout ou la modification de l'accès aux messages vocaux Gmail :
 3. accepter le scope Gmail demandé, puis vérifier que la fonction retourne cette même adresse ;
 4. ne jamais valider le fonctionnement avec un compte Gmail personnel : le backend le refusera explicitement.
 
-Le manifeste active le service avancé Gmail et le scope `https://www.googleapis.com/auth/gmail.modify`. Cette autorisation permet de lister les messages OVH, charger leur pièce jointe audio et retirer uniquement le libellé système `UNREAD` sur action explicite.
+Le manifeste active le service avancé Gmail et le scope `https://www.googleapis.com/auth/gmail.modify`. Cette autorisation permet de lister les messages OVH, charger leur pièce jointe audio et retirer uniquement le libellé système `UNREAD` sur action explicite (vocal `Marquer comme lu`, ou e-mails `Historique_Email` d'une demande lors de `Marquer comme traité`).
 
 Règle projet : toute modification validée de `apps-script/` déclenche ce redéploiement dans la même intervention, sauf demande explicite de ne pas déployer. La procédure détaillée pour les agents se trouve dans `skills/deploy-chez-papi-backend/SKILL.md`.
 

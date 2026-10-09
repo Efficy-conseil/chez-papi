@@ -48,6 +48,9 @@ function fixture() {
       update(id, fields) {
         return new Promise((resolve, reject) => requests.push({ id, fields, resolve, reject }));
       },
+      markClientMessageHandled(id) {
+        return new Promise((resolve, reject) => requests.push({ id, fields: { relance_a_traiter: false }, resolve, reject }));
+      },
       add() { assert.fail('Aucune nouvelle demande ne doit être créée'); }
     },
     openEventModal() { assert.fail('Le traitement ne doit jamais rouvrir ou réinitialiser la fiche'); },
@@ -155,6 +158,17 @@ for (const networkError of [false, true]) {
   await retry;
 }
 
+// Un échec Gmail n'annule pas le traitement de la fiche mais il est signalé.
+{
+  const f = fixture();
+  const pending = f.context.markFollowupHandled();
+  f.requests[0].resolve({ success: true, gmail: { error: 'Libellé Gmail introuvable : Historique_Email' } });
+  await pending;
+  assert.equal(f.context.appData[0].relance_a_traiter, false);
+  assert.equal(f.notifications.at(-1)[1], 'error');
+  assert.match(f.notifications.at(-1)[0], /n’a pas pu être marqué comme lu dans Gmail/);
+}
+
 // Le regroupement affiche le message intégral échappé, y compris les fiches closes.
 {
   const f = fixture();
@@ -229,4 +243,80 @@ for (const [status, fields, expectedCalendar] of [
   }
 }
 
-console.log('Tests de traitement des messages réussis (réponses lentes, saisies, navigation, erreurs, contenu intégral et Calendar).');
+// Backend réel : « Marquer comme traité » passe en lu uniquement les e-mails
+// de la demande classés dans Historique_Email.
+{
+  const headers = ['id_demande', 'statut', 'relance_a_traiter', 'gmail_message_id', 'make_operation_log', 'derniere_modification'];
+  const log = JSON.stringify({ email1: {}, wix1: {}, lu1: {}, supprime1: {}, ovh1: {}, 'id invalide': {} });
+  const messages = {
+    email1: ['Label_email', 'UNREAD'],
+    email2: ['Label_email', 'UNREAD', 'INBOX'],
+    wix1: ['Label_wix', 'UNREAD'],
+    lu1: ['Label_email'],
+    ovh1: ['Label_ovh', 'UNREAD']
+  };
+  const setup = profileEmail => {
+    const row = ['TEST-A', 'Événement confirmé', true, 'email2', log, ''];
+    const modified = [];
+    const context = vm.createContext({
+      Logger: { log() {} },
+      LockService: { getDocumentLock: () => ({ waitLock() {}, releaseLock() {} }) },
+      CacheService: { getScriptCache: () => ({ get: () => null, put() {} }) },
+      SpreadsheetApp: { flush() {} },
+      Gmail: { Users: {
+        getProfile: () => ({ emailAddress: profileEmail }),
+        Labels: { list: () => ({ labels: [
+          { id: 'Label_email', name: 'Historique_Email' },
+          { id: 'Label_wix', name: 'Historique_Wix' },
+          { id: 'Label_ovh', name: 'Historique_OVH' }
+        ] }) },
+        Messages: {
+          get(userId, id, options) {
+            assert.equal(options.format, 'minimal');
+            if (!messages[id]) throw new Error('Requested entity was not found.');
+            return { id, labelIds: messages[id] };
+          },
+          modify: (resource, userId, id) => modified.push({ resource, id })
+        }
+      } }
+    });
+    vm.runInContext(readFileSync('apps-script/code.gs', 'utf8'), context);
+    let calendarCalls = 0;
+    context.getSheet = () => ({
+      getLastColumn: () => headers.length,
+      getRange(line, column) {
+        const values = () => [line === 1 ? headers : row];
+        return {
+          getValues: values,
+          getDisplayValues: () => values().map(cells => cells.map(String)),
+          getValue: () => row[column - 1],
+          setValue(value) { row[column - 1] = value; }
+        };
+      }
+    });
+    context.ensureSchemaHeaders = () => {};
+    context.findRowByDemandId = () => ({ rowIndex: 2 });
+    context.syncCalendarEvent = () => calendarCalls++;
+    context.ok = value => value;
+    return { context, row, modified, calendarCalls: () => calendarCalls };
+  };
+
+  const t = setup('demande.chezpapimaisongourmande@gmail.com');
+  const result = t.context.markClientMessageHandled('TEST-A');
+  assert.equal(t.row[2], false);
+  assert.equal(t.calendarCalls(), 0);
+  assert.deepEqual(JSON.parse(JSON.stringify(t.modified)), [
+    { resource: { removeLabelIds: ['UNREAD'] }, id: 'email2' },
+    { resource: { removeLabelIds: ['UNREAD'] }, id: 'email1' }
+  ], 'seuls les e-mails non lus de Historique_Email sont marqués comme lus, sans autre libellé modifié');
+  assert.deepEqual(JSON.parse(JSON.stringify(result.gmail)), { marked_read: 2, already_read: 1, skipped: 3 });
+
+  // Mauvaise boîte Gmail : la fiche est traitée, Gmail n'est pas modifié.
+  const wrongMailbox = setup('autre@gmail.com');
+  const degraded = wrongMailbox.context.markClientMessageHandled('TEST-A');
+  assert.equal(wrongMailbox.row[2], false);
+  assert.equal(wrongMailbox.modified.length, 0);
+  assert.match(degraded.gmail.error, /boîte Gmail Chez Papi/);
+}
+
+console.log('Tests de traitement des messages réussis (réponses lentes, saisies, navigation, erreurs, contenu intégral, Calendar et lecture Gmail).');

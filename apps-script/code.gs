@@ -37,6 +37,7 @@ const VOICEMAIL_PERSONAL_QUERY = 'label:Hors_Scope_Make is:unread from:no-reply@
 const PENDING_VOICEMAIL_QUERY = 'in:inbox is:unread from:no-reply@ovh.fr';
 const VOICEMAIL_MAX_AUDIO_BYTES = 12 * 1024 * 1024;
 const VOICEMAIL_GMAIL_ACCOUNT = 'demande.chezpapimaisongourmande@gmail.com';
+const CLIENT_EMAIL_HISTORY_LABEL = 'Historique_Email';
 const VOICEMAIL_ANALYSIS_TIMEZONE = 'Europe/Paris';
 const VOICEMAIL_ANALYSIS_HOURS = [6, 12, 16, 21];
 const DISCARDED_VOICEMAILS_PROPERTY = 'discarded-ovh-voicemails-v1';
@@ -240,6 +241,7 @@ function doPost(e) {
     if (body.action === 'archiveOvhVoicemail') return archiveOvhVoicemail(body.message_id);
     if (body.action === 'add')    return withDocumentLock(function() { return addRow(body.row || {}, body.options || {}); });
     if (body.action === 'update') return withDocumentLock(function() { return updateRowById(body.id_demande, body.fields || {}); });
+    if (body.action === 'markClientMessageHandled') return markClientMessageHandled(body.id_demande);
     if (body.action === 'updateThreadFollowup') return withDocumentLock(function() { return updateThreadFollowup(body.gmail_thread_id, body.fields || {}, body.options || {}); });
     if (body.action === 'updateWixFollowup') return withDocumentLock(function() { return updateWixFollowup(body.gmail_thread_id, body.email_client, body.fields || {}, body.options || {}); });
     if (body.action === 'updateExistingDemandFollowup') return withDocumentLock(function() { return updateExistingDemandFollowup(body.match || {}, body.fields || {}, body.options || {}); });
@@ -569,6 +571,75 @@ function archiveOvhVoicemail(messageId) {
   const voicemailLabelId = getGmailLabelIdByName(VOICEMAIL_HISTORY_LABEL);
   Gmail.Users.Messages.modify({ addLabelIds: [voicemailLabelId], removeLabelIds: ['INBOX'] }, 'me', id);
   return ok({ message_id: id, archived: true, label: VOICEMAIL_HISTORY_LABEL });
+}
+
+// ── Messages clients traités ───────────────────────────────────────────────
+
+// « Marquer comme traité » retire l'indicateur de la fiche, puis passe en lu
+// les e-mails Gmail de cette demande. Seuls les e-mails classés par Make dans
+// Historique_Email sont concernés : Wix, Voxist, les vocaux OVH ou tout autre
+// message gardent leur état Gmail.
+function markClientMessageHandled(idDemande) {
+  const id = String(idDemande || '').trim();
+  if (!id) throw new Error('id_demande manquant');
+  const messageIds = withDocumentLock(function() {
+    updateRowById(id, { relance_a_traiter: false });
+    const sheet = getSheet();
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
+    const found = findRowByDemandId(sheet, headers, id);
+    return found ? clientMessageIdsForRow(readRowData(sheet, headers, found.rowIndex)) : [];
+  });
+
+  // L'écriture de la fiche est déjà confirmée : un échec Gmail est signalé
+  // sans annuler le traitement.
+  let gmail;
+  try {
+    gmail = markClientEmailsRead(messageIds);
+  } catch (err) {
+    const message = String(err && err.message || err || 'Erreur Gmail inconnue');
+    Logger.log('Marquage Gmail impossible pour ' + id + ' : ' + message);
+    gmail = { error: message };
+  }
+  return ok({ id_demande: id, fields: { relance_a_traiter: false }, gmail: gmail });
+}
+
+// Le journal Make conserve tous les messages Gmail rattachés à la fiche ;
+// gmail_message_id porte le plus récent.
+function clientMessageIdsForRow(row) {
+  const ids = [String(row.gmail_message_id || '').trim()]
+    .concat(Object.keys(parseMakeOperationLog(row.make_operation_log)));
+  return ids.filter(function(messageId, index) {
+    return /^[A-Za-z0-9_-]{1,128}$/.test(messageId) && ids.indexOf(messageId) === index;
+  });
+}
+
+function markClientEmailsRead(messageIds) {
+  const result = { marked_read: 0, already_read: 0, skipped: 0 };
+  if (!messageIds.length) return result;
+  ensureVoicemailMailbox();
+  const historyLabelId = getGmailLabelIdByName(CLIENT_EMAIL_HISTORY_LABEL);
+  messageIds.forEach(function(messageId) {
+    let message;
+    try {
+      message = Gmail.Users.Messages.get('me', messageId, { format: 'minimal' });
+    } catch (err) {
+      // Message supprimé définitivement de Gmail : rien à marquer.
+      result.skipped++;
+      return;
+    }
+    const labelIds = message && message.labelIds || [];
+    if (labelIds.indexOf(historyLabelId) === -1) {
+      result.skipped++;
+      return;
+    }
+    if (labelIds.indexOf('UNREAD') === -1) {
+      result.already_read++;
+      return;
+    }
+    Gmail.Users.Messages.modify({ removeLabelIds: ['UNREAD'] }, 'me', messageId);
+    result.marked_read++;
+  });
+  return result;
 }
 
 function ensureGmailService() {

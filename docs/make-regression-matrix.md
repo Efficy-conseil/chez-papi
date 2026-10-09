@@ -205,6 +205,7 @@ Cette matrice doit être rejouée avant toute activation d'un blueprint modifié
 | F27 | Ouverture d'une session avec chargement principal lent | La pastille vocale affiche immédiatement un état de chargement puis son nombre, sans attendre la fin du chargement des demandes |
 | F28 | Ligne au statut `À vérifier` dans `Messages reçus` | Le bouton `Rattacher à une demande` est affiché à côté de `Marquer comme traité` et ouvre directement la comparaison existante |
 | F29 | Confirmation du rattachement depuis `Messages reçus` | La source est conservée et annotée, quitte la file des messages à traiter, et le message apparaît sur la destination sans écraser ses champs renseignés |
+| F30 | `Marquer comme traité` sur une demande dont les e-mails sont classés `Historique_Email`, `Historique_Wix` ou `Historique_OVH` | Seuls les e-mails non lus `Historique_Email` de la demande passent en lu dans Gmail ; aucun libellé n'est ajouté ou retiré ; les autres messages gardent leur état ; un échec Gmail laisse la fiche traitée et affiche une notification |
 
 ## Procédure d'exécution
 
