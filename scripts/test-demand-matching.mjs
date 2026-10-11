@@ -477,8 +477,9 @@ const forcedReview = evaluate(`(() => {
   };
   try {
     getSheet = () => ({
-      getLastColumn: () => 1,
-      getRange: () => ({ getValues: () => [['id_demande']] })
+      getLastRow: () => 1,
+      getLastColumn: () => 3,
+      getRange: () => ({ getValues: () => [['id_demande', 'email_client', 'statut']] })
     });
     ensureSchemaHeaders = () => {};
     findMakeOperationByMessageId = () => null;
@@ -668,14 +669,48 @@ assert.equal(cell(context.followupSheetIsatis, 'GMAIL-THREAD-ISATIS', 'relance_a
 assert.deepEqual(context.reviewCardCalls, []);
 context.getSheet = () => context.followupSheetDubois;
 
-// Sans fil commun, « incertain » crée toujours une fiche de contrôle.
+// Huwarts : la réponse à une demande Wix arrive dans un autre fil ; classée
+// « incertain », elle rejoint l'unique demande active de la même adresse.
+context.followupSheetHuwarts = reviewSheet([
+  { id_demande: 'WIX-HUWARTS', nom_client: 'Géraldine Huwarts', email_client: 'huwarts@example.com', date_evenement: '17/10/2026', statut: 'Nouvelle demande', gmail_thread_id: 'THREAD-WIX-HUWARTS' }
+]);
+context.getSheet = () => context.followupSheetHuwarts;
+const huwartsFollowup = evaluate(`JSON.parse(updateExistingDemandFollowup(
+  { email_client: 'huwarts@example.com', nom_client: 'Géraldine Duret Huwarts', date_evenement: 'Inconnu / à compléter' },
+  { gmail_thread_id: 'THREAD-REPONSE-HUWARTS', gmail_message_id: 'MESSAGE-HUWARTS-2', dernier_message_client: 'extra merci beaucoup' },
+  { force_review_card: true, create_if_not_found: true, fallback_row: { id_demande: 'GMAIL-MESSAGE-HUWARTS-2' } }
+).getContent()).data`);
+assert.equal(huwartsFollowup.updated, true);
+assert.equal(huwartsFollowup.id_demande, 'WIX-HUWARTS');
+assert.equal(huwartsFollowup.matched_by, 'email_client_unique');
+assert.equal(cell(context.followupSheetHuwarts, 'WIX-HUWARTS', 'dernier_message_client'), 'extra merci beaucoup');
+assert.deepEqual(context.reviewCardCalls, []);
+
+// Une date de prestation différente de celle de la demande existante peut
+// annoncer un autre événement : « incertain » crée alors une fiche de contrôle.
+const huwartsOtherDate = evaluate(`JSON.parse(updateExistingDemandFollowup(
+  { email_client: 'huwarts@example.com', date_evenement: '12/12/2026' },
+  { gmail_thread_id: 'AUTRE-FIL-HUWARTS', gmail_message_id: 'MESSAGE-HUWARTS-3' },
+  { force_review_card: true, create_if_not_found: true, fallback_row: { id_demande: 'GMAIL-MESSAGE-HUWARTS-3' } }
+).getContent()).data`);
+assert.equal(huwartsOtherDate.created_from_unmatched_followup, true);
+assert.deepEqual(context.reviewCardCalls, ['GMAIL-MESSAGE-HUWARTS-3']);
+
+// Sans fil commun et avec plusieurs vraies demandes actives pour la même
+// adresse, « incertain » crée toujours une fiche de contrôle.
+context.followupSheetDuboisMulti = reviewSheet([
+  { id_demande: 'GMAIL-DUBOIS-A', nom_client: 'Stéphanie Dubois', email_client: 'dubois@example.com', statut: 'Nouvelle demande', gmail_thread_id: 'THREAD-A' },
+  { id_demande: 'GMAIL-DUBOIS-B', nom_client: 'Stéphanie Dubois', email_client: 'dubois@example.com', statut: 'Devis envoyé', gmail_thread_id: 'THREAD-B' }
+]);
+context.getSheet = () => context.followupSheetDuboisMulti;
 const uncertainWithoutThread = evaluate(`JSON.parse(updateExistingDemandFollowup(
   { email_client: 'dubois@example.com' },
   { gmail_thread_id: 'AUTRE-FIL', gmail_message_id: 'MESSAGE-DUBOIS-3' },
   { force_review_card: true, create_if_not_found: true, fallback_row: { id_demande: 'GMAIL-MESSAGE-DUBOIS-3' } }
 ).getContent()).data`);
 assert.equal(uncertainWithoutThread.created_from_unmatched_followup, true);
-assert.deepEqual(context.reviewCardCalls, ['GMAIL-MESSAGE-DUBOIS-3']);
+assert.deepEqual(context.reviewCardCalls, ['GMAIL-MESSAGE-HUWARTS-3', 'GMAIL-MESSAGE-DUBOIS-3']);
+context.getSheet = () => context.followupSheetDubois;
 
 // Le fil seul, avec une autre adresse, ne suffit jamais.
 const otherSenderInThread = evaluate(`JSON.parse(updateExistingDemandFollowup(
