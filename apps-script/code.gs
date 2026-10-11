@@ -1405,25 +1405,37 @@ function updateExistingDemandFollowup(match, fields, options) {
     threadMatches = refine(findRowsByThreadAndEmail(sheet, headers, threadId, email, false));
   }
   const threadMatch = threadMatches.length === 1 ? threadMatches[0] : null;
+  // La réponse d'un client à une demande Wix arrive toujours dans un autre fil
+  // que la notification Wix : pour un rôle « incertain », l'adresse exacte
+  // d'une seule demande (active, ou de la même date de prestation) vaut aussi
+  // preuve. Sinon, la fiche de contrôle reste obligatoire.
+  let uncertainEmailMatch = null;
   if (!threadMatch && options && normalizeBoolean(options.force_review_card)) {
-    return createUnmatchedFollowupDemand(options.fallback_row || {}, fields || {});
+    const sameEmailMatches = !email ? [] : refine(hasSpecificEventDate
+      ? findRowsByEmailAndEventDate(sheet, headers, email, dateEvenement)
+      : findActiveRowsByEmail(sheet, headers, email));
+    if (sameEmailMatches.length !== 1) {
+      return createUnmatchedFollowupDemand(options.fallback_row || {}, fields || {});
+    }
+    uncertainEmailMatch = sameEmailMatches[0];
   }
+  const proofMatch = threadMatch || uncertainEmailMatch;
   // Voxist fournit un numéro appelant fiable : une unique demande active portant
   // ce numéro prévaut sur un nom éventuellement mal retranscrit par l'audio.
-  const phoneMatches = !threadMatch && preferUniquePhone && phone
+  const phoneMatches = !proofMatch && preferUniquePhone && phone
     ? refine(findActiveRowsByPhone(sheet, headers, phone))
     : [];
-  const emailMatches = !threadMatch && phoneMatches.length === 0 && hasSpecificEventDate && email
+  const emailMatches = !proofMatch && phoneMatches.length === 0 && hasSpecificEventDate && email
     ? refine(findRowsByEmailAndEventDate(sheet, headers, email, dateEvenement))
     : [];
-  const nameMatches = !threadMatch && phoneMatches.length === 0 && hasSpecificEventDate && emailMatches.length === 0 && name
+  const nameMatches = !proofMatch && phoneMatches.length === 0 && hasSpecificEventDate && emailMatches.length === 0 && name
     ? refine(findRowsByNameAndEventDate(sheet, headers, name, dateEvenement))
     : [];
-  const activeEmailMatches = !threadMatch && phoneMatches.length === 0 && !hasSpecificEventDate && email
+  const activeEmailMatches = !proofMatch && phoneMatches.length === 0 && !hasSpecificEventDate && email
     ? refine(findActiveRowsByEmail(sheet, headers, email))
     : [];
-  let matches = threadMatch
-    ? [threadMatch]
+  let matches = proofMatch
+    ? [proofMatch]
     : (phoneMatches.length > 0
     ? phoneMatches
     : (emailMatches.length > 0
@@ -1487,7 +1499,7 @@ function updateExistingDemandFollowup(match, fields, options) {
   return ok(Object.assign({
     id_demande: found.id_demande || "",
     row: found.rowIndex,
-    matched_by: threadMatch ? "gmail_thread_id_and_email_client" : "business_fields"
+    matched_by: threadMatch ? "gmail_thread_id_and_email_client" : (uncertainEmailMatch ? "email_client_unique" : "business_fields")
   }, writeResult));
 }
 
