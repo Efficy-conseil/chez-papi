@@ -362,6 +362,14 @@ assert(
   (moduleById(mainModules, 81).mapper?.data || '').includes('"dernier_message_client":"{{escapeJSON(38.message_original)}}"'),
   'message récent analysé absent du suivi Email du module 81'
 );
+assert(
+  moduleById(mainModules, 39).mapper?.values?.message_original === '{{ifempty(trim(substring(1.fullTextBody; 0; 5000)); 38.message_original)}}',
+  'message_original Email direct du module 39 ne conserve pas le texte brut de l’e-mail'
+);
+assert(
+  (moduleById(mainModules, 81).mapper?.data || '').includes('"message_original":"{{escapeJSON(ifempty(trim(substring(1.fullTextBody; 0; 5000)); 38.message_original))}}"'),
+  'message_original Email direct du module 81 ne conserve pas le texte brut de l’e-mail'
+);
 
 [
   [84, 'Site Internet'],
