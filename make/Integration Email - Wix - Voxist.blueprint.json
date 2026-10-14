@@ -1998,8 +1998,7 @@
                                 ]
                             },
                             "mapper": {
-                                "model": "gpt-4o-mini",
-                                "top_p": "1",
+                                "model": "gpt-5-mini",
                                 "select": "chat",
                                 "messages": [
                                     {
@@ -2012,8 +2011,7 @@
                                         "imageDetail": "auto"
                                     }
                                 ],
-                                "max_tokens": "700",
-                                "temperature": "0",
+                                "max_tokens": "4000",
                                 "n_completions": "1",
                                 "response_format": "json_object",
                                 "parseJSONResponse": false
@@ -5061,8 +5059,7 @@
                                                 ]
                                             },
                                             "mapper": {
-                                                "model": "gpt-4o-mini",
-                                                "top_p": "1",
+                                                "model": "gpt-5-mini",
                                                 "select": "chat",
                                                 "messages": [
                                                     {
@@ -5079,8 +5076,7 @@
                                                         "imageDetail": "auto"
                                                     }
                                                 ],
-                                                "max_tokens": "1600",
-                                                "temperature": "0",
+                                                "max_tokens": "4000",
                                                 "n_completions": "1",
                                                 "response_format": "json_object",
                                                 "parseJSONResponse": false
@@ -7444,8 +7440,7 @@
                                             },
                                             "filter": null,
                                             "mapper": {
-                                                "model": "gpt-4o-mini",
-                                                "top_p": "1",
+                                                "model": "gpt-5-mini",
                                                 "select": "chat",
                                                 "messages": [
                                                     {
@@ -7458,8 +7453,7 @@
                                                         "imageDetail": "auto"
                                                     }
                                                 ],
-                                                "max_tokens": "1600",
-                                                "temperature": "0",
+                                                "max_tokens": "4000",
                                                 "n_completions": "1",
                                                 "response_format": "json_object",
                                                 "parseJSONResponse": false
@@ -8873,8 +8867,7 @@
                                                     },
                                                     "filter": null,
                                                     "mapper": {
-                                                        "model": "gpt-4o-mini",
-                                                        "top_p": "1",
+                                                        "model": "gpt-5-mini",
                                                         "select": "chat",
                                                         "messages": [
                                                             {
@@ -8886,8 +8879,7 @@
                                                                 "content": "Date de réception : {{1.internalDate}}\nTéléphone appelant : {{11.telephone_e164}}\nTranscription audio : {{7.text.text}}\nEmail Voxist limité : {{substring(1.fullTextBody; 0; 1000)}}\n\nDécide uniquement selon le contenu métier. is_demande=true pour une demande ou relance liée à une prestation traiteur, un devis, un événement, un repas, une livraison ou un échange client antérieur. is_demande=false pour silence, bruit, message personnel, spam ou message sans contexte métier.\nSi aucun nom n’est prononcé : nom_client=\"Inconnu / à compléter\". Le téléphone doit être celui de l’appelant. canal=\"Téléphone\", source=\"Voxist\", send_ack=false et ack_mode=\"\".\nSi is_demande=true : archive_label=\"Historique_Voxist\", statut=\"À vérifier\" pour une relance, sinon \"À rappeler\", et resume_court non vide.\nSi is_demande=false : statut=\"\", resume_court=\"\", archive_label=\"Hors_Scope_Make\".\nDates : JJ/MM/AAAA, plage JJ/MM/AAAA au JJ/MM/AAAA, année seule AAAA, sinon null. Pour une demande reçue en 2026, corrige 2016 vers 2026 ou 2007 vers 2027 seulement si la date complète obtenue est future ; ne corrige jamais une année seule. Heure : HH:MM ou chaîne vide. Ferme le JSON immédiatement après la dernière valeur."
                                                             }
                                                         ],
-                                                        "max_tokens": "900",
-                                                        "temperature": "0",
+                                                        "max_tokens": "4000",
                                                         "n_completions": "1",
                                                         "response_format": "json_object",
                                                         "parseJSONResponse": false
@@ -13244,8 +13236,7 @@
                                 ]
                             },
                             "mapper": {
-                                "model": "gpt-4o-mini",
-                                "top_p": "1",
+                                "model": "gpt-5-mini",
                                 "select": "chat",
                                 "messages": [
                                     {
@@ -13274,8 +13265,7 @@
                                         "imageDetail": "auto"
                                     }
                                 ],
-                                "max_tokens": "700",
-                                "temperature": "0",
+                                "max_tokens": "4000",
                                 "n_completions": "1",
                                 "response_format": "json_object",
                                 "parseJSONResponse": false
@@ -18596,8 +18586,7 @@
                                                                 ]
                                                             },
                                                             "mapper": {
-                                                                "model": "gpt-4o-mini",
-                                                                "top_p": "1",
+                                                                "model": "gpt-5-mini",
                                                                 "select": "chat",
                                                                 "messages": [
                                                                     {
@@ -18614,8 +18603,7 @@
                                                                         "imageDetail": "auto"
                                                                     }
                                                                 ],
-                                                                "max_tokens": "1600",
-                                                                "temperature": "0",
+                                                                "max_tokens": "4000",
                                                                 "n_completions": "1",
                                                                 "response_format": "json_object",
                                                                 "parseJSONResponse": false
@@ -20973,8 +20961,7 @@
                                                             },
                                                             "filter": null,
                                                             "mapper": {
-                                                                "model": "gpt-4o-mini",
-                                                                "top_p": "1",
+                                                                "model": "gpt-5-mini",
                                                                 "select": "chat",
                                                                 "messages": [
                                                                     {
@@ -20987,8 +20974,7 @@
                                                                         "imageDetail": "auto"
                                                                     }
                                                                 ],
-                                                                "max_tokens": "1600",
-                                                                "temperature": "0",
+                                                                "max_tokens": "4000",
                                                                 "n_completions": "1",
                                                                 "response_format": "json_object",
                                                                 "parseJSONResponse": false
@@ -22402,8 +22388,7 @@
                                                                     },
                                                                     "filter": null,
                                                                     "mapper": {
-                                                                        "model": "gpt-4o-mini",
-                                                                        "top_p": "1",
+                                                                        "model": "gpt-5-mini",
                                                                         "select": "chat",
                                                                         "messages": [
                                                                             {
@@ -22415,8 +22400,7 @@
                                                                                 "content": "Date de réception : {{1.internalDate}}\nTéléphone appelant : {{118.telephone_e164}}\nTranscription audio : {{133.text.text}}\n\nLa transcription native présente dans l'e-mail OVH est volontairement exclue : décide exclusivement à partir de la transcription audio ci-dessus.\n\nDécide uniquement selon le contenu métier. is_demande=true pour une demande ou relance liée à une prestation traiteur, un devis, un événement, un repas, une livraison ou un échange client antérieur. is_demande=false pour silence, bruit, message personnel, spam ou message sans contexte métier.\nSi aucun nom n’est prononcé : nom_client=\"Inconnu / à compléter\". Le téléphone doit être celui de l’appelant. canal=\"Téléphone\", source=\"OVH\", send_ack=false et ack_mode=\"\".\nSi is_demande=true : archive_label=\"Historique_OVH\", statut=\"À vérifier\" pour une relance, sinon \"À rappeler\", et resume_court non vide.\nSi is_demande=false : statut=\"\", resume_court=\"\", archive_label=\"Hors_Scope_Make\".\nDates : JJ/MM/AAAA, plage JJ/MM/AAAA au JJ/MM/AAAA, année seule AAAA, sinon null. Pour une demande reçue en 2026, corrige 2016 vers 2026 ou 2007 vers 2027 seulement si la date complète obtenue est future ; ne corrige jamais une année seule. Heure : HH:MM ou chaîne vide. Ferme le JSON immédiatement après la dernière valeur."
                                                                             }
                                                                         ],
-                                                                        "max_tokens": "900",
-                                                                        "temperature": "0",
+                                                                        "max_tokens": "4000",
                                                                         "n_completions": "1",
                                                                         "response_format": "json_object",
                                                                         "parseJSONResponse": false

@@ -196,7 +196,7 @@ assert(
   assert(prompt.includes('quelle que soit sa durée'), `prise en charge des vocaux longs absente de la qualification ${routeName}`);
   assert(prompt.includes('toutes les informations métier uniques'), `extraction complète des vocaux longs absente de la qualification ${routeName}`);
   assert(prompt.includes('La durée du vocal ne doit jamais modifier is_demande'), `durée susceptible de fausser la qualification ${routeName}`);
-  assert(extraction.mapper?.max_tokens === '1600', `marge de sortie JSON ${routeName} insuffisante`);
+  assert(Number(extraction.mapper?.max_tokens) >= 1600, `marge de sortie JSON ${routeName} insuffisante`);
 });
 
 const voxistPrefilterRouter = moduleById(mainModules, 69);
@@ -474,7 +474,7 @@ const audioRecoveryParser = moduleById(mainModules, 113);
 const audioRecoveryResume = moduleById(mainModules, 114);
 const audioRecoveryPrompt = JSON.stringify(audioRecoveryAi.mapper?.messages || []);
 assert(audioRecoveryAi.module === 'openai-gpt-3:CreateCompletion', 'reprise audio non reliée à OpenAI');
-assert(audioRecoveryAi.mapper?.max_tokens === '900', 'reprise audio non bornée à 900 tokens');
+assert(Number(audioRecoveryAi.mapper?.max_tokens) >= 900, 'reprise audio : marge de sortie inférieure à 900 tokens');
 assert(audioRecoveryPrompt.includes('{{7.text.text}}'), 'transcription originale absente de la reprise audio');
 assert(audioRecoveryPrompt.includes('400 caractères maximum'), 'message_original non borné dans la reprise audio');
 assert(
