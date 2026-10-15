@@ -20,6 +20,9 @@ const scriptProperties = new Map();
 const modified = [];
 const trashed = [];
 const listQueries = [];
+const logSheets = new Map();
+const insertedSheets = [];
+let failNextLogAppend = false;
 let profileEmail = 'demande.chezpapimaisongourmande@gmail.com';
 let gmailAppPlainBody = '';
 let gmailAppHtmlBody = '';
@@ -115,6 +118,31 @@ const context = vm.createContext({
     },
     newBlob(value) {
       return { getDataAsString: () => Buffer.from(value).toString('utf8') };
+    }
+  },
+  SpreadsheetApp: {
+    getActiveSpreadsheet() {
+      return {
+        getSheetByName: name => logSheets.get(name) || null,
+        getNumSheets: () => 1 + logSheets.size,
+        insertSheet(name, index) {
+          insertedSheets.push({ name, index });
+          const logSheet = {
+            rows: [],
+            frozenRows: 0,
+            appendRow(row) {
+              if (failNextLogAppend) {
+                failNextLogAppend = false;
+                throw new Error('Quota Sheets dépassé');
+              }
+              this.rows.push(row);
+            },
+            setFrozenRows(count) { this.frozenRows = count; }
+          };
+          logSheets.set(name, logSheet);
+          return logSheet;
+        }
+      };
     }
   },
   PropertiesService: {
@@ -410,7 +438,7 @@ assert.match(frontendSource, /refreshButton\.textContent = 'Actualisation…'/);
 assert.match(frontendSource, /refreshButton\.disabled = true/);
 assert.match(frontendSource, /refreshButton\.disabled = false/);
 
-const read = context.markVoicemailRead(messageId);
+const read = context.markVoicemailRead(messageId, 'gerant@example.com');
 assert.equal(read.message_id, messageId);
 assert.equal(read.read, true);
 assert.deepEqual(JSON.parse(JSON.stringify(modified)), [
@@ -418,12 +446,38 @@ assert.deepEqual(JSON.parse(JSON.stringify(modified)), [
   { resource: { removeLabelIds: ['UNREAD'] }, userId: 'me', id: messageId }
 ]);
 
-const deletedProcessed = context.trashVoicemail(messageId);
+// Le journal est créé une seule fois, en dernier onglet, pour ne jamais
+// remplacer le premier onglet lu par getSheet().
+const voicemailLog = logSheets.get('Journal_vocaux');
+assert.ok(voicemailLog, 'le journal des vocaux doit être créé à la première action');
+assert.deepEqual(insertedSheets, [{ name: 'Journal_vocaux', index: 1 }]);
+assert.equal(voicemailLog.frozenRows, 1);
+assert.deepEqual([...voicemailLog.rows[0]], ['Date', 'Action', 'Utilisateur', 'Appelant', 'Vocal reçu le', 'Identifiant Gmail']);
+const firstTrashLog = voicemailLog.rows[1];
+assert.equal(firstTrashLog[1], 'Supprimé');
+assert.equal(firstTrashLog[2], '');
+const readLog = voicemailLog.rows.at(-1);
+assert.equal(typeof readLog[0].getTime, 'function', 'la date de l’action doit être une vraie date');
+assert.equal(readLog[1], 'Marqué comme lu');
+assert.equal(readLog[2], 'gerant@example.com');
+assert.equal(readLog[3], '06 64 88 67 08');
+assert.equal(readLog[4].getTime(), Date.UTC(2026, 9, 6, 15, 12));
+assert.equal(readLog[5], messageId);
+
+// Une erreur du journal ne doit jamais empêcher le passage en lu.
+const logRowsBeforeFailure = voicemailLog.rows.length;
+failNextLogAppend = true;
+assert.equal(context.markVoicemailRead(messageId, 'gerant@example.com').read, true);
+assert.equal(voicemailLog.rows.length, logRowsBeforeFailure);
+
+const deletedProcessed = context.trashVoicemail(messageId, 'gerant@example.com');
 assert.equal(deletedProcessed.trashed, true, 'un vocal déjà analysé doit aussi pouvoir être supprimé');
 assert.deepEqual(trashed, [
   { userId: 'me', id: messageId },
   { userId: 'me', id: messageId }
 ]);
+assert.deepEqual([...voicemailLog.rows.at(-1).slice(1, 4)], ['Supprimé', 'gerant@example.com', '06 64 88 67 08']);
+assert.equal(insertedSheets.length, 1, 'le journal ne doit pas être recréé');
 
 cacheValues.clear();
 profileEmail = 'compte.personnel@example.com';
