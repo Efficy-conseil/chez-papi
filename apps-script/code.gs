@@ -42,6 +42,8 @@ const VOICEMAIL_ANALYSIS_TIMEZONE = 'Europe/Paris';
 const VOICEMAIL_ANALYSIS_HOURS = [6, 12, 16, 21];
 const DISCARDED_VOICEMAILS_PROPERTY = 'discarded-ovh-voicemails-v1';
 const DISCARDED_VOICEMAILS_RETENTION_MS = 35 * 24 * 60 * 60 * 1000;
+const VOICEMAIL_LOG_SHEET = 'Journal_vocaux';
+const VOICEMAIL_LOG_HEADERS = ['Date', 'Action', 'Utilisateur', 'Appelant', 'Vocal reçu le', 'Identifiant Gmail'];
 let DELAY_MAKE_ERRORS_FOR_HTTP_TIMEOUT = false;
 
 const ALLOWED_STATUSES = [
@@ -236,8 +238,8 @@ function doPost(e) {
     if (body.action === 'listVoicemails') return listUnreadVoicemails();
     if (body.action === 'getVoicemailAudio') return getVoicemailAudio(body.message_id);
     if (body.action === 'linkVoicemailToDemand') return withDocumentLock(function() { return linkVoicemailToDemand(body.message_id, body.id_demande); });
-    if (body.action === 'markVoicemailRead') return markVoicemailRead(body.message_id);
-    if (body.action === 'trashVoicemail') return trashVoicemail(body.message_id);
+    if (body.action === 'markVoicemailRead') return markVoicemailRead(body.message_id, auth.user);
+    if (body.action === 'trashVoicemail') return trashVoicemail(body.message_id, auth.user);
     if (body.action === 'archiveOvhVoicemail') return archiveOvhVoicemail(body.message_id);
     if (body.action === 'add')    return withDocumentLock(function() { return addRow(body.row || {}, body.options || {}); });
     if (body.action === 'update') return withDocumentLock(function() { return updateRowById(body.id_demande, body.fields || {}); });
@@ -532,7 +534,7 @@ function linkVoicemailToDemand(messageId, idDemande) {
   });
 }
 
-function markVoicemailRead(messageId) {
+function markVoicemailRead(messageId, user) {
   ensureVoicemailMailbox();
   const voicemailLabelId = getGmailLabelIdByName(VOICEMAIL_HISTORY_LABEL);
   const personalLabelId = getGmailLabelIdByName(VOICEMAIL_PERSONAL_LABEL);
@@ -542,10 +544,11 @@ function markVoicemailRead(messageId) {
   if (!isAccessibleOvhVoicemail(message, bodyText, voicemailLabelId, personalLabelId) || isDiscardedVoicemail(id)) throw new Error('Message vocal introuvable');
 
   Gmail.Users.Messages.modify({ removeLabelIds: ['UNREAD'] }, 'me', id);
+  logVoicemailAction('Marqué comme lu', user, message, bodyText);
   return ok({ message_id: id, read: true });
 }
 
-function trashVoicemail(messageId) {
+function trashVoicemail(messageId, user) {
   ensureVoicemailMailbox();
   const voicemailLabelId = getGmailLabelIdByName(VOICEMAIL_HISTORY_LABEL);
   const personalLabelId = getGmailLabelIdByName(VOICEMAIL_PERSONAL_LABEL);
@@ -558,7 +561,35 @@ function trashVoicemail(messageId) {
 
   rememberDiscardedVoicemail(id);
   Gmail.Users.Messages.trash('me', id);
+  logVoicemailAction('Supprimé', user, message, bodyText);
   return ok({ message_id: id, trashed: true });
+}
+
+// Gmail ne conserve pas l'auteur d'un passage en lu. Ce journal trace donc les
+// seules actions faites depuis le dashboard : un vocal ouvert directement dans
+// Gmail n'y figure pas. Une erreur d'écriture ne bloque jamais l'action.
+function logVoicemailAction(action, user, message, bodyText) {
+  try {
+    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet = spreadsheet.getSheetByName(VOICEMAIL_LOG_SHEET);
+    if (!sheet) {
+      // Inséré en dernier : getSheet() lit toujours le premier onglet.
+      sheet = spreadsheet.insertSheet(VOICEMAIL_LOG_SHEET, spreadsheet.getNumSheets());
+      sheet.appendRow(VOICEMAIL_LOG_HEADERS);
+      sheet.setFrozenRows(1);
+    }
+    const internalDate = Number(message && message.internalDate || 0);
+    sheet.appendRow([
+      new Date(),
+      action,
+      String(user || ''),
+      extractOvhCaller(getGmailHeader(message && message.payload, 'Subject'), bodyText),
+      internalDate ? new Date(internalDate) : '',
+      String(message && message.id || '')
+    ]);
+  } catch (err) {
+    Logger.log('Journal des vocaux non écrit [' + action + '] : ' + String(err && err.message || err));
+  }
 }
 
 function archiveOvhVoicemail(messageId) {
