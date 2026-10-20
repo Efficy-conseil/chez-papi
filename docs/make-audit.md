@@ -49,7 +49,7 @@ Références : `docs/product-contract.md` et `docs/make-regression-matrix.md`.
 - Wix, Voxist et les boîtes internes sont exclus avant analyse.
 - Tous les autres nouveaux emails peuvent être analysés, même sans ancien mot-clé de préfiltrage.
 - L'IA distingue nouvelle demande, suivi et hors scope.
-- Les suivis rattachés sont archivés après mise à jour.
+- Les suivis rattachés et les fiches de contrôle sont archivés dès que le backend confirme `updated = true` (module 82). Depuis le 20/10/2026, ce filtre ne dépend plus d'une liste de phrases, de `is_followup` ni de l'objet : une réponse de refus formulée autrement que « choisi un autre prestataire » restait en boîte de réception sans jamais être reprise par Make (cas E51).
 - Pour une nouvelle demande, l'archivage précède l'accusé optionnel afin qu'une adresse absente ne bloque pas le classement Gmail.
 
 ### Tally
