@@ -596,13 +596,16 @@ assert(
   'suivi Email sans date de prestation encore bloqué avant le backend'
 );
 const followupArchiveConditionSets = moduleById(mainModules, 82).filter?.conditions || [];
+// Le backend confirme tout rattachement ou fiche de contrôle par updated = true :
+// cette confirmation suffit. Une liste de phrases laisserait en boîte de
+// réception chaque nouvelle formulation (cas E51).
 assert(
-  followupArchiveConditionSets.some(conditionSet =>
-    conditionSet.some(condition => condition?.a === '{{38.is_followup}}' && condition?.b === 'true') &&
-    conditionSet.some(condition => condition?.a === '{{81.data.data.updated}}' && condition?.b === 'true') &&
-    !conditionSet.some(condition => condition?.a === '{{38.date_evenement}}')
-  ),
-  'archivage du suivi Email sans date encore bloqué après rattachement'
+  followupArchiveConditionSets.length === 1 &&
+    followupArchiveConditionSets[0].length === 1 &&
+    followupArchiveConditionSets[0][0]?.a === '{{81.data.data.updated}}' &&
+    followupArchiveConditionSets[0][0]?.b === 'true' &&
+    followupArchiveConditionSets[0][0]?.o === 'boolean:equal',
+  'archivage du suivi Email encore soumis à d’autres conditions que la confirmation backend'
 );
 
 [62, 15, 39].forEach(id => {
@@ -775,20 +778,14 @@ const emailAnalysisPrompt = JSON.stringify(moduleById(mainModules, 37).mapper?.m
   assert(newEmailDemandFilter.includes(marker) && newEmailDemandFilter.includes('text:notcontain'), `indice de suivi non exclu de la création Email : ${marker}`);
 });
 const explicitReminderMarkers = ['me permets de vous relancer', 'précédent mail', 'sans réponse'];
-const followupArchiveFilter = JSON.stringify(moduleById(mainModules, 82).filter || {});
 const outOfScopeEmailFilter = JSON.stringify(moduleById(mainModules, 51).filter || {});
 explicitReminderMarkers.forEach(marker => {
   assert(emailAnalysisPrompt.includes(marker), `relance explicite absente de l'analyse IA : ${marker}`);
-  assert(followupArchiveFilter.includes(marker) && followupArchiveFilter.includes('{{81.data.data.updated}}'), `archivage après rattachement absent pour la relance explicite : ${marker}`);
   assert(newEmailDemandFilter.includes(marker) && newEmailDemandFilter.includes('text:notcontain'), `relance explicite non exclue de la création Email : ${marker}`);
 });
 assert(
   emailAnalysisPrompt.includes('choisi un autre prestataire'),
   'réponse de refus après devis absente de l’analyse Email direct'
-);
-assert(
-  JSON.stringify(moduleById(mainModules, 82).filter || {}).includes('choisi un autre prestataire'),
-  'archivage de la réponse de refus après devis absent après rattachement'
 );
 assert(
   (existingFollowup.mapper?.data || '').includes('"lieu_prestation":"{{38.lieu_prestation}}"') &&
