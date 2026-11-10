@@ -4,6 +4,27 @@ const mainRaw = readFileSync('make/Integration Email - Wix - Voxist.blueprint.js
 const main = JSON.parse(mainRaw);
 const tally = JSON.parse(readFileSync('make/Integration Tally.blueprint.json', 'utf8'));
 
+// Make évalue les formules {{…}} avant d'envoyer le corps : dans une formule,
+// un texte s'écrit entre guillemets simples ("…"), jamais \"…\". Pour vérifier
+// le JSON envoyé, on neutralise donc chaque formule avant de décoder le corps.
+function parseMakeBody(data) {
+  return JSON.parse(String(data || '{}').replace(/\{\{[\s\S]*?\}\}/g, formula => formula.replace(/(?<!\\)"/g, '\\"')));
+}
+
+// Un \" dans une formule laisse un antislash dans le texte produit par Make.
+// Quand une condition if(…) renvoie ce texte directement dans une valeur JSON,
+// l'antislash ferme mal la valeur et le backend reçoit un corps illisible
+// (incident du vocal OVH du 10 novembre 2026, module 143).
+function assertNoEscapedQuoteInRawJsonFormula(module) {
+  const data = String(module.mapper?.data || '');
+  (data.match(/"\{\{if\([\s\S]*?\}\}"/g) || []).forEach(value => {
+    const formula = value.slice(1, -1);
+    if (/;\s*\\"/.test(formula)) {
+      throw new Error(`Audit blueprint : résultat de if() écrit avec \\" dans le module HTTP ${module.id} (${formula.slice(0, 80)})`);
+    }
+  });
+}
+
 function collectModules(value, modules = []) {
   if (Array.isArray(value)) {
     value.forEach(item => collectModules(item, modules));
@@ -129,14 +150,14 @@ assert(
 
 const audioCreationModule = moduleById(mainModules, 15);
 assert(
-  (audioCreationModule.mapper?.data || '').includes('if(14.statut = \\"À vérifier\\"; \\"À vérifier\\"; if(14.is_demande = false; \\"À vérifier\\"; \\"Nouvelle demande\\"))'),
+  (audioCreationModule.mapper?.data || '').includes('if(14.statut = "À vérifier"; "À vérifier"; if(14.is_demande = false; "À vérifier"; "Nouvelle demande"))'),
   'le module 15 écrase encore les relances non rattachées par Nouvelle demande'
 );
 [
   [62, '61', 'transcription'],
   [15, '14', 'audio']
 ].forEach(([moduleId, parsedModuleId, routeName]) => {
-  const body = JSON.parse(moduleById(mainModules, moduleId).mapper?.data || '{}');
+  const body = parseMakeBody(moduleById(mainModules, moduleId).mapper?.data || '{}');
   const expectedPhone = `{{escapeJSON(replace(replace(ifempty(11.telephone_e164; ${parsedModuleId}.telephone); "/\\D/g"; ""); "/^33/"; "0"))}}`;
   assert(
     body.row?.telephone === expectedPhone,
@@ -229,10 +250,11 @@ httpModules.forEach(module => {
   assert(module.mapper?.followAllRedirects === true, `Follow all redirects désactivé sur le module ${module.id}`);
   if (module.mapper?.contentType === 'application/json' && module.mapper?.data) {
     try {
-      JSON.parse(module.mapper.data);
+      parseMakeBody(module.mapper.data);
     } catch (error) {
       throw new Error(`Audit blueprint : corps JSON invalide sur le module HTTP ${module.id} (${error.message})`);
     }
+    assertNoEscapedQuoteInRawJsonFormula(module);
   }
 });
 
@@ -723,11 +745,15 @@ assert(!ovhAudioQualificationPrompt.includes('1.fullTextBody'), 'transcription n
   [127, 122],
   [143, 135]
 ].forEach(([moduleId, extractionModuleId]) => {
-  const body = JSON.parse(moduleById(mainModules, moduleId).mapper?.data || '{}');
+  const body = parseMakeBody(moduleById(mainModules, moduleId).mapper?.data || '{}');
   assert(body.row?.id_demande === 'VOXIST-{{1.id}}', `création OVH du module ${moduleId} privée des protections backend téléphoniques`);
   assert(body.row?.canal === 'Téléphone', `canal OVH inattendu dans le module ${moduleId}`);
   assert(body.row?.telephone?.includes(`ifempty(118.telephone_e164; ${extractionModuleId}.telephone)`), `téléphone OVH non priorisé dans le module ${moduleId}`);
 });
+assert(
+  parseMakeBody(moduleById(mainModules, 143).mapper?.data).row?.statut === '{{if(135.statut = "À vérifier"; "À vérifier"; if(135.is_demande = false; "À vérifier"; "Nouvelle demande"))}}',
+  'statut de création OVH audio encore écrit avec des guillemets échappés (corps JSON cassé)'
+);
 
 const ovhRoute = topRoutes.find(route => route.flow?.[0]?.id === 115);
 const ovhRouteSerialized = JSON.stringify(ovhRoute);
