@@ -4,23 +4,23 @@ const mainRaw = readFileSync('make/Integration Email - Wix - Voxist.blueprint.js
 const main = JSON.parse(mainRaw);
 const tally = JSON.parse(readFileSync('make/Integration Tally.blueprint.json', 'utf8'));
 
-// Make évalue les formules {{…}} avant d'envoyer le corps : dans une formule,
-// un texte s'écrit entre guillemets simples ("…"), jamais \"…\". Pour vérifier
-// le JSON envoyé, on neutralise donc chaque formule avant de décoder le corps.
+// Make évalue les formules {{…}} avant d'envoyer le corps et ne traite pas
+// l'antislash comme un échappement : dans une formule, un texte s'écrit "…"
+// et une expression régulière "/\D/g", jamais \"…\" ni \\D. Pour vérifier le
+// JSON envoyé, on protège donc chaque formule avant de décoder le corps.
 function parseMakeBody(data) {
-  return JSON.parse(String(data || '{}').replace(/\{\{[\s\S]*?\}\}/g, formula => formula.replace(/(?<!\\)"/g, '\\"')));
+  return JSON.parse(String(data || '{}').replace(/\{\{[\s\S]*?\}\}/g, formula => formula.replace(/\\/g, '\\\\').replace(/"/g, '\\"')));
 }
 
-// Un \" dans une formule laisse un antislash dans le texte produit par Make.
-// Quand une condition if(…) renvoie ce texte directement dans une valeur JSON,
-// l'antislash ferme mal la valeur et le backend reçoit un corps illisible
-// (incident du vocal OVH du 10 novembre 2026, module 143).
+// Un \" ou un \\ dans une formule reste tel quel dans le texte produit par
+// Make : statut « À vérifier\ » qui casse le JSON (incident du vocal OVH du
+// 10 novembre 2026, module 143), comparaison « incertain » toujours fausse,
+// expression régulière du téléphone inopérante, date « Inconnu / à compléter\ ».
 function assertNoEscapedQuoteInRawJsonFormula(module) {
   const data = String(module.mapper?.data || '');
-  (data.match(/"\{\{if\([\s\S]*?\}\}"/g) || []).forEach(value => {
-    const formula = value.slice(1, -1);
-    if (/;\s*\\"/.test(formula)) {
-      throw new Error(`Audit blueprint : résultat de if() écrit avec \\" dans le module HTTP ${module.id} (${formula.slice(0, 80)})`);
+  (data.match(/\{\{[\s\S]*?\}\}/g) || []).forEach(formula => {
+    if (formula.includes('\\"') || formula.includes('\\\\')) {
+      throw new Error(`Audit blueprint : formule Make avec \\" ou \\\\ dans le module HTTP ${module.id} (${formula.slice(0, 80)})`);
     }
   });
 }
@@ -398,14 +398,14 @@ assert(
   [85, 'Email'],
   [80, 'Email']
 ].forEach(([moduleId, expectedChannel]) => {
-  const body = JSON.parse(moduleById(mainModules, moduleId).mapper?.data || '{}');
+  const body = parseMakeBody(moduleById(mainModules, moduleId).mapper?.data || '{}');
   assert(body.options?.create_if_not_found === true, `création de secours absente du module ${moduleId}`);
   assert(body.options?.fallback_row?.id_demande === 'GMAIL-{{1.threadId}}', `identifiant de secours non idempotent dans le module ${moduleId}`);
   assert(body.options?.fallback_row?.statut === 'À vérifier', `statut de secours inattendu dans le module ${moduleId}`);
   assert(body.options?.fallback_row?.canal === expectedChannel, `canal de secours inattendu dans le module ${moduleId}`);
 });
 [80, 85].forEach(moduleId => {
-  const body = JSON.parse(moduleById(mainModules, moduleId).mapper?.data || '{}');
+  const body = parseMakeBody(moduleById(mainModules, moduleId).mapper?.data || '{}');
   assert(body.options?.match?.email_client === '{{1.fromEmail}}', `recherche de secours par email absente du module ${moduleId}`);
 });
 [
@@ -450,18 +450,18 @@ const voxistAudioExtraction = moduleById(mainModules, 13);
   [102, 14]
 ].forEach(([moduleId, extractionModuleId]) => {
   const body = moduleById(mainModules, moduleId).mapper?.data || '';
-  const normalizedPhone = `{{escapeJSON(replace(replace(ifempty(11.telephone_e164; ${extractionModuleId}.telephone); \\"/\\\\D/g\\"; \\"\\"); \\"/^33/\\"; \\"0\\"))}}`;
+  const normalizedPhone = `{{escapeJSON(replace(replace(ifempty(11.telephone_e164; ${extractionModuleId}.telephone); "/\\D/g"; ""); "/^33/"; "0"))}}`;
   assert(
     body.split(`"telephone":"${normalizedPhone}"`).length - 1 === 2,
     `téléphone Voxist non normalisé et protégé dans match et fields du module ${moduleId}`
   );
   assert(
-    !body.includes(`replace(ifempty(11.telephone_e164; ${extractionModuleId}.telephone); 33; \\"0\\")`),
+    !body.includes(`replace(ifempty(11.telephone_e164; ${extractionModuleId}.telephone); 33; "0")`),
     `ancienne normalisation Voxist susceptible de produire un antislash encore présente dans le module ${moduleId}`
   );
   ['date_evenement', 'nom_client', 'nb_convives', 'lieu_prestation', 'type_evenement'].forEach(field => {
     assert(
-      body.includes(`"${field}":"{{escapeJSON(ifempty(${extractionModuleId}.${field}; \\"\\"))}}"`),
+      body.includes(`"${field}":"{{escapeJSON(ifempty(${extractionModuleId}.${field}; ""))}}"`),
       `champ Voxist ${field} non protégé par escapeJSON dans le module ${moduleId}`
     );
   });
@@ -665,7 +665,7 @@ assert(!emailAiConditions.some(condition => condition?.o === 'number:greater'), 
 });
 
 const ovhDuplicateCheck = moduleById(mainModules, 115);
-const ovhDuplicateBody = JSON.parse(ovhDuplicateCheck.mapper?.data || '{}');
+const ovhDuplicateBody = parseMakeBody(ovhDuplicateCheck.mapper?.data);
 assert(ovhDuplicateBody.action === 'checkDuplicate', 'anti-doublon OVH non relié à checkDuplicate');
 assert(ovhDuplicateBody.match?.id_demande === 'VOXIST-{{1.id}}', 'identifiant technique OVH incompatible avec les protections backend existantes');
 assert(ovhDuplicateBody.match?.gmail_thread_id === '' && ovhDuplicateBody.match?.legacy_id === '', 'anti-doublon OVH encore dépendant du fil Gmail');
@@ -765,7 +765,7 @@ oldVoxistReferences.forEach(id => {
   129, 130, 145, 147, 150
 ].forEach(id => {
   const archiveModule = moduleById(mainModules, id);
-  const body = JSON.parse(archiveModule.mapper?.data || '{}');
+  const body = parseMakeBody(archiveModule.mapper?.data);
   assert(archiveModule.module === 'http:ActionSendData', `archivage OVH ${id} non confié au backend`);
   assert(body.action === 'archiveOvhVoicemail', `archivage OVH ${id} hors de Historique_OVH`);
   assert(body.message_id === '{{1.id}}', `message Gmail absent de l’archivage OVH ${id}`);
@@ -914,7 +914,7 @@ assert(
     outOfScopeEmailFilter.includes('incertain'),
   'archivage hors périmètre Email non protégé par les rôles métier'
 );
-const protectedFollowupBody = JSON.parse(existingFollowup.mapper?.data || '{}');
+const protectedFollowupBody = parseMakeBody(existingFollowup.mapper?.data);
 assert(protectedFollowupBody.options?.create_if_ambiguous === true, 'fiche de contrôle absente en cas de rapprochement ambigu');
 assert(
   protectedFollowupBody.options?.force_review_card === '{{if(38.message_role = "incertain"; true; false)}}',
@@ -961,7 +961,7 @@ assert(
 );
 assert(tallyCreation.module === 'http:ActionSendData', 'création Tally encore réalisée directement dans Google Sheets');
 const tallyCreationBody = tallyCreation.mapper?.data || '';
-const tallyCreationRow = JSON.parse(tallyCreationBody).row || {};
+const tallyCreationRow = parseMakeBody(tallyCreationBody).row || {};
 assert(tallyCreationBody.includes('"action":"createMakeDemand"'), 'création Tally non reliée au backend idempotent');
 assert(tallyCreationBody.includes('"id_demande":"TALLY-{{1.submissionId}}"'), 'identifiant idempotent Tally absent');
 const tallyCreationRetry = tallyCreation.onerror?.find(module => module.module === 'builtin:Break');
