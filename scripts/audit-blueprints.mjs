@@ -1012,4 +1012,21 @@ directPhoneSamples.forEach(value => {
 assert(!tallyModules.some(module => /google-sheets:/i.test(module.module)), 'accès Google Sheets direct encore présent dans Tally');
 assert(tallyCreationBody.includes('DD/MM/YYYY'), 'date Tally non normalisée au format français');
 
+// La création Email direct écrit directement dans Sheets (module 39) puis
+// envoie un accusé au client (module 40). Si une fiche porte déjà l'identifiant
+// GMAIL-<fil> que le module 39 va écrire, l'e-mail a déjà été traité : un e-mail
+// relu par Make (réimport du scénario, reprise) recréait sinon la fiche et
+// renvoyait l'accusé (incident du 10 novembre 2026, 22h40). Le simple compteur
+// du module 60 reste exclu : il bloquerait aussi une nouvelle demande légitime
+// envoyée dans le fil ou depuis l'adresse d'une demande connue.
+[39, 40].forEach(moduleId => {
+  const groups = moduleById(mainModules, moduleId).filter?.conditions || [];
+  assert(
+    groups.length > 0 && groups.every(group => group.some(condition =>
+      condition?.a === '{{ifempty(60.data.data.id_demande; "")}}' && condition?.b === 'GMAIL-{{1.threadId}}' && condition?.o === 'text:notequal'
+    )),
+    `module ${moduleId} rejouable sans protection contre un identifiant GMAIL-<fil> déjà écrit`
+  );
+});
+
 console.log(`Audit blueprints réussi : ${mainModules.length} modules principaux, ${tallyModules.length} modules Tally.`);

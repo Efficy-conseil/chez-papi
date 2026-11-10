@@ -15443,6 +15443,11 @@
                                                             "a": "{{1.fromEmail}}",
                                                             "b": "no-reply@ovh.fr",
                                                             "o": "text:notequal"
+                                                        },
+                                                        {
+                                                            "a": "{{ifempty(60.data.data.id_demande; \"\")}}",
+                                                            "b": "GMAIL-{{1.threadId}}",
+                                                            "o": "text:notequal"
                                                         }
                                                     ],
                                                     [
@@ -15594,6 +15599,11 @@
                                                         {
                                                             "a": "{{1.fromEmail}}",
                                                             "b": "no-reply@ovh.fr",
+                                                            "o": "text:notequal"
+                                                        },
+                                                        {
+                                                            "a": "{{ifempty(60.data.data.id_demande; \"\")}}",
+                                                            "b": "GMAIL-{{1.threadId}}",
                                                             "o": "text:notequal"
                                                         }
                                                     ]
@@ -16506,6 +16516,11 @@
                                                             "a": "{{1.fromEmail}}",
                                                             "b": "no-reply@ovh.fr",
                                                             "o": "text:notequal"
+                                                        },
+                                                        {
+                                                            "a": "{{ifempty(60.data.data.id_demande; \"\")}}",
+                                                            "b": "GMAIL-{{1.threadId}}",
+                                                            "o": "text:notequal"
                                                         }
                                                     ],
                                                     [
@@ -16631,6 +16646,11 @@
                                                         {
                                                             "a": "{{1.fromEmail}}",
                                                             "b": "no-reply@ovh.fr",
+                                                            "o": "text:notequal"
+                                                        },
+                                                        {
+                                                            "a": "{{ifempty(60.data.data.id_demande; \"\")}}",
+                                                            "b": "GMAIL-{{1.threadId}}",
                                                             "o": "text:notequal"
                                                         }
                                                     ]
