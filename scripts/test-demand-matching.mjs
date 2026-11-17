@@ -805,4 +805,49 @@ assert.doesNotMatch(chainTargetNotes, /Rattachée manuellement à MANUAL-AUTRE/)
 assert.equal(evaluate(`isMergedSourceNotes(${JSON.stringify(chainRows[1][mergeHeaders.indexOf('notes')])})`), true);
 assert.equal(evaluate(`isMergedSourceNotes(${JSON.stringify(chainTargetNotes)})`), false);
 
+// Coralie : deux clientes différentes partagent un prénom et une date de
+// prestation. Avec deux adresses différentes, un mot du nom en commun ne suffit
+// pas : le message part en fiche de contrôle et la demande existante reste intacte.
+context.followupSheetCoralie = reviewSheet([
+  { id_demande: 'GMAIL-URBANIAK', nom_client: 'Coralie URBANIAK', email_client: 'c.urbaniak@example.org', telephone: '04 90 44 13 17', type_evenement: 'Entreprise', date_evenement: '20/11/2026', nb_convives: '30 personnes', statut: 'Événement confirmé', gmail_thread_id: 'THREAD-URBANIAK' }
+]);
+context.getSheet = () => context.followupSheetCoralie;
+context.reviewCardCalls = [];
+const coralieFollowup = evaluate(`JSON.parse(updateExistingDemandFollowup(
+  { email_client: 'coralie.debeaune@example.com', nom_client: 'DEBEAUNE, Coralie', date_evenement: '20/11/2026', telephone: '07 63 14 29 83', nb_convives: '20 pers', type_evenement: 'Entreprise' },
+  { gmail_thread_id: 'THREAD-SAUR', gmail_message_id: 'MESSAGE-SAUR', dernier_message_client: 'Je lance le bon de commande' },
+  { create_if_not_found: true, fallback_row: { id_demande: 'GMAIL-MESSAGE-SAUR' } }
+).getContent()).data`);
+assert.equal(coralieFollowup.created_from_unmatched_followup, true);
+assert.deepEqual(context.reviewCardCalls, ['GMAIL-MESSAGE-SAUR']);
+assert.equal(cell(context.followupSheetCoralie, 'GMAIL-URBANIAK', 'dernier_message_client'), '');
+assert.equal(cell(context.followupSheetCoralie, 'GMAIL-URBANIAK', 'gmail_thread_id'), 'THREAD-URBANIAK');
+
+// Le même nom complet reste recevable depuis une autre adresse (adresse pro,
+// adresse perso) : la demande unique est rattachée.
+context.followupSheetFullName = reviewSheet([
+  { id_demande: 'WIX-LEROY', nom_client: 'Julie Leroy', email_client: 'julie.leroy@example.org', date_evenement: '05/06/2027', statut: 'Devis envoyé' }
+]);
+context.getSheet = () => context.followupSheetFullName;
+const fullNameFollowup = evaluate(`JSON.parse(updateExistingDemandFollowup(
+  { email_client: 'j.leroy@travail.example.com', nom_client: 'LEROY Julie', date_evenement: '05/06/2027' },
+  { gmail_message_id: 'MESSAGE-LEROY', dernier_message_client: 'Je vous écris de mon adresse pro' },
+  { create_if_not_found: true, fallback_row: { id_demande: 'GMAIL-MESSAGE-LEROY' } }
+).getContent()).data`);
+assert.equal(fullNameFollowup.id_demande, 'WIX-LEROY');
+assert.deepEqual(context.reviewCardCalls, ['GMAIL-MESSAGE-SAUR']);
+
+// Sans adresse sur la demande (saisie manuelle, appel), le nom proche à la même
+// date reste un indice recevable : pas de contradiction possible sur l'email.
+context.candidateSheetNotebaert = reviewSheet([
+  { id_demande: 'MANUAL-NOTEBAERT', nom_client: 'elodie notebaert', date_evenement: '29/11/2026', statut: 'Devis envoyé' }
+]);
+const manualCandidates = evaluate(`findDemandMatchCandidates(candidateSheetNotebaert, ${JSON.stringify(reviewHeaders)}, { email_client: 'notebaert.elodie@example.com', nom_client: 'Madame NOTEBAERT Élodie', date_evenement: '29/11/2026' }, { mode: 'followup' })`);
+assert.deepEqual(Array.from(manualCandidates, candidate => candidate.id_demande), ['MANUAL-NOTEBAERT']);
+
+// La recherche de doublons en saisie manuelle reste large : elle ne fait que
+// proposer des candidates à un humain.
+const manualModeCandidates = evaluate(`findDemandMatchCandidates(followupSheetCoralie, ${JSON.stringify(reviewHeaders)}, { email_client: 'coralie.debeaune@example.com', nom_client: 'DEBEAUNE, Coralie', date_evenement: '20/11/2026' }, { mode: 'manual' })`);
+assert.deepEqual(Array.from(manualModeCandidates, candidate => candidate.id_demande), ['GMAIL-URBANIAK']);
+
 console.log('Tests de rapprochement réussis.');

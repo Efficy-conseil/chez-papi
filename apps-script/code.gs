@@ -2340,14 +2340,23 @@ function findDemandMatchCandidates(sheet, headers, incoming, options) {
     }
     if (mode === "followup" && row.statut === "Devis envoyé") score += 10;
 
+    // Un suivi rattaché automatiquement ne doit jamais reposer sur un indice
+    // contredit. Si l'expéditeur et la demande ont chacun une adresse et
+    // qu'elles diffèrent, un mot du nom en commun (souvent un prénom, ex.
+    // « Coralie ») ne prouve rien : seul un nom complet identique reste
+    // recevable. Le doute part en fiche de contrôle, où Manon rattache en un
+    // clic ; un faux rattachement, lui, fait disparaître une commande.
+    const sameName = !!target.name && !!rowName && target.name === rowName;
+    const emailConflict = mode === "followup" && !!target.email && !!rowEmail && target.email !== rowEmail;
+    const nameIsTrusted = !emailConflict || (sameName && rowName.split(' ').length >= 2);
     const hasStrongIdentity =
       (target.email && rowEmail && target.email === rowEmail) ||
       (target.phones.length && rowPhones.some(function(phone) { return target.phones.indexOf(phone) !== -1; })) ||
-      (sameDate && target.name && rowName && (
-        target.name === rowName || hasSharedToken(target.name, rowName)
-      )) ||
-      (target.name && rowName && target.name === rowName && secondaryScore > 0) ||
-      (mode === "followup" && target.name && rowName && target.name === rowName);
+      (nameIsTrusted && (
+        (sameDate && target.name && rowName && (sameName || hasSharedToken(target.name, rowName))) ||
+        (sameName && secondaryScore > 0) ||
+        (mode === "followup" && sameName)
+      ));
     // Dans un suivi, un nom complet exact est suffisant à condition que la
     // demande active soit unique. Cela permet notamment de rattacher une
     // réponse email à une ancienne demande téléphonique sans adresse email.
